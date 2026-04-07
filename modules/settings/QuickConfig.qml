@@ -3,10 +3,13 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Io
+import Qt.labs.folderlistmodel
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.common.models
+import Quickshell.Hyprland
 
 ContentPage {
     forceWidth: true
@@ -66,7 +69,7 @@ ContentPage {
 
             Item {
                 implicitWidth: 340
-                implicitHeight: 200
+                implicitHeight: 220
                 
                 StyledImage {
                     id: wallpaperPreview
@@ -80,7 +83,7 @@ ContentPage {
                     layer.effect: OpacityMask {
                         maskSource: Rectangle {
                             width: 360
-                            height: 200
+                            height: 220
                             radius: Appearance.rounding.normal
                         }
                     }
@@ -88,64 +91,6 @@ ContentPage {
             }
 
             ColumnLayout {
-                RippleButtonWithIcon {
-                    enabled: !randomWallProc.running
-                    visible: Config.options.policies.weeb === 1
-                    Layout.fillWidth: true
-                    buttonRadius: Appearance.rounding.small
-                    materialIcon: "ifl"
-                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random: Konachan")
-                    onClicked: {
-                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;
-                        randomWallProc.running = true;
-                    }
-                }
-                RippleButtonWithIcon {
-                    enabled: !randomWallProc.running
-                    visible: Config.options.policies.weeb === 1
-                    Layout.fillWidth: true
-                    buttonRadius: Appearance.rounding.small
-                    materialIcon: "ifl"
-                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random: osu! seasonal")
-                    onClicked: {
-                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_osu_wall.sh`;
-                        randomWallProc.running = true;
-                    }
-                }
-                RippleButtonWithIcon {
-                    Layout.fillWidth: true
-                    materialIcon: "wallpaper"
-
-                    onClicked: {
-                        Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
-                    }
-                    mainContentComponent: Component {
-                        RowLayout {
-                            spacing: 10
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                text: Translation.tr("Choose file")
-                                color: Appearance.colors.colOnSecondaryContainer
-                            }
-                            RowLayout {
-                                spacing: 3
-                                KeyboardKey {
-                                    key: "Ctrl"
-                                }
-                                KeyboardKey {
-                                    key: Config.options.cheatsheet.superKey ?? "󰖳"
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignVCenter
-                                    text: "+"
-                                }
-                                KeyboardKey {
-                                    key: "T"
-                                }
-                            }
-                        }
-                    }
-                }
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.fillWidth: true
@@ -159,6 +104,63 @@ ContentPage {
                     SmallLightDarkPreferenceButton {
                         Layout.fillHeight: true
                         dark: true
+                    }
+                }
+                RippleButtonWithIcon {
+                    enabled: !randomWallProc.running
+                    visible: Config.options.policies.weeb === 1
+                    Layout.fillWidth: true
+                    buttonRadius: Appearance.rounding.small
+                    materialIcon: "ifl"
+                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random • Konachan")
+                    onClicked: {
+                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;
+                        randomWallProc.running = true;
+                    }
+                }
+                RippleButtonWithIcon {
+                    enabled: !randomWallProc.running
+                    visible: Config.options.policies.weeb === 1
+                    Layout.fillWidth: true
+                    buttonRadius: Appearance.rounding.small
+                    materialIcon: "ifl"
+                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random • osu! seasonal")
+                    onClicked: {
+                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_osu_wall.sh`;
+                        randomWallProc.running = true;
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    MaterialTextArea {
+                        Layout.fillWidth: true
+                        placeholderText: Translation.tr("Accent Color")
+                        text: Config.options.appearance.palette.accentColor
+                        wrapMode: TextEdit.Wrap
+                        onTextChanged: {
+                            Config.options.appearance.palette.accentColor = text;
+                            debounceTimer.restart();
+                        }
+                        Timer {
+                            id: debounceTimer
+                            interval: 600
+                            repeat: false
+                            onTriggered: {
+                                const color = parent.text.trim();
+                                const isValidHex = /^#[0-9A-Fa-f]{6}$/.test(color);
+                                if (!isValidHex) return;
+                                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color", color]);
+                            }
+                        }
+                    }
+
+                    ToolbarPairedFab {
+                        iconText: "colorize"
+                        onClicked: {
+                            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color"]);
+                        }        
                     }
                 }
             }
@@ -210,12 +212,22 @@ ContentPage {
             ]
         }
 
-        ConfigSwitch {
-            buttonIcon: "ev_shadow"
-            text: Translation.tr("Transparency")
-            checked: Config.options.appearance.transparency.enable
-            onCheckedChanged: {
-                Config.options.appearance.transparency.enable = checked;
+        ConfigRow {
+            ConfigSwitch {
+                buttonIcon: "motion_mode"
+                text: Translation.tr("Transparency")
+                checked: Config.options.appearance.transparency.enable
+                onCheckedChanged: {
+                    Config.options.appearance.transparency.enable = checked;
+                }
+            }
+            ConfigSwitch {
+                buttonIcon: "autofps_select"
+                text: Translation.tr("Automatic")
+                checked: Config.options.appearance.transparency.automatic
+                onCheckedChanged: {
+                    Config.options.appearance.transparency.automatic = checked;
+                }
             }
         }
     }
