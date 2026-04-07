@@ -15,8 +15,8 @@ RippleButton {
     visible: aiChatEnabled || translatorEnabled || animeEnabled
 
     property real buttonPadding: 5
-    implicitWidth: distroIcon.width + buttonPadding * 2
-    implicitHeight: distroIcon.height + buttonPadding * 2
+    implicitWidth: Config.options.bar.cornerStyle === 2 ? 27 : distroIcon.width + buttonPadding * 2
+    implicitHeight: Config.options.bar.cornerStyle === 2 ? 27 : distroIcon.height + buttonPadding * 2
     buttonRadius: Appearance.rounding.full
     colBackgroundHover: Appearance.colors.colLayer1Hover
     colRipple: Appearance.colors.colLayer1Active

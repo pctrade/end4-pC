@@ -44,6 +44,7 @@ Item {
 
         BarIsland {
             padding: 4
+            visible: Config.options.bar.weather.enable
             WeatherBar {}
         }
 

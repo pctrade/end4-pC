@@ -39,6 +39,18 @@ Item {
         root.showLanguageSelector = true
     }
 
+    function swapLanguages() {
+        let temp = root.targetLanguage;
+        root.targetLanguage = root.sourceLanguage;
+        root.sourceLanguage = temp;
+        
+        // Save to config
+        Config.options.language.translator.targetLanguage = root.targetLanguage;
+        Config.options.language.translator.sourceLanguage = root.sourceLanguage;
+        
+        translateTimer.restart(); // Restart translation after swap
+    }
+
     onFocusChanged: (focus) => {
         if (focus) {
             root.inputField.forceActiveFocus()
@@ -115,11 +127,36 @@ Item {
                 id: contentColumn
                 anchors.fill: parent
 
-                LanguageSelectorButton { // Target language button
-                    id: targetLanguageButton
-                    displayText: root.targetLanguage
-                    onClicked: {
-                        root.showLanguageSelectorDialog(true);
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Appearance.spacing.small
+
+                    LanguageSelectorButton { // Target language button
+                        id: targetLanguageButton
+                        displayText: root.targetLanguage
+                        onClicked: {
+                            root.showLanguageSelectorDialog(true);
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    GroupButton { // Swap languages button
+                        id: swapButton
+                        Layout.preferredWidth: height
+                        buttonRadius: Appearance.rounding.small
+                        contentItem: MaterialSymbol {
+                            anchors.centerIn: parent
+                            horizontalAlignment: Text.AlignHCenter
+                            iconSize: Appearance.font.pixelSize.larger
+                            text: "autorenew"
+                            color: Appearance.colors.colOnLayer1
+                        }
+                        onClicked: {
+                            root.swapLanguages();
+                        }
                     }
                 }
 
