@@ -107,8 +107,8 @@ ContentPage {
                             value: 1
                         },
                         {
-                            displayName: Translation.tr("Rect"),
-                            icon: "toolbar",
+                            displayName: Translation.tr("Islands"),
+                            icon: "crop_3_2",
                             value: 2
                         }
                     ]
