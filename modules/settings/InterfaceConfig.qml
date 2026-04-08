@@ -20,7 +20,7 @@ ContentPage {
                 }
                 // Use a nerdfont to see the icons
                 options: ([
-                  "󰖳", "", "󰨡", "", "󰌽", "󰣇", "", "", "", 
+                  "󰖳", "", "󰨡", "", "󰌽", "󰣇", "", "", "",
                   "", "", "󱄛", "", "", "", "⌘", "󰀲", "󰟍", ""
                 ]).map(icon => { return {
                   displayName: icon,
@@ -271,12 +271,23 @@ ContentPage {
         title: Translation.tr("Overlay: Crosshair")
 
         MaterialTextArea {
+            id: crosshairCodeTextArea
             Layout.fillWidth: true
             placeholderText: Translation.tr("Crosshair code (in Valorant's format)")
             text: Config.options.crosshair.code
             wrapMode: TextEdit.Wrap
+
+            Timer {
+                id: crosshairCodeDebounceTimer
+                interval: 1000 // Ajusta este valor si lo necesitas
+                running: false
+                onTriggered: {
+                    Config.options.crosshair.code = crosshairCodeTextArea.text;
+                }
+            }
+
             onTextChanged: {
-                Config.options.crosshair.code = text;
+                crosshairCodeDebounceTimer.restart();
             }
         }
 
@@ -307,12 +318,23 @@ ContentPage {
         title: Translation.tr("Overlay: Floating Image")
 
         MaterialTextArea {
+            id: floatingImageSourceTextArea
             Layout.fillWidth: true
             placeholderText: Translation.tr("Image source")
             text: Config.options.overlay.floatingImage.imageSource
             wrapMode: TextEdit.Wrap
+
+            Timer {
+                id: floatingImageSourceDebounceTimer
+                interval: 1000 // Ajusta este valor si lo necesitas
+                running: false
+                onTriggered: {
+                    Config.options.overlay.floatingImage.imageSource = floatingImageSourceTextArea.text;
+                }
+            }
+
             onTextChanged: {
-                Config.options.overlay.floatingImage.imageSource = text;
+                floatingImageSourceDebounceTimer.restart();
             }
         }
     }
@@ -350,10 +372,10 @@ ContentPage {
                 }
             }
         }
-        
+
         ContentSubsection {
             title: Translation.tr("Google Lens")
-            
+
             ConfigSelectionArray {
                 currentValue: Config.options.search.imageSearch.useCircleSelection ? "circle" : "rectangles"
                 onSelected: newValue => {
@@ -381,7 +403,7 @@ ContentPage {
 
         ContentSubsection {
             title: Translation.tr("Circle selection")
-            
+
             ConfigSpinBox {
                 icon: "eraser_size_3"
                 text: Translation.tr("Stroke width")
@@ -432,7 +454,7 @@ ContentPage {
 
         ContentSubsection {
             title: Translation.tr("Quick toggles")
-            
+
             ConfigSelectionArray {
                 Layout.fillWidth: false
                 currentValue: Config.options.sidebar.quickToggles.style
@@ -478,7 +500,7 @@ ContentPage {
                     Config.options.sidebar.quickSliders.enable = checked;
                 }
             }
-            
+
             ConfigSwitch {
                 buttonIcon: "brightness_6"
                 text: Translation.tr("Brightness")
@@ -542,7 +564,7 @@ ContentPage {
                 }
                 ConfigSpinBox {
                     icon: "arrow_cool_down"
-                    text: Translation.tr("with vertical offset")
+                    text: Translation.tr("con desplazamiento vertical")
                     value: Config.options.sidebar.cornerOpen.clicklessCornerVerticalOffset
                     from: 0
                     to: 20
@@ -558,7 +580,7 @@ ContentPage {
                     }
                 }
             }
-            
+
             ConfigRow {
                 uniform: true
                 ConfigSwitch {
@@ -749,12 +771,23 @@ ContentPage {
             title: Translation.tr("Main font")
 
             MaterialTextArea {
+                id: mainFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., Google Sans Flex)")
                 text: Config.options.appearance.fonts.main
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: mainFontDebounceTimer
+                    interval: 1000 
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.main = mainFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.main = text;
+                    mainFontDebounceTimer.restart();
                 }
             }
         }
@@ -763,12 +796,23 @@ ContentPage {
             title: Translation.tr("Numbers font")
 
             MaterialTextArea {
+                id: numbersFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name")
                 text: Config.options.appearance.fonts.numbers
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: numbersFontDebounceTimer
+                    interval: 1000
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.numbers = numbersFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.numbers = text;
+                    numbersFontDebounceTimer.restart();
                 }
             }
         }
@@ -777,12 +821,23 @@ ContentPage {
             title: Translation.tr("Title font")
 
             MaterialTextArea {
+                id: titleFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name")
                 text: Config.options.appearance.fonts.title
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: titleFontDebounceTimer
+                    interval: 1000
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.title = titleFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.title = text;
+                    titleFontDebounceTimer.restart();
                 }
             }
         }
@@ -791,12 +846,23 @@ ContentPage {
             title: Translation.tr("Monospace font")
 
             MaterialTextArea {
+                id: monospaceFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
                 text: Config.options.appearance.fonts.monospace
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: monospaceFontDebounceTimer
+                    interval: 1000
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.monospace = monospaceFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.monospace = text;
+                    monospaceFontDebounceTimer.restart();
                 }
             }
         }
@@ -805,12 +871,23 @@ ContentPage {
             title: Translation.tr("Nerd font icons")
 
             MaterialTextArea {
+                id: iconNerdFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., JetBrains Mono NF)")
                 text: Config.options.appearance.fonts.iconNerd
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: iconNerdFontDebounceTimer
+                    interval: 1000
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.iconNerd = iconNerdFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.iconNerd = text;
+                    iconNerdFontDebounceTimer.restart();
                 }
             }
         }
@@ -819,12 +896,23 @@ ContentPage {
             title: Translation.tr("Reading font")
 
             MaterialTextArea {
+                id: readingFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., Readex Pro)")
                 text: Config.options.appearance.fonts.reading
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: readingFontDebounceTimer
+                    interval: 1000
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.reading = readingFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.reading = text;
+                    readingFontDebounceTimer.restart();
                 }
             }
         }
@@ -833,12 +921,23 @@ ContentPage {
             title: Translation.tr("Expressive font")
 
             MaterialTextArea {
+                id: expressiveFontTextArea
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Font family name (e.g., Space Grotesk)")
                 text: Config.options.appearance.fonts.expressive
                 wrapMode: TextEdit.NoWrap
+
+                Timer {
+                    id: expressiveFontDebounceTimer
+                    interval: 1000
+                    running: false
+                    onTriggered: {
+                        Config.options.appearance.fonts.expressive = expressiveFontTextArea.text;
+                    }
+                }
+
                 onTextChanged: {
-                    Config.options.appearance.fonts.expressive = text;
+                    expressiveFontDebounceTimer.restart();
                 }
             }
         }

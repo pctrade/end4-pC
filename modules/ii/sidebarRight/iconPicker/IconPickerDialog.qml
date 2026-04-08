@@ -44,13 +44,13 @@ WindowDialog {
             width: 70
             height: 70
 
-            Image {
+            CustomIcon {
                 anchors.centerIn: parent
                 width: 36
                 height: 36
-                source: delegateItem.modelData.fileURL
-                sourceSize: Qt.size(36, 36)
-                fillMode: Image.PreserveAspectFit
+                source: delegateItem.modelData.fileName
+                colorize: Config.options.custom.colorizeIcon
+                color: Appearance.colors.colOnLayer0
             }
 
             MouseArea {
@@ -59,7 +59,7 @@ WindowDialog {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    Config.setNestedValue("custom.distroIcon", delegateItem.modelData.fileURL)
+                    Config.setNestedValue("custom.distroIcon", delegateItem.modelData.fileName.replace(".svg", ""))
                     root.dismiss()
                 }
                 Rectangle {
@@ -73,6 +73,19 @@ WindowDialog {
     }
 
     WindowDialogButtonRow {
+        ConfigSwitch {
+            buttonIcon: "palette"
+            text: Translation.tr("Colorize")
+            checked: Config.options.custom.colorizeIcon
+            onCheckedChanged: {
+                Config.options.custom.colorizeIcon = checked
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+        }
+
         DialogButton {
             buttonText: "Reset"
             onClicked: {
@@ -80,9 +93,7 @@ WindowDialog {
                 root.dismiss()
             }
         }
-        Item {
-            Layout.fillWidth: true
-        }
+
         DialogButton {
             buttonText: "Done"
             onClicked: root.dismiss()

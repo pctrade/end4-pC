@@ -544,6 +544,11 @@ Singleton {
                 }
             }
 
+            property JsonObject custom: JsonObject {
+                property string distroIcon: ""
+                property bool colorizeIcon: true
+            }
+
             property JsonObject screenRecord: JsonObject {
                 property string savePath: Directories.videos.replace("file://","") // strip "file://"
             }

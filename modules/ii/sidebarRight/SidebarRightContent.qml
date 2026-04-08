@@ -16,6 +16,7 @@ import qs.modules.ii.sidebarRight.bluetoothDevices
 import qs.modules.ii.sidebarRight.nightLight
 import qs.modules.ii.sidebarRight.volumeMixer
 import qs.modules.ii.sidebarRight.wifiNetworks
+import qs.modules.ii.sidebarRight.iconPicker
 
 Item {
     id: root
@@ -28,6 +29,7 @@ Item {
     property bool showNightLightDialog: false
     property bool showWifiDialog: false
     property bool editMode: false
+    property bool showIconPickerDialog: false
 
     Connections {
         target: GlobalStates
@@ -153,6 +155,11 @@ Item {
         }
     }
 
+    ToggleDialog {
+        shownPropertyString: "showIconPickerDialog"
+        dialog: IconPickerDialog {}
+    }
+
     component ToggleDialog: Loader {
         id: toggleDialogLoader
         required property string shownPropertyString
@@ -226,20 +233,30 @@ Item {
                 id: uptimeRow
                 anchors.centerIn: parent
                 spacing: 8
-                CustomIcon {
-                    id: distroIcon
+                Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 25
                     height: 25
-                    source: SystemInfo.distroIcon
-                    colorize: true
-                    color: Appearance.colors.colOnLayer0
+
+                    CustomIcon {
+                        id: distroIcon
+                        anchors.fill: parent
+                        source: Config.options.custom.distroIcon || SystemInfo.distroIcon
+                        colorize: Config.options.custom.colorizeIcon
+                        color: Appearance.colors.colOnLayer0
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.showIconPickerDialog = true
+                    }
                 }
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
                     font.pixelSize: Appearance.font.pixelSize.normal
                     color: Appearance.colors.colOnLayer0
-                    text: Translation.tr("Up %1").arg(DateTime.uptime)
+                    text: Translation.tr("Up • %1").arg(DateTime.uptime)
                     textFormat: Text.MarkdownText
                 }
             }
