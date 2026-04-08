@@ -74,7 +74,7 @@ WindowDialog {
 
     WindowDialogButtonRow {
         ConfigSwitch {
-            buttonIcon: "palette"
+            buttonIcon: "colors"
             text: Translation.tr("Colorize")
             checked: Config.options.custom.colorizeIcon
             onCheckedChanged: {

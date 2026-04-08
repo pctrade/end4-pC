@@ -10,6 +10,7 @@ ContentPage {
 
     ContentSection {
         icon: "monitor"
+        visible: Hyprland.monitors.values.length > 1
         title: Translation.tr("Screens")
 
         ContentSubsection {
@@ -51,6 +52,13 @@ ContentPage {
                             Config.options.bar.screenList = list.length === allNames.length ? [] : list
                         }
                     }
+                }
+
+                SelectionGroupButton {
+                    leftmost: false
+                    rightmost: true
+                    buttonIcon: "page_footer"
+                    buttonText: Translation.tr("")
                 }
             }
         }

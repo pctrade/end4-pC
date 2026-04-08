@@ -31,6 +31,28 @@ Singleton {
     property list<real> memoryUsageHistory: []
     property list<real> swapUsageHistory: []
 
+    property real cpuTemp: 0
+
+    Process {
+        id: tempProc
+        command: ["bash", "-c", "sensors | grep 'Package id 0' | awk '{print $4}' | tr -d '+°C'"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.cpuTemp = parseFloat(text.trim())
+            }
+        }
+    }
+
+    Timer {
+        interval: 3000
+        running: true
+        repeat: true
+        onTriggered: {
+            tempProc.running = false
+            tempProc.running = true
+        }
+    }
+
     function kbToGbString(kb) {
         return (kb / (1024 * 1024)).toFixed(1) + " GB";
     }

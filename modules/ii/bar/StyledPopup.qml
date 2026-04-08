@@ -8,17 +8,18 @@ import Quickshell.Wayland
 
 LazyLoader {
     id: root
-
     property Item hoverTarget
     default property Item contentItem
     property real popupBackgroundMargin: 0
-
     active: hoverTarget && hoverTarget.containsMouse
 
     component: PanelWindow {
         id: popupWindow
-        color: "transparent"
 
+        // Bring contentItem reference into this scope
+        property Item innerContent: root.contentItem
+
+        color: "transparent"
         anchors.left: !Config.options.bar.vertical || (Config.options.bar.vertical && !Config.options.bar.bottom)
         anchors.right: Config.options.bar.vertical && Config.options.bar.bottom
         anchors.top: Config.options.bar.vertical || (!Config.options.bar.vertical && !Config.options.bar.bottom)
@@ -30,13 +31,13 @@ LazyLoader {
         mask: Region {
             item: popupBackground
         }
-
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
+
         margins {
             left: {
                 if (!Config.options.bar.vertical) return root.QsWindow?.mapFromItem(
-                    root.hoverTarget, 
+                    root.hoverTarget,
                     (root.hoverTarget.width - popupBackground.implicitWidth) / 2, 0
                 ).x;
                 return Appearance.sizes.verticalBarWidth
@@ -44,13 +45,14 @@ LazyLoader {
             top: {
                 if (!Config.options.bar.vertical) return Appearance.sizes.barHeight;
                 return root.QsWindow?.mapFromItem(
-                    root.hoverTarget, 
+                    root.hoverTarget,
                     (root.hoverTarget.height - popupBackground.implicitHeight) / 2, 0
                 ).y;
             }
             right: Appearance.sizes.verticalBarWidth
             bottom: Appearance.sizes.barHeight
         }
+
         WlrLayershell.namespace: "quickshell:popup"
         WlrLayershell.layer: WlrLayer.Overlay
 
@@ -61,6 +63,7 @@ LazyLoader {
         Rectangle {
             id: popupBackground
             readonly property real margin: 10
+
             anchors {
                 fill: parent
                 leftMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.left)
@@ -68,14 +71,23 @@ LazyLoader {
                 topMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.top)
                 bottomMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.bottom)
             }
-            implicitWidth: root.contentItem.implicitWidth + margin * 2
-            implicitHeight: root.contentItem.implicitHeight + margin * 2
+
+            // Use local reference instead of crossing LazyLoader scope boundary
+            implicitWidth: (popupWindow.innerContent?.implicitWidth ?? 0) + margin * 2
+            implicitHeight: (popupWindow.innerContent?.implicitHeight ?? 0) + margin * 2
+
             color: Appearance.m3colors.m3surfaceContainer
             radius: Appearance.rounding.small
-            children: [root.contentItem]
-
             border.width: 1
             border.color: Appearance.colors.colLayer0Border
+
+            // Reparent content here once the window is ready
+            Component.onCompleted: {
+                if (popupWindow.innerContent) {
+                    popupWindow.innerContent.parent = popupBackground
+                    popupWindow.innerContent.anchors.centerIn = popupBackground
+                }
+            }
         }
     }
 }
