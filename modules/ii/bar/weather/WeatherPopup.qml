@@ -60,9 +60,9 @@ StyledPopup {
             uniformCellWidths: true
 
             WeatherCard {
-                title: Translation.tr("UV Index")
-                symbol: "wb_sunny"
-                value: Weather.data.uv
+                title: Translation.tr("Rain?")
+                symbol: "rainy"
+                value: Weather.data.cr
             }
             WeatherCard {
                 title: Translation.tr("Wind")

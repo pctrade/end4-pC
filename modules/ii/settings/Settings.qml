@@ -75,7 +75,7 @@ Scope {
         Rectangle {
             id: settingsWindow
             anchors.centerIn: parent
-            width: Math.min(parent.width - 80, 1000)
+            width: Math.min(parent.width - 80, 1050)
             height: Math.min(parent.height - 80, 650)
             color: Appearance.colors.colLayer0
             border.width: 1

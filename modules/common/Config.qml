@@ -583,7 +583,21 @@ Singleton {
             property JsonObject wallpaperSelector: JsonObject {
                 property bool useSystemFileDialog: false
             }
+
+            property JsonObject wallpapers: JsonObject {
+                property string service: "wallhaven"
+                property string sort: "favourites"
+                property bool showAnimeResults: false
+                property JsonObject paths: JsonObject {
+                    property string download: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers`)
+                    property string nsfw: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers/NSFW`)
+                }
+            }
             
+            property JsonObject wallhaven: JsonObject {
+                property string apiKey: "" // opcional, solo para NSFW o más resultados
+            }
+
             property JsonObject windows: JsonObject {
                 property bool showTitlebar: true // Client-side decoration for shell apps
                 property bool centerTitle: true
