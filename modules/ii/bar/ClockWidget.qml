@@ -34,6 +34,7 @@ Item {
             font.pixelSize: Appearance.font.pixelSize.large
             color: Appearance.colors.colOnLayer1
             text: DateTime.time
+            font.letterSpacing: -0.4
             font.features: { "tnum": 1 }
         }
 

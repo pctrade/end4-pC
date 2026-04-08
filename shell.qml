@@ -67,19 +67,6 @@ ShellRoot {
         }
     }
 
-    IpcHandler {
-        target: "settings"
-        function toggle(): void {
-            GlobalStates.settingsOpen = !GlobalStates.settingsOpen
-        }
-        function open(): void {
-            GlobalStates.settingsOpen = true
-        }
-        function close(): void {
-            GlobalStates.settingsOpen = false
-        }
-    }
-
     GlobalShortcut {
         name: "panelFamilyCycle"
         description: "Cycles panel family"

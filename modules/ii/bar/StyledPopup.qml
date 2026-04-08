@@ -62,7 +62,7 @@ LazyLoader {
 
         Rectangle {
             id: popupBackground
-            readonly property real margin: 10
+            readonly property real margin: 8
 
             anchors {
                 fill: parent
@@ -77,7 +77,7 @@ LazyLoader {
             implicitHeight: (popupWindow.innerContent?.implicitHeight ?? 0) + margin * 2
 
             color: Appearance.m3colors.m3surfaceContainer
-            radius: Appearance.rounding.small
+            radius: Appearance.rounding.normal
             border.width: 1
             border.color: Appearance.colors.colLayer0Border
 
