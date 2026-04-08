@@ -51,7 +51,7 @@ Singleton {
                         "md5": item.id,  
                         "preview_url": item.urls.small,  
                         "sample_url": item.urls.full,  
-                        "file_url": item.urls.full,  
+                        "file_url": item.urls.full + "&w=1920&h=1080&fit=crop",
                         "file_ext": "jpg",  
                         "source": item.links.html,  
                         "author": item.user.name,  

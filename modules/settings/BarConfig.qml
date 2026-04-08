@@ -3,9 +3,58 @@ import QtQuick.Layouts
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import Quickshell.Hyprland
 
 ContentPage {
     forceWidth: true
+
+    ContentSection {
+        icon: "monitor"
+        title: Translation.tr("Screens")
+
+        ContentSubsection {
+            title: Translation.tr("Show bar on")
+
+            Flow {
+                Layout.fillWidth: true
+                spacing: 2
+
+                SelectionGroupButton {
+                    leftmost: true
+                    rightmost: Hyprland.monitors.length === 0 
+                    buttonIcon: "tv_displays"
+                    buttonText: Translation.tr("All")
+                    toggled: Config.options.bar.screenList.length === 0
+                    onClicked: Config.options.bar.screenList = []
+                }
+
+                Repeater {
+                    model: Hyprland.monitors
+                    delegate: SelectionGroupButton {
+                        required property var modelData
+                        required property int index
+                        leftmost: false
+                        rightmost: index === Hyprland.monitors.length - 1
+                        buttonIcon: "monitor"
+                        buttonText: modelData.name
+                        toggled: Config.options.bar.screenList.includes(modelData.name)
+                        onClicked: {
+                            const allNames = Array.from({length: Hyprland.monitors.length}, (_, i) => Hyprland.monitors[i].name)
+                            let list = Config.options.bar.screenList.length === 0
+                                ? allNames.slice()
+                                : Config.options.bar.screenList.slice()
+                            if (toggled) {
+                                list = list.filter(s => s !== modelData.name)
+                            } else {
+                                list.push(modelData.name)
+                            }
+                            Config.options.bar.screenList = list.length === allNames.length ? [] : list
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     ContentSection {
         icon: "notifications"
@@ -19,7 +68,7 @@ ContentPage {
             }
         }
     }
-    
+
     ContentSection {
         icon: "spoke"
         title: Translation.tr("Positioning")

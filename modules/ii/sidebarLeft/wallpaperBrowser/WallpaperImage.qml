@@ -179,18 +179,19 @@ Button {
                                     ])  
                                 }  
                             }  
-                            MenuButton {  
-                                id: setWallpaperButton  
-                                Layout.fillWidth: true  
-                                buttonText: Translation.tr("Set as wallpaper")  
-                                onClicked: {  
-                                    root.showActions = false;  
-                                    Wallpapers.select(root.imageData.file_url);
-                                    if (root.imageData.color != "") {
-                                        Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color", root.imageData.color]);  
-                                    }
-                                }  
-                            }  
+                            MenuButton {
+                                id: downloadAndApplyButton
+                                Layout.fillWidth: true
+                                buttonText: Translation.tr("Download & Apply")
+                                onClicked: {
+                                    root.showActions = false;
+                                    const targetPath = root.imageData.is_nsfw ? root.nsfwPath : root.downloadPath;
+                                    const fullPath = `${targetPath}/${root.fileName}`;
+                                    Quickshell.execDetached(["bash", "-c", 
+                                        `mkdir -p '${targetPath}' && curl '${root.imageData.file_url}' -o '${fullPath}' && ${Directories.wallpaperSwitchScriptPath} --image '${fullPath}' && notify-send '${Translation.tr("Wallpaper applied")}' '${root.fileName}' -a 'Shell'`
+                                    ])
+                                }
+                            }
                         }  
                     }
                 }  
