@@ -228,7 +228,7 @@ Item { // Player instance
                 StyledText {
                     id: trackArtist
                     Layout.fillWidth: true
-                    Layout.topMargin: -8
+                    Layout.topMargin: -6
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: blendedColors.colSubtext
                     elide: Text.ElideRight
@@ -245,7 +245,7 @@ Item { // Player instance
                     StyledText {
                         id: trackTime
                         anchors.bottom: sliderRow.top
-                        anchors.bottomMargin: 5
+                        anchors.bottomMargin: 0
                         anchors.left: parent.left
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: blendedColors.colSubtext

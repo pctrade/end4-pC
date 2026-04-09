@@ -18,8 +18,8 @@ Item {
     property color activeColor: "white"
     property color dimColor: Qt.rgba(1, 1, 1, 0.35)
     
-    property color indicatorColor: "red"
-    property color indicatorShapeColor: "blue"
+    property color indicatorColor: Appearance.colors.colPrimaryContainer
+    property color indicatorShapeColor: Appearance.colors.colOnPrimaryContainer
 
     property var lyricsLines: []
     property int activeIndex: -1
@@ -139,75 +139,12 @@ Item {
                 anchors.centerIn: parent
                 spacing: 12
 
-                Rectangle {
-                    id: indicatorBg
+                MaterialLoadingIndicator {
                     Layout.alignment: Qt.AlignHCenter
-                    width: 48
-                    height: 48
-                    radius: 24
-                    color: root.indicatorColor 
-
-                    property double baseShapeSize: 48 * 0.7
-                    property double leapZoomSize: baseShapeSize * 1.2
-                    property double leapZoomProgress: 0
-                    property int shapeIndex: 0
-                    property double continuousRotation: 0
-                    property double leapRotation: 0
-                    rotation: continuousRotation + leapRotation
-
-                    property list<var> shapes: [
-                        MaterialShape.Shape.SoftBurst,
-                        MaterialShape.Shape.Cookie9Sided,
-                        MaterialShape.Shape.Pentagon,
-                        MaterialShape.Shape.Pill,
-                        MaterialShape.Shape.Sunny,
-                        MaterialShape.Shape.Cookie4Sided,
-                        MaterialShape.Shape.Oval,
-                    ]
-
-                    RotationAnimation on continuousRotation {
-                        running: root.status === "loading"
-                        duration: 12000; loops: Animation.Infinite
-                        from: 0; to: 360
-                    }
-
-                    Timer {
-                        interval: 800; running: root.status === "loading"; repeat: true
-                        onTriggered: leapAnim.start()
-                    }
-
-                    ParallelAnimation {
-                        id: leapAnim
-                        PropertyAction { target: indicatorBg; property: "shapeIndex"; value: (indicatorBg.shapeIndex + 1) % indicatorBg.shapes.length }
-                        RotationAnimation {
-                            target: indicatorBg
-                            direction: RotationAnimation.Shortest
-                            property: "leapRotation"
-                            to: (indicatorBg.leapRotation + 90) % 360
-                            duration: 350
-                            easing.type: Easing.InOutQuad
-                        }
-                        NumberAnimation {
-                            target: indicatorBg; property: "leapZoomProgress"
-                            from: 0; to: 1; duration: 750
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: Appearance.animationCurves.standard
-                        }
-                    }
-
-                    MaterialShape {
-                        anchors.centerIn: parent
-                        shape: indicatorBg.shapes[indicatorBg.shapeIndex]
-                        implicitSize: {
-                            const leapZoomDiff = indicatorBg.leapZoomSize - indicatorBg.baseShapeSize
-                            const progressFirstHalf = Math.min(indicatorBg.leapZoomProgress, 0.5) * 2
-                            const progressSecondHalf = Math.max(indicatorBg.leapZoomProgress - 0.5, 0) * 2
-                            return indicatorBg.baseShapeSize + leapZoomDiff * progressFirstHalf - leapZoomDiff * progressSecondHalf
-                        }
-                        // VÍNCULO CON EL COLOR DEL ICONO DE CARGA
-                        color: root.indicatorShapeColor
-                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                    }
+                    loading: root.status === "loading"
+                    colBg: root.indicatorColor
+                    colShape: root.indicatorShapeColor
+                    implicitSize: 48 
                 }
             }
         }
