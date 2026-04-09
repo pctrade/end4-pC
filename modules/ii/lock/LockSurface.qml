@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell.Services.UPower
+import Quickshell.Services.Mpris
 import qs
 import qs.services
 import qs.modules.common
@@ -244,7 +245,115 @@ MouseArea {
         IconAndTextPair {
             Layout.leftMargin: 8
             icon: "account_circle"
+            visible: MprisController.activePlayer === null
             text: SystemInfo.username
+        }
+
+        // Media player info 
+        Loader {
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+            Layout.alignment: Qt.AlignVCenter
+            active: MprisController.activePlayer !== null
+            visible: active
+            
+            sourceComponent: Item {
+                implicitWidth: mediaRow.implicitWidth
+                implicitHeight: mediaRow.implicitHeight
+                
+                readonly property MprisPlayer activePlayer: MprisController.activePlayer
+                readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || ""
+                
+                Timer {
+                    running: activePlayer?.playbackState == MprisPlaybackState.Playing
+                    interval: Config.options.resources.updateInterval
+                    repeat: true
+                    onTriggered: activePlayer.positionChanged()
+                }
+                
+                RowLayout {
+                    id: mediaRow
+                    spacing: 8
+                    anchors.centerIn: parent
+                    
+                    Image {
+                        Layout.alignment: Qt.AlignVCenter
+                        source: activePlayer?.trackArtUrl && activePlayer.trackArtUrl !== "" ? 
+                                activePlayer.trackArtUrl : "../../assets/icons/cover.png"
+                        fillMode: Image.PreserveAspectCrop
+                        cache: false
+                        width: 40
+                        height: 40
+                        sourceSize.width: 40
+                        sourceSize.height: 40
+                        
+                        layer.enabled: true
+                        layer.effect: OpacityMask {
+                            maskSource: Rectangle {
+                                width: 40
+                                height: 40
+                                radius: Appearance.rounding.full
+                            }
+                        }
+                    }
+                    
+                    Column {
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: -2
+                        
+                        StyledText {
+                            horizontalAlignment: Text.AlignLeft
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            width: Math.min(implicitWidth, 180) 
+                            color: Appearance.colors.colOnSurfaceVariant
+                            text: {
+                                var artist = activePlayer?.trackArtist || " ";
+                                return artist.length > 25 ? artist.substring(0, 25) + "..." : artist;
+                            }
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                        }
+                        
+                        StyledText {
+                            horizontalAlignment: Text.AlignLeft
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            width: Math.min(implicitWidth, 180) 
+                            color: Appearance.colors.colOnSurfaceVariant
+                            text: {
+                                var title = cleanedTitle;
+                                return title.length > 30 ? title.substring(0, 30) + "..." : title;
+                            }
+                            font.weight: Font.Medium
+                            font.pixelSize: Appearance.font.pixelSize.small
+                        }
+                    }
+                    
+                    ClippedFilledCircularProgress {
+                        id: mediaCircProg
+                        Layout.alignment: Qt.AlignVCenter
+                        lineWidth: Appearance.rounding.unsharpen
+                        value: activePlayer?.position / activePlayer?.length
+                        implicitSize: 24
+                        colPrimary: Appearance.colors.colOnSurfaceVariant
+                        enableAnimation: false
+                        
+                        Item {
+                            anchors.centerIn: parent
+                            width: mediaCircProg.implicitSize
+                            height: mediaCircProg.implicitSize
+                            
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                fill: 1
+                                text: "music_note"
+                                iconSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnSurfaceVariant
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Keyboard layout (Xkb)
@@ -253,7 +362,7 @@ MouseArea {
             Layout.fillHeight: true
 
             active: true
-            visible: active
+            visible: active && MprisController.activePlayer === null
 
             sourceComponent: Row {
                 spacing: 8

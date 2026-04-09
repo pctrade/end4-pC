@@ -203,7 +203,7 @@ Item { // Player instance
                         if (c && c != "#000000" && c != "#ffffff" && c != "transparent") {
                             return c
                         }
-                        return blendedColors.colPrimary || "white"
+                        return blendedColors.colPrimary || Appearance.colors.colPrimary
                     }
                 }
             }
