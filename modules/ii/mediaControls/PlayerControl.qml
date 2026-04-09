@@ -22,9 +22,10 @@ Item { // Player instance
     property color artDominantColor: ColorUtils.mix((colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary), Appearance.colors.colPrimaryContainer, 0.8) || Appearance.m3colors.m3secondaryContainer
     property bool downloaded: false
     property list<real> visualizerPoints: []
-    property real maxVisualizerValue: 1000 // Max value in the data points
-    property int visualizerSmoothing: 2 // Number of points to average for smoothing
+    property real maxVisualizerValue: 1000
+    property int visualizerSmoothing: 2
     property real radius
+    property bool showLyrics: false
 
     property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
 
@@ -50,7 +51,7 @@ Item { // Player instance
         }
     }
 
-    Timer { // Force update for revision
+    Timer {
         running: root.player?.playbackState == MprisPlaybackState.Playing
         interval: Config.options.resources.updateInterval
         repeat: true
@@ -64,16 +65,13 @@ Item { // Player instance
             root.artDominantColor = Appearance.m3colors.m3secondaryContainer
             return;
         }
-
-        // Binding does not work in Process
-        coverArtDownloader.targetFile = root.artUrl 
+        coverArtDownloader.targetFile = root.artUrl
         coverArtDownloader.artFilePath = root.artFilePath
-        // Download
         root.downloaded = false
         coverArtDownloader.running = true
     }
 
-    Process { // Cover art downloader
+    Process {
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
@@ -86,8 +84,8 @@ Item { // Player instance
     ColorQuantizer {
         id: colorQuantizer
         source: root.displayedArtFilePath
-        depth: 0 // 2^0 = 1 color
-        rescaleSize: 1 // Rescale to 1x1 pixel for faster processing
+        depth: 0
+        rescaleSize: 1
     }
 
     property QtObject blendedColors: AdaptedMaterialScheme {
@@ -97,7 +95,8 @@ Item { // Player instance
     StyledRectangularShadow {
         target: background
     }
-    Rectangle { // Background
+
+    Rectangle {
         id: background
         anchors.fill: parent
         anchors.margins: Appearance.sizes.elevationMargin
@@ -146,47 +145,61 @@ Item { // Player instance
             color: blendedColors.colPrimary
         }
 
-        RowLayout {
+        ColumnLayout { 
             anchors.fill: parent
             anchors.margins: 13
-            spacing: 15
+            spacing: 10
 
-            Rectangle { // Art background
-                id: artBackground
+            RowLayout {
+                Layout.fillWidth: true
                 Layout.fillHeight: true
-                implicitWidth: height
-                radius: Appearance.rounding.verysmall
-                color: ColorUtils.transparentize(blendedColors.colLayer1, 0.5)
+                spacing: 15
 
-                layer.enabled: true
-                layer.effect: OpacityMask {
-                    maskSource: Rectangle {
-                        width: artBackground.width
-                        height: artBackground.height
-                        radius: artBackground.radius
+                Rectangle {
+                    id: artBackground
+                    implicitHeight: 150
+                    implicitWidth: 150
+                    radius: 16
+                    color: ColorUtils.transparentize(blendedColors.colLayer1, 0.5)
+
+                    layer.enabled: true
+                    layer.effect: OpacityMask {
+                        maskSource: Rectangle {
+                            width: artBackground.width
+                            height: artBackground.height
+                            radius: artBackground.radius
+                        }
+                    }
+
+                    StyledImage {
+                        id: mediaArt
+                        property int size: parent.height
+                        anchors.fill: parent
+                        source: root.displayedArtFilePath
+                        fillMode: Image.PreserveAspectCrop
+                        cache: false
+                        antialiasing: true
+                        width: size
+                        height: size
+                        sourceSize.width: size
+                        sourceSize.height: size
                     }
                 }
 
-                StyledImage { // Art image
-                    id: mediaArt
-                    property int size: parent.height
-                    anchors.fill: parent
-
-                    source: root.displayedArtFilePath
-                    fillMode: Image.PreserveAspectCrop
-                    cache: false
-                    antialiasing: true
-
-                    width: size
-                    height: size
-                    sourceSize.width: size
-                    sourceSize.height: size
+                Lyrics {
+                    player: root.player
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    textColor: blendedColors.colOnLayer0
+                    activeColor: blendedColors.colPrimary
+                    dimColor: blendedColors.colSubtext
                 }
             }
 
-            ColumnLayout { // Info & controls
-                Layout.fillHeight: true
-                spacing: 2
+            ColumnLayout {
+                id: infoColumn
+                Layout.fillWidth: true
+                Layout.bottomMargin: 5
 
                 StyledText {
                     id: trackTitle
@@ -199,9 +212,11 @@ Item { // Player instance
                     animationDistanceX: 6
                     animationDistanceY: 0
                 }
+
                 StyledText {
                     id: trackArtist
                     Layout.fillWidth: true
+                    Layout.topMargin: -8
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: blendedColors.colSubtext
                     elide: Text.ElideRight
@@ -210,7 +225,7 @@ Item { // Player instance
                     animationDistanceX: 6
                     animationDistanceY: 0
                 }
-                Item { Layout.fillHeight: true }
+
                 Item {
                     Layout.fillWidth: true
                     implicitHeight: trackTime.implicitHeight + sliderRow.implicitHeight
@@ -223,8 +238,10 @@ Item { // Player instance
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: blendedColors.colSubtext
                         elide: Text.ElideRight
+                        font.features: { "tnum": 1 }
                         text: `${StringUtils.friendlyTimeForSeconds(root.player?.position)} / ${StringUtils.friendlyTimeForSeconds(root.player?.length)}`
                     }
+
                     RowLayout {
                         id: sliderRow
                         anchors {
@@ -232,10 +249,12 @@ Item { // Player instance
                             left: parent.left
                             right: parent.right
                         }
+
                         TrackChangeButton {
                             iconName: "skip_previous"
                             downAction: () => root.player?.previous()
                         }
+
                         Item {
                             id: progressBarContainer
                             Layout.fillWidth: true
@@ -245,7 +264,7 @@ Item { // Player instance
                                 id: sliderLoader
                                 anchors.fill: parent
                                 active: root.player?.canSeek ?? false
-                                sourceComponent: StyledSlider { 
+                                sourceComponent: StyledSlider {
                                     configuration: StyledSlider.Configuration.Wavy
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
@@ -265,16 +284,15 @@ Item { // Player instance
                                     right: parent.right
                                 }
                                 active: !(root.player?.canSeek ?? false)
-                                sourceComponent: StyledProgressBar { 
+                                sourceComponent: StyledProgressBar {
                                     wavy: root.player?.isPlaying
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
                                     value: root.player?.position / root.player?.length
                                 }
                             }
-
-                            
                         }
+
                         TrackChangeButton {
                             iconName: "skip_next"
                             downAction: () => root.player?.next()

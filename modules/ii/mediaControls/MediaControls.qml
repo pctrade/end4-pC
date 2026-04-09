@@ -20,7 +20,7 @@ Scope {
     readonly property var meaningfulPlayers: filterDuplicatePlayers(realPlayers)
     readonly property real osdWidth: Appearance.sizes.osdWidth
     readonly property real widgetWidth: Appearance.sizes.mediaControlsWidth
-    readonly property real widgetHeight: Appearance.sizes.mediaControlsHeight
+    readonly property real widgetHeight: 300
     property real popupRounding: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
     property list<real> visualizerPoints: []
 
