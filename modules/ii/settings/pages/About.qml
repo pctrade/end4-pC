@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Io
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -45,6 +46,24 @@ ContentPage {
         updatesProcess.running = true;
         installAgeProcess.running = true;
         packagesProcess.running = true;
+    }
+
+    function runSystemUpdate() {
+        GlobalStates.settingsOpen = false
+        Quickshell.execDetached([
+            "kitty", "--hold",
+            "fish", "-i", "-l", "-c",
+            "yay -Syu --combinedupgrade=false"
+        ])
+    }
+
+    function runUpdateDots() {
+        GlobalStates.settingsOpen = false
+        Quickshell.execDetached([
+            "kitty", "--hold",
+            "bash", "-c",
+            "cd ~/.config/quickshell/ && rm -rf end4-pC && git clone https://github.com/pctrade/end4-pC.git && killall qs; nohup qs -c end4-pC > /tmp/qs.log 2>&1 &"
+        ])
     }
 
     Component.onCompleted: refresh()
@@ -150,7 +169,7 @@ ContentPage {
 
     ContentSection {
         Layout.fillWidth: true
-        Layout.topMargin: 70
+        Layout.topMargin: 50
 
         ColumnLayout {
             Layout.fillWidth: true
@@ -234,6 +253,29 @@ ContentPage {
                         SystemInfoRow { label: Translation.tr("Shell  •"); value: shell || "Loading..." }
                         SystemInfoRow { label: Translation.tr("Uptime  •"); value: uptime || "Loading..." }
                     }
+                }
+            }
+            Row {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 2
+                Layout.topMargin: 20
+
+                SelectionGroupButton {
+                    leftmost: true
+                    rightmost: false
+                    buttonIcon: "app_badging"
+                    buttonText: Translation.tr("Update Dots")
+                    toggled: false
+                    onClicked: runUpdateDots()
+                }
+
+                SelectionGroupButton {
+                    leftmost: false
+                    rightmost: true
+                    buttonIcon: "deployed_code_update"
+                    buttonText: Translation.tr("Update System")
+                    toggled: false
+                    onClicked: runSystemUpdate()
                 }
             }
         }
