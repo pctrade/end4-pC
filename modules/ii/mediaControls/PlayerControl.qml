@@ -187,6 +187,7 @@ Item { // Player instance
                 }
 
                 Lyrics {
+                    id: lyricsComp
                     player: root.player
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -284,7 +285,7 @@ Item { // Player instance
                                     value: root.player?.position / root.player?.length
                                     onMoved: {
                                         root.player.position = value * root.player.length;
-                                        lyricsComp.forceSync();
+                                        lyricsComp.restartLyrics();
                                     }
                                 }
                             }
