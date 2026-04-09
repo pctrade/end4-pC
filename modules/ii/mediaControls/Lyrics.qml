@@ -18,8 +18,8 @@ Item {
     property color activeColor: "white"
     property color dimColor: Qt.rgba(1, 1, 1, 0.35)
     
-    property color indicatorColor: Appearance.colors.colPrimaryContainer
-    property color indicatorShapeColor: Appearance.colors.colOnPrimaryContainer
+    property color indicatorColor: "red"       // Cambia esto de Appearance a "red"
+    property color indicatorShapeColor: "blue"
 
     property var lyricsLines: []
     property int activeIndex: -1

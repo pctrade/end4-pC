@@ -193,6 +193,18 @@ Item { // Player instance
                     textColor: blendedColors.colOnLayer0
                     activeColor: blendedColors.colPrimary
                     dimColor: blendedColors.colSubtext
+                    indicatorColor: {
+                        let c = blendedColors.colPrimaryContainer
+                        return (c && c != "#000000" && c != "transparent") ? c : root.artDominantColor
+                    }
+
+                    indicatorShapeColor: {
+                        let c = blendedColors.colOnPrimaryContainer
+                        if (c && c != "#000000" && c != "#ffffff" && c != "transparent") {
+                            return c
+                        }
+                        return blendedColors.colPrimary || "white"
+                    }
                 }
             }
 
