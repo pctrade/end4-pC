@@ -20,9 +20,16 @@ Scope {
     readonly property var meaningfulPlayers: filterDuplicatePlayers(realPlayers)
     readonly property real osdWidth: Appearance.sizes.osdWidth
     readonly property real widgetWidth: Appearance.sizes.mediaControlsWidth
-    readonly property real widgetHeight: 290
+    readonly property real widgetHeight: Appearance.sizes.mediaControlsHeight
     property real popupRounding: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
     property list<real> visualizerPoints: []
+
+    readonly property string mediaPosition: {
+        if (Config.options.bar.layouts.leftLayout.includes("media")) return "left"
+        if (Config.options.bar.layouts.middleLayout.includes("media")) return "center"
+        if (Config.options.bar.layouts.rightLayout.includes("media")) return "right"
+        return "center"
+    }
 
     function filterDuplicatePlayers(players) {
         let filtered = [];
@@ -100,7 +107,12 @@ Scope {
             margins {
                 top: Config.options.bar.vertical ? ((panelWindow.screen.height / 2) - widgetHeight * 1.5) : Appearance.sizes.barHeight
                 bottom: Appearance.sizes.barHeight
-                left: Config.options.bar.vertical ? Appearance.sizes.barHeight : Config.options.bar.cornerStyle === 2 ? (panelWindow.screen.width / 2) - (widgetWidth / 2) : (panelWindow.screen.width / 2) - (osdWidth / 2) - widgetWidth
+                left: {
+                    if (root.mediaPosition === "left") return Appearance.sizes.hyprlandGapsOut
+                    if (root.mediaPosition === "center") return (panelWindow.screen.width / 2) - (widgetWidth / 2)
+                    if (root.mediaPosition === "right") return panelWindow.screen.width - widgetWidth - Appearance.sizes.hyprlandGapsOut
+                    return (panelWindow.screen.width / 2) - (widgetWidth / 2)
+                }
                 right: Appearance.sizes.barHeight
             }
 
@@ -130,12 +142,12 @@ Scope {
                     model: ScriptModel {
                         values: root.meaningfulPlayers
                     }
-                    delegate: PlayerControl {
+                    delegate: Player {
                         required property MprisPlayer modelData
                         player: modelData
                         visualizerPoints: root.visualizerPoints
                         implicitWidth: root.widgetWidth
-                        implicitHeight: root.widgetHeight
+                        implicitHeight: showLyrics ? 290 : Appearance.sizes.mediaControlsHeight
                         radius: root.popupRounding
                     }
                 }

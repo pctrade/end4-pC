@@ -16,7 +16,7 @@ Item {
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
     Layout.fillHeight: true
-    implicitWidth: rowLayout.implicitWidth + rowLayout.spacing * 2
+    implicitWidth: Math.min(rowLayout.implicitWidth + 8, 280)
     implicitHeight: Appearance.sizes.barHeight
 
     Timer {
@@ -77,7 +77,7 @@ Item {
             width: rowLayout.width - (CircularProgress.size + rowLayout.spacing * 2)
             Layout.alignment: Qt.AlignVCenter
             Layout.fillWidth: true // Ensures the text takes up available space
-            Layout.rightMargin: rowLayout.spacing
+            Layout.rightMargin: 0
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight // Truncates the text on the right
             color: Appearance.colors.colOnLayer1

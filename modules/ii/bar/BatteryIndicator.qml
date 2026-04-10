@@ -13,7 +13,7 @@ MouseArea {
     readonly property real percentage: Battery.percentage
     readonly property bool isLow: percentage <= Config.options.battery.low / 100
 
-    implicitWidth: batteryProgress.implicitWidth
+    implicitWidth: batteryProgress.implicitWidth + 2
     implicitHeight: Appearance.sizes.barHeight
 
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
@@ -21,6 +21,7 @@ MouseArea {
     ClippedProgressBar {
         id: batteryProgress
         anchors.centerIn: parent
+        anchors.leftMargin: 2
         value: percentage
         highlightColor: (isLow && !isCharging) ? Appearance.m3colors.m3error : Appearance.colors.colOnSecondaryContainer
 

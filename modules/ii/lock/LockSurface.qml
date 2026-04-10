@@ -251,8 +251,8 @@ MouseArea {
 
         // Media player info 
         Loader {
-            Layout.leftMargin: 4
-            Layout.rightMargin: 4
+            Layout.leftMargin: 2
+            Layout.rightMargin: 2
             Layout.alignment: Qt.AlignVCenter
             active: MprisController.activePlayer !== null
             visible: active
@@ -286,7 +286,7 @@ MouseArea {
                         height: 40
                         sourceSize.width: 40
                         sourceSize.height: 40
-                        
+
                         layer.enabled: true
                         layer.effect: OpacityMask {
                             maskSource: Rectangle {

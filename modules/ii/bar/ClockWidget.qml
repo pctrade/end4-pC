@@ -8,7 +8,7 @@ Item {
     id: root
     property bool borderless: Config.options.bar.borderless
     property bool showDate: Config.options.bar.verbose
-    implicitWidth: rowLayout.implicitWidth
+    implicitWidth: rowLayout.implicitWidth + 12
     implicitHeight: Appearance.sizes.barHeight
 
     RowLayout {

@@ -6,60 +6,326 @@ import qs.modules.common.widgets
 import Quickshell.Hyprland
 
 ContentPage {
+    id: rootPage
     forceWidth: true
+
+    property var allWidgets: [
+        "leftSidebarButton", "workspaces", "weatherBar", "media",
+        "resources", "systemIcons", "clockWidget", "utilButtons",
+        "sysTray", "batteryIndicator", "activeWindow"
+    ]
+
+    function availableFor() {
+        let used = [
+            ...Config.options.bar.layouts.leftLayout,
+            ...Config.options.bar.layouts.middleLayout,
+            ...Config.options.bar.layouts.rightLayout
+        ]
+        return allWidgets.filter(w => !used.includes(w))
+    }
+
+    ContentSection {
+        icon: "mobile_layout"
+        title: Translation.tr("Bar layout")
+
+        // Left
+        ContentSubsection {
+            title: Translation.tr("Left")
+            Layout.fillWidth: true
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Repeater {
+                        model: Config.options.bar.layouts.leftLayout
+                        delegate: SelectionGroupButton {
+                            required property var modelData
+                            required property int index
+                            leftmost: true; rightmost: true
+                            buttonIcon: "close"
+                            buttonText: modelData
+                            toggled: true
+                            onClicked: {
+                                let list = Config.options.bar.layouts.leftLayout.slice()
+                                list.splice(index, 1)
+                                Config.options.bar.layouts.leftLayout = list
+                            }
+                        }
+                    }
+                }
+                ToolbarPairedFab {
+                    Layout.alignment: Qt.AlignVCenter
+                    iconText: leftDropdown.visible ? "keyboard_arrow_up" : "add"
+                    onClicked: {
+                        leftDropdown.visible = !leftDropdown.visible
+                        centerDropdown.visible = false
+                        rightDropdown.visible = false
+                    }
+                }
+            }
+
+            Item {
+                id: leftDropdown
+                Layout.fillWidth: true
+                visible: false
+                implicitHeight: visible ? dropdownRectLeft.height + 8 : 0
+                opacity: visible ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                Rectangle {
+                    id: dropdownRectLeft
+                    anchors.top: parent.top
+                    anchors.topMargin: 4
+                    width: parent.width
+                    implicitHeight: leftDropdownFlow.implicitHeight + 16
+                    color: Appearance.colors.colLayer1
+                    radius: Appearance.rounding.normal
+                    border.width: 1
+                    border.color: Appearance.colors.colLayer0Border
+
+                    Flow {
+                        id: leftDropdownFlow
+                        anchors { fill: parent; margins: 8 }
+                        spacing: 2
+                        Repeater {
+                            model: rootPage.availableFor()
+                            delegate: SelectionGroupButton {
+                                required property var modelData
+                                leftmost: true; rightmost: true
+                                buttonText: modelData
+                                onClicked: {
+                                    let list = Config.options.bar.layouts.leftLayout.slice()
+                                    list.push(modelData)
+                                    Config.options.bar.layouts.leftLayout = list
+                                    leftDropdown.visible = false
+                                }
+                            }
+                        }
+                        StyledText {
+                            visible: rootPage.availableFor().length === 0
+                            text: Translation.tr("No widgets available")
+                            color: Appearance.colors.colSubtext
+                            font.pixelSize: Appearance.font.pixelSize.small
+                        }
+                    }
+                }
+            }
+        }
+
+        // Middle
+        ContentSubsection {
+            title: Translation.tr("Center")
+            Layout.fillWidth: true
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Repeater {
+                        model: Config.options.bar.layouts.middleLayout
+                        delegate: SelectionGroupButton {
+                            required property var modelData
+                            required property int index
+                            leftmost: true; rightmost: true
+                            buttonIcon: "close"
+                            buttonText: modelData
+                            toggled: true
+                            onClicked: {
+                                let list = Config.options.bar.layouts.middleLayout.slice()
+                                list.splice(index, 1)
+                                Config.options.bar.layouts.middleLayout = list
+                            }
+                        }
+                    }
+                }
+                ToolbarPairedFab {
+                    Layout.alignment: Qt.AlignVCenter
+                    iconText: centerDropdown.visible ? "keyboard_arrow_up" : "add"
+                    onClicked: {
+                        centerDropdown.visible = !centerDropdown.visible
+                        leftDropdown.visible = false
+                        rightDropdown.visible = false
+                    }
+                }
+            }
+
+            Item {
+                id: centerDropdown
+                Layout.fillWidth: true
+                visible: false
+                implicitHeight: visible ? dropdownRectCenter.height + 8 : 0
+                opacity: visible ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                Rectangle {
+                    id: dropdownRectCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 4
+                    width: parent.width
+                    implicitHeight: centerDropdownFlow.implicitHeight + 16
+                    color: Appearance.colors.colLayer1
+                    radius: Appearance.rounding.normal
+                    border.width: 1
+                    border.color: Appearance.colors.colLayer0Border
+
+                    Flow {
+                        id: centerDropdownFlow
+                        anchors { fill: parent; margins: 8 }
+                        spacing: 2
+                        Repeater {
+                            model: rootPage.availableFor()
+                            delegate: SelectionGroupButton {
+                                required property var modelData
+                                leftmost: true; rightmost: true
+                                buttonText: modelData
+                                onClicked: {
+                                    let list = Config.options.bar.layouts.middleLayout.slice()
+                                    list.push(modelData)
+                                    Config.options.bar.layouts.middleLayout = list
+                                    centerDropdown.visible = false
+                                }
+                            }
+                        }
+                        StyledText {
+                            visible: rootPage.availableFor().length === 0
+                            text: Translation.tr("No widgets available")
+                            color: Appearance.colors.colSubtext
+                            font.pixelSize: Appearance.font.pixelSize.small
+                        }
+                    }
+                }
+            }
+        }
+
+        // Right
+        ContentSubsection {
+            title: Translation.tr("Right")
+            Layout.fillWidth: true
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Repeater {
+                        model: Config.options.bar.layouts.rightLayout
+                        delegate: SelectionGroupButton {
+                            required property var modelData
+                            required property int index
+                            leftmost: true; rightmost: true
+                            buttonIcon: "close"
+                            buttonText: modelData
+                            toggled: true
+                            onClicked: {
+                                let list = Config.options.bar.layouts.rightLayout.slice()
+                                list.splice(index, 1)
+                                Config.options.bar.layouts.rightLayout = list
+                            }
+                        }
+                    }
+                }
+                ToolbarPairedFab {
+                    Layout.alignment: Qt.AlignVCenter
+                    iconText: rightDropdown.visible ? "keyboard_arrow_up" : "add"
+                    onClicked: {
+                        rightDropdown.visible = !rightDropdown.visible
+                        leftDropdown.visible = false
+                        centerDropdown.visible = false
+                    }
+                }
+            }
+
+            Item {
+                id: rightDropdown
+                Layout.fillWidth: true
+                visible: false
+                implicitHeight: visible ? dropdownRectRight.height + 8 : 0
+                opacity: visible ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                Rectangle {
+                    id: dropdownRectRight
+                    anchors.top: parent.top
+                    anchors.topMargin: 4
+                    width: parent.width
+                    implicitHeight: rightDropdownFlow.implicitHeight + 16
+                    color: Appearance.colors.colLayer1
+                    radius: Appearance.rounding.normal
+                    border.width: 1
+                    border.color: Appearance.colors.colLayer0Border
+
+                    Flow {
+                        id: rightDropdownFlow
+                        anchors { fill: parent; margins: 8 }
+                        spacing: 2
+                        Repeater {
+                            model: rootPage.availableFor()
+                            delegate: SelectionGroupButton {
+                                required property var modelData
+                                leftmost: true; rightmost: true
+                                buttonText: modelData
+                                onClicked: {
+                                    let list = Config.options.bar.layouts.rightLayout.slice()
+                                    list.push(modelData)
+                                    Config.options.bar.layouts.rightLayout = list
+                                    rightDropdown.visible = false
+                                }
+                            }
+                        }
+                        StyledText {
+                            visible: rootPage.availableFor().length === 0
+                            text: Translation.tr("No widgets available")
+                            color: Appearance.colors.colSubtext
+                            font.pixelSize: Appearance.font.pixelSize.small
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     ContentSection {
         icon: "monitor"
         visible: Hyprland.monitors.values.length > 1
         title: Translation.tr("Screens")
-
         ContentSubsection {
             title: Translation.tr("Show bar on")
-
             Flow {
-                Layout.fillWidth: true
-                spacing: 2
-
+                Layout.fillWidth: true; spacing: 2
                 SelectionGroupButton {
-                    leftmost: true
-                    rightmost: Hyprland.monitors.length === 0 
-                    buttonIcon: "tv_displays"
-                    buttonText: Translation.tr("All")
+                    leftmost: true; rightmost: Hyprland.monitors.length === 0 
+                    buttonIcon: "tv_displays"; buttonText: Translation.tr("All")
                     toggled: Config.options.bar.screenList.length === 0
                     onClicked: Config.options.bar.screenList = []
                 }
-
                 Repeater {
                     model: Hyprland.monitors
                     delegate: SelectionGroupButton {
-                        required property var modelData
-                        required property int index
-                        leftmost: false
-                        rightmost: index === Hyprland.monitors.length - 1
-                        buttonIcon: "monitor"
-                        buttonText: modelData.name
+                        required property var modelData; required property int index
+                        leftmost: false; rightmost: index === Hyprland.monitors.length - 1
+                        buttonIcon: "monitor"; buttonText: modelData.name
                         toggled: Config.options.bar.screenList.includes(modelData.name)
                         onClicked: {
                             const allNames = Array.from({length: Hyprland.monitors.length}, (_, i) => Hyprland.monitors[i].name)
-                            let list = Config.options.bar.screenList.length === 0
-                                ? allNames.slice()
-                                : Config.options.bar.screenList.slice()
-                            if (toggled) {
-                                list = list.filter(s => s !== modelData.name)
-                            } else {
-                                list.push(modelData.name)
-                            }
+                            let list = Config.options.bar.screenList.length === 0 ? allNames.slice() : Config.options.bar.screenList.slice()
+                            if (toggled) list = list.filter(s => s !== modelData.name)
+                            else list.push(modelData.name)
                             Config.options.bar.screenList = list.length === allNames.length ? [] : list
                         }
                     }
                 }
-
-                SelectionGroupButton {
+                 SelectionGroupButton {
                     leftmost: false
                     rightmost: true
                     buttonIcon: "page_footer"
                     buttonText: Translation.tr("")
-                }
+                } 
             }
         }
     }
@@ -71,21 +337,16 @@ ContentPage {
             buttonIcon: "counter_2"
             text: Translation.tr("Unread indicator: show count")
             checked: Config.options.bar.indicators.notifications.showUnreadCount
-            onCheckedChanged: {
-                Config.options.bar.indicators.notifications.showUnreadCount = checked;
-            }
+            onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
         }
     }
 
     ContentSection {
         icon: "spoke"
         title: Translation.tr("Positioning")
-
         ConfigRow {
             ContentSubsection {
-                title: Translation.tr("Bar position")
-                Layout.fillWidth: true
-
+                title: Translation.tr("Bar position"); Layout.fillWidth: true
                 ConfigSelectionArray {
                     currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
                     onSelected: newValue => {
@@ -93,105 +354,46 @@ ContentPage {
                         Config.options.bar.vertical = (newValue & 2) !== 0;
                     }
                     options: [
-                        {
-                            displayName: Translation.tr("Top"),
-                            icon: "arrow_upward",
-                            value: 0 // bottom: false, vertical: false
-                        },
-                        {
-                            displayName: Translation.tr("Left"),
-                            icon: "arrow_back",
-                            value: 2 // bottom: false, vertical: true
-                        },
-                        {
-                            displayName: Translation.tr("Bottom"),
-                            icon: "arrow_downward",
-                            value: 1 // bottom: true, vertical: false
-                        },
-                        {
-                            displayName: Translation.tr("Right"),
-                            icon: "arrow_forward",
-                            value: 3 // bottom: true, vertical: true
-                        }
+                        { displayName: Translation.tr("Top"), icon: "arrow_upward", value: 0 },
+                        { displayName: Translation.tr("Left"), icon: "arrow_back", value: 2 },
+                        { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
+                        { displayName: Translation.tr("Right"), icon: "arrow_forward", value: 3 }
                     ]
                 }
             }
             ContentSubsection {
-                title: Translation.tr("Automatically hide")
-                Layout.fillWidth: false
-
+                title: Translation.tr("Automatically hide"); Layout.fillWidth: false
                 ConfigSelectionArray {
                     currentValue: Config.options.bar.autoHide.enable
-                    onSelected: newValue => {
-                        Config.options.bar.autoHide.enable = newValue; // Update local copy
-                    }
+                    onSelected: newValue => { Config.options.bar.autoHide.enable = newValue; }
                     options: [
-                        {
-                            displayName: Translation.tr("No"),
-                            icon: "close",
-                            value: false
-                        },
-                        {
-                            displayName: Translation.tr("Yes"),
-                            icon: "check",
-                            value: true
-                        }
+                        { displayName: Translation.tr("No"), icon: "close", value: false },
+                        { displayName: Translation.tr("Yes"), icon: "check", value: true }
                     ]
                 }
             }
         }
-
         ConfigRow {
-            
             ContentSubsection {
-                title: Translation.tr("Corner style")
-                Layout.fillWidth: true
-
+                title: Translation.tr("Corner style"); Layout.fillWidth: true
                 ConfigSelectionArray {
                     currentValue: Config.options.bar.cornerStyle
-                    onSelected: newValue => {
-                        Config.options.bar.cornerStyle = newValue; // Update local copy
-                    }
+                    onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
                     options: [
-                        {
-                            displayName: Translation.tr("Hug"),
-                            icon: "line_curve",
-                            value: 0
-                        },
-                        {
-                            displayName: Translation.tr("Float"),
-                            icon: "page_header",
-                            value: 1
-                        },
-                        {
-                            displayName: Translation.tr("Islands"),
-                            icon: "crop_3_2",
-                            value: 2
-                        }
+                        { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
+                        { displayName: Translation.tr("Float"), icon: "page_header", value: 1 },
+                        { displayName: Translation.tr("Islands"), icon: "crop_3_2", value: 2 }
                     ]
                 }
             }
-
             ContentSubsection {
-                title: Translation.tr("Group style")
-                Layout.fillWidth: false
-
+                title: Translation.tr("Group style"); Layout.fillWidth: false
                 ConfigSelectionArray {
                     currentValue: Config.options.bar.borderless
-                    onSelected: newValue => {
-                        Config.options.bar.borderless = newValue; // Update local copy
-                    }
+                    onSelected: newValue => { Config.options.bar.borderless = newValue; }
                     options: [
-                        {
-                            displayName: Translation.tr("Pills"),
-                            icon: "location_chip",
-                            value: false
-                        },
-                        {
-                            displayName: Translation.tr("Line-separated"),
-                            icon: "split_scene",
-                            value: true
-                        }
+                        { displayName: Translation.tr("Pills"), icon: "location_chip", value: false },
+                        { displayName: Translation.tr("Line-separated"), icon: "split_scene", value: true }
                     ]
                 }
             }
@@ -201,207 +403,96 @@ ContentPage {
     ContentSection {
         icon: "shelf_auto_hide"
         title: Translation.tr("Tray")
-
         ConfigSwitch {
-            buttonIcon: "keep"
-            text: Translation.tr('Make icons pinned by default')
+            buttonIcon: "keep"; text: Translation.tr('Make icons pinned by default')
             checked: Config.options.tray.invertPinnedItems
-            onCheckedChanged: {
-                Config.options.tray.invertPinnedItems = checked;
-            }
+            onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
         }
-        
         ConfigSwitch {
-            buttonIcon: "colors"
-            text: Translation.tr('Tint icons')
+            buttonIcon: "colors"; text: Translation.tr('Tint icons')
             checked: Config.options.tray.monochromeIcons
-            onCheckedChanged: {
-                Config.options.tray.monochromeIcons = checked;
-            }
+            onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
         }
     }
 
     ContentSection {
         icon: "widgets"
         title: Translation.tr("Utility buttons")
-
         ConfigRow {
             uniform: true
             ConfigSwitch {
-                buttonIcon: "content_cut"
-                text: Translation.tr("Screen snip")
+                buttonIcon: "content_cut"; text: Translation.tr("Screen snip")
                 checked: Config.options.bar.utilButtons.showScreenSnip
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showScreenSnip = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showScreenSnip = checked; }
             }
             ConfigSwitch {
-                buttonIcon: "colorize"
-                text: Translation.tr("Color picker")
+                buttonIcon: "colorize"; text: Translation.tr("Color picker")
                 checked: Config.options.bar.utilButtons.showColorPicker
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showColorPicker = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showColorPicker = checked; }
             }
         }
         ConfigRow {
             uniform: true
             ConfigSwitch {
-                buttonIcon: "keyboard"
-                text: Translation.tr("Keyboard toggle")
+                buttonIcon: "keyboard"; text: Translation.tr("Keyboard toggle")
                 checked: Config.options.bar.utilButtons.showKeyboardToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showKeyboardToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showKeyboardToggle = checked; }
             }
             ConfigSwitch {
-                buttonIcon: "mic"
-                text: Translation.tr("Mic toggle")
+                buttonIcon: "mic"; text: Translation.tr("Mic toggle")
                 checked: Config.options.bar.utilButtons.showMicToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showMicToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showMicToggle = checked; }
             }
         }
         ConfigRow {
             uniform: true
             ConfigSwitch {
-                buttonIcon: "dark_mode"
-                text: Translation.tr("Dark/Light toggle")
+                buttonIcon: "dark_mode"; text: Translation.tr("Dark/Light toggle")
                 checked: Config.options.bar.utilButtons.showDarkModeToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showDarkModeToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showDarkModeToggle = checked; }
             }
             ConfigSwitch {
-                buttonIcon: "speed"
-                text: Translation.tr("Performance Profile toggle")
+                buttonIcon: "speed"; text: Translation.tr("Performance Profile toggle")
                 checked: Config.options.bar.utilButtons.showPerformanceProfileToggle
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showPerformanceProfileToggle = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showPerformanceProfileToggle = checked; }
             }
         }
         ConfigRow {
             uniform: true
             ConfigSwitch {
-                buttonIcon: "videocam"
-                text: Translation.tr("Record")
+                buttonIcon: "videocam"; text: Translation.tr("Record")
                 checked: Config.options.bar.utilButtons.showScreenRecord
-                onCheckedChanged: {
-                    Config.options.bar.utilButtons.showScreenRecord = checked;
-                }
+                onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked; }
             }
         }
     }
 
     ContentSection {
-        icon: "cloud"
-        title: Translation.tr("Weather")
+        icon: "workspaces"; title: Translation.tr("Workspaces")
         ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr("Enable")
-            checked: Config.options.bar.weather.enable
-            onCheckedChanged: {
-                Config.options.bar.weather.enable = checked;
-            }
-        }
-    }
-
-    ContentSection {
-        icon: "workspaces"
-        title: Translation.tr("Workspaces")
-
-        ConfigSwitch {
-            buttonIcon: "counter_1"
-            text: Translation.tr('Always show numbers')
+            buttonIcon: "counter_1"; text: Translation.tr('Always show numbers')
             checked: Config.options.bar.workspaces.alwaysShowNumbers
-            onCheckedChanged: {
-                Config.options.bar.workspaces.alwaysShowNumbers = checked;
-            }
+            onCheckedChanged: { Config.options.bar.workspaces.alwaysShowNumbers = checked; }
         }
-
         ConfigSwitch {
-            buttonIcon: "award_star"
-            text: Translation.tr('Show app icons')
+            buttonIcon: "award_star"; text: Translation.tr('Show app icons')
             checked: Config.options.bar.workspaces.showAppIcons
-            onCheckedChanged: {
-                Config.options.bar.workspaces.showAppIcons = checked;
-            }
+            onCheckedChanged: { Config.options.bar.workspaces.showAppIcons = checked; }
         }
-
-        ConfigSwitch {
-            buttonIcon: "colors"
-            text: Translation.tr('Tint app icons')
-            checked: Config.options.bar.workspaces.monochromeIcons
-            onCheckedChanged: {
-                Config.options.bar.workspaces.monochromeIcons = checked;
-            }
-        }
-
         ConfigSpinBox {
-            icon: "view_column"
-            text: Translation.tr("Workspaces shown")
+            icon: "view_column"; text: Translation.tr("Workspaces shown")
             value: Config.options.bar.workspaces.shown
-            from: 1
-            to: 30
-            stepSize: 1
-            onValueChanged: {
-                Config.options.bar.workspaces.shown = value;
-            }
-        }
-
-        ConfigSpinBox {
-            icon: "touch_long"
-            text: Translation.tr("Number show delay when pressing Super (ms)")
-            value: Config.options.bar.workspaces.showNumberDelay
-            from: 0
-            to: 1000
-            stepSize: 50
-            onValueChanged: {
-                Config.options.bar.workspaces.showNumberDelay = value;
-            }
-        }
-
-        ContentSubsection {
-            title: Translation.tr("Number style")
-
-            ConfigSelectionArray {
-                currentValue: JSON.stringify(Config.options.bar.workspaces.numberMap)
-                onSelected: newValue => {
-                    Config.options.bar.workspaces.numberMap = JSON.parse(newValue)
-                }
-                options: [
-                    {
-                        displayName: Translation.tr("Normal"),
-                        icon: "timer_10",
-                        value: '[]'
-                    },
-                    {
-                        displayName: Translation.tr("Han chars"),
-                        icon: "square_dot",
-                        value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]'
-                    },
-                    {
-                        displayName: Translation.tr("Roman"),
-                        icon: "account_balance",
-                        value: '["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"]'
-                    }
-                ]
-            }
+            from: 1; to: 30
+            onValueChanged: { Config.options.bar.workspaces.shown = value; }
         }
     }
 
     ContentSection {
-        icon: "tooltip"
-        title: Translation.tr("Tooltips")
+        icon: "tooltip"; title: Translation.tr("Tooltips")
         ConfigSwitch {
-            buttonIcon: "ads_click"
-            text: Translation.tr("Click to show")
+            buttonIcon: "ads_click"; text: Translation.tr("Click to show")
             checked: Config.options.bar.tooltips.clickToShow
-            onCheckedChanged: {
-                Config.options.bar.tooltips.clickToShow = checked;
-            }
+            onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
         }
     }
 }

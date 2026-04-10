@@ -42,26 +42,6 @@ Item {
         return result
     }
 
-    function forceSync() {
-        if (root.status !== "ok" || root.lyricsLines.length === 0) return;
-
-        const pos = root.player?.position ?? 0;
-        let idx = -1;
-        
-        for (let i = 0; i < root.lyricsLines.length; i++) {
-            if (root.lyricsLines[i].time <= pos) {
-                idx = i;
-            } else {
-                break;
-            }
-        }
-
-        if (idx !== root.activeIndex) {
-            root.activeIndex = idx;
-            root.slots = root.buildSlots(idx);
-        }
-    }
-
     property var slots: ["", "", "", "", "", "", ""]
 
     Timer {

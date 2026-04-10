@@ -11,6 +11,7 @@ LazyLoader {
     property Item hoverTarget
     default property Item contentItem
     property real popupBackgroundMargin: 0
+    property real leftMarginOffset: 0
     active: hoverTarget && hoverTarget.containsMouse
 
     component: PanelWindow {
@@ -36,10 +37,13 @@ LazyLoader {
 
         margins {
             left: {
-                if (!Config.options.bar.vertical) return root.QsWindow?.mapFromItem(
-                    root.hoverTarget,
-                    (root.hoverTarget.width - popupBackground.implicitWidth) / 2, 0
-                ).x;
+                if (!Config.options.bar.vertical) {
+                    const base = root.QsWindow?.mapFromItem(
+                        root.hoverTarget,
+                        (root.hoverTarget.width - popupBackground.implicitWidth) / 2, 0
+                    ).x;
+                    return base + root.leftMarginOffset;
+                }
                 return Appearance.sizes.verticalBarWidth
             }
             top: {
