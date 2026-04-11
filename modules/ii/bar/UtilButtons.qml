@@ -4,6 +4,7 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
@@ -39,15 +40,74 @@ Item {
         Loader {
             active: Config.options.bar.utilButtons.showScreenRecord
             visible: Config.options.bar.utilButtons.showScreenRecord
-            sourceComponent: CircleUtilButton {
+            sourceComponent: Item {
+                id: recordingItem
                 Layout.alignment: Qt.AlignVCenter
-                onClicked: Quickshell.execDetached([Directories.recordScriptPath])
-                MaterialSymbol {
-                    horizontalAlignment: Qt.AlignHCenter
-                    fill: 1
-                    text: "screen_record"
-                    iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                implicitWidth: btn.implicitWidth + timerRevealer.implicitWidth
+                implicitHeight: btn.implicitHeight
+
+                property bool isRecording: Config.options.bar.utilButtons.isRecording
+                property int elapsedSeconds: 0
+
+                onIsRecordingChanged: {
+                    if (!isRecording) elapsedSeconds = 0
+                }
+
+                function formatTime(s) {
+                    return Math.floor(s / 60).toString().padStart(2, '0') + ":" + (s % 60).toString().padStart(2, '0')
+                }
+
+                Timer {
+                    interval: 1000
+                    repeat: true
+                    running: recordingItem.isRecording
+                    onTriggered: recordingItem.elapsedSeconds++
+                }
+
+                CircleUtilButton {
+                    id: btn
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    colBackground: recordingItem.isRecording ? Appearance.colors.colError : "transparent"
+                    buttonRadius: recordingItem.isRecording ? Appearance.rounding.normal : implicitHeight / 2
+                    onClicked: Quickshell.execDetached([Directories.recordScriptPath])
+
+                    Behavior on colBackground {
+                        ColorAnimation { duration: 200 }
+                    }
+                    Behavior on buttonRadius {
+                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                    }
+
+                    MaterialSymbol {
+                        horizontalAlignment: Qt.AlignHCenter
+                        fill: 1
+                        text: "screen_record"
+                        iconSize: Appearance.font.pixelSize.large
+                        color: recordingItem.isRecording ? Appearance.colors.colOnError : Appearance.colors.colOnLayer2
+
+                        Behavior on color {
+                            ColorAnimation { duration: 200 }
+                        }
+                    }
+                }
+
+                Revealer {
+                    id: timerRevealer
+                    anchors.left: btn.right
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 8
+                    anchors.verticalCenter: btn.verticalCenter
+                    reveal: recordingItem.isRecording
+
+                    StyledText {
+                        text: recordingItem.formatTime(recordingItem.elapsedSeconds)
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.features: { "tnum": 1 }
+                        font.letterSpacing: -0.3
+                        color: Appearance.colors.colOnLayer2
+                        rightPadding: 8
+                    }
                 }
             }
         }

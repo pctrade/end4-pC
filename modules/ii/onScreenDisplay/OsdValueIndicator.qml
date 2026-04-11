@@ -91,6 +91,8 @@ Item {
                         color: Appearance.colors.colOnLayer0
                         font.pixelSize: Appearance.font.pixelSize.small
                         Layout.fillWidth: false
+                        font.features: { "tnum": 1 }
+                        font.letterSpacing: -0.4
                         text: Math.round(root.value * 100)
                     }
                 }

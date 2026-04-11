@@ -117,6 +117,7 @@ Item {
                     font.pixelSize: Appearance.font.pixelSize.small
                     color: root.blendedColors.colSubtext
                     elide: Text.ElideRight
+                    font.features: { "tnum": 1 }
                     text: `${StringUtils.friendlyTimeForSeconds(root.player?.position)} / ${StringUtils.friendlyTimeForSeconds(root.player?.length)}`
                 }
 
