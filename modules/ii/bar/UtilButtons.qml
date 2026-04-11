@@ -96,17 +96,19 @@ Item {
                     id: timerRevealer
                     anchors.left: btn.right
                     anchors.leftMargin: 8
-                    anchors.rightMargin: 8
                     anchors.verticalCenter: btn.verticalCenter
                     reveal: recordingItem.isRecording
 
                     StyledText {
+                        width: implicitWidth
                         text: recordingItem.formatTime(recordingItem.elapsedSeconds)
                         font.pixelSize: Appearance.font.pixelSize.small
                         font.features: { "tnum": 1 }
                         font.letterSpacing: -0.3
                         color: Appearance.colors.colOnLayer2
                         rightPadding: 8
+
+                        Component.onCompleted: width = implicitWidth
                     }
                 }
             }
