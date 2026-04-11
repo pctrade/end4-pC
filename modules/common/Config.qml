@@ -250,9 +250,9 @@ Singleton {
                 }
 
                 property JsonObject layouts: JsonObject {
-                    property list<string> leftLayout: ["clock"]
-                    property list<string> middleLayout: ["workspaces"]
-                    property list<string> rightLayout: ["windowsname"]
+                    property list<string> leftLayout: ["workspaces"]
+                    property list<string> middleLayout: ["clockWidget"]
+                    property list<string> rightLayout: ["systemIcons"]
                 }
                 
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
