@@ -156,6 +156,7 @@ Item {
                             property bool isActive: root.currentPage === index
                             opacity: isActive ? 1 : 0
                             enabled: isActive
+                            visible: isActive
                             anchors.topMargin: isActive ? 0 : 12
 
                             Behavior on opacity {

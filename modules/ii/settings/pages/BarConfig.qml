@@ -82,7 +82,7 @@ ContentPage {
                     width: parent.width
                     implicitHeight: leftDropdownFlow.implicitHeight + 16
                     color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.normal
+                    radius: Appearance.rounding.large
                     border.width: 1
                     border.color: Appearance.colors.colLayer0Border
 
@@ -169,7 +169,7 @@ ContentPage {
                     width: parent.width
                     implicitHeight: centerDropdownFlow.implicitHeight + 16
                     color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.normal
+                    radius: Appearance.rounding.large
                     border.width: 1
                     border.color: Appearance.colors.colLayer0Border
 
@@ -256,7 +256,7 @@ ContentPage {
                     width: parent.width
                     implicitHeight: rightDropdownFlow.implicitHeight + 16
                     color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.normal
+                    radius: Appearance.rounding.large
                     border.width: 1
                     border.color: Appearance.colors.colLayer0Border
 

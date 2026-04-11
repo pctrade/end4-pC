@@ -56,7 +56,7 @@ Item {
                 maskSource: Rectangle {
                     width: artBackground.width
                     height: artBackground.height
-                    radius: artBackground.radius
+                    radius: artBackground.radius + 6
                 }
             }
 

@@ -9,7 +9,8 @@ import qs.modules.common.widgets
 
 Item {
     id: root
-    implicitWidth: gridLayout.implicitWidth
+    visible: SystemTray.items.values.length > 0
+    implicitWidth: gridLayout.implicitWidth + 10
     implicitHeight: gridLayout.implicitHeight
     property bool vertical: false
     property bool invertSide: false
@@ -70,6 +71,7 @@ Item {
         columns: root.vertical ? 1 : -1
         anchors.fill: parent
         rowSpacing: 8
+        anchors.leftMargin: 8
         columnSpacing: Config.options.bar.cornerStyle === 2 ? 10 : 15
 
         RippleButton {
@@ -144,14 +146,6 @@ Item {
                     root.setExtraWindowAndGrabFocus(qsWindow);
                 }
             }
-        }
-
-        StyledText {
-            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-            font.pixelSize: Appearance.font.pixelSize.larger
-            color: Appearance.colors.colSubtext
-            text: "•"
-            visible: root.showSeparator && SystemTray.items.values.length > 0 && Config.options.bar.cornerStyle !== 2
         }
     }
 }
