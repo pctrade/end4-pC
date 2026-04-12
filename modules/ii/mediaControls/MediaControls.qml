@@ -105,15 +105,29 @@ Scope {
                 right: Config.options.bar.vertical && Config.options.bar.bottom
             }
             margins {
-                top: Config.options.bar.vertical ? ((panelWindow.screen.height / 2) - widgetHeight * 1.5) : Appearance.sizes.barHeight
+                top: Config.options.bar.vertical
+                    ? (!Config.options.bar.bottom
+                        ? (root.mediaPosition === "left" ? Appearance.sizes.hyprlandGapsOut
+                            : root.mediaPosition === "right" ? panelWindow.screen.height - widgetHeight - Appearance.sizes.hyprlandGapsOut
+                            : (panelWindow.screen.height / 2) - (widgetHeight / 2))
+                        : ((panelWindow.screen.height / 2) - widgetHeight * 1.5))
+                    : Appearance.sizes.barHeight
                 bottom: Appearance.sizes.barHeight
                 left: {
+                    if (Config.options.bar.vertical) {
+                        if (!Config.options.bar.bottom) return Appearance.sizes.verticalBarWidth + Appearance.sizes.hyprlandGapsOut
+                        return (panelWindow.screen.width / 2) - (widgetWidth / 2)
+                    }
                     if (root.mediaPosition === "left") return Appearance.sizes.hyprlandGapsOut
                     if (root.mediaPosition === "center") return (panelWindow.screen.width / 2) - (widgetWidth / 2)
                     if (root.mediaPosition === "right") return panelWindow.screen.width - widgetWidth - Appearance.sizes.hyprlandGapsOut
                     return (panelWindow.screen.width / 2) - (widgetWidth / 2)
                 }
-                right: Appearance.sizes.barHeight
+                right: {
+                    if (Config.options.bar.vertical && Config.options.bar.bottom)
+                        return Appearance.sizes.verticalBarWidth + Appearance.sizes.hyprlandGapsOut
+                    return Appearance.sizes.barHeight
+                }
             }
 
             mask: Region {

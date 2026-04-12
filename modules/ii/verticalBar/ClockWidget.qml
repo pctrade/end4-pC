@@ -22,7 +22,7 @@ Item {
                 required property string modelData
                 Layout.alignment: Qt.AlignHCenter
                 font.pixelSize: modelData.match(/am|pm/i) ? 
-                    Appearance.font.pixelSize.smaller // Smaller "am"/"pm" text
+                    Appearance.font.pixelSize.smaller 
                     : Appearance.font.pixelSize.large
                 color: Appearance.colors.colOnLayer1
                 text: modelData.padStart(2, "0")

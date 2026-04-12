@@ -43,7 +43,7 @@ Item {
             visible: Config.options.bar.utilButtons.showScreenRecord
             sourceComponent: Item {
                 id: recordingItem
-                implicitWidth: btn.implicitWidth + timerRevealer.implicitWidth
+                implicitWidth: root.vertical ? btn.implicitWidth : btn.implicitWidth + timerRevealer.implicitWidth
                 implicitHeight: btn.implicitHeight
 
                 property bool isRecording: Config.options.bar.utilButtons.isRecording
@@ -85,7 +85,6 @@ Item {
                         text: "screen_record"
                         iconSize: Appearance.font.pixelSize.large
                         color: recordingItem.isRecording ? Appearance.colors.colOnError : Appearance.colors.colOnLayer2
-
                         Behavior on color {
                             ColorAnimation { duration: 200 }
                         }
@@ -94,6 +93,7 @@ Item {
 
                 Revealer {
                     id: timerRevealer
+                    visible: !root.vertical
                     anchors.left: btn.right
                     anchors.leftMargin: 8
                     anchors.verticalCenter: btn.verticalCenter
@@ -107,7 +107,6 @@ Item {
                         font.letterSpacing: -0.3
                         color: Appearance.colors.colOnLayer2
                         rightPadding: 8
-
                         Component.onCompleted: width = implicitWidth
                     }
                 }

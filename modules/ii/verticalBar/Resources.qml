@@ -7,13 +7,13 @@ import qs.modules.ii.bar as Bar
 MouseArea {
     id: root
     property bool alwaysShowAllResources: false
-    implicitHeight: columnLayout.implicitHeight
+    implicitHeight: columnLayout.implicitHeight + 20
     implicitWidth: columnLayout.implicitWidth
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
 
     ColumnLayout {
         id: columnLayout
-        spacing: 10
+        spacing: 5
         anchors.fill: parent
 
         Resource {

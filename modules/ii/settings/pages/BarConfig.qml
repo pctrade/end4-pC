@@ -10,9 +10,17 @@ ContentPage {
     forceWidth: true
 
     property var allWidgets: [
-        "leftSidebarButton", "workspaces", "weatherBar", "media",
-        "resources", "systemIcons", "clockWidget", "utilButtons",
-        "sysTray", "batteryIndicator", "activeWindow"
+        { id: "leftSidebarButton", name: Translation.tr("Sidebar Button") },
+        { id: "workspaces",        name: Translation.tr("Workspaces") },
+        { id: "weatherBar",        name: Translation.tr("Weather") },
+        { id: "media",             name: Translation.tr("Media") },
+        { id: "resources",         name: Translation.tr("Resources") },
+        { id: "systemIcons",       name: Translation.tr("System Icons") },
+        { id: "clockWidget",       name: Translation.tr("Clock") },
+        { id: "utilButtons",       name: Translation.tr("Util Buttons") },
+        { id: "sysTray",           name: Translation.tr("Tray") },
+        { id: "batteryIndicator",  name: Translation.tr("Battery") },
+        { id: "activeWindow",      name: Translation.tr("Active Window") }
     ]
 
     function availableFor() {
@@ -21,7 +29,12 @@ ContentPage {
             ...Config.options.bar.layouts.middleLayout,
             ...Config.options.bar.layouts.rightLayout
         ]
-        return allWidgets.filter(w => !used.includes(w))
+        return allWidgets.filter(w => !used.includes(w.id))
+    }
+
+    function getWidgetName(id) {
+        const w = allWidgets.find(w => w.id === id)
+        return w ? w.name : id
     }
 
     ContentSection {
@@ -30,7 +43,7 @@ ContentPage {
 
         // Left
         ContentSubsection {
-            title: Translation.tr("Left")
+            title: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
             Layout.fillWidth: true
 
             RowLayout {
@@ -46,7 +59,7 @@ ContentPage {
                             required property int index
                             leftmost: true; rightmost: true
                             buttonIcon: "close"
-                            buttonText: modelData
+                            buttonText: rootPage.getWidgetName(modelData)
                             toggled: true
                             onClicked: {
                                 let list = Config.options.bar.layouts.leftLayout.slice()
@@ -95,10 +108,10 @@ ContentPage {
                             delegate: SelectionGroupButton {
                                 required property var modelData
                                 leftmost: true; rightmost: true
-                                buttonText: modelData
+                                buttonText: modelData.name
                                 onClicked: {
                                     let list = Config.options.bar.layouts.leftLayout.slice()
-                                    list.push(modelData)
+                                    list.push(modelData.id)
                                     Config.options.bar.layouts.leftLayout = list
                                     leftDropdown.visible = false
                                 }
@@ -133,7 +146,7 @@ ContentPage {
                             required property int index
                             leftmost: true; rightmost: true
                             buttonIcon: "close"
-                            buttonText: modelData
+                            buttonText: rootPage.getWidgetName(modelData)
                             toggled: true
                             onClicked: {
                                 let list = Config.options.bar.layouts.middleLayout.slice()
@@ -182,10 +195,10 @@ ContentPage {
                             delegate: SelectionGroupButton {
                                 required property var modelData
                                 leftmost: true; rightmost: true
-                                buttonText: modelData
+                                buttonText: modelData.name
                                 onClicked: {
                                     let list = Config.options.bar.layouts.middleLayout.slice()
-                                    list.push(modelData)
+                                    list.push(modelData.id)
                                     Config.options.bar.layouts.middleLayout = list
                                     centerDropdown.visible = false
                                 }
@@ -204,7 +217,7 @@ ContentPage {
 
         // Right
         ContentSubsection {
-            title: Translation.tr("Right")
+            title: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
             Layout.fillWidth: true
 
             RowLayout {
@@ -220,7 +233,7 @@ ContentPage {
                             required property int index
                             leftmost: true; rightmost: true
                             buttonIcon: "close"
-                            buttonText: modelData
+                            buttonText: rootPage.getWidgetName(modelData)
                             toggled: true
                             onClicked: {
                                 let list = Config.options.bar.layouts.rightLayout.slice()
@@ -269,10 +282,10 @@ ContentPage {
                             delegate: SelectionGroupButton {
                                 required property var modelData
                                 leftmost: true; rightmost: true
-                                buttonText: modelData
+                                buttonText: modelData.name
                                 onClicked: {
                                     let list = Config.options.bar.layouts.rightLayout.slice()
-                                    list.push(modelData)
+                                    list.push(modelData.id)
                                     Config.options.bar.layouts.rightLayout = list
                                     rightDropdown.visible = false
                                 }
@@ -299,7 +312,7 @@ ContentPage {
             Flow {
                 Layout.fillWidth: true; spacing: 2
                 SelectionGroupButton {
-                    leftmost: true; rightmost: Hyprland.monitors.length === 0 
+                    leftmost: true; rightmost: Hyprland.monitors.length === 0
                     buttonIcon: "tv_displays"; buttonText: Translation.tr("All")
                     toggled: Config.options.bar.screenList.length === 0
                     onClicked: Config.options.bar.screenList = []
@@ -320,12 +333,12 @@ ContentPage {
                         }
                     }
                 }
-                 SelectionGroupButton {
+                SelectionGroupButton {
                     leftmost: false
                     rightmost: true
                     buttonIcon: "page_footer"
                     buttonText: Translation.tr("")
-                } 
+                }
             }
         }
     }
@@ -354,10 +367,10 @@ ContentPage {
                         Config.options.bar.vertical = (newValue & 2) !== 0;
                     }
                     options: [
-                        { displayName: Translation.tr("Top"), icon: "arrow_upward", value: 0 },
-                        { displayName: Translation.tr("Left"), icon: "arrow_back", value: 2 },
+                        { displayName: Translation.tr("Top"),    icon: "arrow_upward",  value: 0 },
+                        { displayName: Translation.tr("Left"),   icon: "arrow_back",    value: 2 },
                         { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
-                        { displayName: Translation.tr("Right"), icon: "arrow_forward", value: 3 }
+                        { displayName: Translation.tr("Right"),  icon: "arrow_forward", value: 3 }
                     ]
                 }
             }
@@ -367,7 +380,7 @@ ContentPage {
                     currentValue: Config.options.bar.autoHide.enable
                     onSelected: newValue => { Config.options.bar.autoHide.enable = newValue; }
                     options: [
-                        { displayName: Translation.tr("No"), icon: "close", value: false },
+                        { displayName: Translation.tr("No"),  icon: "close", value: false },
                         { displayName: Translation.tr("Yes"), icon: "check", value: true }
                     ]
                 }
@@ -380,9 +393,9 @@ ContentPage {
                     currentValue: Config.options.bar.cornerStyle
                     onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
                     options: [
-                        { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
-                        { displayName: Translation.tr("Float"), icon: "page_header", value: 1 },
-                        { displayName: Translation.tr("Islands"), icon: "crop_3_2", value: 2 }
+                        { displayName: Translation.tr("Hug"),     icon: "line_curve",  value: 0 },
+                        { displayName: Translation.tr("Float"),   icon: "page_header", value: 1 },
+                        { displayName: Translation.tr("Islands"), icon: "crop_3_2",    value: 2 }
                     ]
                 }
             }
@@ -392,8 +405,8 @@ ContentPage {
                     currentValue: Config.options.bar.borderless
                     onSelected: newValue => { Config.options.bar.borderless = newValue; }
                     options: [
-                        { displayName: Translation.tr("Pills"), icon: "location_chip", value: false },
-                        { displayName: Translation.tr("Line-separated"), icon: "split_scene", value: true }
+                        { displayName: Translation.tr("Pills"),          icon: "location_chip", value: false },
+                        { displayName: Translation.tr("Line-separated"), icon: "split_scene",   value: true }
                     ]
                 }
             }
@@ -404,12 +417,12 @@ ContentPage {
         icon: "shelf_auto_hide"
         title: Translation.tr("Tray")
         ConfigSwitch {
-            buttonIcon: "keep"; text: Translation.tr('Make icons pinned by default')
+            buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
             checked: Config.options.tray.invertPinnedItems
             onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
         }
         ConfigSwitch {
-            buttonIcon: "colors"; text: Translation.tr('Tint icons')
+            buttonIcon: "colors"; text: Translation.tr("Tint icons")
             checked: Config.options.tray.monochromeIcons
             onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
         }
@@ -470,12 +483,12 @@ ContentPage {
     ContentSection {
         icon: "workspaces"; title: Translation.tr("Workspaces")
         ConfigSwitch {
-            buttonIcon: "counter_1"; text: Translation.tr('Always show numbers')
+            buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
             checked: Config.options.bar.workspaces.alwaysShowNumbers
             onCheckedChanged: { Config.options.bar.workspaces.alwaysShowNumbers = checked; }
         }
         ConfigSwitch {
-            buttonIcon: "award_star"; text: Translation.tr('Show app icons')
+            buttonIcon: "award_star"; text: Translation.tr("Show app icons")
             checked: Config.options.bar.workspaces.showAppIcons
             onCheckedChanged: { Config.options.bar.workspaces.showAppIcons = checked; }
         }
@@ -489,28 +502,15 @@ ContentPage {
 
     ContentSubsection {
         title: Translation.tr("Number style")
-
         ConfigSelectionArray {
             currentValue: JSON.stringify(Config.options.bar.workspaces.numberMap)
             onSelected: newValue => {
                 Config.options.bar.workspaces.numberMap = JSON.parse(newValue)
             }
             options: [
-                {
-                    displayName: Translation.tr("Normal"),
-                    icon: "timer_10",
-                    value: '[]'
-                },
-                {
-                    displayName: Translation.tr("Han chars"),
-                    icon: "square_dot",
-                    value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]'
-                },
-                {
-                    displayName: Translation.tr("Roman"),
-                    icon: "account_balance",
-                    value: '["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"]'
-                }
+                { displayName: Translation.tr("Normal"),    icon: "timer_10",        value: '[]' },
+                { displayName: Translation.tr("Han chars"), icon: "square_dot",      value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]' },
+                { displayName: Translation.tr("Roman"),     icon: "account_balance", value: '["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"]' }
             ]
         }
     }

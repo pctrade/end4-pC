@@ -14,7 +14,7 @@ Item {
     property bool showDate: Config.options.bar.verbose
     property bool vertical: Config.options.bar.vertical
 
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : flow.implicitWidth + 10
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : flow.implicitWidth + 6
     implicitHeight: vertical ? flow.implicitHeight + 6 : Appearance.sizes.barHeight
 
     MouseArea {
@@ -28,7 +28,7 @@ Item {
         id: flow
         anchors.centerIn: parent
         flow: root.vertical ? Flow.TopToBottom : Flow.LeftToRight
-        spacing: 10
+        spacing: 6
 
         Revealer {
             reveal: true

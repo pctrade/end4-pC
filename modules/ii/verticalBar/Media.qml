@@ -17,7 +17,7 @@ MouseArea {
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
     Layout.fillHeight: true
-    implicitHeight: mediaCircProg.implicitHeight
+    implicitHeight: mediaCircProg.implicitHeight + 6 
     implicitWidth: Appearance.sizes.verticalBarWidth
 
     Timer {
@@ -65,25 +65,4 @@ MouseArea {
             }
         }
     }
-
-    Bar.StyledPopup {
-        hoverTarget: root
-        active: GlobalStates.mediaControlsOpen ? false : root.containsMouse
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 4
-
-            Bar.StyledPopupHeaderRow {
-                icon: "music_note"
-                label: Translation.tr("Media")
-            }
-
-            StyledText {
-                color: Appearance.colors.colOnSurfaceVariant
-                text: `${cleanedTitle}${activePlayer?.trackArtist ? '\n' + activePlayer.trackArtist : ''}`
-            }
-        }
-    }
-
 }

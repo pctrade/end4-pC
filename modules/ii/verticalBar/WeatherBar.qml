@@ -12,7 +12,7 @@ MouseArea {
     property bool vertical: Config.options.bar.vertical
 
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : rowLayout.implicitWidth + 6
-    implicitHeight: vertical ? colLayout.implicitHeight + 12 : Appearance.sizes.barHeight
+    implicitHeight: vertical ? colLayout.implicitHeight + 8 : Appearance.sizes.barHeight
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
@@ -69,7 +69,6 @@ MouseArea {
         StyledText {
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.colors.colOnLayer1
-            // quitar la C o F del final
             text: (Weather.data?.temp ?? "--°").replace(/[CF]$/, "")
             Layout.alignment: Qt.AlignHCenter
         }
