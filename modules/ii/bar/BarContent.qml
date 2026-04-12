@@ -106,14 +106,13 @@ Item {
                 spacing: 2
                 layoutDirection: Qt.RightToLeft
                 Repeater {
-                    model: Config.options.bar.layouts.rightLayout
+                    model: Config.options.bar.layouts.rightLayout.slice().reverse()
                     delegate: BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
                         totalCount: Config.options.bar.layouts.rightLayout.length
                         startRadius: (index === Config.options.bar.layouts.rightLayout.length - 1 || Config.options.bar.layouts.rightLayout.length <= 1) ? (height / 2) : Appearance.rounding.unsharpenmore
                         endRadius: (index === 0 || Config.options.bar.layouts.rightLayout.length <= 1) ? (height / 2) : Appearance.rounding.unsharpenmore
-                        
                         Loader { Layout.fillHeight: true; source: root.getWidgetUrl(modelData) }
                     }
                 }

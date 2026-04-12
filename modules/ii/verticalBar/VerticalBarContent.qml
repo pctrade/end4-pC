@@ -110,7 +110,7 @@ Item {
                 anchors.fill: parent
                 spacing: 2
                 Repeater {
-                    model: Config.options.bar.layouts.rightLayout.slice().reverse()
+                    model: Config.options.bar.layouts.rightLayout
                     delegate: Bar.BarGroup {
                         Layout.fillWidth: true
                         vertical: true
