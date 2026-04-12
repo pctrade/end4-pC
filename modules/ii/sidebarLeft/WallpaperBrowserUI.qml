@@ -103,7 +103,7 @@ Item {
             PagePlaceholder {  
                 id: placeholderItem  
                 shown: root.responses.length === 0  
-                icon: "wallpaper"
+                icon: "panorama"
                 description: Translation.tr("Type %1service to get started").arg(root.commandPrefix)  
                 title: Translation.tr("Wallpapers")  
                 shape: MaterialShape.Shape.Puffy  

@@ -211,6 +211,7 @@ Singleton {
                     }
                 }
                 property string wallpaperPath: ""
+                property string wallpaperAnimation: "circle"
                 property string thumbnailPath: ""
                 property bool hideWhenFullscreen: true
                 property JsonObject parallax: JsonObject {

@@ -15,14 +15,15 @@ ComboBox {
     property color colBackground: Appearance.colors.colSecondaryContainer
     property color colBackgroundHover: Appearance.colors.colSecondaryContainerHover
     property color colBackgroundActive: Appearance.colors.colSecondaryContainerActive
-
     property string searchText: ""
-    property var filteredModel: {
-        if (!searchText || searchText.length === 0) return root.model ?? []
+
+    property int visibleCount: {
+        if (!root.searchText || root.searchText.length === 0) 
+            return root.model?.length ?? 0
         return (root.model ?? []).filter(item => {
             const display = typeof item === "object" ? (item[root.textRole] ?? "") : String(item)
-            return display.toLowerCase().includes(searchText.toLowerCase())
-        })
+            return display.toLowerCase().includes(root.searchText.toLowerCase())
+        }).length
     }
 
     implicitHeight: 40
@@ -97,10 +98,16 @@ ComboBox {
     delegate: ItemDelegate {
         id: itemDelegate
         width: ListView.view ? ListView.view.width : root.width
-        implicitHeight: 40
+        implicitHeight: visible ? 40 : 0
+        visible: {
+            if (!root.searchText || root.searchText.length === 0) return true
+            const display = typeof model === "object" ? (model[root.textRole] ?? "") : String(model)
+            return display.toLowerCase().includes(root.searchText.toLowerCase())
+        }
 
         required property var model
         required property int index
+
         property color color: {
             if (root.currentIndex === itemDelegate.index) {
                 if (itemDelegate.down) return Appearance.colors.colSecondaryContainerActive;
@@ -165,7 +172,11 @@ ComboBox {
     popup: Popup {
         y: root.height + 4
         width: root.width
-        height: Math.min(searchField.implicitHeight + 20 + listView.contentHeight + topPadding + bottomPadding, 320)
+        clip: true
+        height: Math.min(
+            searchField.implicitHeight + 20 + (visibleCount * 42) + topPadding + bottomPadding,
+            320
+        )
         padding: 8
 
         onVisibleChanged: {
@@ -265,12 +276,11 @@ ComboBox {
             StyledListView {
                 id: listView
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(contentHeight, 320 - searchField.implicitHeight - 28 - 16)
+                Layout.preferredHeight: Math.min(contentHeight, 320 - searchField.implicitHeight - 8 - 46)
                 clip: true
                 spacing: 2
-                model: root.popup.visible ? root.filteredModel : null
+                model: root.popup.visible ? root.delegateModel : null
                 currentIndex: root.highlightedIndex
-                delegate: root.delegate
             }
         }
     }

@@ -8,46 +8,62 @@ ContentPage {
     forceWidth: true
 
     ContentSection {
-        icon: "sync_alt"
-        title: Translation.tr("Parallax")
+        icon: "panorama"
+        title: Translation.tr("Wallpaper")
 
-        ConfigSwitch {
-            buttonIcon: "unfold_more_double"
-            text: Translation.tr("Vertical")
-            checked: Config.options.background.parallax.vertical
-            onCheckedChanged: {
-                Config.options.background.parallax.vertical = checked;
-            }
-        }
+        ContentSubsection {
+            visible: !Config.options.background.widgets.clock.showOnlyWhenLocked
+            title: Translation.tr("Transition")
+            Layout.fillWidth: true
 
-        ConfigRow {
-            uniform: true
-            ConfigSwitch {
-                buttonIcon: "counter_1"
-                text: Translation.tr("Depends on workspace")
-                checked: Config.options.background.parallax.enableWorkspace
-                onCheckedChanged: {
-                    Config.options.background.parallax.enableWorkspace = checked;
+            ConfigSelectionArray {
+                Layout.fillWidth: false
+                currentValue: Config.options.background.wallpaperAnimation
+                onSelected: newValue => {
+                    Config.options.background.wallpaperAnimation = newValue;
                 }
-            }
-            ConfigSwitch {
-                buttonIcon: "side_navigation"
-                text: Translation.tr("Depends on sidebars")
-                checked: Config.options.background.parallax.enableSidebar
-                onCheckedChanged: {
-                    Config.options.background.parallax.enableSidebar = checked;
-                }
-            }
-        }
-        ConfigSpinBox {
-            icon: "loupe"
-            text: Translation.tr("Preferred wallpaper zoom (%)")
-            value: Config.options.background.parallax.workspaceZoom * 100
-            from: 10
-            to: 200
-            stepSize: 1
-            onValueChanged: {
-                Config.options.background.parallax.workspaceZoom = value / 100;
+                options: [
+                    {
+                        displayName: Translation.tr(""),
+                        icon: "block",
+                        value: ""
+                    },
+                    {
+                        displayName: Translation.tr("Circle"),
+                        icon: "circle",
+                        value: "circle"
+                    },
+                    {
+                        displayName: Translation.tr("Pit"),
+                        icon: "blur_circular",
+                        value: "circlePit"
+                    },
+                    {
+                        displayName: Translation.tr("Magic"),
+                        icon: "auto_awesome",
+                        value: "magic"
+                    },
+                    {
+                        displayName: Translation.tr("Doom"),
+                        icon: "whatshot",
+                        value: "Doom"
+                    },
+                    {
+                        displayName: Translation.tr("Peel"),
+                        icon: "layers",
+                        value: "Peel"
+                    },
+                    {
+                        displayName: Translation.tr("Fade"),
+                        icon: "gradient",
+                        value: "transition"
+                    },
+                    {
+                        displayName: Translation.tr("Random"),
+                        icon: "shuffle",
+                        value: "random"
+                    },
+                ]
             }
         }
     }
