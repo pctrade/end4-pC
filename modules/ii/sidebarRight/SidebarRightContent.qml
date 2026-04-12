@@ -105,10 +105,24 @@ Item {
             }
 
             BottomWidgetGroup {
+                id: bottomWidgetGroup
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: false
                 Layout.fillWidth: true
                 Layout.preferredHeight: implicitHeight
+
+                QuickToggleButton {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 4
+                    toggled: false
+                    visible: bottomWidgetGroup.collapsed 
+                    buttonIcon: "mode_off_on"
+                    onClicked: GlobalStates.sessionOpen = true
+                    StyledToolTip {
+                        text: Translation.tr("Session")
+                    }
+                }
             }
         }
     }
@@ -225,7 +239,7 @@ Item {
                 left: parent.left
             }
             color: Appearance.colors.colLayer1
-            radius: height / 2
+            radius: Appearance.rounding.normal
             implicitWidth: uptimeRow.implicitWidth + 24
             implicitHeight: uptimeRow.implicitHeight + 8
             
@@ -301,16 +315,6 @@ Item {
                 }
                 StyledToolTip {
                     text: Translation.tr("Settings")
-                }
-            }
-            QuickToggleButton {
-                toggled: false
-                buttonIcon: "power_settings_new"
-                onClicked: {
-                    GlobalStates.sessionOpen = true;
-                }
-                StyledToolTip {
-                    text: Translation.tr("Session")
                 }
             }
         }

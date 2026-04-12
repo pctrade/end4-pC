@@ -130,7 +130,7 @@ ContentPage {
         ContentSubsection {
             title: Translation.tr("Interface Language")
 
-            StyledComboBox {
+            StyledComboBoxSearch {
                 id: languageSelector
                 buttonIcon: "language"
                 textRole: "displayName"

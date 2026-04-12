@@ -18,9 +18,9 @@ Item {
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool wallpapersEnabled: true // sorry always true u can't disable it from settings
     property var tabButtonList: [
-        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("AI")}] : []),
+        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
-        ...(root.wallpapersEnabled ? [{"icon": "wallpaper", "name": Translation.tr("Walls")}] : []),
+        ...(root.wallpapersEnabled ? [{"icon": "wallpaper", "name": Translation.tr("Wallpapers")}] : []),
         ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
     ]
     property int tabCount: swipeView.count
@@ -47,18 +47,14 @@ Item {
             fill: parent
             margins: sidebarPadding
         }
-        spacing: sidebarPadding
+        spacing: -2
 
-        Toolbar {
+        VerticalTabBar {
             visible: tabButtonList.length > 0
-            Layout.alignment: Qt.AlignHCenter
-            enableShadow: false
-            ToolbarTabBar {
-                id: tabBar
-                Layout.alignment: Qt.AlignHCenter
-                tabButtonList: root.tabButtonList
-                currentIndex: swipeView.currentIndex
-            }
+            Layout.fillWidth: true 
+            tabButtonList: root.tabButtonList
+            currentIndex: swipeView.currentIndex
+            onCurrentIndexChanged: swipeView.currentIndex = currentIndex
         }
 
         Rectangle {
@@ -66,7 +62,10 @@ Item {
             Layout.fillHeight: true
             implicitWidth: swipeView.implicitWidth
             implicitHeight: swipeView.implicitHeight
-            radius: Appearance.rounding.normal
+            topLeftRadius: 0
+            bottomLeftRadius: Appearance.roundin.normal
+            topRightRadius: 0
+            bottomRightRadius: Appearance.roundin.normal
             color: Appearance.colors.colLayer1
 
             SwipeView { // Content pages
