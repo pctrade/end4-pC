@@ -47,9 +47,10 @@ Item {
             fill: parent
             margins: sidebarPadding
         }
-        spacing: -2
+        spacing: verticalTabBar.expanded ? -2 : 0
 
         VerticalTabBar {
+            id: verticalTabBar
             visible: tabButtonList.length > 0
             Layout.fillWidth: true 
             tabButtonList: root.tabButtonList
@@ -63,9 +64,9 @@ Item {
             implicitWidth: swipeView.implicitWidth
             implicitHeight: swipeView.implicitHeight
             topLeftRadius: 0
-            bottomLeftRadius: Appearance.roundin.normal
+            bottomLeftRadius: Appearance.rounding.normal
             topRightRadius: 0
-            bottomRightRadius: Appearance.roundin.normal
+            bottomRightRadius: Appearance.rounding.normal
             color: Appearance.colors.colLayer1
 
             SwipeView { // Content pages

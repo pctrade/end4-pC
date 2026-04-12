@@ -15,8 +15,15 @@ Item {
     function setCurrentIndex(index)  { tabBar.setCurrentIndex(index) }
 
     property real cardHeight: 30
+    property bool expanded: false
 
-    implicitHeight: tabButtonList.length * (cardHeight + 2)
+    implicitHeight: expanded 
+        ? tabButtonList.length * (cardHeight + 2)
+        : cardHeight
+
+    Behavior on implicitHeight {
+        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+    }
 
     Repeater {
         model: root.tabButtonList
@@ -32,10 +39,13 @@ Item {
                 return slots.indexOf(index)
             }
 
+            visible: isCurrent || root.expanded
             width: root.width
             height: 30
 
-            y: visualPosition * (cardHeight + 2)
+            y: root.expanded 
+                ? visualPosition * (cardHeight + 2)
+                : isCurrent ? 0 : 0
 
             z: isCurrent ? 0 : (totalCount - visualPosition)
 
@@ -53,9 +63,6 @@ Item {
             Behavior on y {
                 NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
             }
-            Behavior on height {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-            }
             Behavior on color {
                 ColorAnimation { duration: 200; easing.type: Easing.OutCubic }
             }
@@ -64,14 +71,17 @@ Item {
             }
 
             Rectangle {
+                visible: isCurrent
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 12
                 width: 30
-                height: 6
+                height: 4
                 radius: height / 2
                 color: Appearance.colors.colSurfaceContainerHighest
+                opacity: 0.6
             }
+
             RowLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
@@ -100,7 +110,26 @@ Item {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 hoverEnabled: true
-                onClicked: root.setCurrentIndex(parent.index)
+                onClicked: {
+                    if (!root.expanded) {
+                        root.expanded = true
+                        return
+                    }
+                    root.setCurrentIndex(parent.index)
+                }
+            }
+
+            DragHandler {
+                id: dragHandler
+                enabled: isCurrent
+                target: null
+                onTranslationChanged: {
+                    if (translation.y < -20) {
+                        root.expanded = false
+                    } else if (translation.y > 20) {
+                        root.expanded = true
+                    }
+                }
             }
         }
     }
