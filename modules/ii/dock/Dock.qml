@@ -90,7 +90,7 @@ Scope { // Scope
                             color: Appearance.colors.colLayer0
                             border.width: 1
                             border.color: Appearance.colors.colLayer0Border
-                            radius: Appearance.rounding.large
+                            radius: Appearance.rounding.large + 3
                         }
 
                         RowLayout {
@@ -103,8 +103,8 @@ Scope { // Scope
 
                             VerticalButtonGroup {
                                 Layout.topMargin: Appearance.sizes.hyprlandGapsOut // why does this work
-                                Layout.leftMargin: Appearance.sizes.hyprlandGapsOut 
-                                Layout.rightMargin: Appearance.sizes.hyprlandGapsOut 
+                                Layout.leftMargin: root.pinned ? Appearance.sizes.hyprlandGapsOut + 4 : Appearance.sizes.hyprlandGapsOut
+                                Layout.rightMargin: root.pinned ? Appearance.sizes.hyprlandGapsOut + 4 : Appearance.sizes.hyprlandGapsOut
                                 GroupButton {
                                     // Pin button
                                     baseWidth: 35
