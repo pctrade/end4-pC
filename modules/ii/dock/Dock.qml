@@ -103,6 +103,8 @@ Scope { // Scope
 
                             VerticalButtonGroup {
                                 Layout.topMargin: Appearance.sizes.hyprlandGapsOut // why does this work
+                                Layout.leftMargin: Appearance.sizes.hyprlandGapsOut 
+                                Layout.rightMargin: Appearance.sizes.hyprlandGapsOut 
                                 GroupButton {
                                     // Pin button
                                     baseWidth: 35
