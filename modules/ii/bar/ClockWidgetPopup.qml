@@ -13,6 +13,14 @@ StyledPopup {
         return 0
     }
 
+    topMarginOffset: {
+        if (!Config.options.bar.vertical) return 0
+        if (Config.options.bar.layouts.leftLayout.includes("clockWidget")) return 100
+        if (Config.options.bar.layouts.middleLayout.includes("clockWidget")) return 0
+        if (Config.options.bar.layouts.rightLayout.includes("clockWidget")) return -120
+        return 0
+    }
+
     function usageColor(value) {
         if (value > 0.9) return Appearance.colors.colError
         if (value > 0.6) return Appearance.m3colors.m3tertiary

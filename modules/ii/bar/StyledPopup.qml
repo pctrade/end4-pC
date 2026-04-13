@@ -12,6 +12,7 @@ LazyLoader {
     default property Item contentItem
     property real popupBackgroundMargin: 0
     property real leftMarginOffset: 0
+    property real topMarginOffset: 0
     active: hoverTarget && hoverTarget.containsMouse
 
     component: PanelWindow {
@@ -51,7 +52,7 @@ LazyLoader {
                 return root.QsWindow?.mapFromItem(
                     root.hoverTarget,
                     (root.hoverTarget.height - popupBackground.implicitHeight) / 2, 0
-                ).y;
+                ).y + + root.topMarginOffset 
             }
             right: Appearance.sizes.verticalBarWidth
             bottom: Appearance.sizes.barHeight
