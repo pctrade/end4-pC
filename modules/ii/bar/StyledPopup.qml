@@ -52,7 +52,7 @@ LazyLoader {
                 return root.QsWindow?.mapFromItem(
                     root.hoverTarget,
                     (root.hoverTarget.height - popupBackground.implicitHeight) / 2, 0
-                ).y + + root.topMarginOffset 
+                ).y + root.topMarginOffset 
             }
             right: Appearance.sizes.verticalBarWidth
             bottom: Appearance.sizes.barHeight
