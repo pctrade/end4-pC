@@ -11,8 +11,6 @@ LazyLoader {
     property Item hoverTarget
     default property Item contentItem
     property real popupBackgroundMargin: 0
-    property real leftMarginOffset: 0
-    property real topMarginOffset: 0
     active: hoverTarget && hoverTarget.containsMouse
 
     component: PanelWindow {
@@ -42,22 +40,27 @@ LazyLoader {
                     const base = root.QsWindow?.mapFromItem(
                         root.hoverTarget,
                         (root.hoverTarget.width - popupBackground.implicitWidth) / 2, 0
-                    ).x;
-                    return base + root.leftMarginOffset;
+                    ).x
+                    const margin = Appearance.sizes.elevationMargin
+                    const maxLeft = popupWindow.screen.width - popupBackground.implicitWidth - margin
+                    return Math.max(margin, Math.min(base, maxLeft))
                 }
-                return Appearance.sizes.verticalBarWidth
+                if (!Config.options.bar.bottom) return Appearance.sizes.verticalBarWidth
+                return 0
             }
             top: {
-                if (!Config.options.bar.vertical) return Appearance.sizes.barHeight;
-                return root.QsWindow?.mapFromItem(
+                if (!Config.options.bar.vertical) return Appearance.sizes.barHeight
+                const base = root.QsWindow?.mapFromItem(
                     root.hoverTarget,
-                    (root.hoverTarget.height - popupBackground.implicitHeight) / 2, 0
-                ).y + root.topMarginOffset 
+                    0, (root.hoverTarget.height - popupBackground.implicitHeight) / 2
+                ).y  
+                const margin = Appearance.sizes.elevationMargin
+                const maxTop = popupWindow.screen.height - popupBackground.implicitHeight - margin
+                return Math.max(margin, Math.min(base, maxTop))
             }
-            right: Appearance.sizes.verticalBarWidth
-            bottom: Appearance.sizes.barHeight
+            right: Config.options.bar.vertical && Config.options.bar.bottom ? Appearance.sizes.verticalBarWidth : 0  
+            bottom: Config.options.bar.vertical ? 0 : Appearance.sizes.barHeight  
         }
-
         WlrLayershell.namespace: "quickshell:popup"
         WlrLayershell.layer: WlrLayer.Overlay
 
