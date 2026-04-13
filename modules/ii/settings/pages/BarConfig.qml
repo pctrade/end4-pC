@@ -10,7 +10,7 @@ ContentPage {
     forceWidth: true
 
     property var allWidgets: [
-        { id: "leftSidebarButton", name: Translation.tr("Sidebar Button") },
+        { id: "leftSidebarButton", name: Translation.tr("Left Sidebar Button") },
         { id: "workspaces",        name: Translation.tr("Workspaces") },
         { id: "weatherBar",        name: Translation.tr("Weather") },
         { id: "media",             name: Translation.tr("Media") },
@@ -41,267 +41,31 @@ ContentPage {
         icon: "mobile_layout"
         title: Translation.tr("Bar layout")
 
-        // Left
-        ContentSubsection {
-            title: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
-            Layout.fillWidth: true
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                Flow {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Repeater {
-                        model: Config.options.bar.layouts.leftLayout
-                        delegate: SelectionGroupButton {
-                            required property var modelData
-                            required property int index
-                            leftmost: true; rightmost: true
-                            buttonIcon: "close"
-                            buttonText: rootPage.getWidgetName(modelData)
-                            toggled: true
-                            onClicked: {
-                                let list = Config.options.bar.layouts.leftLayout.slice()
-                                list.splice(index, 1)
-                                Config.options.bar.layouts.leftLayout = list
-                            }
-                        }
-                    }
-                }
-                ToolbarPairedFab {
-                    Layout.alignment: Qt.AlignVCenter
-                    iconText: leftDropdown.visible ? "keyboard_arrow_up" : "add"
-                    onClicked: {
-                        leftDropdown.visible = !leftDropdown.visible
-                        centerDropdown.visible = false
-                        rightDropdown.visible = false
-                    }
-                }
-            }
-
-            Item {
-                id: leftDropdown
-                Layout.fillWidth: true
-                visible: false
-                implicitHeight: visible ? dropdownRectLeft.height + 8 : 0
-                opacity: visible ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                Rectangle {
-                    id: dropdownRectLeft
-                    anchors.top: parent.top
-                    anchors.topMargin: 4
-                    width: parent.width
-                    implicitHeight: leftDropdownFlow.implicitHeight + 16
-                    color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.large
-                    border.width: 1
-                    border.color: Appearance.colors.colLayer0Border
-
-                    Flow {
-                        id: leftDropdownFlow
-                        anchors { fill: parent; margins: 8 }
-                        spacing: 2
-                        Repeater {
-                            model: rootPage.availableFor()
-                            delegate: SelectionGroupButton {
-                                required property var modelData
-                                leftmost: true; rightmost: true
-                                buttonText: modelData.name
-                                onClicked: {
-                                    let list = Config.options.bar.layouts.leftLayout.slice()
-                                    list.push(modelData.id)
-                                    Config.options.bar.layouts.leftLayout = list
-                                    leftDropdown.visible = false
-                                }
-                            }
-                        }
-                        StyledText {
-                            visible: rootPage.availableFor().length === 0
-                            text: Translation.tr("No widgets available")
-                            color: Appearance.colors.colSubtext
-                            font.pixelSize: Appearance.font.pixelSize.small
-                        }
-                    }
-                }
-            }
+        LayoutSection {
+            sectionTitle: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
+            layout: Config.options.bar.layouts.leftLayout
+            availableWidgets: rootPage.availableFor()
+            getWidgetName: rootPage.getWidgetName
+            onUpdate: list => Config.options.bar.layouts.leftLayout = list
         }
 
-        // Middle
-        ContentSubsection {
-            title: Translation.tr("Center")
-            Layout.fillWidth: true
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                Flow {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Repeater {
-                        model: Config.options.bar.layouts.middleLayout
-                        delegate: SelectionGroupButton {
-                            required property var modelData
-                            required property int index
-                            leftmost: true; rightmost: true
-                            buttonIcon: "close"
-                            buttonText: rootPage.getWidgetName(modelData)
-                            toggled: true
-                            onClicked: {
-                                let list = Config.options.bar.layouts.middleLayout.slice()
-                                list.splice(index, 1)
-                                Config.options.bar.layouts.middleLayout = list
-                            }
-                        }
-                    }
-                }
-                ToolbarPairedFab {
-                    Layout.alignment: Qt.AlignVCenter
-                    iconText: centerDropdown.visible ? "keyboard_arrow_up" : "add"
-                    onClicked: {
-                        centerDropdown.visible = !centerDropdown.visible
-                        leftDropdown.visible = false
-                        rightDropdown.visible = false
-                    }
-                }
-            }
-
-            Item {
-                id: centerDropdown
-                Layout.fillWidth: true
-                visible: false
-                implicitHeight: visible ? dropdownRectCenter.height + 8 : 0
-                opacity: visible ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                Rectangle {
-                    id: dropdownRectCenter
-                    anchors.top: parent.top
-                    anchors.topMargin: 4
-                    width: parent.width
-                    implicitHeight: centerDropdownFlow.implicitHeight + 16
-                    color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.large
-                    border.width: 1
-                    border.color: Appearance.colors.colLayer0Border
-
-                    Flow {
-                        id: centerDropdownFlow
-                        anchors { fill: parent; margins: 8 }
-                        spacing: 2
-                        Repeater {
-                            model: rootPage.availableFor()
-                            delegate: SelectionGroupButton {
-                                required property var modelData
-                                leftmost: true; rightmost: true
-                                buttonText: modelData.name
-                                onClicked: {
-                                    let list = Config.options.bar.layouts.middleLayout.slice()
-                                    list.push(modelData.id)
-                                    Config.options.bar.layouts.middleLayout = list
-                                    centerDropdown.visible = false
-                                }
-                            }
-                        }
-                        StyledText {
-                            visible: rootPage.availableFor().length === 0
-                            text: Translation.tr("No widgets available")
-                            color: Appearance.colors.colSubtext
-                            font.pixelSize: Appearance.font.pixelSize.small
-                        }
-                    }
-                }
-            }
+        LayoutSection {
+            sectionTitle: Translation.tr("Center")
+            layout: Config.options.bar.layouts.middleLayout
+            availableWidgets: rootPage.availableFor()
+            getWidgetName: rootPage.getWidgetName
+            onUpdate: list => Config.options.bar.layouts.middleLayout = list
         }
 
-        // Right
-        ContentSubsection {
-            title: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
-            Layout.fillWidth: true
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                Flow {
-                    Layout.fillWidth: true
-                    spacing: 2
-                    Repeater {
-                        model: Config.options.bar.layouts.rightLayout
-                        delegate: SelectionGroupButton {
-                            required property var modelData
-                            required property int index
-                            leftmost: true; rightmost: true
-                            buttonIcon: "close"
-                            buttonText: rootPage.getWidgetName(modelData)
-                            toggled: true
-                            onClicked: {
-                                let list = Config.options.bar.layouts.rightLayout.slice()
-                                list.splice(index, 1)
-                                Config.options.bar.layouts.rightLayout = list
-                            }
-                        }
-                    }
-                }
-                ToolbarPairedFab {
-                    Layout.alignment: Qt.AlignVCenter
-                    iconText: rightDropdown.visible ? "keyboard_arrow_up" : "add"
-                    onClicked: {
-                        rightDropdown.visible = !rightDropdown.visible
-                        leftDropdown.visible = false
-                        centerDropdown.visible = false
-                    }
-                }
-            }
-
-            Item {
-                id: rightDropdown
-                Layout.fillWidth: true
-                visible: false
-                implicitHeight: visible ? dropdownRectRight.height + 8 : 0
-                opacity: visible ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                Rectangle {
-                    id: dropdownRectRight
-                    anchors.top: parent.top
-                    anchors.topMargin: 4
-                    width: parent.width
-                    implicitHeight: rightDropdownFlow.implicitHeight + 16
-                    color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.large
-                    border.width: 1
-                    border.color: Appearance.colors.colLayer0Border
-
-                    Flow {
-                        id: rightDropdownFlow
-                        anchors { fill: parent; margins: 8 }
-                        spacing: 2
-                        Repeater {
-                            model: rootPage.availableFor()
-                            delegate: SelectionGroupButton {
-                                required property var modelData
-                                leftmost: true; rightmost: true
-                                buttonText: modelData.name
-                                onClicked: {
-                                    let list = Config.options.bar.layouts.rightLayout.slice()
-                                    list.push(modelData.id)
-                                    Config.options.bar.layouts.rightLayout = list
-                                    rightDropdown.visible = false
-                                }
-                            }
-                        }
-                        StyledText {
-                            visible: rootPage.availableFor().length === 0
-                            text: Translation.tr("No widgets available")
-                            color: Appearance.colors.colSubtext
-                            font.pixelSize: Appearance.font.pixelSize.small
-                        }
-                    }
-                }
-            }
+        LayoutSection {
+            sectionTitle: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
+            layout: Config.options.bar.layouts.rightLayout
+            availableWidgets: rootPage.availableFor()
+            getWidgetName: rootPage.getWidgetName
+            onUpdate: list => Config.options.bar.layouts.rightLayout = list
         }
     }
+
 
     ContentSection {
         icon: "monitor"
