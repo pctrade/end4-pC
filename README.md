@@ -11,8 +11,6 @@ Customized and maintained by **pctrade**
 
 ## 📸 Screenshots
 
-> Replace the images below with your own screenshots
-
 <div align="center">
 
 | 🎵 Lyrics | 🖼️ Online Wallpapers |
