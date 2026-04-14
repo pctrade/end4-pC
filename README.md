@@ -25,7 +25,7 @@ Customized and maintained by **pctrade**
 
 ## ⚡ Installation
 
-> Make sure you have the full [dots-hyprland](https://github.com/end-4/dots-hyprland) setup by [@end-4](https://github.com/end-4) installed and working before proceeding — this is a fork that builds on top of it, not a standalone install.
+> This fork manages its own configuration folder independently. It does **not** overwrite, modify, or depend on an existing [dots-hyprland](https://github.com/end-4/dots-hyprland) installation — it simply creates its own directory alongside your current setup.
 
 ```bash
 cd ~/.config/quickshell/
