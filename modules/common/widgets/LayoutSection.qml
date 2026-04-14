@@ -152,6 +152,7 @@ ContentSubsection {
 
         ToolbarPairedFab {
             Layout.alignment: Qt.AlignVCenter
+            Layout.topMargin: -15
             iconText: dropdown.visible ? "keyboard_arrow_up" : "add"
             onClicked: dropdown.visible = !dropdown.visible
         }
@@ -160,6 +161,7 @@ ContentSubsection {
     Item {
         id: dropdown
         Layout.fillWidth: true
+        Layout.topMargin: 5
         visible: false
         implicitHeight: visible ? dropdownRect.height + 8 : 0
         Behavior on opacity { NumberAnimation { duration: 200 } }
