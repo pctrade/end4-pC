@@ -42,7 +42,7 @@ LazyLoader {
                         (root.hoverTarget.width - popupBackground.implicitWidth) / 2, 0
                     ).x
                     const margin = Appearance.sizes.elevationMargin
-                    const maxLeft = popupWindow.screen.width - popupBackground.implicitWidth - margin - 10
+                    const maxLeft = popupWindow.screen.width - popupBackground.implicitWidth - margin - 15
                     return Math.max(margin, Math.min(base, maxLeft))
                 }
                 if (!Config.options.bar.bottom) return Appearance.sizes.verticalBarWidth

@@ -38,36 +38,6 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "mobile_layout"
-        title: Translation.tr("Bar layout")
-
-        LayoutSection {
-            sectionTitle: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
-            layout: Config.options.bar.layouts.leftLayout
-            availableWidgets: rootPage.availableFor()
-            getWidgetName: rootPage.getWidgetName
-            onUpdate: list => Config.options.bar.layouts.leftLayout = list
-        }
-
-        LayoutSection {
-            sectionTitle: Translation.tr("Center")
-            layout: Config.options.bar.layouts.middleLayout
-            availableWidgets: rootPage.availableFor()
-            getWidgetName: rootPage.getWidgetName
-            onUpdate: list => Config.options.bar.layouts.middleLayout = list
-        }
-
-        LayoutSection {
-            sectionTitle: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
-            layout: Config.options.bar.layouts.rightLayout
-            availableWidgets: rootPage.availableFor()
-            getWidgetName: rootPage.getWidgetName
-            onUpdate: list => Config.options.bar.layouts.rightLayout = list
-        }
-    }
-
-
-    ContentSection {
         icon: "monitor"
         visible: Hyprland.monitors.values.length > 1
         title: Translation.tr("Screens")
@@ -108,6 +78,35 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "splitscreen_add"
+        title: Translation.tr("Bar layout")
+
+        LayoutSection {
+            sectionTitle: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
+            layout: Config.options.bar.layouts.leftLayout
+            availableWidgets: rootPage.availableFor()
+            getWidgetName: rootPage.getWidgetName
+            onUpdate: list => Config.options.bar.layouts.leftLayout = list
+        }
+
+        LayoutSection {
+            sectionTitle: Translation.tr("Center")
+            layout: Config.options.bar.layouts.middleLayout
+            availableWidgets: rootPage.availableFor()
+            getWidgetName: rootPage.getWidgetName
+            onUpdate: list => Config.options.bar.layouts.middleLayout = list
+        }
+
+        LayoutSection {
+            sectionTitle: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
+            layout: Config.options.bar.layouts.rightLayout
+            availableWidgets: rootPage.availableFor()
+            getWidgetName: rootPage.getWidgetName
+            onUpdate: list => Config.options.bar.layouts.rightLayout = list
+        }
+    }
+
+    ContentSection {
         icon: "notifications"
         title: Translation.tr("Notifications")
         ConfigSwitch {
@@ -119,7 +118,7 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "spoke"
+        icon: "pivot_table_chart"
         title: Translation.tr("Positioning")
         ConfigRow {
             ContentSubsection {
@@ -158,7 +157,7 @@ ContentPage {
                     onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
                     options: [
                         { displayName: Translation.tr("Hug"),     icon: "line_curve",  value: 0 },
-                        { displayName: Translation.tr("Float"),   icon: "page_header", value: 1 },
+                        { displayName: Translation.tr("Float"),   icon: "view_day", value: 1 },
                         { displayName: Translation.tr("Islands"), icon: "crop_3_2",    value: 2 }
                     ]
                 }
@@ -169,8 +168,8 @@ ContentPage {
                     currentValue: Config.options.bar.borderless
                     onSelected: newValue => { Config.options.bar.borderless = newValue; }
                     options: [
-                        { displayName: Translation.tr("Pills"),          icon: "location_chip", value: false },
-                        { displayName: Translation.tr("Line-separated"), icon: "split_scene",   value: true }
+                        { displayName: Translation.tr("Pills"),          icon: "pill", value: false },
+                        { displayName: Translation.tr("Separated"), icon: "split_scene",   value: true }
                     ]
                 }
             }
@@ -178,7 +177,7 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "shelf_auto_hide"
+        icon: "inbox_customize"
         title: Translation.tr("Tray")
         ConfigSwitch {
             buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
@@ -193,12 +192,12 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "widgets"
+        icon: "buttons_alt"
         title: Translation.tr("Utility buttons")
         ConfigRow {
             uniform: true
             ConfigSwitch {
-                buttonIcon: "content_cut"; text: Translation.tr("Screen snip")
+                buttonIcon: "screenshot_region"; text: Translation.tr("Screen snip")
                 checked: Config.options.bar.utilButtons.showScreenSnip
                 onCheckedChanged: { Config.options.bar.utilButtons.showScreenSnip = checked; }
             }
@@ -237,7 +236,7 @@ ContentPage {
         ConfigRow {
             uniform: true
             ConfigSwitch {
-                buttonIcon: "videocam"; text: Translation.tr("Record")
+                buttonIcon: "screen_record"; text: Translation.tr("Record")
                 checked: Config.options.bar.utilButtons.showScreenRecord
                 onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked; }
             }
@@ -245,7 +244,7 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "workspaces"; title: Translation.tr("Workspaces")
+        icon: "steppers"; title: Translation.tr("Workspaces")
         ConfigSwitch {
             buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
             checked: Config.options.bar.workspaces.alwaysShowNumbers
@@ -273,7 +272,7 @@ ContentPage {
             }
             options: [
                 { displayName: Translation.tr("Normal"),    icon: "timer_10",        value: '[]' },
-                { displayName: Translation.tr("Han chars"), icon: "square_dot",      value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]' },
+                { displayName: Translation.tr("Han chars"), icon: "glyphs",      value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]' },
                 { displayName: Translation.tr("Roman"),     icon: "account_balance", value: '["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"]' }
             ]
         }

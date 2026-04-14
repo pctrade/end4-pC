@@ -193,7 +193,7 @@ MouseArea {
                                 path: `${Directories.pictures}/Wallpapers`
                             },
                             {
-                                icon: "favorite",
+                                icon: "imagesmode",
                                 name: "Homework",
                                 path: `${Directories.pictures}/homework`
                             },
@@ -387,7 +387,7 @@ MouseArea {
                             IconToolbarButton {
                                 implicitWidth: height
                                 onClicked: root.updateThumbnails()  
-                                text: "refresh"
+                                text: "reset_image"
                                 StyledToolTip {
                                     text: Translation.tr("Update Thumbnails")
                                 }

@@ -17,7 +17,6 @@ ContentPage {
             Layout.fillWidth: true
 
             ConfigSelectionArray {
-                Layout.fillWidth: false
                 currentValue: Config.options.background.wallpaperAnimation
                 onSelected: newValue => {
                     Config.options.background.wallpaperAnimation = newValue;
@@ -34,9 +33,14 @@ ContentPage {
                         value: "circle"
                     },
                     {
-                        displayName: Translation.tr("Pit"),
+                        displayName: Translation.tr("Circle Pit"),
                         icon: "blur_circular",
                         value: "circlePit"
+                    },
+                    {
+                        displayName: Translation.tr("Select"),
+                        icon: "lasso_select",
+                        value: "circleSelect"
                     },
                     {
                         displayName: Translation.tr("Magic"),

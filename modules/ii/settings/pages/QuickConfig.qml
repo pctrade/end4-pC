@@ -294,7 +294,7 @@ ContentPage {
                         },
                         {
                             displayName: Translation.tr("Float"),
-                            icon: "page_header",
+                            icon: "view_day",
                             value: 1
                         },
                         {
