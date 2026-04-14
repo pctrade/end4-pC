@@ -25,7 +25,8 @@ Customized and maintained by **pctrade**
 
 ## ⚡ Installation
 
-> This fork manages its own configuration folder independently. It does **not** overwrite, modify, or depend on an existing [dots-hyprland](https://github.com/end-4/dots-hyprland) installation — it simply creates its own directory alongside your current setup.
+> [!NOTE]
+> This fork manages its own configuration folder independently — it does **not** overwrite or modify any existing setup. However, it does require [illogical-impulse](https://github.com/end-4/dots-hyprland) to be installed and running.
 
 ```bash
 cd ~/.config/quickshell/
