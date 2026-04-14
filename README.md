@@ -11,11 +11,14 @@ Customized and maintained by **pctrade**
 
 ## 📸 Screenshots
 
+> Replace the images below with your own screenshots
+
 <div align="center">
 
-| | |
+| 🎵 Lyrics | 🖼️ Online Wallpapers |
 |:---:|:---:|
 | ![Screenshot 1](screenshots/1.png) | ![Screenshot 2](screenshots/2.png) |
+| ⚙️ Configurable Bar | ✨ And More |
 | ![Screenshot 3](screenshots/3.png) | ![Screenshot 4](screenshots/4.png) |
 
 </div>
