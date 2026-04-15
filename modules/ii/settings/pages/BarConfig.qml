@@ -39,6 +39,7 @@ ContentPage {
 
     ContentSection {
         icon: "monitor"
+        shape: MaterialShape.Shape.ClamShell
         visible: Hyprland.monitors.values.length > 1
         title: Translation.tr("Screens")
         ContentSubsection {
@@ -79,6 +80,7 @@ ContentPage {
 
     ContentSection {
         icon: "splitscreen_add"
+        shape: MaterialShape.Shape.Cookie6Sided
         title: Translation.tr("Bar layout")
 
         LayoutSection {
@@ -108,6 +110,7 @@ ContentPage {
 
     ContentSection {
         icon: "notifications"
+        shape: MaterialShape.Shape.Bun
         title: Translation.tr("Notifications")
         ConfigSwitch {
             buttonIcon: "counter_2"
@@ -119,6 +122,7 @@ ContentPage {
 
     ContentSection {
         icon: "pivot_table_chart"
+        shape: MaterialShape.Shape.Gem
         title: Translation.tr("Positioning")
         ConfigRow {
             ContentSubsection {
@@ -177,6 +181,7 @@ ContentPage {
     }
 
     ContentSection {
+        shape: MaterialShape.Shape.Square
         icon: "inbox_customize"
         title: Translation.tr("Tray")
         ConfigSwitch {
@@ -193,6 +198,7 @@ ContentPage {
 
     ContentSection {
         icon: "buttons_alt"
+        shape: MaterialShape.Shape.SoftBurst
         title: Translation.tr("Utility buttons")
         ConfigRow {
             uniform: true
@@ -244,6 +250,7 @@ ContentPage {
     }
 
     ContentSection {
+        shape: MaterialShape.Shape.Cookie12Sided
         icon: "steppers"; title: Translation.tr("Workspaces")
         ConfigSwitch {
             buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
@@ -279,6 +286,7 @@ ContentPage {
     }
 
     ContentSection {
+        shape: MaterialShape.Shape.Puffy
         icon: "tooltip"; title: Translation.tr("Tooltips")
         ConfigSwitch {
             buttonIcon: "ads_click"; text: Translation.tr("Click to show")

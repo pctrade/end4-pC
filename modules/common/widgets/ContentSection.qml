@@ -6,8 +6,10 @@ import qs.modules.common.widgets
 
 ColumnLayout {
     id: root
+    property var shape: MaterialShape.Shape.Clover4Leaf
     property string title
     property string icon: ""
+    property var bgColor: Appearance.colors.colSecondaryContainer
     default property alias data: sectionContent.data
 
     Layout.fillWidth: true
@@ -15,9 +17,11 @@ ColumnLayout {
 
     RowLayout {
         spacing: 6
-        OptionalMaterialSymbol {
-            icon: root.icon
-            iconSize: Appearance.font.pixelSize.hugeass
+        MaterialShapeWrappedMaterialSymbol {
+            text: root.icon
+            iconSize: Appearance.font.pixelSize.larger
+            wrappedShape: root.shape
+            color: bgColor
         }
         StyledText {
             text: root.title
@@ -26,11 +30,9 @@ ColumnLayout {
             color: Appearance.colors.colOnSecondaryContainer
         }
     }
-
     ColumnLayout {
         id: sectionContent
         Layout.fillWidth: true
         spacing: 4
-
     }
 }

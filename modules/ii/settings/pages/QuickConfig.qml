@@ -62,6 +62,7 @@ ContentPage {
     ContentSection {
         icon: "format_paint"
         title: Translation.tr("Wallpaper & Colors")
+        shape: MaterialShape.Shape.Puffy
         Layout.fillWidth: true
 
         RowLayout {
@@ -235,6 +236,7 @@ ContentPage {
     ContentSection {
         icon: "screenshot_monitor"
         title: Translation.tr("Bar & screen")
+        shape: MaterialShape.Shape.ClamShell
 
         ConfigSwitch {
             buttonIcon: "variable_insert"

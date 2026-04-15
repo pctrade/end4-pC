@@ -9,6 +9,7 @@ ContentPage {
 
     ContentSection {
         icon: "neurology"
+        shape: MaterialShape.Shape.Ghostish
         title: Translation.tr("AI")
 
         MaterialTextArea {
@@ -26,6 +27,7 @@ ContentPage {
 
     ContentSection {
         icon: "music_cast"
+        shape: MaterialShape.Shape.Oval
         title: Translation.tr("Music Recognition")
 
         ConfigSpinBox {
@@ -54,6 +56,7 @@ ContentPage {
 
     ContentSection {
         icon: "cell_tower"
+        shape: MaterialShape.Shape.PixelCircle
         title: Translation.tr("Networking")
 
         MaterialTextArea {
@@ -87,6 +90,7 @@ ContentPage {
 
     ContentSection {
         icon: "file_open"
+        shape: MaterialShape.Shape.Slanted
         title: Translation.tr("Save paths")
 
         MaterialTextArea {
@@ -112,6 +116,7 @@ ContentPage {
 
     ContentSection {
         icon: "search"
+        shape: MaterialShape.Shape.Cookie6Sided
         title: Translation.tr("Search")
 
         ConfigSwitch {
@@ -228,6 +233,7 @@ ContentPage {
 
     ContentSection {
         icon: "weather_mix"
+        shape: MaterialShape.Shape.Pill
         title: Translation.tr("Weather")
         ConfigRow {
             ConfigSwitch {

@@ -10,6 +10,7 @@ ContentPage {
     ContentSection {
         icon: "panorama"
         title: Translation.tr("Wallpaper")
+        shape: MaterialShape.Shape.Clover4Leaf
 
         ContentSubsection {
             visible: !Config.options.background.widgets.clock.showOnlyWhenLocked
@@ -75,6 +76,7 @@ ContentPage {
     ContentSection {
         id: settingsClock
         icon: "clock_loader_40"
+        shape: MaterialShape.Shape.Bun
         title: Translation.tr("Widget: Clock")
 
         function stylePresent(styleName) {
@@ -572,6 +574,7 @@ ContentPage {
 
     ContentSection {
         icon: "weather_mix"
+        shape: MaterialShape.Shape.Pill
         title: Translation.tr("Widget: Weather")
 
         ConfigRow {

@@ -18,6 +18,7 @@ ContentPage {
 
     ContentSection {
         icon: "volume_up"
+        shape: MaterialShape.Shape.Circle
         title: Translation.tr("Audio")
 
         ConfigSwitch {
@@ -57,6 +58,7 @@ ContentPage {
 
     ContentSection {
         icon: "battery_android_full"
+        shape: MaterialShape.Shape.SemiCircle
         title: Translation.tr("Battery")
 
         ConfigRow {
@@ -125,6 +127,7 @@ ContentPage {
 
     ContentSection {
         icon: "language"
+        shape: MaterialShape.Shape.Gem
         title: Translation.tr("Language")
 
         ContentSubsection {
@@ -185,6 +188,7 @@ ContentPage {
 
     ContentSection {
         icon: "rule"
+        shape: MaterialShape.Shape.SoftBoom
         title: Translation.tr("Policies")
 
         ConfigRow {
@@ -256,6 +260,7 @@ ContentPage {
 
     ContentSection {
         icon: "notification_sound"
+        shape: MaterialShape.Shape.Clover8Leaf
         title: Translation.tr("Sounds")
         ConfigRow {
             uniform: true
@@ -280,6 +285,7 @@ ContentPage {
 
     ContentSection {
         icon: "nest_clock_farsight_analog"
+        shape: MaterialShape.Shape.Bun
         title: Translation.tr("Time")
 
         ConfigRow {
@@ -349,6 +355,7 @@ ContentPage {
 
     ContentSection {
         icon: "work_alert"
+        shape: MaterialShape.Shape.Diamond
         title: Translation.tr("Work safety")
 
         ConfigSwitch {

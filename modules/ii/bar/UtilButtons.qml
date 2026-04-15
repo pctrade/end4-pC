@@ -68,7 +68,7 @@ Item {
                     id: btn
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    colBackground: recordingItem.isRecording ? Appearance.colors.colError : "transparent"
+                    colBackground: recordingItem.isRecording ? Appearance.colors.colPrimaryContainer : "transparent"
                     buttonRadius: recordingItem.isRecording ? Appearance.rounding.normal : implicitHeight / 2
                     onClicked: Quickshell.execDetached([Directories.recordScriptPath])
 
@@ -82,9 +82,9 @@ Item {
                     MaterialSymbol {
                         horizontalAlignment: Qt.AlignHCenter
                         fill: 1
-                        text: "screen_record"
+                        text: recordingItem.isRecording ? "stop_circle" : "screen_record"
                         iconSize: Appearance.font.pixelSize.large
-                        color: recordingItem.isRecording ? Appearance.colors.colOnError : Appearance.colors.colOnLayer2
+                        color: recordingItem.isRecording ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer2
 
                         Behavior on color {
                             ColorAnimation { duration: 200 }

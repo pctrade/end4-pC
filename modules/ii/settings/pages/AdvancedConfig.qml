@@ -9,6 +9,7 @@ ContentPage {
     ContentSection {
         icon: "colors"
         title: Translation.tr("Color generation")
+        shape: MaterialShape.Shape.VerySunny
 
         ConfigSwitch {
             buttonIcon: "hardware"

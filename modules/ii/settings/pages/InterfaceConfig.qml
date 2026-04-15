@@ -10,6 +10,7 @@ ContentPage {
     ContentSection {
         icon: "call_to_action"
         title: Translation.tr("Dock")
+        shape: MaterialShape.Shape.Cookie6Sided
 
         ConfigSwitch {
             buttonIcon: "check"
@@ -52,6 +53,7 @@ ContentPage {
     ContentSection {
         icon: "lock"
         title: Translation.tr("Lock screen")
+        shape: MaterialShape.Shape.Pentagon
 
         ConfigSwitch {
             buttonIcon: "water_drop"
@@ -151,6 +153,7 @@ ContentPage {
 
     ContentSection {
         icon: "notifications"
+        shape: MaterialShape.Shape.Bun
         title: Translation.tr("Notifications")
 
         ConfigSpinBox {
@@ -168,6 +171,7 @@ ContentPage {
 
     ContentSection {
         icon: "select_window"
+        shape: MaterialShape.Shape.SoftBurst
         title: Translation.tr("Overlay: General")
 
         ConfigSwitch {
@@ -190,6 +194,7 @@ ContentPage {
 
     ContentSection {
         icon: "point_scan"
+        shape: MaterialShape.Shape.Burst
         title: Translation.tr("Overlay: Crosshair")
 
         MaterialTextArea {
@@ -237,6 +242,7 @@ ContentPage {
 
     ContentSection {
         icon: "point_scan"
+        shape: MaterialShape.Shape.Flower
         title: Translation.tr("Overlay: Floating Image")
 
         MaterialTextArea {
@@ -263,6 +269,7 @@ ContentPage {
 
     ContentSection {
         icon: "screenshot_frame_2"
+        shape: MaterialShape.Shape.Diamond
         title: Translation.tr("Region selector (screen snipping/Google Lens)")
 
         ContentSubsection {
@@ -354,6 +361,7 @@ ContentPage {
 
     ContentSection {
         icon: "side_navigation"
+        shape: MaterialShape.Shape.Clover4Leaf
         title: Translation.tr("Sidebars")
 
         ConfigSwitch {
@@ -559,6 +567,7 @@ ContentPage {
 
     ContentSection {
         icon: "voting_chip"
+        shape: MaterialShape.Shape.Sunny
         title: Translation.tr("On-screen display")
 
         ConfigSpinBox {
@@ -576,6 +585,7 @@ ContentPage {
 
     ContentSection {
         icon: "overview_key"
+        shape: MaterialShape.Shape.Gem
         title: Translation.tr("Overview")
 
         ConfigSwitch {
@@ -672,6 +682,7 @@ ContentPage {
     }
 
     ContentSection {
+        shape: MaterialShape.Shape.Puffy
         icon: "wallpaper_slideshow"
         title: Translation.tr("Wallpaper selector")
 
@@ -687,6 +698,7 @@ ContentPage {
 
     ContentSection {
         icon: "text_format"
+        shape: MaterialShape.Shape.Arch
         title: Translation.tr("Fonts")
 
         ContentSubsection {
