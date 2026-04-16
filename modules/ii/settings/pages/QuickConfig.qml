@@ -70,7 +70,7 @@ ContentPage {
 
             Item {
                 implicitWidth: 340
-                implicitHeight: 220
+                implicitHeight: 210
                 
                 StyledImage {
                     id: wallpaperPreview

@@ -84,14 +84,17 @@ Variants {
         Component.onCompleted: {
             bgRoot.currentWallpaperSource = bgRoot.wallpaperPath
             bgRoot.previousWallpaperSource = bgRoot.wallpaperPath
-            bgRoot.currentShader = bgRoot.wallpaperAnimation === "random" 
-                ? bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
-                : bgRoot.wallpaperAnimation
+            if (bgRoot.wallpaperAnimation !== "") {
+                bgRoot.currentShader = bgRoot.wallpaperAnimation === "random"
+                    ? bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
+                    : bgRoot.wallpaperAnimation
+            }
         }
 
         onWallpaperPathChanged: {
             bgRoot.previousWallpaperSource = bgRoot.currentWallpaperSource
             bgRoot.currentWallpaperSource = wallpaperPath
+            if (bgRoot.wallpaperAnimation === "") return
             if (bgRoot.wallpaperAnimation === "random") {
                 bgRoot.currentShader = bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
             } else {
@@ -134,7 +137,7 @@ Variants {
                 smooth: true
                 asynchronous: false
                 layer.enabled: true
-                visible: false
+                visible: bgRoot.wallpaperAnimation === ""
                 onStatusChanged: {
                     if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
                         transitionAnim.restart()
@@ -145,7 +148,7 @@ Variants {
             ShaderEffect {
                 id: transitionEffect
                 anchors.fill: parent
-                visible: !blurLoader.active
+                visible: !blurLoader.active && bgRoot.wallpaperAnimation !== ""
                 property var fromImage: previousWallpaper
                 property var toImage: wallpaper
                 property real progress: bgRoot.transitionProgress
@@ -153,7 +156,7 @@ Variants {
                 property real aspectY: 1.0
                 property vector2d aspectRatio: Qt.vector2d(aspectX, aspectY)
                 property vector2d origin: Qt.vector2d(0.5, 0.5)
-                fragmentShader: Qt.resolvedUrl(`shaders/${bgRoot.currentShader}.frag.qsb`)
+                fragmentShader: bgRoot.wallpaperAnimation !== "" ? Qt.resolvedUrl(`shaders/${bgRoot.currentShader}.frag.qsb`) : ""
             }
 
             Loader {

@@ -80,6 +80,7 @@ Scope { // Scope
 
                         StyledRectangularShadow {
                             target: dockVisualBackground
+                            visible: false
                         }
                         Rectangle { // The real rectangle that is visible
                             id: dockVisualBackground
@@ -87,8 +88,8 @@ Scope { // Scope
                             anchors.fill: parent
                             anchors.topMargin: Appearance.sizes.elevationMargin
                             anchors.bottomMargin: Appearance.sizes.hyprlandGapsOut
-                            color: Appearance.colors.colLayer0
-                            border.width: 1
+                            color: Config.options.dock.showBackground ? Appearance.colors.colLayer0 : "transparent"
+                            border.width: Config.options.dock.showBackground ? 1 : 0
                             border.color: Appearance.colors.colLayer0Border
                             radius: Appearance.rounding.large + 3
                         }

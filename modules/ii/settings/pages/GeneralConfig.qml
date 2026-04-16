@@ -355,7 +355,7 @@ ContentPage {
 
     ContentSection {
         icon: "work_alert"
-        shape: MaterialShape.Shape.Diamond
+        shape: MaterialShape.Shape.PuffyDiamond
         title: Translation.tr("Work safety")
 
         ConfigSwitch {

@@ -21,6 +21,15 @@ ContentPage {
             }
         }
 
+        ConfigSwitch {
+            buttonIcon: "shadow"
+            text: Translation.tr("Background")
+            checked: Config.options.dock.showBackground
+            onCheckedChanged: {
+                Config.options.dock.showBackground = checked;
+            }
+        }
+
         ConfigRow {
             uniform: true
             ConfigSwitch {
@@ -269,7 +278,7 @@ ContentPage {
 
     ContentSection {
         icon: "screenshot_frame_2"
-        shape: MaterialShape.Shape.Diamond
+        shape: MaterialShape.Shape.PuffyDiamond
         title: Translation.tr("Region selector (screen snipping/Google Lens)")
 
         ContentSubsection {
@@ -683,7 +692,7 @@ ContentPage {
 
     ContentSection {
         shape: MaterialShape.Shape.Puffy
-        icon: "wallpaper_slideshow"
+        icon: "panorama"
         title: Translation.tr("Wallpaper selector")
 
         ConfigSwitch {
@@ -698,7 +707,7 @@ ContentPage {
 
     ContentSection {
         icon: "text_format"
-        shape: MaterialShape.Shape.Arch
+        shape: MaterialShape.Shape.Arrow
         title: Translation.tr("Fonts")
 
         ContentSubsection {
