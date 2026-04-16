@@ -11,7 +11,7 @@ Item {
     property int totalCount: 0
 
     readonly property real fullRadius: height / 2
-    readonly property real midRadius: Appearance.rounding.unsharpenmore
+    readonly property real midRadius: Config.options.bar.cornerStyle === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore
 
     property real startRadius: {
         if (totalCount <= 1) return fullRadius; 
