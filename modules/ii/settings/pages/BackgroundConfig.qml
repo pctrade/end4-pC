@@ -618,4 +618,43 @@ ContentPage {
             }
         }
     }
+
+    ContentSection {
+        icon: "music_note"
+        shape: MaterialShape.Shape.Cookie4Sided
+        title: Translation.tr("Widget: Music")
+
+        ContentSubsection {
+
+            ConfigSwitch {
+                Layout.fillWidth: true
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.background.widgets.media.enable
+                onCheckedChanged: {
+                    Config.options.background.widgets.media.enable = checked;
+                }
+            }
+
+            ConfigSwitch {
+                Layout.fillWidth: true
+                buttonIcon: "subtitles"
+                text: Translation.tr("Show Titles")
+                checked: Config.options.background.widgets.media.showTitles
+                onCheckedChanged: {
+                    Config.options.background.widgets.media.showTitles = checked;
+                }
+            }
+
+            ConfigSwitch {
+                Layout.fillWidth: true
+                buttonIcon: "motion_play"
+                text: Translation.tr("Show Controls")
+                checked: Config.options.background.widgets.media.showControls
+                onCheckedChanged: {
+                    Config.options.background.widgets.media.showControls = checked;
+                }
+            }
+        }
+    }
 }

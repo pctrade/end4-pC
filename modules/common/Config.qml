@@ -209,6 +209,16 @@ Singleton {
                         property real x: 400
                         property real y: 100
                     }
+
+                    property JsonObject media: JsonObject {
+                        property bool enable: false
+                        property bool showControls: true
+                        property bool showTitles: true
+                        property string backgroundShape: "Cookie4Sided"
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 800
+                        property real y: 500
+                    }
                 }
                 property string wallpaperPath: ""
                 property string wallpaperAnimation: "circle"

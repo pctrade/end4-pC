@@ -1,0 +1,207 @@
+import Quickshell
+import Quickshell.Io
+import Quickshell.Services.Mpris
+import QtQuick
+import QtQuick.Effects
+import QtQuick.Layouts
+import qs
+import qs.services
+import Qt5Compat.GraphicalEffects
+import qs.modules.common
+import qs.modules.common.models
+import qs.modules.common.functions
+import qs.modules.common.widgets
+import qs.modules.common.widgets.widgetCanvas
+import qs.modules.ii.background.widgets
+
+AbstractBackgroundWidget {
+    id: root
+
+    signal requestReset()
+
+    configEntryName: "media"
+
+    readonly property var playerList: MprisController.players
+    property MprisPlayer currentPlayer: MprisController.activePlayer
+    property var artUrl: currentPlayer?.trackArtUrl
+    property string artDownloadLocation: Directories.coverArt
+    property string artFileName: Qt.md5(artUrl)
+    property string artFilePath: `${artDownloadLocation}/${artFileName}`
+
+    property real widgetSize: 200
+    property real controlsSize: 55
+    property real buttonIconSize: 30
+
+    property bool downloaded: false
+    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+
+    implicitHeight: contentItem.implicitHeight
+    implicitWidth: contentItem.implicitWidth
+
+    property bool hovering: false
+    hoverEnabled: true
+    onEntered: { hovering = true }
+    onExited:  { hovering = false }
+
+    onArtFilePathChanged: updateArt()
+
+    function updateArt() {
+        coverArtDownloader.targetFile = root.artUrl
+        coverArtDownloader.artFilePath = root.artFilePath
+        root.downloaded = false
+        coverArtDownloader.running = true
+    }
+
+    Process {
+        id: coverArtDownloader
+        property string targetFile: root.artUrl
+        property string artFilePath: root.artFilePath
+        command: ["bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'`]
+        onExited: (exitCode, exitStatus) => {
+            root.downloaded = true
+        }
+    }
+
+    Item {
+        id: contentItem
+
+        implicitWidth: root.widgetSize
+        implicitHeight: root.widgetSize
+
+        FadeLoader {
+            z: 2
+            anchors.centerIn: parent
+            shown: root.currentPlayer == null
+            sourceComponent: MaterialShapeWrappedMaterialSymbol {
+                padding: 20
+                text: root.currentPlayer == null ? "music_off" : !root.downloaded ? "hourglass_bottom" : ""
+                anchors.centerIn: parent
+                iconSize: root.widgetSize / 4
+                shape: MaterialShape.Shape.Cookie12Sided
+                color: Appearance.colors.colOnSecondaryContainer
+                colSymbol: Appearance.colors.colPrimaryContainer
+            }
+        }
+
+        MaterialShape {
+            id: artBackground
+            anchors.fill: parent
+            color: Appearance.colors.colPrimaryContainer
+            shape: MaterialShape.Shape.Cookie4Sided
+
+            layer.enabled: true
+            layer.effect: OpacityMask {
+                maskSource: MaterialShape {
+                    width: artBackground.width
+                    height: artBackground.height
+                    shape: MaterialShape.Shape.Cookie4Sided
+                }
+            }
+
+            StyledImage {
+                id: mediaArt
+                property int size: parent.height
+                anchors.fill: parent
+
+                source: root.displayedArtFilePath
+                fillMode: Image.PreserveAspectCrop
+                cache: false
+                antialiasing: true
+
+                width: size
+                height: size
+                sourceSize.width: size
+                sourceSize.height: size
+            }
+        }
+
+        Loader {
+            active: Config.options.background.widgets.media.showTitles
+            anchors {
+                left: parent.left
+                bottom: parent.bottom
+            }
+            sourceComponent: Rectangle {
+                implicitWidth: controlsSize * 2
+                implicitHeight: controlsSize - 10 
+                z: 2
+                radius: Appearance.rounding.full
+                color: Appearance.colors.colSecondaryContainer
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 2
+
+                    Text {
+                        width: controlsSize * 2 - 12
+                        text: root.currentPlayer?.trackArtist ?? ""
+                        color: Appearance.colors.colOnSecondaryContainer
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Text {
+                        width: controlsSize * 2 - 12
+                        text: root.currentPlayer?.trackTitle ?? ""
+                        color: Appearance.colors.colOnSecondaryContainer
+                        font.pixelSize: 9
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
+            }
+        }
+
+        FadeLoader {
+            active: Config.options.background.widgets.media.showControls
+            anchors {
+                top: parent.top
+                right: parent.right
+            }
+            sourceComponent: ControlButton {
+                buttonRadius: root.currentPlayer?.isPlaying ? Appearance.rounding.normal : controlsSize / 2
+                colBackground: Appearance.colors.colTertiaryContainer
+                colBackgroundHover: Appearance.colors.colTertiaryContainerHover
+                colRipple: Appearance.colors.colTertiaryContainerActive
+                symbolText: root.currentPlayer?.isPlaying ? "pause" : "play_arrow"
+                symbolColor: Appearance.colors.colSecondary
+                onClicked: {
+                    root.currentPlayer.togglePlaying()
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
+                    onPressed: (event) => {
+                        if (event.button === Qt.MiddleButton || event.button === Qt.BackButton) {
+                            root.currentPlayer.previous()
+                        } else if (event.button === Qt.RightButton || event.button === Qt.ForwardButton) {
+                            root.currentPlayer.next()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    component ControlButton: RippleButton {
+        id: button
+        property string symbolText
+        property color symbolColor
+
+        z: 2
+        implicitWidth: controlsSize
+        implicitHeight: implicitWidth
+        buttonRadius: Appearance.rounding.full
+
+        MaterialSymbol {
+            anchors.centerIn: parent
+            iconSize: root.buttonIconSize
+            text: button.symbolText
+            fill: 1
+            color: button.symbolColor
+        }
+    }
+}
