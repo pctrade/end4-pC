@@ -156,15 +156,12 @@ AbstractBackgroundWidget {
                     }
                 }
 
-                // cajita decorativa centrada debajo
                 Item {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: 8 + cornerRadius * 2   // el rect + espacio para las esquinas
+                    width: 8 + cornerRadius * 2  
                     height: Config.options.background.widgets.media.showLyrics ? 16 : 0
                     
-                    property int cornerRadius: 4  // r = mitad del ancho del rect (8/2)
-
-                    // El rect principal SIN radius en las esquinas de arriba
+                    property int cornerRadius: 4 
                     Rectangle {
                         id: theRect
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -172,21 +169,18 @@ AbstractBackgroundWidget {
                         width: 0
                         height: Config.options.background.widgets.media.showLyrics ? 16 : 0
                         color: Appearance.colors.colSecondaryContainer
-                        // solo radio abajo
                         radius: 0
                     }
 
-                    // Esquina cóncava izquierda
                     RoundCorner {
                         visible: Config.options.background.widgets.media.showLyrics
                         anchors.right: theRect.left
                         anchors.top: theRect.top
                         implicitSize: cornerRadius
-                        color: Appearance.colors.colSecondaryContainer // color del fondo/barra
-                        corner: RoundCorner.CornerEnum.TopRight  // curva hacia adentro
+                        color: Appearance.colors.colSecondaryContainer 
+                        corner: RoundCorner.CornerEnum.TopRight 
                     }
 
-                    // Esquina cóncava derecha
                     RoundCorner {
                         visible: Config.options.background.widgets.media.showLyrics
                         anchors.left: theRect.right

@@ -118,7 +118,7 @@ Scope {
                         if (!Config.options.bar.bottom) return Appearance.sizes.verticalBarWidth + Appearance.sizes.hyprlandGapsOut
                         return (panelWindow.screen.width / 2) - (widgetWidth / 2)
                     }
-                    if (root.mediaPosition === "left") return Appearance.sizes.hyprlandGapsOut
+                    if (root.mediaPosition === "left") return Appearance.sizes.hyprlandGapsOut - 5
                     if (root.mediaPosition === "center") return (panelWindow.screen.width / 2) - (widgetWidth / 2)
                     if (root.mediaPosition === "right") return panelWindow.screen.width - widgetWidth - Appearance.sizes.hyprlandGapsOut
                     return (panelWindow.screen.width / 2) - (widgetWidth / 2)
