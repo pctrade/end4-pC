@@ -648,6 +648,16 @@ ContentPage {
 
             ConfigSwitch {
                 Layout.fillWidth: true
+                buttonIcon: "lyrics"
+                text: Translation.tr("Show Lyrics")
+                checked: Config.options.background.widgets.media.showLyrics
+                onCheckedChanged: {
+                    Config.options.background.widgets.media.showLyrics = checked;
+                }
+            }
+
+            ConfigSwitch {
+                Layout.fillWidth: true
                 buttonIcon: "motion_play"
                 text: Translation.tr("Show Controls")
                 checked: Config.options.background.widgets.media.showControls

@@ -121,34 +121,107 @@ AbstractBackgroundWidget {
                 left: parent.left
                 bottom: parent.bottom
             }
-            sourceComponent: Rectangle {
-                implicitWidth: controlsSize * 2
-                implicitHeight: controlsSize - 10 
-                z: 2
-                radius: Appearance.rounding.full
-                color: Appearance.colors.colSecondaryContainer
+            sourceComponent: Column {
+                spacing: 0
 
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 2
+                Rectangle {
+                    implicitWidth: controlsSize * 2
+                    implicitHeight: controlsSize - 10
+                    z: 2
+                    radius: Appearance.rounding.full
+                    color: Appearance.colors.colSecondaryContainer
 
-                    Text {
-                        width: controlsSize * 2 - 12
-                        text: root.currentPlayer?.trackArtist ?? ""
-                        color: Appearance.colors.colOnSecondaryContainer
-                        font.pixelSize: 10
-                        font.weight: Font.Bold
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 2
+
+                        Text {
+                            width: controlsSize * 2 - 12
+                            text: root.currentPlayer?.trackArtist ?? ""
+                            color: Appearance.colors.colOnSecondaryContainer
+                            font.pixelSize: 10
+                            font.weight: Font.Bold
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+
+                        Text {
+                            width: controlsSize * 2 - 12
+                            text: root.currentPlayer?.trackTitle ?? ""
+                            color: Appearance.colors.colOnSecondaryContainer
+                            font.pixelSize: 9
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+                }
+
+                // cajita decorativa centrada debajo
+                Item {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 8 + cornerRadius * 2   // el rect + espacio para las esquinas
+                    height: Config.options.background.widgets.media.showLyrics ? 16 : 0
+                    
+                    property int cornerRadius: 4  // r = mitad del ancho del rect (8/2)
+
+                    // El rect principal SIN radius en las esquinas de arriba
+                    Rectangle {
+                        id: theRect
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        width: 0
+                        height: Config.options.background.widgets.media.showLyrics ? 16 : 0
+                        color: Appearance.colors.colSecondaryContainer
+                        // solo radio abajo
+                        radius: 0
                     }
 
-                    Text {
-                        width: controlsSize * 2 - 12
-                        text: root.currentPlayer?.trackTitle ?? ""
-                        color: Appearance.colors.colOnSecondaryContainer
-                        font.pixelSize: 9
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
+                    // Esquina cóncava izquierda
+                    RoundCorner {
+                        visible: Config.options.background.widgets.media.showLyrics
+                        anchors.right: theRect.left
+                        anchors.top: theRect.top
+                        implicitSize: cornerRadius
+                        color: Appearance.colors.colSecondaryContainer // color del fondo/barra
+                        corner: RoundCorner.CornerEnum.TopRight  // curva hacia adentro
+                    }
+
+                    // Esquina cóncava derecha
+                    RoundCorner {
+                        visible: Config.options.background.widgets.media.showLyrics
+                        anchors.left: theRect.right
+                        anchors.top: theRect.top
+                        implicitSize: cornerRadius
+                        color: Appearance.colors.colSecondaryContainer
+                        corner: RoundCorner.CornerEnum.TopLeft
+                    }
+                    Item {
+                        width: 320
+                        height: Config.options.background.widgets.media.showLyrics ? 250 + 16 : 0
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        Rectangle {
+                            id: lyricsBox
+                            visible: Config.options.background.widgets.media.showLyrics
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            width: 320
+                            height: 250
+                            radius: Appearance.rounding.normal
+                            color: Appearance.colors.colSecondaryContainer
+
+                            Lyrics {
+                                id: lyricsComp
+                                anchors.fill: parent
+                                anchors.margins: 16
+                                player: root.currentPlayer
+                                textColor: Appearance.colors.colOnLayer0
+                                activeColor: Appearance.colors.colPrimary
+                                dimColor: Appearance.colors.colSubtext
+                                indicatorColor: Appearance.colors.colPrimary
+                                indicatorShapeColor: Appearance.colors.colOnPrimary
+                            }
+                        }
                     }
                 }
             }

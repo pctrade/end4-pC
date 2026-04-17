@@ -213,6 +213,7 @@ Singleton {
                     property JsonObject media: JsonObject {
                         property bool enable: false
                         property bool showControls: true
+                        property bool showLyrics: false
                         property bool showTitles: true
                         property string backgroundShape: "Cookie4Sided"
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
