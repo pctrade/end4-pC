@@ -29,7 +29,7 @@ Item {
         { name: Translation.tr("Desktop"), icon: "texture",        component: Qt.resolvedUrl("pages/BackgroundConfig.qml") },
         { name: Translation.tr("Interface"),  icon: "bottom_app_bar", component: Qt.resolvedUrl("pages/InterfaceConfig.qml") },
         { name: Translation.tr("Services"),   icon: "settings",       component: Qt.resolvedUrl("pages/ServicesConfig.qml") },
-        { name: Translation.tr("Advanced"),   icon: "handyman",   component: Qt.resolvedUrl("pages/AdvancedConfig.qml") },
+        { name: Translation.tr("Hyprland"),   icon: "select_window_2",   component: Qt.resolvedUrl("pages/HyprlandConfig.qml") },
         { name: Translation.tr("About"),      icon: "info",           component: Qt.resolvedUrl("pages/About.qml") }
     ]
 

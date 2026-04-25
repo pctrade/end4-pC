@@ -109,18 +109,6 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "notifications"
-        shape: MaterialShape.Shape.Bun
-        title: Translation.tr("Notifications")
-        ConfigSwitch {
-            buttonIcon: "counter_2"
-            text: Translation.tr("Unread indicator: show count")
-            checked: Config.options.bar.indicators.notifications.showUnreadCount
-            onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
-        }
-    }
-
-    ContentSection {
         icon: "pivot_table_chart"
         shape: MaterialShape.Shape.Gem
         title: Translation.tr("Positioning")
@@ -177,6 +165,18 @@ ContentPage {
                     ]
                 }
             }
+        }
+    }
+
+    ContentSection {
+        icon: "notifications"
+        shape: MaterialShape.Shape.Bun
+        title: Translation.tr("Notifications")
+        ConfigSwitch {
+            buttonIcon: "counter_2"
+            text: Translation.tr("Unread indicator: show count")
+            checked: Config.options.bar.indicators.notifications.showUnreadCount
+            onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
         }
     }
 
