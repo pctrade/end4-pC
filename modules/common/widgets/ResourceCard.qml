@@ -16,7 +16,7 @@ Rectangle {
 
     width: cardWidth
     height: 72
-    radius: Appearance.rounding.normal
+    radius: Appearance.rounding.normal - 4
     color: Appearance.colors.colSurfaceContainerHigh
 
     function usageColor(v) {

@@ -13,7 +13,7 @@ MouseArea {
     readonly property real percentage: Battery.percentage
     readonly property bool isLow: percentage <= Config.options.battery.low / 100
 
-    implicitWidth: batteryProgress.implicitWidth + 2
+    implicitWidth: Appearance.sizes.verticalBarWidth 
     implicitHeight: Appearance.sizes.barHeight
 
     hoverEnabled: !Config.options.bar.tooltips.clickToShow

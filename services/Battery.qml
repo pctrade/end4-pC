@@ -49,6 +49,16 @@ Singleton {
         return 0;
     })()
 
+    property int chargeCycles: (function() {
+        const devList = UPower.devices.values;
+        for (let i = 0; i < devList.length; ++i) {
+            const dev = devList[i];
+            if (dev.isLaptopBattery) {
+                return dev.chargeCycles ?? -1
+            }
+        }
+        return -1
+    })()
 
     onIsLowAndNotChargingChanged: {
         if (!root.available || !isLowAndNotCharging) return;

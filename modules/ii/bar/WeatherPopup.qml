@@ -17,22 +17,23 @@ StyledPopup {
         spacing: 5
 
         // Header
-        ColumnLayout {
-            id: header
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 2
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 3
+            spacing: 7
 
-            RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: 6
+            MaterialShapeWrappedMaterialSymbol {
+                shape: MaterialShape.Shape.Circle
+                text: "location_on"
+                iconSize: Appearance.font.pixelSize.large
+                implicitSize: 36
+                color: Appearance.colors.colPrimaryContainer
+                colSymbol: Appearance.colors.colPrimary
+            }
 
-                MaterialSymbol {
-                    fill: 0
-                    font.weight: Font.Medium
-                    text: "location_on"
-                    iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnSurfaceVariant
-                }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: -3
 
                 StyledText {
                     text: Weather.data.city
@@ -42,12 +43,26 @@ StyledPopup {
                     }
                     color: Appearance.colors.colOnSurfaceVariant
                 }
+
+                StyledText {
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: Appearance.colors.colOnSurfaceVariant
+                    text: Translation.tr("Feels like %1").arg(Weather.data.tempFeelsLike)
+                    opacity: 0.6
+                }
             }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+
             StyledText {
-                id: temp
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colOnSurfaceVariant
-                text: Weather.data.temp + " • " + Translation.tr("Feels like %1").arg(Weather.data.tempFeelsLike)
+                Layout.rightMargin: 8
+                font.pixelSize: Appearance.font.pixelSize.huge
+                font.weight: Font.Bold
+                color: Appearance.colors.colPrimary
+                text: Weather.data.temp
             }
         }
 
