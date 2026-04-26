@@ -21,7 +21,7 @@ Item {
     property string artFileName: Qt.md5(artUrl)
     property string artFilePath: `${artDownloadLocation}/${artFileName}`
     property color artDominantColor: ColorUtils.mix(
-        colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary,
+        (colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary),
         Appearance.colors.colPrimaryContainer, 0.8
     ) || Appearance.m3colors.m3secondaryContainer
     property bool downloaded: false
@@ -29,12 +29,8 @@ Item {
     property real maxVisualizerValue: 1000
     property int visualizerSmoothing: 2
     property real radius
-    property string displayedArtFilePath: downloaded ? Qt.resolvedUrl(artFilePath) : ""
 
-    property QtObject blendedColors: AdaptedMaterialScheme { color: artDominantColor }
-
-    readonly property real btnSmall: Math.max(42, height * 0.06)
-    readonly property real btnVol: Math.max(36, height * 0.05)
+    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
 
     Timer {
         running: root.player?.playbackState == MprisPlaybackState.Playing
@@ -59,7 +55,7 @@ Item {
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
         command: ["bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'`]
-        onExited: root.downloaded = true
+        onExited: (exitCode, exitStatus) => { root.downloaded = true }
     }
 
     ColorQuantizer {
@@ -69,24 +65,8 @@ Item {
         rescaleSize: 1
     }
 
-    component ControlButton: RippleButton {
-        property real baseSize: root.btnSmall
-        implicitWidth: baseSize * 1.5
-        implicitHeight: baseSize * 1.5
-        buttonRadius: Appearance.rounding.full
-        colBackground: ColorUtils.transparentize(root.blendedColors.colSecondaryContainer, 0.7)
-        colBackgroundHover: root.blendedColors.colSecondaryContainerHover
-        colRipple: root.blendedColors.colSecondaryContainerActive
-    }
-
-    component VolumeButton: RippleButton {
-        property real baseSize: root.btnVol
-        implicitWidth: baseSize
-        implicitHeight: baseSize
-        buttonRadius: Appearance.rounding.large
-        colBackground: ColorUtils.transparentize(root.blendedColors.colSecondaryContainer, 0.7)
-        colBackgroundHover: root.blendedColors.colSecondaryContainerHover
-        colRipple: root.blendedColors.colSecondaryContainerActive
+    property QtObject blendedColors: AdaptedMaterialScheme {
+        color: artDominantColor
     }
 
     Rectangle {
@@ -100,12 +80,13 @@ Item {
         radius: Appearance.rounding.normal
 
         WaveVisualizer {
+            id: visualizerCanvas
             anchors.fill: parent
             live: root.player?.isPlaying
             points: root.visualizerPoints
             maxVisualizerValue: root.maxVisualizerValue
             smoothing: root.visualizerSmoothing
-            color: root.blendedColors.colPrimary
+            color: blendedColors.colPrimary
         }
 
         ColumnLayout {
@@ -127,10 +108,10 @@ Item {
             Rectangle {
                 id: artBackground
                 Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth: Math.min(parent.width, parent.height * 0.45)
+                Layout.preferredWidth: Math.min(parent.width * 1, parent.height * 0.45)
                 Layout.preferredHeight: Layout.preferredWidth
                 radius: Appearance.rounding.small
-                color: ColorUtils.transparentize(root.blendedColors.colLayer1, 0.5)
+                color: ColorUtils.transparentize(blendedColors.colLayer1, 0.5)
 
                 layer.enabled: true
                 layer.effect: OpacityMask {
@@ -159,40 +140,56 @@ Item {
                 Layout.bottomMargin: parent.height * 0.02
                 spacing: parent.height * 0.005
 
-                Repeater {
-                    model: [
-                        { txt: StringUtils.cleanMusicTitle(root.player?.trackTitle) || "Untitled", big: true },
-                        { txt: root.player?.trackArtist || "Unknown Artist",                        big: false }
-                    ]
-                    delegate: Item {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: lbl.implicitHeight
-                        Layout.minimumHeight: (modelData.big
-                            ? Math.max(16, parent.parent.height * 0.024)
-                            : Math.max(13, parent.parent.height * 0.018)) * 1.5
-                        clip: true
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: titleText.implicitHeight
+                    Layout.minimumHeight: Math.max(16, parent.parent.height * 0.024) * 1.5
+                    clip: true
 
-                        StyledText {
-                            id: lbl
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width
-                            font.pixelSize: modelData.big
-                                ? Math.max(16, parent.parent.height * 0.024)
-                                : Math.max(13, parent.parent.height * 0.018)
-                            font.weight: modelData.big ? Font.Bold : Font.Normal
-                            color: modelData.big ? root.blendedColors.colOnLayer0 : root.blendedColors.colSubtext
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            elide: Text.ElideRight
-                            text: modelData.txt
+                    StyledText {
+                        id: titleText
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        font.pixelSize: Math.max(16, parent.parent.height * 0.024)
+                        font.weight: Font.Bold
+                        color: blendedColors.colOnLayer0
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                        text: StringUtils.cleanMusicTitle(root.player?.trackTitle) || "Untitled"
 
-                            Behavior on text {
-                                SequentialAnimation {
-                                    NumberAnimation { target: lbl; property: "x"; to: -lbl.width;  duration: 150; easing.type: Easing.InQuad }
-                                    PropertyAction  { target: lbl; property: "text" }
-                                    NumberAnimation { target: lbl; property: "x"; from: lbl.width; to: 0; duration: 150; easing.type: Easing.OutQuad }
-                                }
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation { target: titleText; property: "x"; to: -titleText.width; duration: 150; easing.type: Easing.InQuad }
+                                PropertyAction { target: titleText; property: "text" }
+                                NumberAnimation { target: titleText; property: "x"; from: titleText.width; to: 0; duration: 150; easing.type: Easing.OutQuad }
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: artistText.implicitHeight
+                    Layout.minimumHeight: Math.max(13, parent.parent.height * 0.018) * 1.5
+                    clip: true
+
+                    StyledText {
+                        id: artistText
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        font.pixelSize: Math.max(13, parent.parent.height * 0.018)
+                        color: blendedColors.colSubtext
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                        text: root.player?.trackArtist || "Unknown Artist"
+
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation { target: artistText; property: "x"; to: -artistText.width; duration: 150; easing.type: Easing.InQuad }
+                                PropertyAction { target: artistText; property: "text" }
+                                NumberAnimation { target: artistText; property: "x"; from: artistText.width; to: 0; duration: 150; easing.type: Easing.OutQuad }
                             }
                         }
                     }
@@ -201,21 +198,22 @@ Item {
 
             // ── Lyrics ──
             Lyrics {
+                id: lyricsComp
                 player: root.player
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 textAlignment: Text.AlignHCenter
-                textColor: root.blendedColors.colOnLayer0
-                activeColor: root.blendedColors.colPrimary
-                dimColor: root.blendedColors.colSubtext
+                textColor: blendedColors.colOnLayer0
+                activeColor: blendedColors.colPrimary
+                dimColor: blendedColors.colSubtext
                 indicatorColor: {
-                    const c = root.blendedColors.colPrimaryContainer
+                    let c = blendedColors.colPrimaryContainer
                     return (c && c != "#000000" && c != "transparent") ? c : root.artDominantColor
                 }
                 indicatorShapeColor: {
-                    const c = root.blendedColors.colOnPrimaryContainer
+                    let c = blendedColors.colOnPrimaryContainer
                     if (c && c != "#000000" && c != "#ffffff" && c != "transparent") return c
-                    return root.blendedColors.colPrimary || Appearance.colors.colPrimary
+                    return blendedColors.colPrimary || Appearance.colors.colPrimary
                 }
             }
 
@@ -226,8 +224,8 @@ Item {
                 spacing: 12
 
                 StyledText {
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: root.blendedColors.colSubtext
+                    font.pixelSize: Appearance.pixelSize.normal
+                    color: blendedColors.colSubtext
                     font.letterSpacing: -0.4
                     font.features: { "tnum": 1 }
                     text: StringUtils.friendlyTimeForSeconds(root.player?.position)
@@ -243,30 +241,34 @@ Item {
                         active: root.player?.canSeek ?? false
                         sourceComponent: StyledSlider {
                             configuration: StyledSlider.Configuration.Wavy
-                            highlightColor: root.blendedColors.colPrimary
-                            trackColor: root.blendedColors.colSecondaryContainer
-                            handleColor: root.blendedColors.colPrimary
-                            value: (root.player?.position ?? 0) / (root.player?.length ?? 1)
+                            highlightColor: blendedColors.colPrimary
+                            trackColor: blendedColors.colSecondaryContainer
+                            handleColor: blendedColors.colPrimary
+                            value: root.player?.position / root.player?.length
                             onMoved: root.player.position = value * root.player.length
                         }
                     }
 
                     Loader {
                         id: progressBarLoader
-                        anchors { verticalCenter: parent.verticalCenter; left: parent.left; right: parent.right }
+                        anchors {
+                            verticalCenter: parent.verticalCenter
+                            left: parent.left
+                            right: parent.right
+                        }
                         active: !(root.player?.canSeek ?? false)
                         sourceComponent: StyledProgressBar {
                             wavy: root.player?.isPlaying
-                            highlightColor: root.blendedColors.colPrimary
-                            trackColor: root.blendedColors.colSecondaryContainer
-                            value: (root.player?.position ?? 0) / (root.player?.length ?? 1)
+                            highlightColor: blendedColors.colPrimary
+                            trackColor: blendedColors.colSecondaryContainer
+                            value: root.player?.position / root.player?.length
                         }
                     }
                 }
 
                 StyledText {
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: root.blendedColors.colSubtext
+                    font.pixelSize: Appearance.pixelSize.normal
+                    color: blendedColors.colSubtext
                     font.letterSpacing: -0.4
                     font.features: { "tnum": 1 }
                     text: StringUtils.friendlyTimeForSeconds(root.player?.length)
@@ -281,12 +283,20 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 10
 
-                ControlButton {
+                RippleButton {
+                    property real baseSize: Math.max(42, parent.parent.height * 0.06)
+                    implicitWidth: baseSize * 1.5
+                    implicitHeight: baseSize * 1.5
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
+                    colBackgroundHover: blendedColors.colSecondaryContainerHover
+                    colRipple: blendedColors.colSecondaryContainerActive
                     downAction: () => root.player?.previous()
                     contentItem: MaterialSymbol {
-                        iconSize: 25; fill: 1
+                        iconSize: 25
+                        fill: 1
                         horizontalAlignment: Text.AlignHCenter
-                        color: root.blendedColors.colOnSecondaryContainer
+                        color: blendedColors.colOnSecondaryContainer
                         text: "skip_previous"
                     }
                 }
@@ -296,25 +306,36 @@ Item {
                     Layout.fillWidth: true
                     implicitHeight: baseSize
                     buttonRadius: root.player?.isPlaying ? Appearance.rounding.verylarge : baseSize / 2
-                    colBackground: root.player?.isPlaying ? root.blendedColors.colPrimary : root.blendedColors.colSecondaryContainer
-                    colBackgroundHover: root.player?.isPlaying ? root.blendedColors.colPrimaryHover : root.blendedColors.colSecondaryContainerHover
-                    colRipple: root.player?.isPlaying ? root.blendedColors.colPrimaryActive : root.blendedColors.colSecondaryContainerActive
+                    colBackground: root.player?.isPlaying ? blendedColors.colPrimary : blendedColors.colSecondaryContainer
+                    colBackgroundHover: root.player?.isPlaying ? blendedColors.colPrimaryHover : blendedColors.colSecondaryContainerHover
+                    colRipple: root.player?.isPlaying ? blendedColors.colPrimaryActive : blendedColors.colSecondaryContainerActive
                     downAction: () => root.player.togglePlaying()
                     contentItem: MaterialSymbol {
-                        iconSize: 50; fill: 1
+                        iconSize: 50
+                        fill: 1
                         horizontalAlignment: Text.AlignHCenter
-                        color: root.player?.isPlaying ? root.blendedColors.colOnPrimary : root.blendedColors.colOnSecondaryContainer
+                        color: root.player?.isPlaying ? blendedColors.colOnPrimary : blendedColors.colOnSecondaryContainer
                         text: root.player?.isPlaying ? "pause" : "play_arrow"
-                        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
+                        Behavior on color {
+                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        }
                     }
                 }
 
-                ControlButton { // remember to take this out as global widgets, pC please
+                RippleButton {
+                    property real baseSize: Math.max(42, parent.parent.height * 0.06)
+                    implicitWidth: baseSize * 1.5
+                    implicitHeight: baseSize * 1.5
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
+                    colBackgroundHover: blendedColors.colSecondaryContainerHover
+                    colRipple: blendedColors.colSecondaryContainerActive
                     downAction: () => root.player?.next()
                     contentItem: MaterialSymbol {
-                        iconSize: 25; fill: 1
+                        iconSize: 25
+                        fill: 1
                         horizontalAlignment: Text.AlignHCenter
-                        color: root.blendedColors.colOnSecondaryContainer
+                        color: blendedColors.colOnSecondaryContainer
                         text: "skip_next"
                     }
                 }
@@ -326,36 +347,58 @@ Item {
                 Layout.topMargin: 8
                 spacing: 8
 
-                VolumeButton { // remember to take this out as global widgets, pC please
+                RippleButton {
+                    property real baseSize: Math.max(36, parent.parent.height * 0.05)
+                    implicitWidth: baseSize
+                    implicitHeight: baseSize
+                    buttonRadius: Appearance.rounding.large
+                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
+                    colBackgroundHover: blendedColors.colSecondaryContainerHover
+                    colRipple: blendedColors.colSecondaryContainerActive
                     downAction: () => root.player.volume = root.player.volume > 0 ? 0 : 1.0
                     contentItem: MaterialSymbol {
-                        iconSize: 18; fill: 1
+                        iconSize: 18
+                        fill: 1
                         horizontalAlignment: Text.AlignHCenter
-                        color: root.blendedColors.colOnSecondaryContainer
+                        color: blendedColors.colOnSecondaryContainer
                         text: (root.player?.volume ?? 1) <= 0 ? "volume_off"
                             : (root.player?.volume ?? 1) < 0.5 ? "volume_down"
                             : "volume_up"
                     }
                 }
 
-                VolumeButton {
+                RippleButton {
+                    property real baseSize: Math.max(36, parent.parent.height * 0.05)
                     Layout.fillWidth: true
+                    implicitHeight: baseSize
+                    buttonRadius: Appearance.rounding.large
+                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
+                    colBackgroundHover: blendedColors.colSecondaryContainerHover
+                    colRipple: blendedColors.colSecondaryContainerActive
                     downAction: () => root.player.volume = Math.max(0, (root.player?.volume ?? 1) - 0.1)
                     contentItem: MaterialSymbol {
-                        iconSize: 18; fill: 1
+                        iconSize: 18
+                        fill: 1
                         horizontalAlignment: Text.AlignHCenter
-                        color: root.blendedColors.colOnSecondaryContainer
+                        color: blendedColors.colOnSecondaryContainer
                         text: "volume_down"
                     }
                 }
 
-                VolumeButton {
+                RippleButton {
+                    property real baseSize: Math.max(36, parent.parent.height * 0.05)
                     Layout.fillWidth: true
+                    implicitHeight: baseSize
+                    buttonRadius: Appearance.rounding.large
+                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
+                    colBackgroundHover: blendedColors.colSecondaryContainerHover
+                    colRipple: blendedColors.colSecondaryContainerActive
                     downAction: () => root.player.volume = Math.min(1.5, (root.player?.volume ?? 1) + 0.1)
                     contentItem: MaterialSymbol {
-                        iconSize: 18; fill: 1
+                        iconSize: 18
+                        fill: 1
                         horizontalAlignment: Text.AlignHCenter
-                        color: root.blendedColors.colOnSecondaryContainer
+                        color: blendedColors.colOnSecondaryContainer
                         text: "volume_up"
                     }
                 }
