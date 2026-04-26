@@ -49,8 +49,8 @@ ContentPage {
   animation = layersIn, 1, 4, pc_decel, slide
   animation = layersOut, 1, 4, pc_accel, slide
   animation = workspaces, 1, 6, pc_decel, slide
-  animation = specialWorkspaceIn, 1, 6, pc_wobble, slidevert
-  animation = specialWorkspaceOut, 1, 6, pc_accel, slidevert
+  animation = specialWorkspaceIn, 1, 2, pc_wobble, slidevert
+  animation = specialWorkspaceOut, 1, 2, pc_accel, slidevert
 }`
 
     property string presetNormal: `animations {
@@ -86,8 +86,8 @@ ContentPage {
   animation = layersIn, 1, 4, niri_decel, slide
   animation = layersOut, 1, 4, niri_accel, slide
   animation = workspaces, 1, 6, niri_decel, slidevert
-  animation = specialWorkspaceIn, 1, 6, niri_wobble, slidevert
-  animation = specialWorkspaceOut, 1, 6, niri_accel, slidevert
+  animation = specialWorkspaceIn, 1, 4, niri_wobble, slidevert
+  animation = specialWorkspaceOut, 1, 4, niri_accel, slidevert
 }`
 
     // ── Displays ─────────────────────────────────────────────────────────────
