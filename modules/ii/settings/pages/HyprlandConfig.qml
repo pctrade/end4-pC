@@ -401,7 +401,7 @@ ContentPage {
         title: Translation.tr("Animations")
 
         ConfigSwitch {
-            buttonIcon: "animation"
+            buttonIcon: "check"
             text: Translation.tr("Enable Animations")
             checked: animEnabled.value ?? true
             onCheckedChanged: HyprlandConfig.set("animations:enabled", checked ? 1 : 0)
@@ -434,9 +434,9 @@ ContentPage {
                     }
                 }
                 options: [
-                    { displayName: Translation.tr("Elastic"),   icon: "move_selection_right",      value: "fast"   },
+                    { displayName: Translation.tr("Elastic"),   icon: "move_selection_right", value: "fast" },
                     { displayName: Translation.tr("Normal"), icon: "animation", value: "normal" },
-                    { displayName: Translation.tr("Niri Like"),   icon: "mobiledata_arrows",      value: "niri"   },
+                    { displayName: Translation.tr("Niri Like"),   icon: "mobiledata_arrows", value: "niri" },
                 ]
             }
         }
