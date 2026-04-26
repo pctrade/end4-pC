@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
+import Quickshell
+import qs.modules.common.functions
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -443,6 +445,30 @@ ContentPage {
             Layout.fillWidth: true
             Layout.topMargin: 15
             text: Translation.tr("Animation presets require a source line in your hyprland.conf. Add the following line to enable presets:") + "\n\nsource = ~/.config/hypr/hyprland/shellOverrides/animations.conf"
+
+            Item { Layout.fillWidth: true }
+
+            RippleButtonWithIcon {
+                id: copySourceButton
+                property bool justCopied: false
+                Layout.fillWidth: false
+                buttonRadius: Appearance.rounding.small
+                materialIcon: justCopied ? "check" : "content_copy"
+                mainText: justCopied ? Translation.tr("Copied!") : Translation.tr("Copy line")
+                onClicked: {
+                    copySourceButton.justCopied = true
+                    Quickshell.clipboardText = "source = ~/.config/hypr/hyprland/shellOverrides/animations.conf"
+                    revertSourceTimer.restart()
+                }
+                colBackground: ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
+                colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                colRipple: Appearance.colors.colPrimaryContainerActive
+                Timer {
+                    id: revertSourceTimer
+                    interval: 1500
+                    onTriggered: copySourceButton.justCopied = false
+                }
+            }
         }
         
         Process {
