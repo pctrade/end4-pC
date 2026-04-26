@@ -24,6 +24,7 @@ Item {
     property var lyricsLines: []
     property int activeIndex: -1
     property string status: "loading"
+    property int textAlignment: Text.AlignLeft
 
     readonly property int before: 3
     readonly property int after:  3
@@ -161,7 +162,7 @@ Item {
                     id: lyricSlot
                     required property int index
                     Layout.fillWidth: true
-                    horizontalAlignment: Text.AlignLeft
+                    horizontalAlignment: root.textAlignment
                     wrapMode: Text.WordWrap
                     text: root.slots[index] ?? ""
                     readonly property int dist: Math.abs(index - root.before)
