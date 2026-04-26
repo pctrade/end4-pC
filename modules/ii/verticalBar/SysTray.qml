@@ -10,9 +10,9 @@ import qs.modules.common.widgets
 Item {
     id: root
     visible: SystemTray.items.values.length > 0
-    implicitWidth: gridLayout.implicitWidth + 10
-    implicitHeight: gridLayout.implicitHeight
-    property bool vertical: false
+    implicitWidth: Appearance.sizes.verticalBarWidth
+    implicitHeight: gridLayout.implicitHeight + 10
+    property bool vertical: true
     property bool invertSide: false
     property bool trayOverflowOpen: false
     property bool showSeparator: true
@@ -25,10 +25,7 @@ Item {
         if (unpinnedItems.length == 0) root.closeOverflowMenu();
     }
 
-    function grabFocus() {
-        focusGrab.active = true;
-    }
-
+    function grabFocus() { focusGrab.active = true }
     function setExtraWindowAndGrabFocus(window) {
         if (root.activeMenu && root.activeMenu !== window) {
             if (typeof root.activeMenu.close === "function")
@@ -38,19 +35,11 @@ Item {
         root.activeMenu = window;
         root.grabFocus();
     }
-
-    function releaseFocus() {
-        focusGrab.active = false;
-    }
-
-    function closeOverflowMenu() {
-        focusGrab.active = false;
-    }
+    function releaseFocus() { focusGrab.active = false }
+    function closeOverflowMenu() { focusGrab.active = false }
 
     onTrayOverflowOpenChanged: {
-        if (root.trayOverflowOpen) {
-            root.grabFocus();
-        }
+        if (root.trayOverflowOpen) root.grabFocus();
     }
 
     HyprlandFocusGrab {
@@ -68,22 +57,21 @@ Item {
 
     GridLayout {
         id: gridLayout
-        columns: root.vertical ? 1 : -1
+        columns: 1
         anchors.fill: parent
+        anchors.topMargin: 5
+        anchors.bottomMargin: 5
         rowSpacing: 8
-        anchors.leftMargin: 5
-        columnSpacing: Config.options.bar.cornerStyle === 2 ? 10 : 15
+        columnSpacing: 0
 
         RippleButton {
             id: trayOverflowButton
             visible: root.showOverflowMenu && root.unpinnedItems.length > 0
             toggled: root.trayOverflowOpen
-            property bool containsMouse: hovered
 
             downAction: () => root.trayOverflowOpen = !root.trayOverflowOpen
 
-            Layout.fillHeight: !root.vertical
-            Layout.fillWidth: root.vertical
+            Layout.fillWidth: true
             background.implicitWidth: 24
             background.implicitHeight: 24
             background.anchors.centerIn: this
@@ -96,8 +84,10 @@ Item {
                 iconSize: Appearance.font.pixelSize.larger
                 text: "expand_more"
                 horizontalAlignment: Text.AlignHCenter
-                color: root.trayOverflowOpen ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer2
-                rotation: (root.trayOverflowOpen ? 180 : 0) - (90 * root.vertical) + (180 * root.invertSide)
+                color: root.trayOverflowOpen
+                    ? Appearance.colors.colOnSecondaryContainer
+                    : Appearance.colors.colOnLayer2
+                rotation: root.trayOverflowOpen ? 180 : 0
                 Behavior on rotation {
                     animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
@@ -117,14 +107,12 @@ Item {
 
                     Repeater {
                         model: root.unpinnedItems
-
                         delegate: SysTrayItem {
                             required property SystemTrayItem modelData
                             item: modelData
-                            Layout.fillHeight: !root.vertical
-                            Layout.fillWidth: root.vertical
-                            onMenuClosed: root.releaseFocus();
-                            onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow);
+                            Layout.fillWidth: true
+                            onMenuClosed: root.releaseFocus()
+                            onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
                         }
                     }
                 }
@@ -135,16 +123,12 @@ Item {
             model: ScriptModel {
                 values: root.pinnedItems
             }
-
             delegate: SysTrayItem {
                 required property SystemTrayItem modelData
                 item: modelData
-                Layout.fillHeight: !root.vertical
-                Layout.fillWidth: root.vertical
-                onMenuClosed: root.releaseFocus();
-                onMenuOpened: (qsWindow) => {
-                    root.setExtraWindowAndGrabFocus(qsWindow);
-                }
+                Layout.fillWidth: true
+                onMenuClosed: root.releaseFocus()
+                onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
             }
         }
     }

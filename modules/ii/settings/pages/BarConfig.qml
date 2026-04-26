@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -20,7 +21,9 @@ ContentPage {
         { id: "utilButtons",       name: Translation.tr("Util Buttons") },
         { id: "sysTray",           name: Translation.tr("Tray") },
         { id: "batteryIndicator",  name: Translation.tr("Battery") },
-        { id: "activeWindow",      name: Translation.tr("Active Window") }
+        { id: "activeWindow",      name: Translation.tr("Active Window") },
+        { id: "powerButton",      name: Translation.tr("Power Button") },
+        { id: "updatesCount",      name: Translation.tr("Updates") }
     ]
 
     function availableFor() {
@@ -245,6 +248,11 @@ ContentPage {
                 buttonIcon: "screen_record"; text: Translation.tr("Record")
                 checked: Config.options.bar.utilButtons.showScreenRecord
                 onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked; }
+            }
+            ConfigSwitch {
+                buttonIcon: "imagesmode"; text: Translation.tr("Wallpapers Toggle")
+                checked: Config.options.bar.utilButtons.showWallpaperToggle
+                onCheckedChanged: { Config.options.bar.utilButtons.showWallpaperToggle = checked; }
             }
         }
     }

@@ -63,13 +63,17 @@ Item {
                         Loader {
                             Layout.fillWidth: true
                             source: root.getWidgetUrl(modelData)
+                            onLoaded: {
+                                if (item && "vertical" in item)
+                                    item.vertical = true
+                            }
                         }
                     }
                 }
             }
         }
 
-        // Top 
+        // Top
         Item {
             anchors.top: parent.top
             anchors.topMargin: Config.options.bar.cornerStyle === 1 ? 4 : 10
@@ -91,6 +95,10 @@ Item {
                         Loader {
                             Layout.fillWidth: true
                             source: root.getWidgetUrl(modelData)
+                            onLoaded: {
+                                if (item && "vertical" in item)
+                                    item.vertical = true
+                            }
                         }
                     }
                 }
@@ -119,6 +127,10 @@ Item {
                         Loader {
                             Layout.fillWidth: true
                             source: root.getWidgetUrl(modelData)
+                            onLoaded: {
+                                if (item && "vertical" in item)
+                                    item.vertical = true
+                            }
                         }
                     }
                 }

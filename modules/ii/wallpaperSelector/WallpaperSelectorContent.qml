@@ -184,7 +184,7 @@ MouseArea {
                             },
                             {
                                 icon: "",
-                                name: "─────────────",
+                                name: "───────",
                                 path: "INTENTIONALLY_INVALID_DIR"
                             },
                             {

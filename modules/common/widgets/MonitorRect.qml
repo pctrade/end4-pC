@@ -14,9 +14,12 @@ Rectangle {
     required property point canvasOffset
     required property var allMonitors
     property bool isSelected: false
+    property var previewPositions: ({})
+    property bool hasOverlap: false
 
     signal positionCommitted(int index, int x, int y)
     signal monitorClicked(int index)
+    signal positionDragging(int index, int x, int y)
 
     property bool isDragging: false
     property real dragX: 0
@@ -28,8 +31,8 @@ Rectangle {
     property int logW: monitorConfig.logicalWidth(monitor)
     property int logH: monitorConfig.logicalHeight(monitor)
 
-    x: isDragging ? dragX : monitor.x * scaleFactor + canvasOffset.x
-    y: isDragging ? dragY : monitor.y * scaleFactor + canvasOffset.y
+    x: isDragging ? dragX : (previewPositions[monitor.name]?.x ?? monitor.x) * scaleFactor + canvasOffset.x
+    y: isDragging ? dragY : (previewPositions[monitor.name]?.y ?? monitor.y) * scaleFactor + canvasOffset.y
     width:  logW * scaleFactor
     height: logH * scaleFactor
 
@@ -37,23 +40,25 @@ Rectangle {
     z: isDragging ? 100 : isSelected ? 2 : 1
 
     color: {
-        if (monitor.disabled)        return Appearance.colors.colLayer2
-        if (isDragging)              return Qt.alpha(Appearance.colors.colPrimaryContainer, 0.7)
-        if (isSelected)              return Appearance.colors.colPrimaryContainer
-        if (hoverArea.containsMouse) return Appearance.colors.colSecondaryContainerHover
+        if (monitor.disabled)             return Appearance.colors.colLayer2
+        if (isDragging && hasOverlap)     return Qt.alpha(Appearance.m3colors.m3error, 0.5)
+        if (isDragging)                   return Qt.alpha(Appearance.colors.colPrimaryContainer, 0.7)
+        if (isSelected)                   return Appearance.colors.colPrimaryContainer
+        if (hoverArea.containsMouse)      return Appearance.colors.colSecondaryContainerHover
         return Appearance.colors.colSecondaryContainer
     }
-    border.color: (isDragging || isSelected)
-        ? Appearance.colors.colPrimary
+
+    border.color: (isDragging && hasOverlap) ? Appearance.m3colors.m3error
+        : (isDragging || isSelected) ? Appearance.colors.colPrimary
         : Appearance.colors.colLayer0Border
     border.width: (isDragging || isSelected) ? 2 : 1
 
-    Behavior on x { enabled: !isDragging; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    Behavior on y { enabled: !isDragging; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    Behavior on x { enabled: !isDragging; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+    Behavior on y { enabled: !isDragging; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
     Behavior on color { ColorAnimation { duration: 150 } }
 
     Rectangle {
-        visible: root.isDragging
+        visible: root.isDragging && !root.hasOverlap
         x: root.snappedX * root.scaleFactor + root.canvasOffset.x - root.x
         y: root.snappedY * root.scaleFactor + root.canvasOffset.y - root.y
         width: root.width
@@ -130,7 +135,7 @@ Rectangle {
             : (root.isDragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor)
         drag.target: root
         drag.axis: Drag.XAndYAxis
-        drag.threshold: 4  
+        drag.threshold: 4
 
         onPressed: {
             root.dragX = monitor.x * root.scaleFactor + root.canvasOffset.x
@@ -149,6 +154,7 @@ Rectangle {
             const snapped = root.snapPosition(realX, realY)
             root.snappedX = snapped.x
             root.snappedY = snapped.y
+            root.positionDragging(root.monitorIndex, root.snappedX, root.snappedY)
         }
 
         onReleased: {

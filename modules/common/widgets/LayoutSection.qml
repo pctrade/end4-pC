@@ -46,26 +46,33 @@ ContentSubsection {
                             id: dragHandler
                             target: null
 
+                            function findNewIndex(dragX, dragY) {
+                                let newIndex = index
+                                let minDist = Infinity
+
+                                for (let i = 0; i < itemRepeater.count; i++) {
+                                    if (i === index) continue
+                                    const child = itemRepeater.itemAt(i)
+                                    if (!child) continue
+                                    const childCenter = child.mapToItem(null, child.width / 2, child.height / 2)
+                                    const dx = dragX - childCenter.x
+                                    const dy = dragY - childCenter.y
+                                    const dist = Math.sqrt(dx * dx + dy * dy)
+                                    if (dist < minDist) {
+                                        minDist = dist
+                                        newIndex = i
+                                    }
+                                }
+                                return newIndex
+                            }
+
                             onActiveChanged: {
                                 if (!active) {
                                     dropIndicator.visible = false
                                     dropIndicator.targetIndex = -1
-
                                     const dragX = dragHandler.centroid.scenePosition.x
-                                    let newIndex = index
-
-                                    for (let i = 0; i < itemRepeater.count; i++) {
-                                        if (i === index) continue
-                                        const child = itemRepeater.itemAt(i)
-                                        if (!child) continue
-                                        const childCenter = child.mapToItem(null, child.width / 2, 0).x
-                                        if (i < index && dragX < childCenter && newIndex === index) {
-                                            newIndex = i
-                                        } else if (i > index && dragX > childCenter) {
-                                            newIndex = i
-                                        }
-                                    }
-
+                                    const dragY = dragHandler.centroid.scenePosition.y
+                                    const newIndex = findNewIndex(dragX, dragY)
                                     if (newIndex !== index) {
                                         let list = root.layout.slice()
                                         const item = list.splice(index, 1)[0]
@@ -78,19 +85,8 @@ ContentSubsection {
                             onCentroidChanged: {
                                 if (!active) return
                                 const dragX = dragHandler.centroid.scenePosition.x
-                                let newIndex = index
-
-                                for (let i = 0; i < itemRepeater.count; i++) {
-                                    if (i === index) continue
-                                    const child = itemRepeater.itemAt(i)
-                                    if (!child) continue
-                                    const childCenter = child.mapToItem(null, child.width / 2, 0).x
-                                    if (i < index && dragX < childCenter && newIndex === index) {
-                                        newIndex = i
-                                    } else if (i > index && dragX > childCenter) {
-                                        newIndex = i
-                                    }
-                                }
+                                const dragY = dragHandler.centroid.scenePosition.y
+                                const newIndex = findNewIndex(dragX, dragY)
 
                                 if (newIndex !== index) {
                                     const refChild = itemRepeater.itemAt(newIndex)
@@ -99,6 +95,8 @@ ContentSubsection {
                                         dropIndicator.x = newIndex < index
                                             ? refLocal.x - 5
                                             : refLocal.x + refChild.width + 1
+                                        dropIndicator.y = refLocal.y
+                                        dropIndicator.height = refChild.height
                                         dropIndicator.visible = true
                                         dropIndicator.targetIndex = newIndex
                                     }
@@ -121,13 +119,15 @@ ContentSubsection {
             Rectangle {
                 id: dropIndicator
                 property int targetIndex: -1
-
                 visible: false
                 width: 3
-                height: itemFlow.implicitHeight > 0 ? itemFlow.implicitHeight : 32
-                y: 0
+                height: 32 
                 radius: 2
                 color: Appearance.colors.colPrimary
+
+                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: 150 } }
 
                 Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -144,9 +144,6 @@ ContentSubsection {
                     width: 8; height: 8; radius: 4
                     color: Appearance.colors.colPrimary
                 }
-
-                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                Behavior on opacity { NumberAnimation { duration: 150 } }
             }
         }
 

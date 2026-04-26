@@ -9,7 +9,9 @@ Item {
 
     property var monitorConfig
     property real padding: 20
-    property int selectedIndex: 0 
+    property int selectedIndex: 0
+    property var previewPositions: ({})
+    property bool dragHasOverlap: false
 
     implicitHeight: 220
 
@@ -22,10 +24,12 @@ Item {
             if (m.disabled) continue
             const w = monitorConfig.logicalWidth(m)
             const h = monitorConfig.logicalHeight(m)
-            minX = Math.min(minX, m.x)
-            minY = Math.min(minY, m.y)
-            maxX = Math.max(maxX, m.x + w)
-            maxY = Math.max(maxY, m.y + h)
+            const px = previewPositions[m.name]?.x ?? m.x
+            const py = previewPositions[m.name]?.y ?? m.y
+            minX = Math.min(minX, px)
+            minY = Math.min(minY, py)
+            maxX = Math.max(maxX, px + w)
+            maxY = Math.max(maxY, py + h)
         }
         if (minX === Infinity) return { minX: 0, minY: 0, width: 1920, height: 1080 }
         return { minX, minY, width: maxX - minX, height: maxY - minY }
@@ -43,28 +47,61 @@ Item {
         (canvas.height - bounds.height * scaleFactor) / 2 - bounds.minY * scaleFactor
     )
 
-    function commitPosition(idx, newX, newY) {
-        let m = monitorConfig.monitors.slice()
-        m[idx] = Object.assign({}, m[idx], { x: newX, y: newY })
+    function checkOverlap(monitors, idx) {
+        const a = monitors[idx]
+        const aw = monitorConfig.logicalWidth(a)
+        const ah = monitorConfig.logicalHeight(a)
+        for (let i = 0; i < monitors.length; i++) {
+            if (i === idx) continue
+            if (monitors[i].disabled) continue
+            const b = monitors[i]
+            const bw = monitorConfig.logicalWidth(b)
+            const bh = monitorConfig.logicalHeight(b)
+            if (a.x < b.x + bw && a.x + aw > b.x &&
+                a.y < b.y + bh && a.y + ah > b.y) {
+                return true
+            }
+        }
+        return false
+    }
+
+    function computeNormalized(monitors, changedIdx, newX, newY) {
+        let m = monitors.slice().map(mon => Object.assign({}, mon))
+        m[changedIdx].x = newX
+        m[changedIdx].y = newY
         let minX = Infinity, minY = Infinity
         for (let i = 0; i < m.length; i++) {
             if (m[i].disabled) continue
             minX = Math.min(minX, m[i].x)
             minY = Math.min(minY, m[i].y)
         }
-        if (minX < 0 || minY < 0) {
-            const offX = minX < 0 ? -minX : 0
-            const offY = minY < 0 ? -minY : 0
+        const offX = minX < 0 ? -minX : 0
+        const offY = minY < 0 ? -minY : 0
+        if (offX > 0 || offY > 0) {
             for (let i = 0; i < m.length; i++) {
-                m[i] = Object.assign({}, m[i], {
-                    x: m[i].x + offX,
-                    y: m[i].y + offY
-                })
+                m[i].x += offX
+                m[i].y += offY
             }
         }
-        monitorConfig.monitors = m
-        for (let i = 0; i < m.length; i++) {
-            monitorConfig.applyMonitor(m[i])
+        return m
+    }
+
+    function updatePreview(idx, newX, newY) {
+        const normalized = computeNormalized(monitorConfig.monitors, idx, newX, newY)
+        root.dragHasOverlap = checkOverlap(normalized, idx)
+        let preview = {}
+        for (let i = 0; i < normalized.length; i++) {
+            preview[normalized[i].name] = { x: normalized[i].x, y: normalized[i].y }
+        }
+        root.previewPositions = preview
+    }
+
+    function commitPosition(idx, newX, newY) {
+        const normalized = computeNormalized(monitorConfig.monitors, idx, newX, newY)
+        monitorConfig.monitors = normalized
+        root.previewPositions = {}
+        for (let i = 0; i < normalized.length; i++) {
+            monitorConfig.applyMonitor(normalized[i])
         }
         monitorConfig.save()
     }
@@ -91,9 +128,18 @@ Item {
                     canvasOffset: root.offset
                     allMonitors: root.monitorConfig.monitors
                     isSelected: index === root.selectedIndex
+                    previewPositions: root.previewPositions
+                    hasOverlap: root.dragHasOverlap && isDragging
 
                     onMonitorClicked: (idx) => root.selectedIndex = idx
-                    onPositionCommitted: (idx, x, y) => root.commitPosition(idx, x, y)
+                    onPositionDragging: (idx, x, y) => root.updatePreview(idx, x, y)
+                    onPositionCommitted: (idx, x, y) => {
+                        const hadOverlap = root.dragHasOverlap
+                        root.previewPositions = {}
+                        root.dragHasOverlap = false
+                        if (!hadOverlap)
+                            root.commitPosition(idx, x, y)
+                    }
                 }
             }
         }
