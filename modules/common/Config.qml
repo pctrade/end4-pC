@@ -149,6 +149,12 @@ Singleton {
                 }
             }
 
+            property JsonObject hyprland: JsonObject { // in case you want to add other things here later
+                property JsonObject animations: JsonObject {
+                    property string animation: "normal"
+                }
+            }
+
             property JsonObject apps: JsonObject {
                 property string bluetooth: "kcmshell6 kcm_bluetooth"
                 property string changePassword: "kitty -1 --hold=yes fish -i -c 'passwd'"
