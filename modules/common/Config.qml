@@ -510,6 +510,15 @@ Singleton {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
                 }
+                property JsonObject media: JsonObject {
+                    property bool enable: true
+                    property bool artColors: false
+                }
+
+                property JsonObject wallpapers: JsonObject {
+                    property bool enable: true
+                }
+                
                 property JsonObject ai: JsonObject {
                     property bool textFadeIn: false
                 }

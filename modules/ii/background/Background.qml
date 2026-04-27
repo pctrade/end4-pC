@@ -83,8 +83,11 @@ Variants {
         }
 
         Component.onCompleted: {
+            previousWallpaper.source = ""
+            wallpaper.source = bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
             bgRoot.currentWallpaperSource = bgRoot.wallpaperPath
-            bgRoot.previousWallpaperSource = bgRoot.wallpaperPath
+            bgRoot.previousWallpaperSource = ""
+            bgRoot.transitionProgress = 1.0
             if (bgRoot.wallpaperAnimation !== "") {
                 bgRoot.currentShader = bgRoot.wallpaperAnimation === "random"
                     ? bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
@@ -93,9 +96,21 @@ Variants {
         }
 
         onWallpaperPathChanged: {
-            bgRoot.previousWallpaperSource = bgRoot.currentWallpaperSource
+            if (wallpaperSafetyTriggered) {
+                previousWallpaper.source = ""
+                wallpaper.source = ""
+                bgRoot.transitionProgress = 1.0
+                return
+            }
+            if (bgRoot.wallpaperAnimation === "") {
+                wallpaper.source = wallpaperPath
+                bgRoot.currentWallpaperSource = wallpaperPath
+                return
+            }
+
+            previousWallpaper.source = bgRoot.currentWallpaperSource
+            wallpaper.source = wallpaperPath
             bgRoot.currentWallpaperSource = wallpaperPath
-            if (bgRoot.wallpaperAnimation === "") return
             if (bgRoot.wallpaperAnimation === "random") {
                 bgRoot.currentShader = bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
             } else {
@@ -112,6 +127,11 @@ Variants {
             to: 1.0
             duration: 1200
             easing.type: Easing.InOutCubic
+            onFinished: {
+                previousWallpaper.source = ""
+                bgRoot.previousWallpaperSource = ""
+                bgRoot.transitionProgress = 1.0
+            }
         }
 
         Item {
@@ -120,9 +140,8 @@ Variants {
             Image {
                 id: previousWallpaper
                 anchors.fill: parent
-                source: bgRoot.previousWallpaperSource
                 fillMode: Image.PreserveAspectCrop
-                cache: false
+                cache: true
                 smooth: true
                 asynchronous: true
                 layer.enabled: true
@@ -132,13 +151,12 @@ Variants {
             StyledImage {
                 id: wallpaper
                 anchors.fill: parent
-                source: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
                 fillMode: Image.PreserveAspectCrop
-                cache: false
+                cache: true
                 smooth: true
-                asynchronous: false
+                asynchronous: true
                 layer.enabled: true
-                visible: bgRoot.wallpaperAnimation === ""
+                visible: bgRoot.wallpaperAnimation === "" && !blurLoader.active
                 onStatusChanged: {
                     if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
                         transitionAnim.restart()
@@ -157,7 +175,9 @@ Variants {
                 property real aspectY: 1.0
                 property vector2d aspectRatio: Qt.vector2d(aspectX, aspectY)
                 property vector2d origin: Qt.vector2d(0.5, 0.5)
-                fragmentShader: bgRoot.wallpaperAnimation !== "" ? Qt.resolvedUrl(`shaders/${bgRoot.currentShader}.frag.qsb`) : ""
+                fragmentShader: bgRoot.wallpaperAnimation !== ""
+                    ? Qt.resolvedUrl(`shaders/${bgRoot.currentShader}.frag.qsb`)
+                    : ""
             }
 
             Loader {
@@ -174,10 +194,9 @@ Variants {
                     }
                 }
                 sourceComponent: GaussianBlur {
-                    source: wallpaper
+                    source: bgRoot.wallpaperAnimation === "" ? wallpaper : transitionEffect
                     radius: GlobalStates.screenLocked ? Config.options.lock.blur.radius : 0
                     samples: radius * 2 + 1
-
                     Rectangle {
                         opacity: GlobalStates.screenLocked ? 1 : 0
                         anchors.fill: parent
@@ -226,6 +245,7 @@ Variants {
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
                     }
                 }
+
                 FadeLoader {
                     id: mediaLoader
                     property bool enableLoading: true
@@ -239,7 +259,7 @@ Variants {
                     }
                     onLoaded: {
                         if (item && item.requestReset) {
-                            item.requestReset.connect(() => { // hard reset
+                            item.requestReset.connect(() => {
                                 mediaLoader.enableLoading = false
                                 mediaTimer.running = true
                             })

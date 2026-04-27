@@ -126,70 +126,9 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "language"
-        shape: MaterialShape.Shape.Gem
-        title: Translation.tr("Language")
-
-        ContentSubsection {
-            title: Translation.tr("Interface Language")
-
-            StyledComboBoxSearch {
-                id: languageSelector
-                buttonIcon: "language"
-                textRole: "displayName"
-
-                model: [
-                    {
-                        displayName: Translation.tr("Auto (System)"),
-                        value: "auto"
-                    },
-                    ...Translation.allAvailableLanguages.map(lang => {
-                        return {
-                            displayName: lang,
-                            value: lang
-                        };
-                    })]
-
-                currentIndex: {
-                    const index = model.findIndex(item => item.value === Config.options.language.ui);
-                    return index !== -1 ? index : 0;
-                }
-
-                onActivated: index => {
-                    Config.options.language.ui = model[index].value;
-                }
-            }
-        }
-        ContentSubsection {
-            title: Translation.tr("Generate translation with Gemini")
-
-            ConfigRow {
-                MaterialTextArea {
-                    id: localeInput
-                    Layout.fillWidth: true
-                    placeholderText: Translation.tr("Locale code, e.g. fr_FR, de_DE, zh_CN...")
-                    text: Config.options.language.ui === "auto" ? Qt.locale().name : Config.options.language.ui
-                }
-                RippleButtonWithIcon {
-                    id: generateTranslationBtn
-                    Layout.fillHeight: true
-                    nerdIcon: ""
-                    enabled: !translationProc.running || (translationProc.locale !== localeInput.text.trim())
-                    mainText: enabled ? Translation.tr("Generate\nTypically takes 2 minutes") : Translation.tr("Generating...\nDon't close this window!")
-                    onClicked: {
-                        translationProc.locale = localeInput.text.trim();
-                        translationProc.running = false;
-                        translationProc.running = true;
-                    }
-                }
-            }
-        }
-    }
-
-    ContentSection {
-        icon: "rule"
-        shape: MaterialShape.Shape.SoftBoom
-        title: Translation.tr("Policies")
+        icon: "splitscreen_left"
+        shape: MaterialShape.Shape.Clover4Leaf
+        title: Translation.tr("Left Sidebar")
 
         ConfigRow {
 
@@ -253,6 +192,262 @@ ContentPage {
                             value: 2
                         }
                     ]
+                }
+            }
+        }
+
+        // Wallpapers
+        ColumnLayout {
+            Layout.topMargin: 15
+            ContentSubsectionLabel {
+                text: Translation.tr("Online Wallpapers")
+            }
+
+            ConfigSwitch {
+                buttonIcon: "panorama"
+                text: Translation.tr('Enabled')
+                checked: Config.options.sidebar.wallpapers.enable
+                onCheckedChanged: {
+                    Config.options.sidebar.wallpapers.enable = checked;
+                }
+            }
+        }
+
+        ColumnLayout {
+
+            ContentSubsectionLabel {
+                text: Translation.tr("Translator")
+            }
+
+            ConfigSwitch {
+                buttonIcon: "translate"
+                text: Translation.tr('Enable translator')
+                checked: Config.options.sidebar.translator.enable
+                onCheckedChanged: {
+                    Config.options.sidebar.translator.enable = checked;
+                }
+            }
+        }
+
+        // Media
+        ColumnLayout {
+
+            ContentSubsectionLabel {
+                text: Translation.tr("Media Player")
+            }
+
+            ConfigSwitch {
+                buttonIcon: "music_note_2"
+                text: Translation.tr('Enabled')
+                checked: Config.options.sidebar.media.enable
+                onCheckedChanged: {
+                    Config.options.sidebar.media.enable = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "radio_button_partial"
+                text: Translation.tr('Follow Album Colors')
+                checked: Config.options.sidebar.media.artColors
+                onCheckedChanged: {
+                    Config.options.sidebar.media.artColors = checked;
+                }
+            }
+        }
+    }
+
+    ContentSection {
+        icon: "splitscreen_right"
+        shape: MaterialShape.Shape.Slanted
+        title: Translation.tr("Right Sidebar")
+
+        ConfigSwitch {
+            buttonIcon: "memory"
+            text: Translation.tr('Keep right sidebar loaded')
+            checked: Config.options.sidebar.keepRightSidebarLoaded
+            onCheckedChanged: {
+                Config.options.sidebar.keepRightSidebarLoaded = checked;
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Quick toggles")
+
+            ConfigSelectionArray {
+                Layout.fillWidth: false
+                currentValue: Config.options.sidebar.quickToggles.style
+                onSelected: newValue => {
+                    Config.options.sidebar.quickToggles.style = newValue;
+                }
+                options: [
+                    {
+                        displayName: Translation.tr("Classic"),
+                        icon: "password_2",
+                        value: "classic"
+                    },
+                    {
+                        displayName: Translation.tr("Android"),
+                        icon: "action_key",
+                        value: "android"
+                    }
+                ]
+            }
+
+            ConfigSpinBox {
+                enabled: Config.options.sidebar.quickToggles.style === "android"
+                icon: "add_column_left"
+                text: Translation.tr("Columns")
+                value: Config.options.sidebar.quickToggles.android.columns
+                from: 1
+                to: 8
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.sidebar.quickToggles.android.columns = value;
+                }
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Sliders")
+
+            ConfigSwitch {
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.sidebar.quickSliders.enable
+                onCheckedChanged: {
+                    Config.options.sidebar.quickSliders.enable = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "brightness_6"
+                text: Translation.tr("Brightness")
+                enabled: Config.options.sidebar.quickSliders.enable
+                checked: Config.options.sidebar.quickSliders.showBrightness
+                onCheckedChanged: {
+                    Config.options.sidebar.quickSliders.showBrightness = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "volume_up"
+                text: Translation.tr("Volume")
+                enabled: Config.options.sidebar.quickSliders.enable
+                checked: Config.options.sidebar.quickSliders.showVolume
+                onCheckedChanged: {
+                    Config.options.sidebar.quickSliders.showVolume = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "mic"
+                text: Translation.tr("Microphone")
+                enabled: Config.options.sidebar.quickSliders.enable
+                checked: Config.options.sidebar.quickSliders.showMic
+                onCheckedChanged: {
+                    Config.options.sidebar.quickSliders.showMic = checked;
+                }
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Corner open")
+            ConfigRow {
+                uniform: true
+                ConfigSwitch {
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: Config.options.sidebar.cornerOpen.enable
+                    onCheckedChanged: {
+                        Config.options.sidebar.cornerOpen.enable = checked;
+                    }
+                }
+            }
+            ConfigSwitch {
+                buttonIcon: "highlight_mouse_cursor"
+                text: Translation.tr("Hover to trigger")
+                checked: Config.options.sidebar.cornerOpen.clickless
+                onCheckedChanged: {
+                    Config.options.sidebar.cornerOpen.clickless = checked;
+                }
+            }
+            Row {
+                ConfigSwitch {
+                    enabled: !Config.options.sidebar.cornerOpen.clickless
+                    text: Translation.tr("Force hover open at absolute corner")
+                    checked: Config.options.sidebar.cornerOpen.clicklessCornerEnd
+                    onCheckedChanged: {
+                        Config.options.sidebar.cornerOpen.clicklessCornerEnd = checked;
+                    }
+                }
+                ConfigSpinBox {
+                    icon: "arrow_cool_down"
+                    text: Translation.tr("con desplazamiento vertical")
+                    value: Config.options.sidebar.cornerOpen.clicklessCornerVerticalOffset
+                    from: 0
+                    to: 20
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.sidebar.cornerOpen.clicklessCornerVerticalOffset = value;
+                    }
+                    MouseArea {
+                        id: mouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.NoButton
+                    }
+                }
+            }
+
+            ConfigRow {
+                uniform: true
+                ConfigSwitch {
+                    buttonIcon: "vertical_align_bottom"
+                    text: Translation.tr("Place at bottom")
+                    checked: Config.options.sidebar.cornerOpen.bottom
+                    onCheckedChanged: {
+                        Config.options.sidebar.cornerOpen.bottom = checked;
+                    }
+                }
+                ConfigSwitch {
+                    buttonIcon: "unfold_more_double"
+                    text: Translation.tr("Value scroll")
+                    checked: Config.options.sidebar.cornerOpen.valueScroll
+                    onCheckedChanged: {
+                        Config.options.sidebar.cornerOpen.valueScroll = checked;
+                    }
+                }
+            }
+            ConfigSwitch {
+                buttonIcon: "visibility"
+                text: Translation.tr("Visualize region")
+                checked: Config.options.sidebar.cornerOpen.visualize
+                onCheckedChanged: {
+                    Config.options.sidebar.cornerOpen.visualize = checked;
+                }
+            }
+            ConfigRow {
+                ConfigSpinBox {
+                    icon: "arrow_range"
+                    text: Translation.tr("Region width")
+                    value: Config.options.sidebar.cornerOpen.cornerRegionWidth
+                    from: 1
+                    to: 300
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.sidebar.cornerOpen.cornerRegionWidth = value;
+                    }
+                }
+                ConfigSpinBox {
+                    icon: "height"
+                    text: Translation.tr("Region height")
+                    value: Config.options.sidebar.cornerOpen.cornerRegionHeight
+                    from: 1
+                    to: 300
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.sidebar.cornerOpen.cornerRegionHeight = value;
+                    }
                 }
             }
         }
@@ -349,6 +544,67 @@ ContentPage {
                         value: "h:mm AP"
                     },
                 ]
+            }
+        }
+    }
+
+    ContentSection {
+        icon: "language"
+        shape: MaterialShape.Shape.Gem
+        title: Translation.tr("Language")
+
+        ContentSubsection {
+            title: Translation.tr("Interface Language")
+
+            StyledComboBoxSearch {
+                id: languageSelector
+                buttonIcon: "language"
+                textRole: "displayName"
+
+                model: [
+                    {
+                        displayName: Translation.tr("Auto (System)"),
+                        value: "auto"
+                    },
+                    ...Translation.allAvailableLanguages.map(lang => {
+                        return {
+                            displayName: lang,
+                            value: lang
+                        };
+                    })]
+
+                currentIndex: {
+                    const index = model.findIndex(item => item.value === Config.options.language.ui);
+                    return index !== -1 ? index : 0;
+                }
+
+                onActivated: index => {
+                    Config.options.language.ui = model[index].value;
+                }
+            }
+        }
+        ContentSubsection {
+            title: Translation.tr("Generate translation with Gemini")
+
+            ConfigRow {
+                MaterialTextArea {
+                    id: localeInput
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Locale code, e.g. fr_FR, de_DE, zh_CN...")
+                    text: Config.options.language.ui === "auto" ? Qt.locale().name : Config.options.language.ui
+                }
+                RippleButtonWithIcon {
+                    id: generateTranslationBtn
+                    Layout.fillHeight: true
+                    nerdIcon: ""
+                    enabled: !translationProc.running || (translationProc.locale !== localeInput.text.trim())
+                    mainText: enabled ? Translation.tr("Generate\nTypically takes 2 minutes") : Translation.tr("Generating...\nDon't close this window!")
+                    onClicked: {
+                        translationProc.locale = localeInput.text.trim();
+                        translationProc.running = false;
+                        translationProc.running = true;
+                    }
+                }
             }
         }
     }

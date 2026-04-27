@@ -20,8 +20,8 @@ Item {
     property bool translatorEnabled: Config.options.sidebar.translator.enable
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
-    property bool wallpapersEnabled: true // sorry always true u can't disable it from settings
-    property bool mediaEnabled: true // sorry always true u can't disable it from settings x2
+    property bool wallpapersEnabled: Config.options.sidebar.wallpapers.enable
+    property bool mediaEnabled: Config.options.sidebar.media.enable
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
