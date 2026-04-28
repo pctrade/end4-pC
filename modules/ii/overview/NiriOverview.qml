@@ -28,8 +28,10 @@ Item {
     readonly property real wsHeight: (screen?.height ?? 1080) * 0.18
     readonly property real wsPadding: 10
     readonly property real scale: Config.options.overview.scale
-    readonly property real screenCenterX: (screen?.width ?? 1920) / 2
-    readonly property real cellWidth: (screen?.width ?? 1920) * 0.15
+
+    readonly property real monitorW: screen?.width ?? 1920
+    readonly property real monitorH: screen?.height ?? 1080
+    readonly property real screenCenterX: monitorW / 2
 
     property var windows: HyprlandData.windowList
 
@@ -41,8 +43,8 @@ Item {
     property real ghostY: 0
     property string dragWinIndex: ""
 
-    implicitWidth: screen?.width ?? 1920
-    implicitHeight: screen?.height ?? 1080
+    implicitWidth: monitorW
+    implicitHeight: monitorH
 
     onActiveWorkspaceIdChanged: scrollTimer.restart()
 
@@ -58,16 +60,15 @@ Item {
             scrollAnim.restart()
         }
     }
+
     Timer {
         id: autoScrollTimer
         interval: 16
         repeat: true
         running: root.isDragging
-
         onTriggered: {
             var edge = root.height * 0.2
             var speed = 18
-
             if (root.ghostY < edge) {
                 var step = speed * (1 - root.ghostY / edge)
                 flickable.contentY = Math.max(0, flickable.contentY - step)
@@ -107,15 +108,83 @@ Item {
         ) ?? null
     }
 
-    function findTargetPos(ghostLocalX, items, activeIdx) {
+    function getWindowsBBox(wins) {
+        if (!wins || wins.length === 0)
+            return { x: 0, y: 0, w: root.monitorW, h: root.monitorH }
+
+        var minX = Infinity, minY = Infinity
+        var maxX = -Infinity, maxY = -Infinity
+
+        for (var i = 0; i < wins.length; i++) {
+            var w = wins[i]
+            var mon = HyprlandData.monitors.find(m => m.id === w.monitor)
+            var monD = getMonitorDataForWindow(w)
+            var wx = w.at[0] - (mon?.x ?? 0) - (monD?.reserved[0] ?? 0)
+            var wy = w.at[1] - (mon?.y ?? 0) - (monD?.reserved[1] ?? 0)
+            minX = Math.min(minX, wx)
+            minY = Math.min(minY, wy)
+            maxX = Math.max(maxX, wx + w.size[0])
+            maxY = Math.max(maxY, wy + w.size[1])
+        }
+
+        return {
+            x: Math.min(minX, 0),
+            y: Math.min(minY, 0),
+            w: Math.max(maxX, root.monitorW),
+            h: Math.max(maxY, root.monitorH)
+        }
+    }
+
+    function getFitScale(wins) {
+        if (!wins || wins.length === 0) return 1.0
+        var bbox = getWindowsBBox(wins)
+        var availW = root.monitorW * 0.92  
+        var availH = root.wsHeight * 0.96 
+        var contentW = bbox.w * root.scale
+        var contentH = bbox.h * root.scale
+        return Math.min(availW / contentW, availH / contentH, 1.0)
+    }
+
+    function getWinXInRow(win, monData, fitScale, bbox) {
+        if (!win || !monData) return 0
+        var mon = HyprlandData.monitors.find(m => m.id === win.monitor)
+        var rawX = win.at[0] - (mon?.x ?? 0) - (monData.reserved[0] ?? 0)
+        var relX = (rawX - bbox.x) * root.scale * fitScale
+        var totalW = bbox.w * root.scale * fitScale
+        return root.screenCenterX - totalW / 2 + relX
+    }
+
+    function getWinYInRow(win, monData, fitScale, bbox) {
+        if (!win || !monData) return 0
+        var mon = HyprlandData.monitors.find(m => m.id === win.monitor)
+        var rawY = win.at[1] - (mon?.y ?? 0) - (monData.reserved[1] ?? 0)
+        var relY = (rawY - bbox.y) * root.scale * fitScale
+        var totalH = bbox.h * root.scale * fitScale
+        return (root.wsHeight - totalH) / 2 + relY
+    }
+
+    function getWinW(win, fitScale) {
+        if (!win) return 80 * root.scale * fitScale
+        return win.size[0] * root.scale * fitScale
+    }
+
+    function getWinH(win, fitScale) {
+        if (!win) return 60 * root.scale * fitScale
+        return win.size[1] * root.scale * fitScale
+    }
+
+    function findTargetPos(ghostLocalX, ghostLocalY, items, fitScale, bbox) {
         var minDist = Infinity
         var bestPos = items.length
         for (var i = 0; i < items.length; i++) {
-            var offset = i - activeIdx
-            var cellCenterX = root.screenCenterX + offset * (root.cellWidth + root.wsPadding)
-            var dx = Math.abs(ghostLocalX - cellCenterX)
-            if (dx < minDist) {
-                minDist = dx
+            var monD = getMonitorDataForWindow(items[i])
+            var cx = getWinXInRow(items[i], monD, fitScale, bbox) + getWinW(items[i], fitScale) / 2
+            var cy = getWinYInRow(items[i], monD, fitScale, bbox) + getWinH(items[i], fitScale) / 2
+            var dx = ghostLocalX - cx
+            var dy = ghostLocalY - cy
+            var dist = Math.sqrt(dx*dx + dy*dy)
+            if (dist < minDist) {
+                minDist = dist
                 bestPos = i
             }
         }
@@ -124,9 +193,7 @@ Item {
 
     function doMove(fromWs, fromPos, toWs, toPos, fromWsWindows, toWsWindows) {
         if (fromWs === -1 || fromPos === -1 || dragWinIndex === "") return
-
         var addr = dragWinIndex
-
         if (fromWs === toWs) {
             if (toPos !== fromPos && toPos < toWsWindows.length) {
                 var targetAddr = toWsWindows[toPos].address
@@ -150,8 +217,8 @@ Item {
         id: dragGhost
         parent: root
         visible: root.isDragging
-        width: root.cellWidth
-        height: root.wsHeight
+        width: 120
+        height: 80
         x: root.ghostX - width / 2
         y: root.ghostY - height / 2
         z: 9999
@@ -189,7 +256,7 @@ Item {
             bottomPadding: root.wsHeight
 
             Repeater {
-                model: root.maxWorkspaces 
+                model: root.maxWorkspaces
                 delegate: Item {
                     id: rowItem
                     required property int index
@@ -197,6 +264,10 @@ Item {
                     property bool isActiveWs: wsId === root.activeWorkspaceId
                     property bool isDragTarget: wsId === root.dragToWs
                     property var wsWindows: root.getWindowsSortedByX(wsId)
+
+                    property var wsBBox: root.getWindowsBBox(wsWindows)
+                    property real wsFitScale: root.getFitScale(wsWindows)
+
                     property int activeWinIdx: {
                         if (wsWindows.length === 0) return 0
                         var minId = Infinity, minIdx = 0
@@ -208,16 +279,8 @@ Item {
                         }
                         return minIdx
                     }
-                    property var activeWin: {
-                        if (wsWindows.length === 0) return null
-                        var tiled = wsWindows.find((w, i) => i === activeWinIdx && !w.floating)
-                        if (tiled) return tiled
-                        var anyTiled = wsWindows.find(w => !w.floating)
-                        if (anyTiled) return anyTiled
-                        return wsWindows[activeWinIdx]
-                    }
-                    property real winW: activeWin ? activeWin.size[0] * root.scale : root.cellWidth
-                    property real winH: activeWin ? activeWin.size[1] * root.scale : root.wsHeight
+                    property var activeWin: wsWindows.length > 0 ? wsWindows[activeWinIdx] : null
+                    property var activeMonData: root.getMonitorDataForWindow(activeWin)
 
                     width: parent.width
                     height: root.wsHeight
@@ -225,10 +288,7 @@ Item {
                     DropArea {
                         anchors.fill: parent
                         keys: ["winDrag"]
-
-                        onEntered: drag => {
-                            root.dragToWs = rowItem.wsId
-                        }
+                        onEntered: drag => { root.dragToWs = rowItem.wsId }
                         onExited: {
                             if (root.dragToWs === rowItem.wsId)
                                 root.dragToWs = -1
@@ -237,18 +297,16 @@ Item {
                             var fromWs = root.dragFromWs
                             var fromPos = root.dragFromPos
                             var toWs = rowItem.wsId
-
                             var ghostLocal = mapFromItem(root, root.ghostX, root.ghostY)
                             var toPos = root.findTargetPos(
-                                ghostLocal.x,
+                                ghostLocal.x, ghostLocal.y,
                                 rowItem.wsWindows,
-                                rowItem.activeWinIdx
+                                rowItem.wsFitScale,
+                                rowItem.wsBBox
                             )
-
                             root.doMove(fromWs, fromPos, toWs, toPos,
                                         root.getWindowsSortedByX(fromWs),
                                         rowItem.wsWindows)
-
                             root.dragFromWs = -1
                             root.dragFromPos = -1
                             root.dragToWs = -1
@@ -256,36 +314,11 @@ Item {
                         }
                     }
 
-                    Rectangle {
-                        visible: rowItem.isActiveWs
-                        x: root.screenCenterX - rowItem.winW / 2
-                        y: (root.wsHeight - rowItem.winH) / 2
-                        width: rowItem.winW
-                        height: rowItem.winH
-                        radius: Appearance.rounding.normal
-                        color: "transparent"
-                        border.width: 2
-                        border.color: Appearance.colors.colSecondary
-                        z: 10
-                        Behavior on x { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
-                        Behavior on width { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
-                        Behavior on height { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
-                    }
-
-                    Rectangle {
-                        visible: rowItem.isDragTarget && root.isDragging
-                        anchors.fill: parent
-                        radius: Appearance.rounding.normal
-                        color: ColorUtils.transparentize(Appearance.colors.colSecondary, 0.88)
-                        border.width: 2
-                        border.color: Appearance.colors.colSecondary
-                        z: 0
-                    }
-
+                    // Empty Workspace 
                     Rectangle {
                         visible: rowItem.wsWindows.length === 0
                         anchors.centerIn: parent
-                        width: root.cellWidth
+                        width: root.monitorW * 0.15
                         height: root.wsHeight
                         radius: Appearance.rounding.normal
                         color: Appearance.colors.colSurfaceContainerLow
@@ -314,6 +347,35 @@ Item {
                         }
                     }
 
+                    // Active Border
+                    Rectangle {
+                        visible: rowItem.isActiveWs && rowItem.activeWin !== null
+                        x: root.getWinXInRow(rowItem.activeWin, rowItem.activeMonData, rowItem.wsFitScale, rowItem.wsBBox)
+                        y: root.getWinYInRow(rowItem.activeWin, rowItem.activeMonData, rowItem.wsFitScale, rowItem.wsBBox)
+                        width: root.getWinW(rowItem.activeWin, rowItem.wsFitScale)
+                        height: root.getWinH(rowItem.activeWin, rowItem.wsFitScale)
+                        radius: Appearance.rounding.normal
+                        color: "transparent"
+                        border.width: 2
+                        border.color: Appearance.colors.colSecondary
+                        z: 10
+                        Behavior on x { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
+                        Behavior on y { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
+                        Behavior on width { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
+                        Behavior on height { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
+                    }
+
+                    // Highlight drop target
+                    Rectangle {
+                        visible: rowItem.isDragTarget && root.isDragging
+                        anchors.fill: parent
+                        radius: Appearance.rounding.normal
+                        color: ColorUtils.transparentize(Appearance.colors.colSecondary, 0.88)
+                        border.width: 2
+                        border.color: Appearance.colors.colSecondary
+                        z: 0
+                    }
+
                     Repeater {
                         model: rowItem.wsWindows.length
                         delegate: Item {
@@ -321,22 +383,33 @@ Item {
                             required property int index
 
                             property var win: rowItem.wsWindows[index]
+                            property var winMonData: root.getMonitorDataForWindow(win)
                             property bool isActiveWin: index === rowItem.activeWinIdx && rowItem.isActiveWs
-                            property int offset: index - rowItem.activeWinIdx
                             property bool isBeingDragged: root.isDragging &&
                                 root.dragFromWs === rowItem.wsId &&
                                 root.dragFromPos === index
 
-                            x: root.screenCenterX - rowItem.winW / 2
-                               + offset * (rowItem.winW + root.wsPadding)
-                            y: (root.wsHeight - rowItem.winH) / 2
-                            width: rowItem.winW
-                            height: rowItem.winH
+                            x: root.getWinXInRow(win, winMonData, rowItem.wsFitScale, rowItem.wsBBox)
+                            y: root.getWinYInRow(win, winMonData, rowItem.wsFitScale, rowItem.wsBBox)
+                            width: root.getWinW(win, rowItem.wsFitScale)
+                            height: root.getWinH(win, rowItem.wsFitScale)
                             z: 1
 
                             opacity: isBeingDragged ? 0.15 : 1.0
                             Behavior on opacity { NumberAnimation { duration: 150 } }
                             Behavior on x {
+                                enabled: !isBeingDragged
+                                NumberAnimation { duration: Appearance.animation.elementMoveFast.duration }
+                            }
+                            Behavior on y {
+                                enabled: !isBeingDragged
+                                NumberAnimation { duration: Appearance.animation.elementMoveFast.duration }
+                            }
+                            Behavior on width {
+                                enabled: !isBeingDragged
+                                NumberAnimation { duration: Appearance.animation.elementMoveFast.duration }
+                            }
+                            Behavior on height {
                                 enabled: !isBeingDragged
                                 NumberAnimation { duration: Appearance.animation.elementMoveFast.duration }
                             }
@@ -347,9 +420,9 @@ Item {
 
                                 toplevel: root.getToplevelForWindow(winContainer.win)
                                 windowData: winContainer.win
-                                monitorData: root.getMonitorDataForWindow(winContainer.win)
-                                widgetMonitor: root.getMonitorDataForWindow(winContainer.win)
-                                scale: root.scale
+                                monitorData: winContainer.winMonData
+                                widgetMonitor: winContainer.winMonData
+                                scale: root.scale * rowItem.wsFitScale
                                 xOffset: 0
                                 yOffset: 0
                                 opacity: winContainer.isActiveWin ? 1.0 : 0.75
