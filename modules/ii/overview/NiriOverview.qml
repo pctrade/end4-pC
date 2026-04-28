@@ -214,7 +214,7 @@ Item {
         id: scrollAnim
         target: flickable
         property: "contentY"
-        duration: Appearance.animation.elementMove.duration
+        duration: Appearance.animation.elementMoveExit.duration
         easing.type: Appearance.animation.elementMove.type
     }
 
