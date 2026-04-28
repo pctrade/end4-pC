@@ -112,6 +112,10 @@ Item {
         if (!wins || wins.length === 0)
             return { x: 0, y: 0, w: root.monitorW, h: root.monitorH }
 
+        var refMon = HyprlandData.monitors.find(m => m.id === wins[0].monitor)
+        var refW = refMon ? refMon.width / (refMon.scale ?? 1.0) : root.monitorW
+        var refH = refMon ? refMon.height / (refMon.scale ?? 1.0) : root.monitorH
+
         var minX = Infinity, minY = Infinity
         var maxX = -Infinity, maxY = -Infinity
 
@@ -130,16 +134,16 @@ Item {
         return {
             x: Math.min(minX, 0),
             y: Math.min(minY, 0),
-            w: Math.max(maxX, root.monitorW),
-            h: Math.max(maxY, root.monitorH)
+            w: Math.max(maxX, refW),
+            h: Math.max(maxY, refH)
         }
     }
 
     function getFitScale(wins) {
         if (!wins || wins.length === 0) return 1.0
         var bbox = getWindowsBBox(wins)
-        var availW = root.monitorW * 0.92  
-        var availH = root.wsHeight * 0.96 
+        var availW = bbox.w * root.scale * 0.92
+        var availH = root.wsHeight * 0.96
         var contentW = bbox.w * root.scale
         var contentH = bbox.h * root.scale
         return Math.min(availW / contentW, availH / contentH, 1.0)
@@ -151,7 +155,8 @@ Item {
         var rawX = win.at[0] - (mon?.x ?? 0) - (monData.reserved[0] ?? 0)
         var relX = (rawX - bbox.x) * root.scale * fitScale
         var totalW = bbox.w * root.scale * fitScale
-        return root.screenCenterX - totalW / 2 + relX
+        var centerX = root.implicitWidth / 2
+        return centerX - totalW / 2 + relX
     }
 
     function getWinYInRow(win, monData, fitScale, bbox) {
@@ -264,7 +269,6 @@ Item {
                     property bool isActiveWs: wsId === root.activeWorkspaceId
                     property bool isDragTarget: wsId === root.dragToWs
                     property var wsWindows: root.getWindowsSortedByX(wsId)
-
                     property var wsBBox: root.getWindowsBBox(wsWindows)
                     property real wsFitScale: root.getFitScale(wsWindows)
 
@@ -347,7 +351,7 @@ Item {
                         }
                     }
 
-                    // Active Border
+                    // Active Window
                     Rectangle {
                         visible: rowItem.isActiveWs && rowItem.activeWin !== null
                         x: root.getWinXInRow(rowItem.activeWin, rowItem.activeMonData, rowItem.wsFitScale, rowItem.wsBBox)
