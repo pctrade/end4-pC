@@ -26,7 +26,7 @@ Item {
             Appearance.colors.colPrimaryContainer,
             0.8
           )
-        : Appearance.m3colors.m3secondaryContainer
+        : Appearance.colors.colPrimaryContainer
     property bool downloaded: false
     property list<real> visualizerPoints: []
     property real maxVisualizerValue: 1000
