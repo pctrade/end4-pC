@@ -294,6 +294,57 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "empty_dashboard"
+        shape: MaterialShape.Shape.Burst
+        title: Translation.tr("Resources")
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "planner_review"; text: Translation.tr("CPU")
+                checked: Config.options.bar.resources.alwaysShowCpu
+                onCheckedChanged: { Config.options.bar.resources.alwaysShowCpu = checked; }
+            }
+            ConfigSwitch {
+                buttonIcon: "thermostat"; text: Translation.tr("Cpu Temperature")
+                checked: Config.options.bar.resources.alwaysShowCpuTemp
+                onCheckedChanged: { Config.options.bar.resources.alwaysShowCpuTemp = checked; }
+            }
+        }
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "memory"; text: Translation.tr("RAM")
+                checked: Config.options.bar.resources.alwaysShowRam
+                onCheckedChanged: { Config.options.bar.resources.alwaysShowRam = checked; }
+            }
+            ConfigSwitch {
+                buttonIcon: "storage"; text: Translation.tr("Disk")
+                checked: Config.options.bar.resources.alwaysShowDisk
+                onCheckedChanged: { Config.options.bar.resources.alwaysShowDisk = checked; }
+            }
+        }
+        ConfigRow {
+            uniform: true
+            ConfigSwitch {
+                buttonIcon: "swap_horiz"; text: Translation.tr("Swap")
+                checked: Config.options.bar.resources.alwaysShowSwap
+                onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked; }
+            }
+        }
+        ConfigSpinBox {
+            icon: "av_timer"
+            text: Translation.tr("Polling interval (ms)")
+            value: Config.options.resources.updateInterval
+            from: 100
+            to: 10000
+            stepSize: 100
+            onValueChanged: {
+                Config.options.resources.updateInterval = value;
+            }
+        }
+    }
+
+    ContentSection {
         shape: MaterialShape.Shape.Puffy
         icon: "tooltip"; title: Translation.tr("Tooltips")
         ConfigSwitch {

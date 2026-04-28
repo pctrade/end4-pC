@@ -260,8 +260,11 @@ Singleton {
                 property bool verbose: true
                 property bool vertical: false
                 property JsonObject resources: JsonObject {
-                    property bool alwaysShowSwap: true
+                    property bool alwaysShowSwap: false
                     property bool alwaysShowCpu: true
+                    property bool alwaysShowCpuTemp: false
+                    property bool alwaysShowDisk: false
+                    property bool alwaysShowRam: true
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
@@ -285,6 +288,7 @@ Singleton {
                     property bool showScreenRecord: false       
                     property bool isRecording: false
                 }
+
                 property JsonObject workspaces: JsonObject {
                     property bool monochromeIcons: true
                     property int shown: 10
@@ -434,6 +438,7 @@ Singleton {
 
             property JsonObject overview: JsonObject {
                 property bool enable: true
+                property string style: "default"
                 property real scale: 0.18 // Relative to screen size
                 property real rows: 2
                 property real columns: 5

@@ -71,24 +71,6 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "memory"
-        title: Translation.tr("Resources")
-
-        ConfigSpinBox {
-            icon: "av_timer"
-            text: Translation.tr("Polling interval (ms)")
-            value: Config.options.resources.updateInterval
-            from: 100
-            to: 10000
-            stepSize: 100
-            onValueChanged: {
-                Config.options.resources.updateInterval = value;
-            }
-        }
-        
-    }
-
-    ContentSection {
         icon: "file_open"
         shape: MaterialShape.Shape.Slanted
         title: Translation.tr("Save paths")

@@ -99,11 +99,24 @@ Scope {
 
             Loader {
                 id: overviewLoader
-                anchors.horizontalCenter: parent.horizontalCenter
                 active: GlobalStates.overviewOpen && (Config?.options.overview.enable ?? true)
-                sourceComponent: OverviewWidget {
-                    screen: panelWindow.screen
-                    visible: (panelWindow.searchingText == "")
+                sourceComponent: (Config?.options.overview.style ?? "default") === "niri" ? niriComponent : defaultComponent
+
+                Component {
+                    id: defaultComponent
+                    OverviewWidget {
+                        screen: panelWindow.screen
+                        visible: (panelWindow.searchingText == "")
+                    }
+                }
+
+                Component {
+                    id: niriComponent
+                    NiriOverview {
+                        screen: panelWindow.screen
+                        panelWindow: panelWindow
+                        visible: (panelWindow.searchingText == "")
+                    }
                 }
             }
         }
