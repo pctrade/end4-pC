@@ -9,9 +9,6 @@ import qs.modules.common.widgets
 
 Item {
     id: root
-    visible: SystemTray.items.values.length > 0
-    implicitWidth: gridLayout.implicitWidth + 10
-    implicitHeight: gridLayout.implicitHeight
     property bool vertical: false
     property bool invertSide: false
     property bool trayOverflowOpen: false
@@ -19,38 +16,31 @@ Item {
     property bool showOverflowMenu: true
     property var activeMenu: null
 
+    visible: SystemTray.items.values.length > 0
+    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : gridLayout.implicitWidth + 10
+    implicitHeight: vertical ? gridLayout.implicitHeight + 10 : gridLayout.implicitHeight
+
     property list<var> pinnedItems: TrayService.pinnedItems
     property list<var> unpinnedItems: TrayService.unpinnedItems
     onUnpinnedItemsChanged: {
-        if (unpinnedItems.length == 0) root.closeOverflowMenu();
+        if (unpinnedItems.length == 0) root.closeOverflowMenu()
     }
 
-    function grabFocus() {
-        focusGrab.active = true;
-    }
-
+    function grabFocus() { focusGrab.active = true }
     function setExtraWindowAndGrabFocus(window) {
         if (root.activeMenu && root.activeMenu !== window) {
             if (typeof root.activeMenu.close === "function")
-                root.activeMenu.close();
-            root.activeMenu = null;
+                root.activeMenu.close()
+            root.activeMenu = null
         }
-        root.activeMenu = window;
-        root.grabFocus();
+        root.activeMenu = window
+        root.grabFocus()
     }
-
-    function releaseFocus() {
-        focusGrab.active = false;
-    }
-
-    function closeOverflowMenu() {
-        focusGrab.active = false;
-    }
+    function releaseFocus() { focusGrab.active = false }
+    function closeOverflowMenu() { focusGrab.active = false }
 
     onTrayOverflowOpenChanged: {
-        if (root.trayOverflowOpen) {
-            root.grabFocus();
-        }
+        if (root.trayOverflowOpen) root.grabFocus()
     }
 
     HyprlandFocusGrab {
@@ -58,10 +48,10 @@ Item {
         active: false
         windows: [trayOverflowLayout.QsWindow?.window, root.activeMenu]
         onCleared: {
-            root.trayOverflowOpen = false;
+            root.trayOverflowOpen = false
             if (root.activeMenu) {
-                root.activeMenu.close();
-                root.activeMenu = null;
+                root.activeMenu.close()
+                root.activeMenu = null
             }
         }
     }
@@ -70,15 +60,16 @@ Item {
         id: gridLayout
         columns: root.vertical ? 1 : -1
         anchors.fill: parent
+        anchors.leftMargin:   root.vertical ? 0 : 5
+        anchors.topMargin:    root.vertical ? 5 : 0
+        anchors.bottomMargin: root.vertical ? 5 : 0
         rowSpacing: 8
-        anchors.leftMargin: 5
-        columnSpacing: Config.options.bar.cornerStyle === 2 ? 10 : 15
+        columnSpacing: root.vertical ? 0 : (Config.options.bar.cornerStyle === 2 ? 10 : 15)
 
         RippleButton {
             id: trayOverflowButton
             visible: root.showOverflowMenu && root.unpinnedItems.length > 0
             toggled: root.trayOverflowOpen
-            property bool containsMouse: hovered
 
             downAction: () => root.trayOverflowOpen = !root.trayOverflowOpen
 
@@ -117,14 +108,13 @@ Item {
 
                     Repeater {
                         model: root.unpinnedItems
-
                         delegate: SysTrayItem {
                             required property SystemTrayItem modelData
                             item: modelData
                             Layout.fillHeight: !root.vertical
                             Layout.fillWidth: root.vertical
-                            onMenuClosed: root.releaseFocus();
-                            onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow);
+                            onMenuClosed: root.releaseFocus()
+                            onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
                         }
                     }
                 }
@@ -132,19 +122,14 @@ Item {
         }
 
         Repeater {
-            model: ScriptModel {
-                values: root.pinnedItems
-            }
-
+            model: ScriptModel { values: root.pinnedItems }
             delegate: SysTrayItem {
                 required property SystemTrayItem modelData
                 item: modelData
                 Layout.fillHeight: !root.vertical
                 Layout.fillWidth: root.vertical
-                onMenuClosed: root.releaseFocus();
-                onMenuOpened: (qsWindow) => {
-                    root.setExtraWindowAndGrabFocus(qsWindow);
-                }
+                onMenuClosed: root.releaseFocus()
+                onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
             }
         }
     }

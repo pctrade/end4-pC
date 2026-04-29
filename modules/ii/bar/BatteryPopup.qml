@@ -75,7 +75,7 @@ StyledPopup {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: 6
 
             ResourceCard {
                 label: Translation.tr("Health")
@@ -83,8 +83,8 @@ StyledPopup {
                 iconShape: MaterialShape.Shape.Clover4Leaf
                 value: Battery.health / 100
                 sublabel: Battery.chargeCycles > 0
-                    ? `${Battery.chargeCycles} cycles`
-                    : Translation.tr("Unknown")
+                    ? `${Battery.chargeCycles} ${Translation.tr("cycles")}`
+                    : Translation.tr("N/A")
                 sublabelColor: Appearance.colors.colOnSurfaceVariant
                 cardWidth: 160
             }

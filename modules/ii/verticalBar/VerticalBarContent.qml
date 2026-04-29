@@ -20,7 +20,7 @@ Item {
     function getWidgetUrl(name) {
         if (!name) return "";
         let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
-        return Qt.resolvedUrl("./" + formattedName + ".qml");
+        return Qt.resolvedUrl("../bar/" + formattedName + ".qml");  // ← apunta a /bar/
     }
 
     property var screen: root.QsWindow.window?.screen
