@@ -129,7 +129,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: Appearance.spacing.small
+                    spacing: 4
 
                     LanguageSelectorButton { // Target language button
                         id: targetLanguageButton

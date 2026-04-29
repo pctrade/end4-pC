@@ -9,11 +9,18 @@ Item {
     property bool vertical: false
     property bool borderless: Config.options.bar.borderless
     property bool showDate: Config.options.bar.verbose
+    property var today: new Date()
+
+    Timer {
+        interval: 60000
+        running: true
+        repeat: true
+        onTriggered: root.today = new Date()
+    }
 
     implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : rowLayout.implicitWidth + 12
     implicitHeight: vertical ? clockColumn.implicitHeight : Appearance.sizes.barHeight
 
-    // Vertical
     ColumnLayout {
         id: clockColumn
         visible: root.vertical
@@ -34,7 +41,6 @@ Item {
         }
     }
 
-    // Horizontal
     RowLayout {
         id: rowLayout
         visible: !root.vertical
@@ -69,6 +75,7 @@ Item {
 
         ClockWidgetPopup {
             hoverTarget: mouseArea
+            today: root.today
         }
     }
 }

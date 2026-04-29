@@ -6,6 +6,7 @@ import QtQuick.Layouts
 
 StyledPopup {
     id: root
+    property var today: new Date()
 
     function usageColor(value) {
         if (value > 0.9) return Appearance.colors.colError
@@ -21,14 +22,14 @@ StyledPopup {
             width: parent.width
 
             StyledText {
-                text: Qt.locale().toString(DateTime.clock.date, " MMMM")
+                text: Qt.locale().toString(root.today, " MMMM")
                 font.pixelSize: Appearance.font.pixelSize.huge
-                font.weight: Font.bold
+                font.weight: Font.Bold
                 color: Appearance.colors.colOnLayer1
             }
 
             StyledText {
-                text: " " + Qt.locale().toString(DateTime.clock.date, "yyyy")
+                text: " " + Qt.locale().toString(root.today, "yyyy")
                 font.pixelSize: Appearance.font.pixelSize.huge
                 color: Appearance.colors.colOnSurfaceVariant
             }
@@ -44,14 +45,14 @@ StyledPopup {
                     required property int index
 
                     readonly property var date: {
-                        const today = DateTime.clock.date
+                        const today = root.today
                         const dow = today.getDay()
                         const d = new Date(today)
                         d.setDate(today.getDate() - dow + index)
                         return d
                     }
                     readonly property bool isToday: {
-                        const t = DateTime.clock.date
+                        const t = root.today
                         return date.getDate()     === t.getDate() &&
                                date.getMonth()    === t.getMonth() &&
                                date.getFullYear() === t.getFullYear()
@@ -131,7 +132,7 @@ StyledPopup {
                     delegate: Rectangle {
                         required property int index
                         readonly property var filteredList: Todo.list.filter(t => !t.done)
-                        readonly property var todo: filteredList[filteredList.length - 1 - index] // last first
+                        readonly property var todo: filteredList[filteredList.length - 1 - index]
                         readonly property int total: todoRepeater.count
                         readonly property bool isFirst: index === 0
                         readonly property bool isLast: index === total - 1
@@ -154,7 +155,7 @@ StyledPopup {
                                 right: parent.right
                                 rightMargin: 10
                             }
-                            text: `    ${todo.content} `
+                            text: `    ${todo.content} `
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: Appearance.colors.colOnLayer1
                             elide: Text.ElideRight
@@ -164,7 +165,7 @@ StyledPopup {
 
                 Rectangle {
                     width: parent.width
-                    height: 32 * 2 
+                    height: 64
                     visible: Todo.list.filter(t => !t.done).length === 0
                     radius: Appearance.rounding.normal
                     color: Appearance.colors.colSurfaceContainerHigh
@@ -182,7 +183,6 @@ StyledPopup {
         Rectangle {
             width: parent.width
             height: 10
-            radius: Appearance.rounding.normal
             color: "transparent"
 
             RowLayout {
@@ -196,7 +196,7 @@ StyledPopup {
                 }
 
                 StyledText {
-                    text: "Sytem Uptime"
+                    text: Translation.tr("System Uptime")
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: Appearance.colors.colOnSurfaceVariant
                 }

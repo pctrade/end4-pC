@@ -16,7 +16,7 @@ Singleton {
     signal tagSuggestion(string query, var suggestions)  
     signal responseFinished()  
 
-    property string unsplashApiToken: KeyringStorage.keyringData.apiKeys.wallpapers_unsplash ?? ""
+    property string unsplashApiToken: KeyringStorage.keyringData?.apiKeys?.wallpapers_unsplash ?? ""
     property string wallhavenApiToken: Config.options.wallhaven?.apiKey ?? ""  
     property string failMessage: Translation.tr("That didn't work. Tips:\n- Check your search query\n- Try different keywords\n- Check your API key under settings")  
     property var responses: []  
