@@ -30,8 +30,8 @@ Variants {
         property string currentWallpaperSource: Config.options.background.wallpaperPath
         property string previousWallpaperSource: Config.options.background.wallpaperPath
 
-        property var shaderList: ["circlePit", "circleSelect", "magic", "Doom", "Peel", "transition"]
-        property string currentShader: "circle"
+        property var shaderList: ["circlePit", "circleSelect", "magic", "Doom", "Peel", "transition", "pixelate", "stripes"]
+        property string currentShader: "magic"
         property string wallpaperAnimation: Config.options.background.wallpaperAnimation ?? "random"
 
         property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)

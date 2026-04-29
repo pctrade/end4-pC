@@ -91,6 +91,16 @@ ContentPage {
                             value: "transition"
                         },
                         {
+                            displayName: Translation.tr("Pixelate"),
+                            icon: "grain",
+                            value: "pixelate"
+                        },
+                        {
+                            displayName: Translation.tr("Stripes"),
+                            icon: "texture_minus",
+                            value: "stripes"
+                        },
+                        {
                             displayName: Translation.tr("Random"),
                             icon: "shuffle",
                             value: "random"
