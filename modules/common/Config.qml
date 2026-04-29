@@ -260,6 +260,7 @@ Singleton {
                 property bool verbose: true
                 property bool vertical: false
                 property JsonObject resources: JsonObject {
+                    property string style: "filled"
                     property bool alwaysShowSwap: false
                     property bool alwaysShowCpu: true
                     property bool alwaysShowCpuTemp: false

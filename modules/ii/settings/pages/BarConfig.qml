@@ -331,6 +331,17 @@ ContentPage {
                 onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked; }
             }
         }
+        ContentSubsection {
+            title: Translation.tr("Style"); Layout.fillWidth: false
+            ConfigSelectionArray {
+                currentValue: Config.options.bar.resources.style
+                onSelected: newValue => { Config.options.bar.resources.style = newValue; }
+                options: [
+                    { displayName: Translation.tr("Filled"),          icon: "incomplete_circle", value: "filled" },
+                    { displayName: Translation.tr("Outline"), icon: "circles",   value: "outline" }
+                ]
+            }
+        }
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Polling interval (ms)")

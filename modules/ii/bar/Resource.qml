@@ -15,57 +15,82 @@ Item {
     implicitHeight: Appearance.sizes.barHeight
     property bool warning: percentage * 100 >= warningThreshold
 
-    RowLayout {
-        id: resourceRowLayout
-        spacing: 2
-        x: shown ? 0 : -resourceRowLayout.width
-        anchors {
-            verticalCenter: parent.verticalCenter
-        }
-
-        ClippedFilledCircularProgress {
-            id: resourceCircProg
-            Layout.alignment: Qt.AlignVCenter
+    Component {
+        id: outlineStyle
+        ClippedOutlineCircularProgress {
             lineWidth: Appearance.rounding.unsharpen
-            value: percentage
+            value: root.percentage
             implicitSize: 20
             colPrimary: root.warning ? Appearance.colors.colError : Appearance.colors.colOnSecondaryContainer
-            accountForLightBleeding: !root.warning
             enableAnimation: false
-
             Item {
                 anchors.centerIn: parent
-                width: resourceCircProg.implicitSize
-                height: resourceCircProg.implicitSize
-                
+                width: 20
+                height: 20
                 MaterialSymbol {
                     anchors.centerIn: parent
                     font.weight: Font.DemiBold
                     fill: 1
-                    text: iconName
+                    text: root.iconName
+                    iconSize: Appearance.font.pixelSize.normal
+                    color: Appearance.colors.colOnSecondaryContainer
+                }
+            }
+        }
+    }
+
+    Component {
+        id: filledStyle
+        ClippedFilledCircularProgress {
+            lineWidth: Appearance.rounding.unsharpen
+            value: root.percentage
+            implicitSize: 20
+            colPrimary: root.warning ? Appearance.colors.colError : Appearance.colors.colOnSecondaryContainer
+            accountForLightBleeding: !root.warning
+            enableAnimation: false
+            Item {
+                anchors.centerIn: parent
+                width: 20
+                height: 20
+                MaterialSymbol {
+                    anchors.centerIn: parent
+                    font.weight: Font.DemiBold
+                    fill: 1
+                    text: root.iconName
                     iconSize: Appearance.font.pixelSize.normal
                     color: Appearance.m3colors.m3onSecondaryContainer
                 }
             }
+        }
+    }
+
+    RowLayout {
+        id: resourceRowLayout
+        spacing: 2
+        x: shown ? 0 : -resourceRowLayout.width
+        anchors.verticalCenter: parent.verticalCenter
+
+        Loader {
+            id: circProgLoader
+            Layout.alignment: Qt.AlignVCenter
+            sourceComponent: Config.options.bar.resources.style === "filled" ? filledStyle : outlineStyle
         }
 
         Item {
             Layout.alignment: Qt.AlignVCenter
             implicitWidth: fullPercentageTextMetrics.width
             implicitHeight: percentageText.implicitHeight
-
             TextMetrics {
                 id: fullPercentageTextMetrics
                 text: "100"
                 font.pixelSize: Appearance.font.pixelSize.small
             }
-
             StyledText {
                 id: percentageText
                 anchors.centerIn: parent
                 color: Appearance.colors.colOnLayer1
                 font.pixelSize: Appearance.font.pixelSize.small
-                text: `${Math.round(percentage * 100).toString()}`
+                text: `${Math.round(root.percentage * 100).toString()}`
             }
         }
 
