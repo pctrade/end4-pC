@@ -11,19 +11,19 @@ ContentPage {
     forceWidth: true
 
     property var allWidgets: [
-        { id: "leftSidebarButton", name: Translation.tr("Left Sidebar Button") },
-        { id: "workspaces",        name: Translation.tr("Workspaces") },
-        { id: "weatherBar",        name: Translation.tr("Weather") },
-        { id: "media",             name: Translation.tr("Media") },
-        { id: "resources",         name: Translation.tr("Resources") },
-        { id: "systemIcons",       name: Translation.tr("System Icons") },
-        { id: "clockWidget",       name: Translation.tr("Clock") },
-        { id: "utilButtons",       name: Translation.tr("Util Buttons") },
-        { id: "sysTray",           name: Translation.tr("Tray") },
-        { id: "batteryIndicator",  name: Translation.tr("Battery") },
-        { id: "activeWindow",      name: Translation.tr("Active Window") },
-        { id: "powerButton",      name: Translation.tr("Power Button") },
-        { id: "updatesCount",      name: Translation.tr("Updates") }
+        { id: "leftSidebarButton", name: Translation.tr("Left Sidebar Button"),  icon: "left_panel_open" },
+        { id: "workspaces",        name: Translation.tr("Workspaces"),           icon: "steppers" },
+        { id: "weatherBar",        name: Translation.tr("Weather"),              icon: "flare" },
+        { id: "media",             name: Translation.tr("Media"),                icon: "music_note" },
+        { id: "resources",         name: Translation.tr("Resources"),            icon: "empty_dashboard" },
+        { id: "systemIcons",       name: Translation.tr("System Icons"),         icon: "info" },
+        { id: "clockWidget",       name: Translation.tr("Clock"),                icon: "schedule" },
+        { id: "utilButtons",       name: Translation.tr("Util Buttons"),         icon: "toggle_on" },
+        { id: "sysTray",           name: Translation.tr("Tray"),                 icon: "inbox" },
+        { id: "batteryIndicator",  name: Translation.tr("Battery"),              icon: "battery_android_frame_full" },
+        { id: "activeWindow",      name: Translation.tr("Active Window"),        icon: "subtitles" },
+        { id: "powerButton",       name: Translation.tr("Power Button"),         icon: "power_settings_new" },
+        { id: "updatesCount",      name: Translation.tr("Updates"),              icon: "deployed_code_update" }
     ]
 
     function availableFor() {
