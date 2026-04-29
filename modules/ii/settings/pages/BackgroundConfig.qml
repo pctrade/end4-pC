@@ -61,11 +61,6 @@ ContentPage {
                             value: ""
                         },
                         {
-                            displayName: Translation.tr("Circle"),
-                            icon: "circle",
-                            value: "circle"
-                        },
-                        {
                             displayName: Translation.tr("Circle Pit"),
                             icon: "blur_circular",
                             value: "circlePit"

@@ -30,7 +30,7 @@ Variants {
         property string currentWallpaperSource: Config.options.background.wallpaperPath
         property string previousWallpaperSource: Config.options.background.wallpaperPath
 
-        property var shaderList: ["circle", "circlePit", "circleSelect", "magic", "Doom", "Peel", "transition"]
+        property var shaderList: ["circlePit", "circleSelect", "magic", "Doom", "Peel", "transition"]
         property string currentShader: "circle"
         property string wallpaperAnimation: Config.options.background.wallpaperAnimation ?? "random"
 
