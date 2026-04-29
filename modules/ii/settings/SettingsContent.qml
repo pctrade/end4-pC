@@ -27,7 +27,6 @@ Item {
             if (idx >= 0) {
                 root.currentPage = idx;
                 
-                // Usamos un pequeño delay para que la página termine de renderizarse
                 if (searchTerm !== "") {
                     Qt.callLater(() => {
                         let loader = pagesRepeater.itemAt(idx);
@@ -175,14 +174,13 @@ Item {
                         id: pagesRepeater
                         model: root.pages
                         Loader {
-                            id: pageLoader // <--- Añade este ID
+                            id: pageLoader 
                             required property var modelData
                             required property var index
                             source: modelData.component
                             active: Config.ready
                             anchors.fill: parent
 
-                            // --- AÑADE ESTAS FUNCIONES DENTRO DEL LOADER ---
                             onLoaded: {
                                 if (root.currentPage === index) {
                                     GlobalStates.currentPageInstance = item;
@@ -193,7 +191,6 @@ Item {
                                     GlobalStates.currentPageInstance = item;
                                 }
                             }
-                            // ----------------------------------------------
 
                             property bool isActive: root.currentPage === index
                             opacity: isActive ? 1 : 0
