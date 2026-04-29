@@ -31,6 +31,8 @@ Singleton {
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
+    property string settingsPage: ""
+    property Item currentPageInstance: null
 
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {

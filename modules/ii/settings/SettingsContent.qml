@@ -13,6 +13,34 @@ Item {
     property real contentPadding: 8
     property int currentPage: 0
 
+    Connections {
+        target: GlobalStates
+        function onSettingsPageChanged() {
+            if (GlobalStates.settingsPage === "") return
+            
+            let parts = GlobalStates.settingsPage.split(":");
+            let pageName = parts[0];
+            let searchTerm = parts.length > 1 ? parts[1] : "";
+
+            const idx = root.pages.findIndex(p => p.name.toLowerCase() === pageName.toLowerCase());
+            
+            if (idx >= 0) {
+                root.currentPage = idx;
+                
+                // Usamos un pequeño delay para que la página termine de renderizarse
+                if (searchTerm !== "") {
+                    Qt.callLater(() => {
+                        let loader = pagesRepeater.itemAt(idx);
+                        if (loader && loader.item && typeof loader.item.goTo === "function") {
+                            loader.item.goTo(searchTerm);
+                        }
+                    });
+                }
+            }
+            GlobalStates.settingsPage = "";
+        }
+    }
+
     onCurrentPageChanged: {
         if (currentPage === 7) {
             const aboutLoader = pagesRepeater.itemAt(7);
@@ -147,11 +175,25 @@ Item {
                         id: pagesRepeater
                         model: root.pages
                         Loader {
+                            id: pageLoader // <--- Añade este ID
                             required property var modelData
                             required property var index
                             source: modelData.component
                             active: Config.ready
                             anchors.fill: parent
+
+                            // --- AÑADE ESTAS FUNCIONES DENTRO DEL LOADER ---
+                            onLoaded: {
+                                if (root.currentPage === index) {
+                                    GlobalStates.currentPageInstance = item;
+                                }
+                            }
+                            onIsActiveChanged: {
+                                if (isActive && item) {
+                                    GlobalStates.currentPageInstance = item;
+                                }
+                            }
+                            // ----------------------------------------------
 
                             property bool isActive: root.currentPage === index
                             opacity: isActive ? 1 : 0

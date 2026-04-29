@@ -12,7 +12,33 @@ import qs.modules.common.models
 import Quickshell.Hyprland
 
 ContentPage {
+    id: page
     forceWidth: true
+
+    function goTo(term) {
+        const t = term.toLowerCase().trim()
+
+        function findTarget(rootItem) {
+            for (let i = 0; i < rootItem.children.length; i++) {
+                let child = rootItem.children[i]
+                if (child.title && child.title.toLowerCase().includes(t)) {
+                    return child
+                }
+            }
+
+            for (let i = 0; i < rootItem.children.length; i++) {
+                let found = findTarget(rootItem.children[i])
+                if (found) return found
+            }
+            return null
+        }
+
+        let target = findTarget(mainLayout)
+        if (target) {
+            let pos = target.mapToItem(mainLayout, 0, 0)
+            page.contentY = Math.max(0, pos.y - 0)
+        }
+    }
 
     Process {
         id: randomWallProc
@@ -58,286 +84,293 @@ ContentPage {
         }
     }
 
-    // Wallpaper selection
-    ContentSection {
-        icon: "format_paint"
-        title: Translation.tr("Wallpaper & Colors")
-        shape: MaterialShape.Shape.Puffy
-        Layout.fillWidth: true
+    ColumnLayout {
+        id: mainLayout 
+        Layout.fillWidth: true   
+        Layout.fillHeight: true
+        spacing: 20
 
-        RowLayout {
+        // Wallpaper selection
+        ContentSection {
+            icon: "format_paint"
+            title: Translation.tr("Wallpaper & Colors")
+            shape: MaterialShape.Shape.Puffy
             Layout.fillWidth: true
 
-            Item {
-                implicitWidth: 340
-                implicitHeight: 210
-                
-                StyledImage {
-                    id: wallpaperPreview
-                    anchors.fill: parent
-                    sourceSize.width: parent.implicitWidth
-                    sourceSize.height: parent.implicitHeight
-                    fillMode: Image.PreserveAspectCrop
-                    source: Config.options.background.wallpaperPath
-                    cache: false
-                    layer.enabled: true
-                    layer.effect: OpacityMask {
-                        maskSource: Rectangle {
-                            width: 360
-                            height: 220
-                            radius: Appearance.rounding.normal
-                        }
-                    }
-                }
-            }
+            RowLayout {
+                Layout.fillWidth: true
 
-            ColumnLayout {
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    uniformCellSizes: true
-
-                    SmallLightDarkPreferenceButton {
-                        Layout.fillHeight: true
-                        dark: false
-                    }
-                    SmallLightDarkPreferenceButton {
-                        Layout.fillHeight: true
-                        dark: true
-                    }
-                }
-                RippleButtonWithIcon {
-                    enabled: !randomWallProc.running
-                    visible: Config.options.policies.weeb === 1
-                    Layout.fillWidth: true
-                    buttonRadius: Appearance.rounding.small
-                    materialIcon: "ifl"
-                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random • Konachan")
-                    onClicked: {
-                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;
-                        randomWallProc.running = true;
-                    }
-                }
-                RippleButtonWithIcon {
-                    enabled: !randomWallProc.running
-                    visible: Config.options.policies.weeb === 1
-                    Layout.fillWidth: true
-                    buttonRadius: Appearance.rounding.small
-                    materialIcon: "ifl"
-                    mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random • osu! seasonal")
-                    onClicked: {
-                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_osu_wall.sh`;
-                        randomWallProc.running = true;
-                    }
-                }
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-
-                    MaterialTextArea {
-                        Layout.fillWidth: true
-                        placeholderText: Translation.tr("Accent Color")
-                        text: Config.options.appearance.palette.accentColor
-                        wrapMode: TextEdit.Wrap
-                        onTextChanged: {
-                            Config.options.appearance.palette.accentColor = text;
-                            debounceTimer.restart();
-                        }
-                        Timer {
-                            id: debounceTimer
-                            interval: 600
-                            repeat: false
-                            onTriggered: {
-                                const color = parent.text.trim();
-                                const isValidHex = /^#[0-9A-Fa-f]{6}$/.test(color);
-                                if (!isValidHex) return;
-                                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color", color]);
+                Item {
+                    implicitWidth: 340
+                    implicitHeight: 210
+                    
+                    StyledImage {
+                        id: wallpaperPreview
+                        anchors.fill: parent
+                        sourceSize.width: parent.implicitWidth
+                        sourceSize.height: parent.implicitHeight
+                        fillMode: Image.PreserveAspectCrop
+                        source: Config.options.background.wallpaperPath
+                        cache: false
+                        layer.enabled: true
+                        layer.effect: OpacityMask {
+                            maskSource: Rectangle {
+                                width: 360
+                                height: 220
+                                radius: Appearance.rounding.normal
                             }
                         }
                     }
+                }
 
-                    ToolbarPairedFab {
-                        iconText: "colorize"
+                ColumnLayout {
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        uniformCellSizes: true
+
+                        SmallLightDarkPreferenceButton {
+                            Layout.fillHeight: true
+                            dark: false
+                        }
+                        SmallLightDarkPreferenceButton {
+                            Layout.fillHeight: true
+                            dark: true
+                        }
+                    }
+                    RippleButtonWithIcon {
+                        enabled: !randomWallProc.running
+                        visible: Config.options.policies.weeb === 1
+                        Layout.fillWidth: true
+                        buttonRadius: Appearance.rounding.small
+                        materialIcon: "ifl"
+                        mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random • Konachan")
                         onClicked: {
-                            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color"]);
-                        }        
+                            randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;
+                            randomWallProc.running = true;
+                        }
+                    }
+                    RippleButtonWithIcon {
+                        enabled: !randomWallProc.running
+                        visible: Config.options.policies.weeb === 1
+                        Layout.fillWidth: true
+                        buttonRadius: Appearance.rounding.small
+                        materialIcon: "ifl"
+                        mainText: randomWallProc.running ? Translation.tr("Be patient...") : Translation.tr("Random • osu! seasonal")
+                        onClicked: {
+                            randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_osu_wall.sh`;
+                            randomWallProc.running = true;
+                        }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        MaterialTextArea {
+                            Layout.fillWidth: true
+                            placeholderText: Translation.tr("Accent Color")
+                            text: Config.options.appearance.palette.accentColor
+                            wrapMode: TextEdit.Wrap
+                            onTextChanged: {
+                                Config.options.appearance.palette.accentColor = text;
+                                debounceTimer.restart();
+                            }
+                            Timer {
+                                id: debounceTimer
+                                interval: 600
+                                repeat: false
+                                onTriggered: {
+                                    const color = parent.text.trim();
+                                    const isValidHex = /^#[0-9A-Fa-f]{6}$/.test(color);
+                                    if (!isValidHex) return;
+                                    Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color", color]);
+                                }
+                            }
+                        }
+
+                        ToolbarPairedFab {
+                            iconText: "colorize"
+                            onClicked: {
+                                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color"]);
+                            }        
+                        }
+                    }
+                }
+            }
+
+            ConfigSelectionArray {
+                currentValue: Config.options.appearance.palette.type
+                onSelected: newValue => {
+                    Config.options.appearance.palette.type = newValue;
+                    Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --noswitch`]);
+                }
+                options: [
+                    {
+                        "value": "auto",
+                        "displayName": Translation.tr("Auto")
+                    },
+                    {
+                        "value": "scheme-content",
+                        "displayName": Translation.tr("Content")
+                    },
+                    {
+                        "value": "scheme-expressive",
+                        "displayName": Translation.tr("Expressive")
+                    },
+                    {
+                        "value": "scheme-fidelity",
+                        "displayName": Translation.tr("Fidelity")
+                    },
+                    {
+                        "value": "scheme-fruit-salad",
+                        "displayName": Translation.tr("Fruit Salad")
+                    },
+                    {
+                        "value": "scheme-monochrome",
+                        "displayName": Translation.tr("Monochrome")
+                    },
+                    {
+                        "value": "scheme-neutral",
+                        "displayName": Translation.tr("Neutral")
+                    },
+                    {
+                        "value": "scheme-rainbow",
+                        "displayName": Translation.tr("Rainbow")
+                    },
+                    {
+                        "value": "scheme-tonal-spot",
+                        "displayName": Translation.tr("Tonal Spot")
+                    }
+                ]
+            }
+
+            ConfigRow {
+                ConfigSwitch {
+                    buttonIcon: "motion_mode"
+                    text: Translation.tr("Transparency")
+                    checked: Config.options.appearance.transparency.enable
+                    onCheckedChanged: {
+                        Config.options.appearance.transparency.enable = checked;
+                    }
+                }
+                ConfigSwitch {
+                    buttonIcon: "autofps_select"
+                    text: Translation.tr("Automatic")
+                    checked: Config.options.appearance.transparency.automatic
+                    onCheckedChanged: {
+                        Config.options.appearance.transparency.automatic = checked;
                     }
                 }
             }
         }
 
-        ConfigSelectionArray {
-            currentValue: Config.options.appearance.palette.type
-            onSelected: newValue => {
-                Config.options.appearance.palette.type = newValue;
-                Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --noswitch`]);
-            }
-            options: [
-                {
-                    "value": "auto",
-                    "displayName": Translation.tr("Auto")
-                },
-                {
-                    "value": "scheme-content",
-                    "displayName": Translation.tr("Content")
-                },
-                {
-                    "value": "scheme-expressive",
-                    "displayName": Translation.tr("Expressive")
-                },
-                {
-                    "value": "scheme-fidelity",
-                    "displayName": Translation.tr("Fidelity")
-                },
-                {
-                    "value": "scheme-fruit-salad",
-                    "displayName": Translation.tr("Fruit Salad")
-                },
-                {
-                    "value": "scheme-monochrome",
-                    "displayName": Translation.tr("Monochrome")
-                },
-                {
-                    "value": "scheme-neutral",
-                    "displayName": Translation.tr("Neutral")
-                },
-                {
-                    "value": "scheme-rainbow",
-                    "displayName": Translation.tr("Rainbow")
-                },
-                {
-                    "value": "scheme-tonal-spot",
-                    "displayName": Translation.tr("Tonal Spot")
-                }
-            ]
-        }
+        ContentSection {
+            icon: "screenshot_monitor"
+            title: Translation.tr("Bar & screen")
+            shape: MaterialShape.Shape.ClamShell
 
-        ConfigRow {
             ConfigSwitch {
-                buttonIcon: "motion_mode"
-                text: Translation.tr("Transparency")
-                checked: Config.options.appearance.transparency.enable
+                buttonIcon: "variable_insert"
+                text: Translation.tr("Background")
+                checked: Config.options.bar.showBackground
                 onCheckedChanged: {
-                    Config.options.appearance.transparency.enable = checked;
+                    Config.options.bar.showBackground = checked;
                 }
             }
-            ConfigSwitch {
-                buttonIcon: "autofps_select"
-                text: Translation.tr("Automatic")
-                checked: Config.options.appearance.transparency.automatic
-                onCheckedChanged: {
-                    Config.options.appearance.transparency.automatic = checked;
-                }
-            }
-        }
-    }
 
-    ContentSection {
-        icon: "screenshot_monitor"
-        title: Translation.tr("Bar & screen")
-        shape: MaterialShape.Shape.ClamShell
-
-        ConfigSwitch {
-            buttonIcon: "variable_insert"
-            text: Translation.tr("Background")
-            checked: Config.options.bar.showBackground
-            onCheckedChanged: {
-                Config.options.bar.showBackground = checked;
-            }
-        }
-
-        ConfigRow {
-            ContentSubsection {
-                title: Translation.tr("Bar position")
-                ConfigSelectionArray {
-                    currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
-                    onSelected: newValue => {
-                        Config.options.bar.bottom = (newValue & 1) !== 0;
-                        Config.options.bar.vertical = (newValue & 2) !== 0;
-                    }
-                    options: [
-                        {
-                            displayName: Translation.tr("Top"),
-                            icon: "arrow_upward",
-                            value: 0 // bottom: false, vertical: false
-                        },
-                        {
-                            displayName: Translation.tr("Left"),
-                            icon: "arrow_back",
-                            value: 2 // bottom: false, vertical: true
-                        },
-                        {
-                            displayName: Translation.tr("Bottom"),
-                            icon: "arrow_downward",
-                            value: 1 // bottom: true, vertical: false
-                        },
-                        {
-                            displayName: Translation.tr("Right"),
-                            icon: "arrow_forward",
-                            value: 3 // bottom: true, vertical: true
+            ConfigRow {
+                ContentSubsection {
+                    title: Translation.tr("Bar position")
+                    ConfigSelectionArray {
+                        currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
+                        onSelected: newValue => {
+                            Config.options.bar.bottom = (newValue & 1) !== 0;
+                            Config.options.bar.vertical = (newValue & 2) !== 0;
                         }
-                    ]
-                }
-            }
-            ContentSubsection {
-                title: Translation.tr("Bar style")
-
-                ConfigSelectionArray {
-                    currentValue: Config.options.bar.cornerStyle
-                    onSelected: newValue => {
-                        Config.options.bar.cornerStyle = newValue; // Update local copy
+                        options: [
+                            {
+                                displayName: Translation.tr("Top"),
+                                icon: "arrow_upward",
+                                value: 0 // bottom: false, vertical: false
+                            },
+                            {
+                                displayName: Translation.tr("Left"),
+                                icon: "arrow_back",
+                                value: 2 // bottom: false, vertical: true
+                            },
+                            {
+                                displayName: Translation.tr("Bottom"),
+                                icon: "arrow_downward",
+                                value: 1 // bottom: true, vertical: false
+                            },
+                            {
+                                displayName: Translation.tr("Right"),
+                                icon: "arrow_forward",
+                                value: 3 // bottom: true, vertical: true
+                            }
+                        ]
                     }
-                    options: [
-                        {
-                            displayName: Translation.tr("Hug"),
-                            icon: "line_curve",
-                            value: 0
-                        },
-                        {
-                            displayName: Translation.tr("Float"),
-                            icon: "view_day",
-                            value: 1
-                        },
-                        {
-                            displayName: Translation.tr("Islands"),
-                            icon: "crop_3_2",
-                            value: 2
-                        }
-                    ]
                 }
-            }
-        }
+                ContentSubsection {
+                    title: Translation.tr("Bar style")
 
-        ConfigRow {
-            ContentSubsection {
-                title: Translation.tr("Screen round corner")
-
-                ConfigSelectionArray {
-                    currentValue: Config.options.appearance.fakeScreenRounding
-                    onSelected: newValue => {
-                        Config.options.appearance.fakeScreenRounding = newValue;
+                    ConfigSelectionArray {
+                        currentValue: Config.options.bar.cornerStyle
+                        onSelected: newValue => {
+                            Config.options.bar.cornerStyle = newValue; // Update local copy
+                        }
+                        options: [
+                            {
+                                displayName: Translation.tr("Hug"),
+                                icon: "line_curve",
+                                value: 0
+                            },
+                            {
+                                displayName: Translation.tr("Float"),
+                                icon: "view_day",
+                                value: 1
+                            },
+                            {
+                                displayName: Translation.tr("Islands"),
+                                icon: "crop_3_2",
+                                value: 2
+                            }
+                        ]
                     }
-                    options: [
-                        {
-                            displayName: Translation.tr("No"),
-                            icon: "close",
-                            value: 0
-                        },
-                        {
-                            displayName: Translation.tr("Yes"),
-                            icon: "check",
-                            value: 1
-                        },
-                        {
-                            displayName: Translation.tr("When not fullscreen"),
-                            icon: "fullscreen_exit",
-                            value: 2
-                        }
-                    ]
                 }
             }
-            
+
+            ConfigRow {
+                ContentSubsection {
+                    title: Translation.tr("Screen round corner")
+
+                    ConfigSelectionArray {
+                        currentValue: Config.options.appearance.fakeScreenRounding
+                        onSelected: newValue => {
+                            Config.options.appearance.fakeScreenRounding = newValue;
+                        }
+                        options: [
+                            {
+                                displayName: Translation.tr("No"),
+                                icon: "close",
+                                value: 0
+                            },
+                            {
+                                displayName: Translation.tr("Yes"),
+                                icon: "check",
+                                value: 1
+                            },
+                            {
+                                displayName: Translation.tr("When not fullscreen"),
+                                icon: "fullscreen_exit",
+                                value: 2
+                            }
+                        ]
+                    }
+                }
+                
+            }
         }
     }
 }

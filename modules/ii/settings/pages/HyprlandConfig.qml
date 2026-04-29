@@ -9,7 +9,33 @@ import qs.modules.common.widgets
 import qs.modules.common.models.hyprland
 
 ContentPage {
+    id: page
     forceWidth: true
+
+    function goTo(term) {
+        const t = term.toLowerCase().trim()
+
+        function findTarget(rootItem) {
+            for (let i = 0; i < rootItem.children.length; i++) {
+                let child = rootItem.children[i]
+                if (child.title && child.title.toLowerCase().includes(t)) {
+                    return child
+                }
+            }
+
+            for (let i = 0; i < rootItem.children.length; i++) {
+                let found = findTarget(rootItem.children[i])
+                if (found) return found
+            }
+            return null
+        }
+
+        let target = findTarget(mainLayout)
+        if (target) {
+            let pos = target.mapToItem(mainLayout, 0, 0)
+            page.contentY = Math.max(0, pos.y - 0)
+        }
+    }
 
     // ── Options ──────────────────────────────────────────────────────────────
     HyprlandConfigOption { id: rounding;      key: "decoration:rounding" }
@@ -92,392 +118,399 @@ ContentPage {
   animation = specialWorkspaceOut, 1, 4, niri_accel, slidevert
 }`
 
-    // ── Displays ─────────────────────────────────────────────────────────────
-    ContentSection {
-        icon: "monitor"
-        shape: MaterialShape.Shape.ClamShell
-        title: Translation.tr("Displays")
-        visible: monitorConfig.monitors.length > 0
 
-        MonitorCanvas {
-            id: monitorCanvas
-            Layout.fillWidth: true
-            monitorConfig: monitorConfig
+    ColumnLayout {
+        id: mainLayout 
+        Layout.fillWidth: true   
+        Layout.fillHeight: true
+        spacing: 20
+        // ── Displays ─────────────────────────────────────────────────────────────
+        ContentSection {
+            icon: "monitor"
+            shape: MaterialShape.Shape.ClamShell
+            title: Translation.tr("Displays")
+            visible: monitorConfig.monitors.length > 0
+
+            MonitorCanvas {
+                id: monitorCanvas
+                Layout.fillWidth: true
+                monitorConfig: monitorConfig
+            }
+
+            ContentSubsection {
+                title: (monitorConfig.monitors[monitorCanvas.selectedIndex]?.name ?? "")
+                    + " · "
+                    + (monitorConfig.monitors[monitorCanvas.selectedIndex]?.description ?? "")
+
+                ConfigSwitch {
+                    buttonIcon: "tv_off"
+                    text: Translation.tr("Enabled")
+                    checked: !(monitorConfig.monitors[monitorCanvas.selectedIndex]?.disabled ?? false)
+                    onCheckedChanged: {
+                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { disabled: !checked })
+                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                    }
+                }
+
+                ContentSubsection {
+                    title: Translation.tr("Resolution & Refresh Rate")
+                    StyledComboBoxSearch {
+                        buttonIcon: "aspect_ratio"
+                        model: (monitorConfig.monitors[monitorCanvas.selectedIndex]?.availableModes ?? [])
+                            .map(mode => ({ display: mode, value: mode }))
+                        textRole: "display"
+                        currentIndex: (monitorConfig.monitors[monitorCanvas.selectedIndex]?.availableModes ?? [])
+                            .indexOf(monitorConfig.monitors[monitorCanvas.selectedIndex]?.currentMode ?? "")
+                        onActivated: {
+                            const mon = monitorConfig.monitors[monitorCanvas.selectedIndex]
+                            const mode = mon.availableModes[currentIndex]
+                            const parts = mode.match(/(\d+)x(\d+)@([\d.]+)Hz/)
+                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, {
+                                currentMode: mode,
+                                width: parseInt(parts[1]),
+                                height: parseInt(parts[2]),
+                                refreshRate: parseFloat(parts[3])
+                            })
+                            monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                        }
+                    }
+                }
+
+                ContentSubsection {
+                    title: Translation.tr("Orientation")
+                    ConfigSelectionArray {
+                        currentValue: monitorConfig.monitors[monitorCanvas.selectedIndex]?.transform ?? 0
+                        onSelected: newValue => {
+                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { transform: newValue })
+                            monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                        }
+                        options: [
+                            { displayName: Translation.tr("Normal"), icon: "screen_rotation_alt", value: 0 },
+                            { displayName: "90°",                    icon: "rotate_90_degrees_cw",  value: 1 },
+                            { displayName: "180°",                   icon: "screen_rotation",       value: 2 },
+                            { displayName: "270°",                   icon: "rotate_90_degrees_ccw", value: 3 },
+                        ]
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "zoom_in"
+                    text: Translation.tr("Scale")
+                    value: Math.round((monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0) * 100)
+                    from: 50; to: 300; stepSize: 25
+                    onValueChanged: {
+                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { scale: value / 100.0 })
+                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "swap_horiz"
+                    text: Translation.tr("Position X")
+                    value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.x ?? 0
+                    from: 0; to: 7680; stepSize: 1
+                    onValueChanged: {
+                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { x: value })
+                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "swap_vert"
+                    text: Translation.tr("Position Y")
+                    value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.y ?? 0
+                    from: 0; to: 4320; stepSize: 1
+                    onValueChanged: {
+                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { y: value })
+                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                    }
+                }
+            }
         }
 
-        ContentSubsection {
-            title: (monitorConfig.monitors[monitorCanvas.selectedIndex]?.name ?? "")
-                + " · "
-                + (monitorConfig.monitors[monitorCanvas.selectedIndex]?.description ?? "")
-
-            ConfigSwitch {
-                buttonIcon: "tv_off"
-                text: Translation.tr("Enabled")
-                checked: !(monitorConfig.monitors[monitorCanvas.selectedIndex]?.disabled ?? false)
-                onCheckedChanged: {
-                    monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { disabled: !checked })
-                    monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
-                }
-            }
+        // ── Layout ───────────────────────────────────────────────────────────────
+        ContentSection {
+            icon: "auto_awesome_mosaic"
+            shape: MaterialShape.Shape.Gem
+            title: Translation.tr("Layout")
 
             ContentSubsection {
-                title: Translation.tr("Resolution & Refresh Rate")
-                StyledComboBoxSearch {
-                    buttonIcon: "aspect_ratio"
-                    model: (monitorConfig.monitors[monitorCanvas.selectedIndex]?.availableModes ?? [])
-                        .map(mode => ({ display: mode, value: mode }))
-                    textRole: "display"
-                    currentIndex: (monitorConfig.monitors[monitorCanvas.selectedIndex]?.availableModes ?? [])
-                        .indexOf(monitorConfig.monitors[monitorCanvas.selectedIndex]?.currentMode ?? "")
-                    onActivated: {
-                        const mon = monitorConfig.monitors[monitorCanvas.selectedIndex]
-                        const mode = mon.availableModes[currentIndex]
-                        const parts = mode.match(/(\d+)x(\d+)@([\d.]+)Hz/)
-                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, {
-                            currentMode: mode,
-                            width: parseInt(parts[1]),
-                            height: parseInt(parts[2]),
-                            refreshRate: parseFloat(parts[3])
-                        })
-                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
-                    }
-                }
-            }
-
-            ContentSubsection {
-                title: Translation.tr("Orientation")
+                title: Translation.tr("Tiling Layout")
                 ConfigSelectionArray {
-                    currentValue: monitorConfig.monitors[monitorCanvas.selectedIndex]?.transform ?? 0
-                    onSelected: newValue => {
-                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { transform: newValue })
-                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
-                    }
+                    currentValue: layout.value ?? "dwindle"
+                    onSelected: newValue => HyprlandConfig.set("general:layout", newValue)
                     options: [
-                        { displayName: Translation.tr("Normal"), icon: "screen_rotation_alt", value: 0 },
-                        { displayName: "90°",                    icon: "rotate_90_degrees_cw",  value: 1 },
-                        { displayName: "180°",                   icon: "screen_rotation",       value: 2 },
-                        { displayName: "270°",                   icon: "rotate_90_degrees_ccw", value: 3 },
+                        { displayName: Translation.tr("Dwindle"),   icon: "browse",             value: "dwindle"   },
+                        { displayName: Translation.tr("Master"),    icon: "auto_awesome_mosaic", value: "master"    },
+                        { displayName: Translation.tr("Scrolling"), icon: "view_carousel",       value: "scrolling" },
+                    ]
+                }
+            }
+        }
+
+        // ── Input ────────────────────────────────────────────────────────────────
+        ContentSection {
+            icon: "trackpad_input"
+            shape: MaterialShape.Shape.Pentagon
+            title: Translation.tr("Input")
+
+            ContentSubsection {
+                title: Translation.tr("Keyboard")
+
+                MaterialTextArea {
+                    id: kbLayoutTextArea
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Keyboard layout (e.g., us, es, latam)")
+                    wrapMode: TextEdit.NoWrap
+                    Component.onCompleted: text = kbLayout.value ?? "us"
+                    Connections {
+                        target: kbLayout
+                        function onValueChanged() {
+                            if (kbLayoutTextArea.text !== kbLayout.value)
+                                kbLayoutTextArea.text = kbLayout.value ?? "us"
+                        }
+                    }
+                    Timer {
+                        id: kbLayoutDebounceTimer
+                        interval: 1000
+                        running: false
+                        onTriggered: HyprlandConfig.set("input:kb_layout", kbLayoutTextArea.text)
+                    }
+                    onTextChanged: kbLayoutDebounceTimer.restart()
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "numbers"
+                    text: Translation.tr("Numlock by default")
+                    checked: numlock.value ?? true
+                    onCheckedChanged: HyprlandConfig.set("input:numlock_by_default", checked ? 1 : 0)
+                }
+
+                ConfigSpinBox {
+                    icon: "keyboard_return"
+                    text: Translation.tr("Repeat delay (ms)")
+                    value: repeatDelay.value ?? 250
+                    from: 100; to: 1000; stepSize: 10
+                    onValueChanged: HyprlandConfig.set("input:repeat_delay", value)
+                }
+
+                ConfigSpinBox {
+                    icon: "speed"
+                    text: Translation.tr("Repeat rate")
+                    value: repeatRate.value ?? 35
+                    from: 10; to: 100; stepSize: 1
+                    onValueChanged: HyprlandConfig.set("input:repeat_rate", value)
+                }
+
+                ConfigSelectionArray {
+                    currentValue: followMouse.value ?? 1
+                    onSelected: newValue => HyprlandConfig.set("input:follow_mouse", newValue)
+                    options: [
+                        { displayName: Translation.tr("Disabled"), icon: "mouse",    value: 0 },
+                        { displayName: Translation.tr("Full"),     icon: "open_with", value: 1 },
+                        { displayName: Translation.tr("Loose"),    icon: "drag_pan",  value: 2 },
+                        { displayName: Translation.tr("Explicit"), icon: "ads_click", value: 3 },
                     ]
                 }
             }
 
-            ConfigSpinBox {
-                icon: "zoom_in"
-                text: Translation.tr("Scale")
-                value: Math.round((monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0) * 100)
-                from: 50; to: 300; stepSize: 25
-                onValueChanged: {
-                    monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { scale: value / 100.0 })
-                    monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
-                }
-            }
+            ContentSubsection {
+                title: Translation.tr("Touchpad")
 
-            ConfigSpinBox {
-                icon: "swap_horiz"
-                text: Translation.tr("Position X")
-                value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.x ?? 0
-                from: 0; to: 7680; stepSize: 1
-                onValueChanged: {
-                    monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { x: value })
-                    monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                ConfigSwitch {
+                    buttonIcon: "swap_vert"
+                    text: Translation.tr("Natural scroll")
+                    checked: naturalScroll.value ?? false
+                    onCheckedChanged: HyprlandConfig.set("input:touchpad:natural_scroll", checked ? 1 : 0)
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "swap_vert"
-                text: Translation.tr("Position Y")
-                value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.y ?? 0
-                from: 0; to: 4320; stepSize: 1
-                onValueChanged: {
-                    monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { y: value })
-                    monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                ConfigSwitch {
+                    buttonIcon: "keyboard_hide"
+                    text: Translation.tr("Disable while typing")
+                    checked: disableTyping.value ?? true
+                    onCheckedChanged: HyprlandConfig.set("input:touchpad:disable_while_typing", checked ? 1 : 0)
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "touch_app"
+                    text: Translation.tr("Clickfinger behavior")
+                    checked: clickfinger.value ?? false
+                    onCheckedChanged: HyprlandConfig.set("input:touchpad:clickfinger_behavior", checked ? 1 : 0)
+                }
+
+                ConfigSpinBox {
+                    icon: "swipe"
+                    text: Translation.tr("Scroll factor")
+                    value: Math.round((scrollFactor.value ?? 0.7) * 10)
+                    from: 1; to: 30; stepSize: 1
+                    onValueChanged: HyprlandConfig.set("input:touchpad:scroll_factor", value / 10.0)
                 }
             }
         }
-    }
 
-    // ── Layout ───────────────────────────────────────────────────────────────
-    ContentSection {
-        icon: "auto_awesome_mosaic"
-        shape: MaterialShape.Shape.Gem
-        title: Translation.tr("Layout")
+        // ── Visual & Aesthetics ──────────────────────────────────────────────────
+        ContentSection {
+            icon: "deblur"
+            shape: MaterialShape.Shape.PixelCircle
+            title: Translation.tr("Visual & Aesthetics")
 
-        ContentSubsection {
-            title: Translation.tr("Tiling Layout")
-            ConfigSelectionArray {
-                currentValue: layout.value ?? "dwindle"
-                onSelected: newValue => HyprlandConfig.set("general:layout", newValue)
-                options: [
-                    { displayName: Translation.tr("Dwindle"),   icon: "browse",             value: "dwindle"   },
-                    { displayName: Translation.tr("Master"),    icon: "auto_awesome_mosaic", value: "master"    },
-                    { displayName: Translation.tr("Scrolling"), icon: "view_carousel",       value: "scrolling" },
-                ]
-            }
-        }
-    }
-
-    // ── Input ────────────────────────────────────────────────────────────────
-    ContentSection {
-        icon: "trackpad_input"
-        shape: MaterialShape.Shape.Pentagon
-        title: Translation.tr("Input")
-
-        ContentSubsection {
-            title: Translation.tr("Keyboard")
-
-            MaterialTextArea {
-                id: kbLayoutTextArea
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("Keyboard layout (e.g., us, es, latam)")
-                wrapMode: TextEdit.NoWrap
-                Component.onCompleted: text = kbLayout.value ?? "us"
-                Connections {
-                    target: kbLayout
-                    function onValueChanged() {
-                        if (kbLayoutTextArea.text !== kbLayout.value)
-                            kbLayoutTextArea.text = kbLayout.value ?? "us"
-                    }
-                }
-                Timer {
-                    id: kbLayoutDebounceTimer
-                    interval: 1000
-                    running: false
-                    onTriggered: HyprlandConfig.set("input:kb_layout", kbLayoutTextArea.text)
-                }
-                onTextChanged: kbLayoutDebounceTimer.restart()
+            ConfigSpinBox {
+                icon: "rounded_corner"
+                text: Translation.tr("Window Rounding")
+                value: rounding.value ?? 22
+                from: 0; to: 30; stepSize: 1
+                onValueChanged: HyprlandConfig.set("decoration:rounding", value)
             }
 
             ConfigSwitch {
-                buttonIcon: "numbers"
-                text: Translation.tr("Numlock by default")
-                checked: numlock.value ?? true
-                onCheckedChanged: HyprlandConfig.set("input:numlock_by_default", checked ? 1 : 0)
+                buttonIcon: "blur_on"
+                text: Translation.tr("Blur")
+                checked: blurEnabled.value ?? true
+                onCheckedChanged: HyprlandConfig.set("decoration:blur:enabled", checked ? 1 : 0)
             }
 
             ConfigSpinBox {
-                icon: "keyboard_return"
-                text: Translation.tr("Repeat delay (ms)")
-                value: repeatDelay.value ?? 250
-                from: 100; to: 1000; stepSize: 10
-                onValueChanged: HyprlandConfig.set("input:repeat_delay", value)
+                icon: "blur_circular"
+                text: Translation.tr("Blur Size")
+                value: blurSize.value ?? 1
+                from: 1; to: 20; stepSize: 1
+                onValueChanged: HyprlandConfig.set("decoration:blur:size", value)
             }
 
             ConfigSpinBox {
-                icon: "speed"
-                text: Translation.tr("Repeat rate")
-                value: repeatRate.value ?? 35
-                from: 10; to: 100; stepSize: 1
-                onValueChanged: HyprlandConfig.set("input:repeat_rate", value)
-            }
-
-            ConfigSelectionArray {
-                currentValue: followMouse.value ?? 1
-                onSelected: newValue => HyprlandConfig.set("input:follow_mouse", newValue)
-                options: [
-                    { displayName: Translation.tr("Disabled"), icon: "mouse",    value: 0 },
-                    { displayName: Translation.tr("Full"),     icon: "open_with", value: 1 },
-                    { displayName: Translation.tr("Loose"),    icon: "drag_pan",  value: 2 },
-                    { displayName: Translation.tr("Explicit"), icon: "ads_click", value: 3 },
-                ]
-            }
-        }
-
-        ContentSubsection {
-            title: Translation.tr("Touchpad")
-
-            ConfigSwitch {
-                buttonIcon: "swap_vert"
-                text: Translation.tr("Natural scroll")
-                checked: naturalScroll.value ?? false
-                onCheckedChanged: HyprlandConfig.set("input:touchpad:natural_scroll", checked ? 1 : 0)
-            }
-
-            ConfigSwitch {
-                buttonIcon: "keyboard_hide"
-                text: Translation.tr("Disable while typing")
-                checked: disableTyping.value ?? true
-                onCheckedChanged: HyprlandConfig.set("input:touchpad:disable_while_typing", checked ? 1 : 0)
-            }
-
-            ConfigSwitch {
-                buttonIcon: "touch_app"
-                text: Translation.tr("Clickfinger behavior")
-                checked: clickfinger.value ?? false
-                onCheckedChanged: HyprlandConfig.set("input:touchpad:clickfinger_behavior", checked ? 1 : 0)
+                icon: "layers"
+                text: Translation.tr("Blur Passes")
+                value: blurPasses.value ?? 3
+                from: 1; to: 6; stepSize: 1
+                onValueChanged: HyprlandConfig.set("decoration:blur:passes", value)
             }
 
             ConfigSpinBox {
-                icon: "swipe"
-                text: Translation.tr("Scroll factor")
-                value: Math.round((scrollFactor.value ?? 0.7) * 10)
-                from: 1; to: 30; stepSize: 1
-                onValueChanged: HyprlandConfig.set("input:touchpad:scroll_factor", value / 10.0)
+                icon: "border_outer"
+                text: Translation.tr("Border Size")
+                value: borderSize.value ?? 1
+                from: 0; to: 10; stepSize: 1
+                onValueChanged: HyprlandConfig.set("general:border_size", value)
+            }
+
+            ConfigSpinBox {
+                icon: "margin"
+                text: Translation.tr("Gaps In")
+                value: gapsIn.value ?? 2
+                from: 0; to: 40; stepSize: 1
+                onValueChanged: HyprlandConfig.set("general:gaps_in", value)
+            }
+
+            ConfigSpinBox {
+                icon: "open_in_full"
+                text: Translation.tr("Gaps Out")
+                value: gapsOut.value ?? 5
+                from: 0; to: 60; stepSize: 1
+                onValueChanged: HyprlandConfig.set("general:gaps_out", value)
+            }
+
+            ConfigSpinBox {
+                icon: "opacity"
+                text: Translation.tr("Active Opacity")
+                value: Math.round((activeOpacity.value ?? 1.0) * 100)
+                from: 10; to: 100; stepSize: 5
+                onValueChanged: HyprlandConfig.set("decoration:active_opacity", value / 100.0)
+            }
+
+            ConfigSpinBox {
+                icon: "opacity"
+                text: Translation.tr("Inactive Opacity")
+                value: Math.round((inactiveOpacity.value ?? 0.9) * 100)
+                from: 10; to: 100; stepSize: 5
+                onValueChanged: HyprlandConfig.set("decoration:inactive_opacity", value / 100.0)
             }
         }
-    }
 
-    // ── Visual & Aesthetics ──────────────────────────────────────────────────
-    ContentSection {
-        icon: "deblur"
-        shape: MaterialShape.Shape.PixelCircle
-        title: Translation.tr("Visual & Aesthetics")
+        // ── Animations ───────────────────────────────────────────────────────────
+        ContentSection {
+            icon: "animation"
+            shape: MaterialShape.Shape.Oval
+            title: Translation.tr("Animations")
 
-        ConfigSpinBox {
-            icon: "rounded_corner"
-            text: Translation.tr("Window Rounding")
-            value: rounding.value ?? 22
-            from: 0; to: 30; stepSize: 1
-            onValueChanged: HyprlandConfig.set("decoration:rounding", value)
-        }
+            ConfigSwitch {
+                buttonIcon: "check"
+                text: Translation.tr("Enable Animations")
+                checked: animEnabled.value ?? true
+                onCheckedChanged: HyprlandConfig.set("animations:enabled", checked ? 1 : 0)
+            }
 
-        ConfigSwitch {
-            buttonIcon: "blur_on"
-            text: Translation.tr("Blur")
-            checked: blurEnabled.value ?? true
-            onCheckedChanged: HyprlandConfig.set("decoration:blur:enabled", checked ? 1 : 0)
-        }
+            ContentSubsection {
+                title: Translation.tr("Animation Preset")
 
-        ConfigSpinBox {
-            icon: "blur_circular"
-            text: Translation.tr("Blur Size")
-            value: blurSize.value ?? 1
-            from: 1; to: 20; stepSize: 1
-            onValueChanged: HyprlandConfig.set("decoration:blur:size", value)
-        }
-
-        ConfigSpinBox {
-            icon: "layers"
-            text: Translation.tr("Blur Passes")
-            value: blurPasses.value ?? 3
-            from: 1; to: 6; stepSize: 1
-            onValueChanged: HyprlandConfig.set("decoration:blur:passes", value)
-        }
-
-        ConfigSpinBox {
-            icon: "border_outer"
-            text: Translation.tr("Border Size")
-            value: borderSize.value ?? 1
-            from: 0; to: 10; stepSize: 1
-            onValueChanged: HyprlandConfig.set("general:border_size", value)
-        }
-
-        ConfigSpinBox {
-            icon: "margin"
-            text: Translation.tr("Gaps In")
-            value: gapsIn.value ?? 2
-            from: 0; to: 40; stepSize: 1
-            onValueChanged: HyprlandConfig.set("general:gaps_in", value)
-        }
-
-        ConfigSpinBox {
-            icon: "open_in_full"
-            text: Translation.tr("Gaps Out")
-            value: gapsOut.value ?? 5
-            from: 0; to: 60; stepSize: 1
-            onValueChanged: HyprlandConfig.set("general:gaps_out", value)
-        }
-
-        ConfigSpinBox {
-            icon: "opacity"
-            text: Translation.tr("Active Opacity")
-            value: Math.round((activeOpacity.value ?? 1.0) * 100)
-            from: 10; to: 100; stepSize: 5
-            onValueChanged: HyprlandConfig.set("decoration:active_opacity", value / 100.0)
-        }
-
-        ConfigSpinBox {
-            icon: "opacity"
-            text: Translation.tr("Inactive Opacity")
-            value: Math.round((inactiveOpacity.value ?? 0.9) * 100)
-            from: 10; to: 100; stepSize: 5
-            onValueChanged: HyprlandConfig.set("decoration:inactive_opacity", value / 100.0)
-        }
-    }
-
-    // ── Animations ───────────────────────────────────────────────────────────
-    ContentSection {
-        icon: "animation"
-        shape: MaterialShape.Shape.Oval
-        title: Translation.tr("Animations")
-
-        ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr("Enable Animations")
-            checked: animEnabled.value ?? true
-            onCheckedChanged: HyprlandConfig.set("animations:enabled", checked ? 1 : 0)
-        }
-
-        ContentSubsection {
-            title: Translation.tr("Animation Preset")
-
-            ConfigSelectionArray {
-                currentValue: Config.options.hyprland.animations.animation
-                
-                onSelected: newValue => {
-                    Config.options.hyprland.animations.animation = newValue;
-
-                    const presets = {
-                        "fast":   presetFast,
-                        "normal": presetNormal,
-                        "niri":   presetNiri
-                    };
+                ConfigSelectionArray {
+                    currentValue: Config.options.hyprland.animations.animation
                     
-                    const content = presets[newValue] ?? "";
+                    onSelected: newValue => {
+                        Config.options.hyprland.animations.animation = newValue;
 
-                    if (content !== "") {
-                        saveAnimProc.command = [
-                            "bash", 
-                            "-c", 
-                            "echo '" + content + "' > ~/.config/hypr/hyprland/shellOverrides/animations.conf"
-                        ];
-                        saveAnimProc.running = true;
+                        const presets = {
+                            "fast":   presetFast,
+                            "normal": presetNormal,
+                            "niri":   presetNiri
+                        };
+                        
+                        const content = presets[newValue] ?? "";
+
+                        if (content !== "") {
+                            saveAnimProc.command = [
+                                "bash", 
+                                "-c", 
+                                "echo '" + content + "' > ~/.config/hypr/hyprland/shellOverrides/animations.conf"
+                            ];
+                            saveAnimProc.running = true;
+                        }
+                    }
+                    options: [
+                        { displayName: Translation.tr("Elastic"),   icon: "move_selection_right", value: "fast" },
+                        { displayName: Translation.tr("Normal"), icon: "animation", value: "normal" },
+                        { displayName: Translation.tr("Niri Like"),   icon: "mobiledata_arrows", value: "niri" },
+                    ]
+                }
+            }
+            
+            NoticeBox {
+                Layout.fillWidth: true
+                Layout.topMargin: 15
+                text: Translation.tr("Animation presets require a source line in your hyprland.conf. Add the following line to enable presets:") + "\n\nsource = ~/.config/hypr/hyprland/shellOverrides/animations.conf"
+
+                Item { Layout.fillWidth: true }
+
+                RippleButtonWithIcon {
+                    id: copySourceButton
+                    property bool justCopied: false
+                    Layout.fillWidth: false
+                    buttonRadius: Appearance.rounding.small
+                    materialIcon: justCopied ? "check" : "content_copy"
+                    mainText: justCopied ? Translation.tr("Copied!") : Translation.tr("Copy line")
+                    onClicked: {
+                        copySourceButton.justCopied = true
+                        Quickshell.clipboardText = "source = ~/.config/hypr/hyprland/shellOverrides/animations.conf"
+                        revertSourceTimer.restart()
+                    }
+                    colBackground: ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
+                    colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                    colRipple: Appearance.colors.colPrimaryContainerActive
+                    Timer {
+                        id: revertSourceTimer
+                        interval: 1500
+                        onTriggered: copySourceButton.justCopied = false
                     }
                 }
-                options: [
-                    { displayName: Translation.tr("Elastic"),   icon: "move_selection_right", value: "fast" },
-                    { displayName: Translation.tr("Normal"), icon: "animation", value: "normal" },
-                    { displayName: Translation.tr("Niri Like"),   icon: "mobiledata_arrows", value: "niri" },
-                ]
             }
-        }
-        
-        NoticeBox {
-            Layout.fillWidth: true
-            Layout.topMargin: 15
-            text: Translation.tr("Animation presets require a source line in your hyprland.conf. Add the following line to enable presets:") + "\n\nsource = ~/.config/hypr/hyprland/shellOverrides/animations.conf"
-
-            Item { Layout.fillWidth: true }
-
-            RippleButtonWithIcon {
-                id: copySourceButton
-                property bool justCopied: false
-                Layout.fillWidth: false
-                buttonRadius: Appearance.rounding.small
-                materialIcon: justCopied ? "check" : "content_copy"
-                mainText: justCopied ? Translation.tr("Copied!") : Translation.tr("Copy line")
-                onClicked: {
-                    copySourceButton.justCopied = true
-                    Quickshell.clipboardText = "source = ~/.config/hypr/hyprland/shellOverrides/animations.conf"
-                    revertSourceTimer.restart()
-                }
-                colBackground: ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
-                colBackgroundHover: Appearance.colors.colPrimaryContainerHover
-                colRipple: Appearance.colors.colPrimaryContainerActive
-                Timer {
-                    id: revertSourceTimer
-                    interval: 1500
-                    onTriggered: copySourceButton.justCopied = false
-                }
+            
+            Process {
+                id: saveAnimProc
+                onRunningChanged: if (!running) reloadAnimProc.running = true
             }
-        }
-        
-        Process {
-            id: saveAnimProc
-            onRunningChanged: if (!running) reloadAnimProc.running = true
-        }
-        Process {
-            id: reloadAnimProc
-            command: ["hyprctl", "reload"]
+            Process {
+                id: reloadAnimProc
+                command: ["hyprctl", "reload"]
+            }
         }
     }
 }
