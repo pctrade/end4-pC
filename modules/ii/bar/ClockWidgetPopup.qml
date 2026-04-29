@@ -155,7 +155,7 @@ StyledPopup {
                                 right: parent.right
                                 rightMargin: 10
                             }
-                            text: `    ${todo.content} `
+                            text: `    ${todo.content} `
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: Appearance.colors.colOnLayer1
                             elide: Text.ElideRight
