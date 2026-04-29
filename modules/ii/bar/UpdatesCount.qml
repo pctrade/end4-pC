@@ -6,6 +6,7 @@ import qs
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 
 MouseArea {
     id: root
@@ -15,13 +16,58 @@ MouseArea {
     implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : rowLayout.implicitWidth + 12
     implicitHeight: vertical ? colLayout.implicitHeight + 8 : Appearance.sizes.barHeight
     cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-    onClicked: {
-        Quickshell.execDetached([
+    onClicked: (mouse) => {
+        if (mouse.button === Qt.LeftButton) {
+            updateProc.running = true
+        }
+    }
+
+    Process {
+        id: updateProc
+        command: [
             "kitty", "--hold",
             "fish", "-i", "-l", "-c",
             "yay -Syu --combinedupgrade=false"
-        ])
+        ]
+        onExited: (exitCode, exitStatus) => {
+            Updates.refresh()
+            notifyTimer.restart()
+        }
+    }
+
+    Timer {
+        id: notifyTimer
+        interval: 5000 
+        repeat: false
+        onTriggered: {
+            if (Updates.count === 0) {
+                Quickshell.execDetached(["notify-send",
+                    Translation.tr("Updates"),
+                    Translation.tr("System up to date"),
+                    "-a", "Shell"
+                ])
+            } else {
+                Quickshell.execDetached(["notify-send",
+                    Translation.tr("Updates"),
+                    Translation.tr("Update cancelled — %1 updates still pending").arg(Updates.count),
+                    "-a", "Shell", "-u", "normal"
+                ])
+            }
+        }
+    }
+
+    onPressed: (mouse) => {
+        if (mouse.button === Qt.RightButton) {
+            Updates.refresh()
+            Quickshell.execDetached(["notify-send",
+                Translation.tr("Updates"),
+                Translation.tr("Checking for updates..."),
+                "-a", "Shell"
+            ])
+            mouse.accepted = false
+        }
     }
 
     // Horizontal
