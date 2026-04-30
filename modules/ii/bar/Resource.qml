@@ -66,7 +66,7 @@ Item {
         }
     }
 
-    // Layout vertical — solo círculo centrado
+    // Vertical
     Loader {
         id: resourceProgress
         visible: root.vertical
@@ -74,7 +74,7 @@ Item {
         sourceComponent: Config.options.bar.resources.style === "filled" ? filledStyle : outlineStyle
     }
 
-    // Layout horizontal — círculo + texto + animación
+    // Horizontal
     RowLayout {
         id: resourceRowLayout
         visible: !root.vertical
@@ -118,11 +118,6 @@ Item {
     }
 
     Behavior on implicitWidth {
-        enabled: !root.vertical
-        NumberAnimation {
-            duration: Appearance.animation.elementMove.duration
-            easing.type: Appearance.animation.elementMove.type
-            easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-        }
+        enabled: false
     }
 }
