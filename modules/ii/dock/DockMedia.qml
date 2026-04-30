@@ -143,7 +143,7 @@ Item {
             Rectangle {
                 id: artRect
                 Layout.alignment:  Qt.AlignVCenter
-                Layout.leftMargin: root.artMargin
+                Layout.leftMargin: root.artMargin + 2
                 implicitWidth:     36
                 implicitHeight:    36
                 color:  ColorUtils.transparentize(root.blendedColors.colLayer1, 0.5)
