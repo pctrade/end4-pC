@@ -31,12 +31,17 @@ Item {
     property string artFileName:         Qt.md5(artUrl)
     property string artFilePath:         `${artDownloadLocation}/${artFileName}`
     property bool   artDownloaded:       false
-    property string displayedArtFilePath: artDownloaded ? Qt.resolvedUrl(artFilePath) : ""
+
+    property string displayedArtFilePath: {
+        if (!root.artDownloaded) return ""
+        if (root.artUrl.startsWith("file://")) return root.artUrl
+        return Qt.resolvedUrl(artFilePath)
+    }
 
     property color artDominantColor: ColorUtils.mix(
-            colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary,
-            Appearance.colors.colPrimaryContainer,
-            0.8)
+        colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary,
+        Appearance.colors.colPrimaryContainer,
+        0.8)
 
     property QtObject blendedColors: AdaptedMaterialScheme {
         color: root.artDominantColor
@@ -48,6 +53,12 @@ Item {
             root.artDownloaded = false
             return
         }
+
+        if (root.artUrl.startsWith("file://")) {
+            root.artDownloaded = true
+            return
+        }
+
         artDownloader.targetFile  = root.artUrl
         artDownloader.artFilePath = root.artFilePath
         root.artDownloaded = false
@@ -84,7 +95,7 @@ Item {
 
     Rectangle {
         id: card
-        anchors.fill: parent
+        anchors.fill:         parent
         anchors.topMargin:    Appearance.sizes.hyprlandGapsOut
         anchors.bottomMargin: Appearance.sizes.hyprlandGapsOut
         anchors.leftMargin:   Appearance.sizes.hyprlandGapsOut
@@ -107,7 +118,7 @@ Item {
             z: 0
         }
 
-        // Blur art
+        // Blur art 
         Image {
             id: blurredArt
             anchors.fill: parent
@@ -123,7 +134,7 @@ Item {
             }
         }
 
-        // Overlay 
+        // Overlay
         Rectangle {
             anchors.fill: parent
             color: ColorUtils.transparentize(root.blendedColors.colLayer0, 0.3)
@@ -131,8 +142,9 @@ Item {
         }
 
         RowLayout {
-            anchors.fill: parent
-            clip: true
+            width:  card.width
+            height: card.height
+            clip:   true
             spacing: 8
             z: 3
 
@@ -166,6 +178,7 @@ Item {
                 }
             }
 
+            // Artist + Title
             ColumnLayout {
                 Layout.fillWidth:  true
                 Layout.fillHeight: true
@@ -184,7 +197,7 @@ Item {
                 StyledText {
                     Layout.fillWidth: true
                     text: StringUtils.cleanMusicTitle(root.trackTitle) || "Untitled"
-                    font.pixelSize: Appearance.font.pixelSize.normal -4
+                    font.pixelSize: Appearance.font.pixelSize.normal - 4
                     color: root.blendedColors.colOnLayer0
                     elide: Text.ElideRight
                     opacity: 0.7
@@ -193,11 +206,13 @@ Item {
                 Item { Layout.fillHeight: true }
             }
 
+            // Buttons
             RowLayout {
                 Layout.rightMargin: 4
                 Layout.alignment:   Qt.AlignVCenter
                 spacing: 3
 
+                // Play / Pause
                 RippleButton {
                     implicitWidth:  26
                     implicitHeight: 26
@@ -229,6 +244,7 @@ Item {
                     }
                 }
 
+                // Next
                 RippleButton {
                     implicitWidth:  28
                     implicitHeight: 28
