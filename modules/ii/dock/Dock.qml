@@ -180,7 +180,7 @@ Scope {
                                 RowLayout {
                                     id: activeRow
                                     anchors.fill: parent
-                                    spacing: 2
+                                    spacing: -4
                                     
                                     DockMedia {     
                                         id: dockMedia       
@@ -214,11 +214,15 @@ Scope {
                                 }
                             }
 
-                            DockSeparator {}
+                            DockSeparator {
+                                Layout.leftMargin: -3
+                            }
 
                             DockButton {
                                 Layout.fillHeight: true
                                 Layout.topMargin: 0
+                                Layout.leftMargin: -10
+                                Layout.rightMargin: -3
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
                                 topInset:    dockRow.padding
                                 bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
