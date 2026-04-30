@@ -13,47 +13,52 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
-Scope { // Scope
+Scope {
     id: root
     property bool pinned: Config.options?.dock.pinnedOnStartup ?? false
 
     Variants {
-        // For each monitor
         model: Quickshell.screens
 
         PanelWindow {
             id: dockRoot
-            // Window
             required property var modelData
             screen: modelData
             visible: !GlobalStates.screenLocked
 
-            property bool reveal: root.pinned || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse) || dockApps.requestDockShow || (!ToplevelManager.activeToplevel?.activated)
+            property bool reveal: root.pinned
+                || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse)
+                || activeAppsArea.requestDockShow
+                || dragSlots.requestDockShow    
+                || (!ToplevelManager.activeToplevel?.activated)
 
-            anchors {
-                bottom: true
-                left: true
-                right: true
-            }
+            anchors { bottom: true; left: true; right: true }
 
-            exclusiveZone: root.pinned ? implicitHeight - (Appearance.sizes.hyprlandGapsOut) - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut) : 0
+            exclusiveZone: root.pinned
+                ? implicitHeight - Appearance.sizes.hyprlandGapsOut
+                  - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut)
+                : 0
 
             implicitWidth: dockBackground.implicitWidth
             WlrLayershell.namespace: "quickshell:dock"
             color: "transparent"
 
-            implicitHeight: (Config.options?.dock.height ?? 70) + Appearance.sizes.elevationMargin + Appearance.sizes.hyprlandGapsOut
+            implicitHeight: (Config.options?.dock.height ?? 70)
+                + Appearance.sizes.elevationMargin
+                + Appearance.sizes.hyprlandGapsOut
 
-            mask: Region {
-                item: dockMouseArea
-            }
+            mask: Region { item: dockMouseArea }
 
             MouseArea {
                 id: dockMouseArea
                 height: parent.height
                 anchors {
                     top: parent.top
-                    topMargin: dockRoot.reveal ? 0 : Config.options?.dock.hoverToReveal ? (dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight) : (dockRoot.implicitHeight + 1)
+                    topMargin: dockRoot.reveal
+                        ? 0
+                        : Config.options?.dock.hoverToReveal
+                            ? (dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight)
+                            : (dockRoot.implicitHeight + 1)
                     horizontalCenter: parent.horizontalCenter
                 }
                 implicitWidth: dockHoverRegion.implicitWidth + Appearance.sizes.elevationMargin * 2
@@ -68,28 +73,31 @@ Scope { // Scope
                     anchors.fill: parent
                     implicitWidth: dockBackground.implicitWidth
 
-                    Item { // Wrapper for the dock background
+                    Item {
                         id: dockBackground
                         anchors {
                             top: parent.top
                             bottom: parent.bottom
                             horizontalCenter: parent.horizontalCenter
                         }
-
                         implicitWidth: dockRow.implicitWidth + 5 * 2
-                        height: parent.height - Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut
+                        height: parent.height
+                            - Appearance.sizes.elevationMargin
+                            - Appearance.sizes.hyprlandGapsOut
 
                         StyledRectangularShadow {
                             target: dockVisualBackground
                             visible: false
                         }
-                        Rectangle { // The real rectangle that is visible
+
+                        Rectangle {
                             id: dockVisualBackground
                             property real margin: Appearance.sizes.elevationMargin
                             anchors.fill: parent
-                            anchors.topMargin: Appearance.sizes.elevationMargin
+                            anchors.topMargin:    Appearance.sizes.elevationMargin
                             anchors.bottomMargin: Appearance.sizes.hyprlandGapsOut
-                            color: Config.options.dock.showBackground ? Appearance.colors.colLayer0 : "transparent"
+                            color: Config.options.dock.showBackground
+                                   ? Appearance.colors.colLayer0 : "transparent"
                             border.width: Config.options.dock.showBackground ? 1 : 0
                             border.color: Appearance.colors.colLayer0Border
                             radius: Appearance.rounding.large + 3
@@ -104,15 +112,17 @@ Scope { // Scope
                             property real padding: 5
 
                             VerticalButtonGroup {
-                                Layout.topMargin: Appearance.sizes.hyprlandGapsOut // why does this work
-                                Layout.leftMargin: root.pinned ? Appearance.sizes.hyprlandGapsOut + 4 : Appearance.sizes.hyprlandGapsOut
-                                Layout.rightMargin: root.pinned ? Appearance.sizes.hyprlandGapsOut + 4 : Appearance.sizes.hyprlandGapsOut
+                                Layout.topMargin: 3
+                                Layout.leftMargin:  root.pinned
+                                    ? Appearance.sizes.hyprlandGapsOut + 4
+                                    : Appearance.sizes.hyprlandGapsOut
+                                Layout.rightMargin: root.pinned
+                                    ? Appearance.sizes.hyprlandGapsOut + 4
+                                    : Appearance.sizes.hyprlandGapsOut
+
                                 GroupButton {
-                                    // Pin button
-                                    baseWidth: 35
-                                    baseHeight: 35
-                                    clickedWidth: baseWidth
-                                    clickedHeight: baseHeight + 20
+                                    baseWidth: 35; baseHeight: 35
+                                    clickedWidth: baseWidth; clickedHeight: baseHeight + 20
                                     buttonRadius: Appearance.rounding.normal
                                     toggled: root.pinned
                                     onClicked: root.pinned = !root.pinned
@@ -120,20 +130,101 @@ Scope { // Scope
                                         text: "keep"
                                         horizontalAlignment: Text.AlignHCenter
                                         iconSize: Appearance.font.pixelSize.larger
-                                        color: root.pinned ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer0
+                                        color: root.pinned
+                                               ? Appearance.m3colors.m3onPrimary
+                                               : Appearance.colors.colOnLayer0
                                     }
                                 }
                             }
+
                             DockSeparator {}
-                            DockApps {
-                                id: dockApps
+
+                            DragApps {
+                                id: dragSlots
+                                Layout.fillHeight: true
+                                Layout.topMargin: 0
+
+                                pinnedApps:    Config.options?.dock.pinnedApps ?? []
                                 buttonPadding: dockRow.padding
+                                btnSize:       46
+                                btnSpacing:    4
+
+                                onOrderChanged: (newOrder) => {
+                                    console.log("[Dock] pinnedApps reordered →",
+                                                JSON.stringify(newOrder))
+                                }
                             }
+
+                            DockSeparator {
+                                visible: activeAppsArea.hasActiveUnpinned
+                            }
+
+                            Item {
+                                id: activeAppsArea
+                                Layout.fillHeight: true
+                                Layout.topMargin: 0
+
+                                property bool requestDockShow: false
+
+                                property var activeUnpinned: {
+                                    return TaskbarApps.apps.filter(
+                                        a => !a.pinned
+                                          && a.appId !== "SEPARATOR"
+                                          && a.toplevels.length > 0
+                                    )
+                                }
+                                property bool hasActiveUnpinned: activeUnpinned.length > 0 || dockMedia.visible
+
+                                implicitWidth:  activeRow.implicitWidth
+                                implicitHeight: parent.height
+
+                                Behavior on implicitWidth {
+                                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                                }
+
+                                RowLayout {
+                                    id: activeRow
+                                    anchors.fill: parent
+                                    spacing: 2
+                                    
+                                    DockMedia {     
+                                        id: dockMedia       
+                                        visible: Config.options.dock.showMedia          
+                                        Layout.fillHeight: true
+                                        Layout.topMargin: 11
+                                        Layout.bottomMargin: 6
+                                        Layout.rightMargin: -6
+                                        buttonPadding: dockRow.padding
+                                    }
+
+                                    Repeater {
+                                        model: activeAppsArea.activeUnpinned
+                                        delegate: DockAppButton {
+                                            required property var modelData
+                                            appToplevel: modelData
+                                            Layout.topMargin: 0
+                                            appListRoot: appListBridge
+
+                                            topInset:    dockRow.padding
+                                            bottomInset: dockRow.padding
+                                        }
+                                    }
+                                }
+
+                                QtObject {
+                                    id: appListBridge
+                                    property Item lastHoveredButton: null
+                                    property bool buttonHovered: false
+                                }
+                            }
+
                             DockSeparator {}
+
                             DockButton {
                                 Layout.fillHeight: true
+                                Layout.topMargin: 0
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
-                                topInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
+                                topInset:    dockRow.padding
                                 bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
                                 contentItem: MaterialSymbol {
                                     anchors.fill: parent

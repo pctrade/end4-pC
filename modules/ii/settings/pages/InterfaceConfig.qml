@@ -184,6 +184,15 @@ ContentPage {
                 }
             }
 
+            ConfigSwitch {
+                buttonIcon: "music_note"
+                text: Translation.tr("Media Player")
+                checked: Config.options.dock.showMedia
+                onCheckedChanged: {
+                    Config.options.dock.showMedia = checked;
+                }
+            }
+
             ConfigRow {
                 uniform: true
                 ConfigSwitch {
