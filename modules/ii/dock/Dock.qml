@@ -221,8 +221,8 @@ Scope {
                             DockButton {
                                 Layout.fillHeight: true
                                 Layout.topMargin: 0
-                                Layout.leftMargin: -10
-                                Layout.rightMargin: -3
+                                Layout.leftMargin: Config.options.dock.showMedia ? -10 : -4
+                                Layout.rightMargin: Config.options.dock.showMedia ? -3 : 0
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
                                 topInset:    dockRow.padding
                                 bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
