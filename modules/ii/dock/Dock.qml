@@ -147,12 +147,7 @@ Scope {
                                 pinnedApps:    Config.options?.dock.pinnedApps ?? []
                                 buttonPadding: dockRow.padding
                                 btnSize:       46
-                                btnSpacing:    4
-
-                                onOrderChanged: (newOrder) => {
-                                    console.log("[Dock] pinnedApps reordered →",
-                                                JSON.stringify(newOrder))
-                                }
+                                btnSpacing:    2
                             }
 
                             DockSeparator {
@@ -193,7 +188,8 @@ Scope {
                                         Layout.fillHeight: true
                                         Layout.topMargin: 11
                                         Layout.bottomMargin: 6
-                                        Layout.rightMargin: -6
+                                        Layout.rightMargin: 0 //just in case lol
+                                        Layout.leftMargin: 0
                                         buttonPadding: dockRow.padding
                                     }
 

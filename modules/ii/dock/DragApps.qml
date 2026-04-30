@@ -16,13 +16,14 @@ import Quickshell.Hyprland
 
 Item {
     id: root
-    property real btnSize:    46
+
+    property real btnSize: 46
     property real btnSpacing: 2
     property real buttonPadding: 5
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
     property real maxWindowPreviewHeight: 200
-    property real maxWindowPreviewWidth:  300
-    property real windowControlsHeight:   30
+    property real maxWindowPreviewWidth: 300
+    property real windowControlsHeight: 30
     property Item lastHoveredButton: null
     property bool buttonHovered: false
     property bool requestDockShow: previewPopup.show
@@ -128,7 +129,6 @@ Item {
 
                 implicitWidth: implicitHeight - topInset - bottomInset
 
-                // ── Hover tracking
                 hoverEnabled: true
                 onHoveredChanged: {
                     if (hovered) {
@@ -165,11 +165,30 @@ Item {
                         implicitSize: 33
                     }
 
+                    Loader {
+                        active: Config.options.dock.monochromeIcons
+                        anchors.fill: appIcon
+                        sourceComponent: Item {
+                            Desaturate {
+                                id: desaturatedIcon
+                                visible: false
+                                anchors.fill: parent
+                                source: appIcon
+                                desaturation: 0.8
+                            }
+                            ColorOverlay {
+                                anchors.fill: desaturatedIcon
+                                source: desaturatedIcon
+                                color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.9)
+                            }
+                        }
+                    }
+
                     RowLayout {
                         spacing: 3
                         anchors {
-                            top:              appIcon.bottom
-                            topMargin:        2
+                            top: appIcon.bottom
+                            topMargin: 2
                             horizontalCenter: parent.horizontalCenter
                         }
                         Repeater {

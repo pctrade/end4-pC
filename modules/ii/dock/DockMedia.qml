@@ -33,13 +33,10 @@ Item {
     property bool   artDownloaded:       false
     property string displayedArtFilePath: artDownloaded ? Qt.resolvedUrl(artFilePath) : ""
 
-    property color artDominantColor: Config.options.sidebar.media.artColors
-        ? ColorUtils.mix(
+    property color artDominantColor: ColorUtils.mix(
             colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary,
             Appearance.colors.colPrimaryContainer,
-            0.8
-          )
-        : Appearance.colors.colPrimaryContainer
+            0.8)
 
     property QtObject blendedColors: AdaptedMaterialScheme {
         color: root.artDominantColor
