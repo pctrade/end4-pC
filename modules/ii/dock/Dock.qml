@@ -26,19 +26,30 @@ Scope {
             screen: modelData
             visible: !GlobalStates.screenLocked
 
-            property bool reveal: root.pinned
-                || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse)
-                || activeAppsArea.requestDockShow
-                || dragSlots.requestDockShow    
-                || (!ToplevelManager.activeToplevel?.activated)
+            property HyprlandMonitor hyprMonitor: Hyprland.monitorFor(modelData)
+            property list<HyprlandWorkspace> monitorWorkspaces: Hyprland.workspaces.values.filter(
+                ws => ws.monitor && ws.monitor.name === hyprMonitor.name
+            )
+            property bool fullscreenOnThisMonitor: monitorWorkspaces.some(
+                ws => ws.active && ws.toplevels.values.some(w => w.wayland?.fullscreen)
+            )
 
-            anchors { bottom: true; left: true; right: true }
+            property bool reveal: {
+                if (fullscreenOnThisMonitor)
+                    return Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse
+                return root.pinned
+                    || (Config.options?.dock.hoverToReveal && dockMouseArea.containsMouse)
+                    || activeAppsArea.requestDockShow
+                    || dragSlots.requestDockShow
+                    || (!ToplevelManager.activeToplevel?.activated)
+            }
 
-            exclusiveZone: root.pinned
+            exclusiveZone: (root.pinned && !fullscreenOnThisMonitor)
                 ? implicitHeight - Appearance.sizes.hyprlandGapsOut
                   - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut)
                 : 0
 
+            anchors { bottom: true; left: true; right: true }
             implicitWidth: dockBackground.implicitWidth
             WlrLayershell.namespace: "quickshell:dock"
             color: "transparent"
@@ -181,14 +192,14 @@ Scope {
                                     id: activeRow
                                     anchors.fill: parent
                                     spacing: -4
-                                    
-                                    DockMedia {     
-                                        id: dockMedia       
-                                        visible: Config.options.dock.showMedia          
+
+                                    DockMedia {
+                                        id: dockMedia
+                                        visible: Config.options.dock.showMedia
                                         Layout.fillHeight: true
                                         Layout.topMargin: 11
                                         Layout.bottomMargin: 6
-                                        Layout.rightMargin: 0 //just in case lol
+                                        Layout.rightMargin: 0
                                         Layout.leftMargin: 0
                                         buttonPadding: dockRow.padding
                                     }
@@ -200,7 +211,6 @@ Scope {
                                             appToplevel: modelData
                                             Layout.topMargin: 0
                                             appListRoot: appListBridge
-
                                             topInset:    dockRow.padding
                                             bottomInset: dockRow.padding
                                         }
