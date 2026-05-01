@@ -17,9 +17,8 @@ Item {
     property var activeMenu: null
 
     visible: SystemTray.items.values.length > 0
-    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : gridLayout.implicitWidth + 10
-    implicitHeight: vertical ? gridLayout.implicitHeight + 10 : gridLayout.implicitHeight
-
+    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : root.unpinnedItems.length > 0 ? gridLayout.implicitWidth + 4 : gridLayout.implicitWidth + 6
+    implicitHeight: vertical ? gridLayout.implicitHeight + 4 : gridLayout.implicitHeight
     property list<var> pinnedItems: TrayService.pinnedItems
     property list<var> unpinnedItems: TrayService.unpinnedItems
     onUnpinnedItemsChanged: {
@@ -60,11 +59,11 @@ Item {
         id: gridLayout
         columns: root.vertical ? 1 : -1
         anchors.fill: parent
-        anchors.leftMargin:   root.vertical ? 0 : 5
-        anchors.topMargin:    root.vertical ? 5 : 0
-        anchors.bottomMargin: root.vertical ? 5 : 0
+        anchors.leftMargin:   0
+        anchors.topMargin:    0
+        anchors.bottomMargin: 0
         rowSpacing: 8
-        columnSpacing: root.vertical ? 0 : (Config.options.bar.cornerStyle === 2 ? 10 : 15)
+        columnSpacing: root.vertical ? 0 : 4
 
         RippleButton {
             id: trayOverflowButton
