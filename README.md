@@ -10,12 +10,13 @@ Customized and maintained by **pctrade**
 ---
 
 ## 📸 Screenshots
-
 <div align="center">
 
 | 🎵 Lyrics | 🖼️ Online Wallpapers |
 |:---:|:---:|
 | ![Screenshot 1](screenshots/1.png) | ![Screenshot 2](screenshots/2.png) |
+| 🪟 Niri Like Overview | 🔧 Hyprland Configs |
+| ![Screenshot 5](screenshots/5.png) | ![Screenshot 6](screenshots/6.png) |
 | ⚙️ Configurable Bar | ✨ And More |
 | ![Screenshot 3](screenshots/3.png) | ![Screenshot 4](screenshots/4.png) |
 

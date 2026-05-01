@@ -199,7 +199,7 @@ Scope {
                                         Layout.fillHeight: true
                                         Layout.topMargin: 11
                                         Layout.bottomMargin: 6
-                                        Layout.rightMargin: 0
+                                        Layout.rightMargin: 3
                                         Layout.leftMargin: 0
                                         buttonPadding: dockRow.padding
                                     }
