@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 import json, subprocess, time, os
 
+lockfile = "/tmp/qs-autostart.lock"
+
+if os.path.exists(lockfile):
+    exit(0)
+
+open(lockfile, 'w').close()
+
 with open(f"{os.environ['HOME']}/.config/illogical-impulse/config.json") as f:
     data = json.load(f)
 
