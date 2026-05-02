@@ -15,11 +15,14 @@ import Quickshell.Services.Mpris
 Item {
     id: root
     required property MprisPlayer player
-    property var artUrl: player?.trackArtUrl
+    property var artUrl: player?.trackArtUrl ?? ""
     property string artDownloadLocation: Directories.coverArt
     property string artFileName: Qt.md5(artUrl)
     property string artFilePath: `${artDownloadLocation}/${artFileName}`
-    property color artDominantColor: ColorUtils.mix((colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary), Appearance.colors.colPrimaryContainer, 0.8) || Appearance.m3colors.m3secondaryContainer
+    property color artDominantColor: ColorUtils.mix(
+        (colorQuantizer?.colors[0] ?? Appearance.colors.colPrimary),
+        Appearance.colors.colPrimaryContainer,
+        0.8) || Appearance.m3colors.m3secondaryContainer
     property bool downloaded: false
     property list<real> visualizerPoints: []
     property real maxVisualizerValue: 1000
@@ -27,7 +30,11 @@ Item {
     property real radius
     property bool showLyrics: false
 
-    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    property string displayedArtFilePath: {
+        if (!root.downloaded) return ""
+        if (root.artUrl.startsWith("file://")) return root.artUrl
+        return Qt.resolvedUrl(artFilePath)
+    }
 
     property QtObject blendedColors: AdaptedMaterialScheme {
         color: artDominantColor
@@ -41,10 +48,17 @@ Item {
     }
 
     onArtFilePathChanged: {
-        if (root.artUrl.length == 0) {
+        if (!root.artUrl || root.artUrl.length === 0) {
             root.artDominantColor = Appearance.m3colors.m3secondaryContainer
-            return;
+            root.downloaded = false
+            return
         }
+
+        if (root.artUrl.startsWith("file://")) {
+            root.downloaded = true
+            return
+        }
+
         coverArtDownloader.targetFile = root.artUrl
         coverArtDownloader.artFilePath = root.artFilePath
         root.downloaded = false

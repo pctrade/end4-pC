@@ -426,6 +426,9 @@ ContentPage {
             }
         }
 
+        // ── Autostart Apps ───────────────────────────────────────────────────────────
+        AutostartApps {}
+        
         // ── Animations ───────────────────────────────────────────────────────────
         ContentSection {
             icon: "animation"

@@ -245,7 +245,9 @@ Item {
                             trackColor: blendedColors.colSecondaryContainer
                             handleColor: blendedColors.colPrimary
                             value: (root.player?.position ?? 0) / (root.player?.length ?? 1)
-                            onMoved: root.player.position = value * root.player.length
+                            onMoved: {root.player.position = value * root.player.length
+                                lyricsComp.restartLyrics()
+                            }
                         }
                     }
 

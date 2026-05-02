@@ -369,7 +369,6 @@ ContentPage {
                         ]
                     }
                 }
-                
             }
         }
     }
