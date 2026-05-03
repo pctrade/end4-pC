@@ -11,12 +11,11 @@ import qs.modules.common.functions
 import qs.modules.common.models
 import Quickshell.Hyprland
 
-ContentSection {
+ColumnLayout {
     id: root
-    icon: "app_registration"
-    shape: MaterialShape.Shape.Sunny
-    title: Translation.tr("Autostart Apps")
     Layout.fillWidth: true
+    width: parent.width
+    spacing: 4
 
     function addEntry() {
         let list = []
@@ -85,6 +84,7 @@ ContentSection {
 
     Item {
         Layout.fillWidth: true
+        Layout.bottomMargin: -4
         height: 24
         visible: Config.options.hyprland.autostartApps.apps.length > 0 && Config.options.hyprland.autostartApps.enable
 
