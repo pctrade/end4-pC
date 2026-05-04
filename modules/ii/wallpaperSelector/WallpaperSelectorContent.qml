@@ -16,6 +16,18 @@ MouseArea {
     property real previewCellAspectRatio: 4 / 3
     property bool useDarkMode: Appearance.m3colors.darkmode
 
+    property var quickDirs: [
+        { icon: "home",      name: "Home",      path: Directories.home },
+        { icon: "docs",      name: "Documents", path: Directories.documents },
+        { icon: "download",  name: "Downloads", path: Directories.downloads },
+        { icon: "image",     name: "Pictures",  path: Directories.pictures },
+        { icon: "movie",     name: "Videos",    path: Directories.videos },
+        { icon: "",          name: "───────",   path: "INTENTIONALLY_INVALID_DIR" },
+        { icon: "wallpaper", name: "Wallpapers", path: `${Directories.pictures}/Wallpapers` },
+        { icon: "imagesmode", name: "Homework", path: `${Directories.pictures}/homework` },
+        { icon: "casino",    name: "Random",    path: `${Directories.pictures}/Random` },
+    ]
+
     function updateThumbnails() {
         const totalImageMargin = (Appearance.sizes.wallpaperSelectorItemMargins + Appearance.sizes.wallpaperSelectorItemPadding) * 2;
         const thumbnailSizeName = Images.thumbnailSizeNameForDimensions(grid.cellWidth - totalImageMargin, grid.cellHeight - totalImageMargin);
@@ -29,7 +41,7 @@ MouseArea {
             Wallpapers.setDirectory(FileUtils.trimFileProtocol(decodeURIComponent(url)));
             event.accepted = true;
         } else {
-            event.accepted = false; // No image, let text pasting proceed
+            event.accepted = false;
         }
     }
 
@@ -53,7 +65,7 @@ MouseArea {
         if (event.key === Qt.Key_Escape) {
             GlobalStates.wallpaperSelectorOpen = false;
             event.accepted = true;
-        } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) { // Intercept Ctrl+V to handle "paste to go to" in pickers
+        } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
             root.handleFilePasting(event);
         } else if (event.modifiers & Qt.AltModifier && event.key === Qt.Key_Up) {
             Wallpapers.navigateUp();
@@ -150,59 +162,13 @@ MouseArea {
                         }
                         text: Translation.tr("Pick a wallpaper")
                     }
+
                     ListView {
-                        // Quick dirs
                         Layout.fillHeight: true
                         Layout.margins: 4
                         implicitWidth: 140
                         clip: true
-                        model: [
-                            {
-                                icon: "home",
-                                name: "Home",
-                                path: Directories.home
-                            },
-                            {
-                                icon: "docs",
-                                name: "Documents",
-                                path: Directories.documents
-                            },
-                            {
-                                icon: "download",
-                                name: "Downloads",
-                                path: Directories.downloads
-                            },
-                            {
-                                icon: "image",
-                                name: "Pictures",
-                                path: Directories.pictures
-                            },
-                            {
-                                icon: "movie",
-                                name: "Videos",
-                                path: Directories.videos
-                            },
-                            {
-                                icon: "",
-                                name: "───────",
-                                path: "INTENTIONALLY_INVALID_DIR"
-                            },
-                            {
-                                icon: "wallpaper",
-                                name: "Wallpapers",
-                                path: `${Directories.pictures}/Wallpapers`
-                            },
-                            {
-                                icon: "imagesmode",
-                                name: "Homework",
-                                path: `${Directories.pictures}/homework`
-                            },
-                            {
-                                icon: "casino",
-                                name: "Random",
-                                path: `${Directories.pictures}/Random`
-                            },
-                        ]
+                        model: root.quickDirs
 
                         delegate: RippleButton {
                             id: quickDirButton
@@ -345,8 +311,8 @@ MouseArea {
                             bottomMargin: 8
                         }
                         spacing: 6
-                        Toolbar {
 
+                        Toolbar {
                             IconToolbarButton {
                                 implicitWidth: height
                                 onClicked: {
@@ -366,9 +332,7 @@ MouseArea {
 
                             IconToolbarButton {
                                 implicitWidth: height
-                                onClicked: {
-                                    Wallpapers.randomFromCurrentFolder();
-                                }
+                                onClicked: Wallpapers.randomFromCurrentFolder()
                                 text: "ifl"
                                 StyledToolTip {
                                     text: Translation.tr("Pick random from this folder")
@@ -386,7 +350,7 @@ MouseArea {
 
                             IconToolbarButton {
                                 implicitWidth: height
-                                onClicked: root.updateThumbnails()  
+                                onClicked: root.updateThumbnails()
                                 text: "reset_image"
                                 StyledToolTip {
                                     text: Translation.tr("Update Thumbnails")
@@ -396,22 +360,16 @@ MouseArea {
                             ToolbarTextField {
                                 id: filterField
                                 placeholderText: focus ? Translation.tr("Search wallpapers") : Translation.tr("Hit \"/\" to search")
-
-                                // Style
                                 clip: true
                                 font.pixelSize: Appearance.font.pixelSize.small
-
-                                // Search
                                 onTextChanged: {
                                     Wallpapers.searchQuery = text;
                                 }
-
                                 Keys.onPressed: event => {
-                                    if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) { // Intercept Ctrl+V to handle "paste to go to" in pickers
+                                    if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
                                         root.handleFilePasting(event);
                                         return;
                                     } else if (text.length !== 0) {
-                                        // No filtering, just navigate grid
                                         if (event.key === Qt.Key_Down) {
                                             grid.moveSelection(grid.columns);
                                             event.accepted = true;
@@ -430,7 +388,7 @@ MouseArea {
 
                         ToolbarPairedFab {
                             iconText: "close"
-                            onClicked: GlobalStates.wallpaperSelectorOpen = false;
+                            onClicked: GlobalStates.wallpaperSelectorOpen = false
                             StyledToolTip {
                                 text: Translation.tr("Cancel wallpaper selection")
                             }

@@ -58,7 +58,7 @@ Item {
         VerticalTabBar {
             id: verticalTabBar
             visible: tabButtonList.length > 0
-            Layout.fillWidth: true 
+            Layout.fillWidth: true
             tabButtonList: root.tabButtonList
             currentIndex: swipeView.currentIndex
             onCurrentIndexChanged: swipeView.currentIndex = currentIndex
@@ -75,12 +75,10 @@ Item {
             bottomRightRadius: Appearance.rounding.normal
             color: Appearance.colors.colLayer1
 
-            SwipeView { // Content pages
+            SwipeView {
                 id: swipeView
                 anchors.fill: parent
                 spacing: 10
-                currentIndex: tabBar.currentIndex
-
                 clip: true
                 layer.enabled: true
                 layer.effect: OpacityMask {
@@ -91,14 +89,20 @@ Item {
                     }
                 }
 
-                contentChildren: [
-                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
-                    ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...(root.mediaEnabled ? [media.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
-                    ...(root.wallpapersEnabled ? [wallpaperBrowser.createObject()] : []),
-                    ...(root.animeEnabled ? [anime.createObject()] : []),
-                ]
+                Component.onCompleted: {
+                    if (root.aiChatEnabled)
+                        addItem(aiChat.createObject(swipeView))
+                    if (root.translatorEnabled)
+                        addItem(translator.createObject(swipeView))
+                    if (root.mediaEnabled)
+                        addItem(media.createObject(swipeView))
+                    if (root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset))
+                        addItem(placeholder.createObject(swipeView))
+                    if (root.wallpapersEnabled)
+                        addItem(wallpaperBrowser.createObject(swipeView))
+                    if (root.animeEnabled)
+                        addItem(anime.createObject(swipeView))
+                }
             }
         }
 
@@ -106,7 +110,6 @@ Item {
             id: media
             SidebarPlayerControl {}
         }
-
         Component {
             id: aiChat
             AiChat {}
@@ -115,10 +118,9 @@ Item {
             id: translator
             Translator {}
         }
-
-        Component {  
-            id: wallpaperBrowser  
-            WallpaperBrowserUI {}  
+        Component {
+            id: wallpaperBrowser
+            WallpaperBrowserUI {}
         }
         Component {
             id: anime
