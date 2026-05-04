@@ -200,6 +200,7 @@ AbstractBackgroundWidget {
                             text: root.currentPlayer?.trackTitle ?? ""
                             color: Appearance.colors.colOnSecondaryContainer
                             font.pixelSize: 9
+                            opacity: 0.6
                             elide: Text.ElideRight
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -260,6 +261,7 @@ AbstractBackgroundWidget {
                                 id: lyricsComp
                                 anchors.fill: parent
                                 anchors.margins: 16
+                                textAlignment: Text.AlignHCenter
                                 player: root.currentPlayer
                                 textColor: Appearance.colors.colOnLayer0
                                 activeColor: Appearance.colors.colPrimary
