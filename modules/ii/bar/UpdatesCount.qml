@@ -12,8 +12,10 @@ MouseArea {
     id: root
     property bool vertical: false
     property bool borderless: Config.options.bar.borderless
-    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : rowLayout.implicitWidth + 12
-    implicitHeight: vertical ? colLayout.implicitHeight + 8 : Appearance.sizes.barHeight
+
+    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : (rowLoader.item?.implicitWidth ?? 0) + 12
+    implicitHeight: vertical ? (colLoader.item?.implicitHeight ?? 0) + 8 : Appearance.sizes.barHeight
+
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton
 
@@ -95,46 +97,48 @@ MouseArea {
     }
 
     // Horizontal
-    RowLayout {
-        id: rowLayout
-        visible: !root.vertical
+    Loader {
+        id: rowLoader
+        active: !root.vertical
+        visible: active
         anchors.centerIn: parent
-        spacing: 4
-
-        MaterialSymbol {
-            Layout.alignment: Qt.AlignVCenter
-            text: "package"
-            iconSize: Appearance.font.pixelSize.normal
-            color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
-                 : Updates.updateAdvised ? Appearance.colors.colTertiary
-                 : Appearance.colors.colOnLayer1
-        }
-
-        Loader {
-            Layout.alignment: Qt.AlignVCenter
-            sourceComponent: Updates.checking ? spinnerComp : textComp
+        sourceComponent: RowLayout {
+            spacing: 4
+            MaterialSymbol {
+                Layout.alignment: Qt.AlignVCenter
+                text: "package"
+                iconSize: Appearance.font.pixelSize.normal
+                color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
+                    : Updates.updateAdvised ? Appearance.colors.colTertiary
+                    : Appearance.colors.colOnLayer1
+            }
+            Loader {
+                Layout.alignment: Qt.AlignVCenter
+                sourceComponent: Updates.checking ? spinnerComp : textComp
+            }
         }
     }
 
     // Vertical
-    ColumnLayout {
-        id: colLayout
-        visible: root.vertical
+    Loader {
+        id: colLoader
+        active: root.vertical
+        visible: active
         anchors.centerIn: parent
-        spacing: 4
-
-        MaterialSymbol {
-            Layout.alignment: Qt.AlignHCenter
-            text: "package"
-            iconSize: Appearance.font.pixelSize.normal
-            color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
-                 : Updates.updateAdvised ? Appearance.colors.colTertiary
-                 : Appearance.colors.colOnLayer1
-        }
-
-        Loader {
-            Layout.alignment: Qt.AlignHCenter
-            sourceComponent: Updates.checking ? spinnerComp : textComp
+        sourceComponent: ColumnLayout {
+            spacing: 4
+            MaterialSymbol {
+                Layout.alignment: Qt.AlignHCenter
+                text: "package"
+                iconSize: Appearance.font.pixelSize.normal
+                color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
+                    : Updates.updateAdvised ? Appearance.colors.colTertiary
+                    : Appearance.colors.colOnLayer1
+            }
+            Loader {
+                Layout.alignment: Qt.AlignHCenter
+                sourceComponent: Updates.checking ? spinnerComp : textComp
+            }
         }
     }
 }

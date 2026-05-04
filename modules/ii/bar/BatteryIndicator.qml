@@ -31,49 +31,55 @@ MouseArea {
             height: batteryProgress.valueBarHeight
 
             // Horizontal
-            RowLayout {
-                visible: !root.vertical
+            Loader {
+                id: rowLoader
+                active: !root.vertical
+                visible: active
                 anchors.centerIn: parent
-                spacing: 0
-
-                MaterialSymbol {
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.topMargin: 2
-                    Layout.leftMargin: -2
-                    Layout.rightMargin: -2
-                    fill: 1
-                    text: "bolt"
-                    iconSize: Appearance.font.pixelSize.smaller
-                    visible:  isCharging && percentage < 1
-                }
-                StyledText {
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.topMargin: 2
-                    font: batteryProgress.font
-                    text: batteryProgress.text
+                sourceComponent: RowLayout {
+                    spacing: 0
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.topMargin: 2
+                        Layout.leftMargin: -2
+                        Layout.rightMargin: -2
+                        fill: 1
+                        text: "bolt"
+                        iconSize: Appearance.font.pixelSize.smaller
+                        visible: root.isCharging && root.percentage < 1
+                    }
+                    StyledText {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.topMargin: 2
+                        font: batteryProgress.font
+                        text: batteryProgress.text
+                    }
                 }
             }
 
             // Vertical
-            ColumnLayout {
-                visible: root.vertical
+            Loader {
+                id: colLoader
+                active: root.vertical
+                visible: active
                 anchors.centerIn: parent
-                rotation: 90
-                spacing: -4
-
-                MaterialSymbol {
-                    Layout.alignment: Qt.AlignHCenter
-                    fill: 1
-                    text: "bolt"
-                    Layout.topMargin: 4
-                    iconSize: Appearance.font.pixelSize.smaller
-                    visible: isCharging && percentage < 1
-                }
-                StyledText {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: (isCharging && percentage < 1) ? 8 : 4  
-                    font: batteryProgress.font
-                    text: batteryProgress.text
+                sourceComponent: ColumnLayout {
+                    rotation: 90
+                    spacing: -4
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignHCenter
+                        fill: 1
+                        text: "bolt"
+                        Layout.topMargin: 4
+                        iconSize: Appearance.font.pixelSize.smaller
+                        visible: root.isCharging && root.percentage < 1
+                    }
+                    StyledText {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: (root.isCharging && root.percentage < 1) ? 8 : 4
+                        font: batteryProgress.font
+                        text: batteryProgress.text
+                    }
                 }
             }
         }
