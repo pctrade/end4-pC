@@ -69,7 +69,8 @@ Item {
     // Vertical
     Loader {
         id: resourceProgress
-        visible: root.vertical
+        active: root.vertical
+        visible: active
         anchors.centerIn: parent
         sourceComponent: Config.options.bar.resources.style === "filled" ? filledStyle : outlineStyle
     }
@@ -84,6 +85,8 @@ Item {
 
         Loader {
             Layout.alignment: Qt.AlignVCenter
+            active: !root.vertical
+            visible: active
             sourceComponent: Config.options.bar.resources.style === "filled" ? filledStyle : outlineStyle
         }
 
