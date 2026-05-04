@@ -345,6 +345,8 @@ Singleton {
             property JsonObject dock: JsonObject {
                 property bool enable: false
                 property bool showBackground: true
+                property bool showPinButton: true
+                property bool showAppsButton: true
                 property bool showMedia: true
                 property bool monochromeIcons: true
                 property real height: 60

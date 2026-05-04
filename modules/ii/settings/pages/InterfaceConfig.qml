@@ -196,6 +196,26 @@ ContentPage {
             ConfigRow {
                 uniform: true
                 ConfigSwitch {
+                    buttonIcon: "keep"
+                    text: Translation.tr("Show Pin Button")
+                    checked: Config.options.dock.showPinButton
+                    onCheckedChanged: {
+                        Config.options.dock.showPinButton = checked;
+                    }
+                }
+                ConfigSwitch {
+                    buttonIcon: "apps"
+                    text: Translation.tr("Show Apps Button")
+                    checked: Config.options.dock.showAppsButton
+                    onCheckedChanged: {
+                        Config.options.dock.showAppsButton = checked;
+                    }
+                }
+            }
+
+            ConfigRow {
+                uniform: true
+                ConfigSwitch {
                     buttonIcon: "highlight_mouse_cursor"
                     text: Translation.tr("Hover to reveal")
                     checked: Config.options.dock.hoverToReveal

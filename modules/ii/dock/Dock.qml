@@ -111,7 +111,7 @@ Scope {
                                    ? Appearance.colors.colLayer0 : "transparent"
                             border.width: Config.options.dock.showBackground ? 1 : 0
                             border.color: Appearance.colors.colLayer0Border
-                            radius: Appearance.rounding.large + 3
+                            radius: Appearance.rounding.normal + 6
                         }
 
                         RowLayout {
@@ -133,6 +133,7 @@ Scope {
 
                                 GroupButton {
                                     baseWidth: 35; baseHeight: 35
+                                    visible: Config.options.dock.showPinButton
                                     clickedWidth: baseWidth; clickedHeight: baseHeight + 20
                                     buttonRadius: Appearance.rounding.normal
                                     toggled: root.pinned
@@ -148,12 +149,15 @@ Scope {
                                 }
                             }
 
-                            DockSeparator {}
+                            DockSeparator {
+                                visible: Config.options.dock.showPinButton
+                            }
 
                             DragApps {
                                 id: dragSlots
                                 Layout.fillHeight: true
                                 Layout.topMargin: 0
+                                Layout.leftMargin: Config.options.dock.showPinButton ? 0 : -15
 
                                 pinnedApps:    Config.options?.dock.pinnedApps ?? []
                                 buttonPadding: dockRow.padding
@@ -162,7 +166,6 @@ Scope {
                             }
 
                             DockSeparator {
-                                visible: activeAppsArea.hasActiveUnpinned
                             }
 
                             Item {
@@ -199,7 +202,6 @@ Scope {
                                         Layout.fillHeight: true
                                         Layout.topMargin: 11
                                         Layout.bottomMargin: 6
-                                        Layout.rightMargin: 3
                                         Layout.leftMargin: 0
                                         buttonPadding: dockRow.padding
                                     }
@@ -210,6 +212,8 @@ Scope {
                                             required property var modelData
                                             appToplevel: modelData
                                             Layout.topMargin: 0
+                                            Layout.rightMargin: Config.options.dock.showAppsButton ? 0 : 4
+                                            Layout.leftMargin: dockMedia.visible ? 4 : 0
                                             appListRoot: appListBridge
                                             topInset:    dockRow.padding
                                             bottomInset: dockRow.padding
@@ -225,14 +229,14 @@ Scope {
                             }
 
                             DockSeparator {
-                                Layout.leftMargin: -3
+                                visible: Config.options.dock.showAppsButton
+                                Layout.leftMargin: Config.options.dock.showAppsButton ? 0 : -3
                             }
 
                             DockButton {
                                 Layout.fillHeight: true
                                 Layout.topMargin: 0
-                                Layout.leftMargin: Config.options.dock.showMedia ? -10 : -4
-                                Layout.rightMargin: Config.options.dock.showMedia ? -3 : 0
+                                visible: Config.options.dock.showAppsButton
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
                                 topInset:    dockRow.padding
                                 bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
