@@ -619,6 +619,7 @@ Singleton {
             
             property JsonObject wallpaperSelector: JsonObject {
                 property bool useSystemFileDialog: false
+                property int changeInterval: 0 
             }
 
             property JsonObject wallpapers: JsonObject {

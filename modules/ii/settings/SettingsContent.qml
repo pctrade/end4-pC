@@ -28,12 +28,16 @@ Item {
                 root.currentPage = idx;
                 
                 if (searchTerm !== "") {
-                    Qt.callLater(() => {
-                        let loader = pagesRepeater.itemAt(idx);
-                        if (loader && loader.item && typeof loader.item.goTo === "function") {
-                            loader.item.goTo(searchTerm);
-                        }
-                    });
+                    let loader = pagesRepeater.itemAt(idx);
+                    if (loader && loader.item && typeof loader.item.goTo === "function") {
+                        loader.item.goTo(searchTerm);
+                    } else if (loader) {
+                        loader.onLoaded.connect(function() {
+                            if (loader.item && typeof loader.item.goTo === "function") {
+                                loader.item.goTo(searchTerm);
+                            }
+                        });
+                    }
                 }
             }
             GlobalStates.settingsPage = "";
@@ -63,6 +67,12 @@ Item {
     Component.onCompleted: {
         MaterialThemeLoader.reapplyTheme()
         Config.readWriteDelay = 0
+        Qt.callLater(() => {
+            for (let i = 0; i < root.pages.length; i++) {
+                let loader = pagesRepeater.itemAt(i)
+                if (loader) loader.active = true
+            }
+        })
     }
 
     ColumnLayout {

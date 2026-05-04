@@ -134,6 +134,18 @@ Variants {
             }
         }
 
+        Timer {
+            id: wallpaperChangeTimer
+            interval: Config.options.wallpaperSelector.changeInterval
+            running: Config.options.wallpaperSelector.changeInterval > 0
+            repeat: true
+            onTriggered: {
+                if (Wallpapers.folderModel.count > 0) {
+                    Wallpapers.randomFromCurrentFolder()
+                }
+            }
+        }
+
         Item {
             anchors.fill: parent
 

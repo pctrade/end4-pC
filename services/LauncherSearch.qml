@@ -374,7 +374,9 @@ Singleton {
                     iconType: LauncherSearchResult.IconType.Material,
                     execute: () => {
                         GlobalStates.settingsOpen = true;
-                        GlobalStates.settingsPage = page.page + ":" + query;
+                        Qt.callLater(() => {
+                            GlobalStates.settingsPage = page.page + ":" + query;
+                        });
                         root.query = "";
                     }
                 }));

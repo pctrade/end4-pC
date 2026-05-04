@@ -562,6 +562,19 @@ ContentPage {
                     Config.options.wallpaperSelector.useSystemFileDialog = checked;
                 }
             }
+            
+            ConfigSpinBox {
+                icon: "timer"
+                text: Translation.tr("Wallpaper change interval (min)")
+                value: Config.options.wallpaperSelector.changeInterval / 60000
+                from: 0
+                to: 1440
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.wallpaperSelector.changeInterval = value * 60000;
+                }
+            }
+
         }
 
         ContentSection {
