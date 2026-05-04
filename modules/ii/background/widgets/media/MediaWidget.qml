@@ -33,7 +33,11 @@ AbstractBackgroundWidget {
     property real buttonIconSize: 30
 
     property bool downloaded: false
-    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    property string displayedArtFilePath: {
+        if (!root.downloaded) return ""
+        if (root.artUrl && root.artUrl.startsWith("file://")) return root.artUrl
+        return root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    }
 
     implicitHeight: contentItem.implicitHeight
     implicitWidth: contentItem.implicitWidth
@@ -46,10 +50,59 @@ AbstractBackgroundWidget {
     onArtFilePathChanged: updateArt()
 
     function updateArt() {
+        if (!root.artUrl || root.artUrl.length === 0) {
+            root.downloaded = false
+            return
+        }
+        if (root.artUrl.startsWith("file://")) {
+            root.downloaded = true
+            return
+        }
         coverArtDownloader.targetFile = root.artUrl
         coverArtDownloader.artFilePath = root.artFilePath
         root.downloaded = false
         coverArtDownloader.running = true
+    }
+
+    function getShape(name) {
+        switch (name) {
+            case "Circle":        return MaterialShape.Shape.Circle
+            case "Square":        return MaterialShape.Shape.Square
+            case "Slanted":       return MaterialShape.Shape.Slanted
+            case "Arch":          return MaterialShape.Shape.Arch
+            case "Fan":           return MaterialShape.Shape.Fan
+            case "Arrow":         return MaterialShape.Shape.Arrow
+            case "SemiCircle":    return MaterialShape.Shape.SemiCircle
+            case "Oval":          return MaterialShape.Shape.Oval
+            case "Pill":          return MaterialShape.Shape.Pill
+            case "Triangle":      return MaterialShape.Shape.Triangle
+            case "Diamond":       return MaterialShape.Shape.Diamond
+            case "ClamShell":     return MaterialShape.Shape.ClamShell
+            case "Pentagon":      return MaterialShape.Shape.Pentagon
+            case "Gem":           return MaterialShape.Shape.Gem
+            case "Sunny":         return MaterialShape.Shape.Sunny
+            case "VerySunny":     return MaterialShape.Shape.VerySunny
+            case "Cookie4Sided":  return MaterialShape.Shape.Cookie4Sided
+            case "Cookie6Sided":  return MaterialShape.Shape.Cookie6Sided
+            case "Cookie7Sided":  return MaterialShape.Shape.Cookie7Sided
+            case "Cookie9Sided":  return MaterialShape.Shape.Cookie9Sided
+            case "Cookie12Sided": return MaterialShape.Shape.Cookie12Sided
+            case "Ghostish":      return MaterialShape.Shape.Ghostish
+            case "Clover4Leaf":   return MaterialShape.Shape.Clover4Leaf
+            case "Clover8Leaf":   return MaterialShape.Shape.Clover8Leaf
+            case "Burst":         return MaterialShape.Shape.Burst
+            case "SoftBurst":     return MaterialShape.Shape.SoftBurst
+            case "Boom":          return MaterialShape.Shape.Boom
+            case "SoftBoom":      return MaterialShape.Shape.SoftBoom
+            case "Flower":        return MaterialShape.Shape.Flower
+            case "Puffy":         return MaterialShape.Shape.Puffy
+            case "PuffyDiamond":  return MaterialShape.Shape.PuffyDiamond
+            case "PixelCircle":   return MaterialShape.Shape.PixelCircle
+            case "PixelTriangle": return MaterialShape.Shape.PixelTriangle
+            case "Bun":           return MaterialShape.Shape.Bun
+            case "Heart":         return MaterialShape.Shape.Heart
+            default:              return MaterialShape.Shape.Cookie4Sided
+        }
     }
 
     Process {
@@ -68,33 +121,32 @@ AbstractBackgroundWidget {
         implicitWidth: root.widgetSize
         implicitHeight: root.widgetSize
 
-        FadeLoader {
-            z: 2
-            anchors.centerIn: parent
-            shown: root.currentPlayer == null
-            sourceComponent: MaterialShapeWrappedMaterialSymbol {
-                padding: 20
-                text: root.currentPlayer == null ? "music_off" : !root.downloaded ? "hourglass_bottom" : ""
-                anchors.centerIn: parent
-                iconSize: root.widgetSize / 4
-                shape: MaterialShape.Shape.Cookie12Sided
-                color: Appearance.colors.colOnSecondaryContainer
-                colSymbol: Appearance.colors.colPrimaryContainer
-            }
+        MaterialShape {
+            id: shadowShape
+            anchors.fill: parent
+            color: Appearance.colors.colPrimaryContainer
+            shape: getShape(Config.options.background.widgets.media.backgroundShape)
+            visible: false
+        }
+
+        StyledDropShadow {
+            target: shadowShape
+            z: -1
         }
 
         MaterialShape {
             id: artBackground
             anchors.fill: parent
+            z: 0
             color: Appearance.colors.colPrimaryContainer
-            shape: MaterialShape.Shape.Cookie4Sided
+            shape: getShape(Config.options.background.widgets.media.backgroundShape)
 
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: MaterialShape {
                     width: artBackground.width
                     height: artBackground.height
-                    shape: MaterialShape.Shape.Cookie4Sided
+                    shape: getShape(Config.options.background.widgets.media.backgroundShape)
                 }
             }
 
@@ -102,12 +154,10 @@ AbstractBackgroundWidget {
                 id: mediaArt
                 property int size: parent.height
                 anchors.fill: parent
-
                 source: root.displayedArtFilePath
                 fillMode: Image.PreserveAspectCrop
                 cache: false
                 antialiasing: true
-
                 width: size
                 height: size
                 sourceSize.width: size
@@ -116,6 +166,7 @@ AbstractBackgroundWidget {
         }
 
         Loader {
+            z: 1
             active: Config.options.background.widgets.media.showTitles
             anchors {
                 left: parent.left
@@ -127,7 +178,6 @@ AbstractBackgroundWidget {
                 Rectangle {
                     implicitWidth: controlsSize * 2
                     implicitHeight: controlsSize - 10
-                    z: 2
                     radius: Appearance.rounding.full
                     color: Appearance.colors.colSecondaryContainer
 
@@ -158,10 +208,11 @@ AbstractBackgroundWidget {
 
                 Item {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: 8 + cornerRadius * 2  
+                    width: 8 + cornerRadius * 2
                     height: Config.options.background.widgets.media.showLyrics ? 16 : 0
-                    
-                    property int cornerRadius: 4 
+
+                    property int cornerRadius: 4
+
                     Rectangle {
                         id: theRect
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -177,8 +228,8 @@ AbstractBackgroundWidget {
                         anchors.right: theRect.left
                         anchors.top: theRect.top
                         implicitSize: cornerRadius
-                        color: Appearance.colors.colSecondaryContainer 
-                        corner: RoundCorner.CornerEnum.TopRight 
+                        color: Appearance.colors.colSecondaryContainer
+                        corner: RoundCorner.CornerEnum.TopRight
                     }
 
                     RoundCorner {
@@ -189,6 +240,7 @@ AbstractBackgroundWidget {
                         color: Appearance.colors.colSecondaryContainer
                         corner: RoundCorner.CornerEnum.TopLeft
                     }
+
                     Item {
                         width: 320
                         height: Config.options.background.widgets.media.showLyrics ? 250 + 16 : 0
@@ -222,6 +274,7 @@ AbstractBackgroundWidget {
         }
 
         FadeLoader {
+            z: 2
             active: Config.options.background.widgets.media.showControls
             anchors {
                 top: parent.top
@@ -249,6 +302,21 @@ AbstractBackgroundWidget {
                         }
                     }
                 }
+            }
+        }
+
+        FadeLoader {
+            z: 3
+            anchors.centerIn: parent
+            shown: root.currentPlayer == null
+            sourceComponent: MaterialShapeWrappedMaterialSymbol {
+                padding: 20
+                text: root.currentPlayer == null ? "music_off" : !root.downloaded ? "hourglass_bottom" : ""
+                anchors.centerIn: parent
+                iconSize: root.widgetSize / 4
+                shape: MaterialShape.Shape.Cookie12Sided
+                color: Appearance.colors.colOnSecondaryContainer
+                colSymbol: Appearance.colors.colPrimaryContainer
             }
         }
     }

@@ -673,6 +673,26 @@ ContentPage {
                     }
                 }
 
+                ContentSubsection {
+                    title: Translation.tr("Background shape")
+                            
+                    ConfigSelectionShapeArray {
+                        currentValue: Config.options.background.widgets.media.backgroundShape
+                        shapeColor: Appearance.colors.colPrimary
+                        backgroundColor: Appearance.colors.colPrimaryContainer
+                        options: [
+                            "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill",
+                            "Triangle", "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny",
+                            "Cookie4Sided", "Cookie6Sided", "Cookie7Sided", "Cookie9Sided", "Cookie12Sided",
+                            "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", "SoftBurst", "Flower",
+                            "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart"
+                        ]
+                        onSelected: newValue => {
+                            Config.options.background.widgets.media.backgroundShape = newValue
+                        }
+                    }
+                }
+
                 ConfigSwitch {
                     Layout.fillWidth: true
                     buttonIcon: "subtitles"
