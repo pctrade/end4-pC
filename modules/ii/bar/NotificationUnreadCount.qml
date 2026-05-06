@@ -8,7 +8,7 @@ MaterialSymbol {
     readonly property bool showUnreadCount: Config.options.bar.indicators.notifications.showUnreadCount
     text: Notifications.silent ? "notifications_paused" : "notifications"
     iconSize: Appearance.font.pixelSize.larger
-    color: Appearance.colors.colOnLayer1
+    color: Config.options.bar.cornerStyle === 3 ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
 
     Rectangle {
         id: notifPing
@@ -20,7 +20,7 @@ MaterialSymbol {
             topMargin: root.showUnreadCount ? 0 : 3
         }
         radius: Appearance.rounding.full
-        color: Appearance.colors.colOnLayer0
+        color: Config.options.bar.cornerStyle === 3 ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
         z: 1
 
         implicitHeight: root.showUnreadCount ? Math.max(notificationCounterText.implicitWidth, notificationCounterText.implicitHeight) : 8
@@ -31,7 +31,7 @@ MaterialSymbol {
             visible: root.showUnreadCount
             anchors.centerIn: parent
             font.pixelSize: Appearance.font.pixelSize.smallest
-            color: Appearance.colors.colLayer0
+            color: Config.options.bar.cornerStyle === 3 ? Appearance.colors.colPrimary : Appearance.colors.colLayer0
             text: Notifications.unread
         }
     }

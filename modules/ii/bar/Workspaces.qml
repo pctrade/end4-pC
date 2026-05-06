@@ -24,8 +24,8 @@ Item {
     readonly property int workspaceGroup: Math.floor((effectiveActiveWorkspaceId - 1) / root.workspacesShown)
     property list<bool> workspaceOccupied: []
     property int widgetPadding: 4
-    property int workspaceButtonWidth: 26
-    property real activeWorkspaceMargin: 2
+    property int workspaceButtonWidth: Config.options.bar.cornerStyle === 3 ? 30 : 26
+    property real activeWorkspaceMargin: Config.options.bar.cornerStyle === 3 ? 3 : 2
     property real workspaceIconSize: workspaceButtonWidth * 0.69
     property real workspaceIconSizeShrinked: workspaceButtonWidth * 0.55
     property real workspaceIconOpacityShrinked: 1
@@ -133,7 +133,7 @@ Item {
                 topRightRadius: root.vertical ? radiusPrev : radiusNext
                 bottomRightRadius: radiusNext
                 
-                color: ColorUtils.transparentize(Appearance.m3colors.m3secondaryContainer, 0.4)
+                color: Config.options.bar.cornerStyle === 3 ? Appearance.colors.colPrimaryContainer : ColorUtils.transparentize(Appearance.m3colors.m3secondaryContainer, 0.4)
                 opacity: (workspaceOccupied[index] && !(!activeWindow?.activated && root.effectiveActiveWorkspaceId === index+1)) ? 1 : 0
 
                 Behavior on opacity {

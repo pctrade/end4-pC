@@ -16,6 +16,7 @@ Item {
     height: parent.height
 
     readonly property real barPadding: 0
+    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3
 
     function getWidgetUrl(name) {
         if (!name) return "";
@@ -31,7 +32,7 @@ Item {
             fill: parent
             margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
         }
-        color: Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 ? Appearance.colors.colLayer0 : "transparent"
+        color: Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial ? Appearance.colors.colLayer0 : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
@@ -52,7 +53,7 @@ Item {
             ColumnLayout {
                 id: middleCol
                 anchors.fill: parent
-                spacing: 2
+                spacing: root.isMaterial ? -6 : 2
                 Repeater {
                     model: Config.options.bar.layouts.middleLayout
                     delegate: Bar.BarGroup {
@@ -84,7 +85,7 @@ Item {
             ColumnLayout {
                 id: topCol
                 anchors.fill: parent
-                spacing: 2
+                spacing: root.isMaterial ? -6 : 2
                 Repeater {
                     model: Config.options.bar.layouts.leftLayout
                     delegate: Bar.BarGroup {
