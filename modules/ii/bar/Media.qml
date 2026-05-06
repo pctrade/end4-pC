@@ -258,7 +258,7 @@ Item {
                     implicitWidth: 40
                     implicitHeight: 23
                     buttonRadius: root.isPlaying ? Appearance.rounding.normal : 13
-                    colBackground: root.isPlaying ? Appearance.colors.colPrimary : Appearance.colors.colPrimaryContainer
+                    colBackground: root.isPlaying ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
                     colBackgroundHover: root.isPlaying ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimaryContainerHover
                     colRipple: root.isPlaying ? Appearance.colors.colPrimaryActive : Appearance.colors.colPrimaryContainerActive
                     downAction: () => root.activePlayer?.togglePlaying()
