@@ -96,10 +96,10 @@ Item {
                         addItem(translator.createObject(swipeView))
                     if (root.mediaEnabled)
                         addItem(media.createObject(swipeView))
-                    if (root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset))
-                        addItem(placeholder.createObject(swipeView))
                     if (root.wallpapersEnabled)
                         addItem(wallpaperBrowser.createObject(swipeView))
+                    if (root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset))
+                        addItem(placeholder.createObject(swipeView))
                     if (root.animeEnabled)
                         addItem(anime.createObject(swipeView))
                 }
