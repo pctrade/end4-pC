@@ -10,7 +10,6 @@ import Qt.labs.synchronizer
 import Quickshell.Io
 import Quickshell.Services.Mpris
 
-
 Item {
     id: root
     required property var scopeRoot
@@ -34,6 +33,13 @@ Item {
     function focusActiveItem() {
         swipeView.currentItem.forceActiveFocus()
     }
+
+    onAiChatEnabledChanged:     swipeView.rebuildTabs()
+    onTranslatorEnabledChanged: swipeView.rebuildTabs()
+    onMediaEnabledChanged:      swipeView.rebuildTabs()
+    onWallpapersEnabledChanged: swipeView.rebuildTabs()
+    onAnimeEnabledChanged:      swipeView.rebuildTabs()
+    onAnimeClosetChanged:       swipeView.rebuildTabs()
 
     Keys.onPressed: (event) => {
         if (event.modifiers === Qt.ControlModifier) {
@@ -89,19 +95,26 @@ Item {
                     }
                 }
 
-                Component.onCompleted: {
-                    if (root.aiChatEnabled)
-                        addItem(aiChat.createObject(swipeView))
-                    if (root.translatorEnabled)
-                        addItem(translator.createObject(swipeView))
-                    if (root.mediaEnabled)
-                        addItem(media.createObject(swipeView))
-                    if (root.wallpapersEnabled)
-                        addItem(wallpaperBrowser.createObject(swipeView))
-                    if (root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset))
+                Component.onCompleted: rebuildTabs()
+
+                function rebuildTabs() {
+                    while (count > 0) removeItem(itemAt(0))
+
+                    const componentMap = {
+                        "neurology":      aiChat,
+                        "translate":      translator,
+                        "music_note":     media,
+                        "panorama":       wallpaperBrowser,
+                        "bookmark_heart": anime,
+                    }
+
+                    for (const tab of root.tabButtonList) {
+                        const comp = componentMap[tab.icon]
+                        if (comp) addItem(comp.createObject(swipeView))
+                    }
+
+                    if (count === 0)
                         addItem(placeholder.createObject(swipeView))
-                    if (root.animeEnabled)
-                        addItem(anime.createObject(swipeView))
                 }
             }
         }
