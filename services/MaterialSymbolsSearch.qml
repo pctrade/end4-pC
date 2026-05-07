@@ -15,7 +15,7 @@ Singleton {
     // ── Load JSON ─────────────────────────────────────────────────────────
     FileView {
         id: symbolsFile
-        path: Qt.resolvedUrl(`${Directories.config}/quickshell/ii/assets/material_symbols_rounded.json`)
+        path: `${Directories.assetsPath}/material_symbols_rounded.json`
         watchChanges: false
         onLoaded: {
             try {
