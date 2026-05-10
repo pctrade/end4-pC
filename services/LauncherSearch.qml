@@ -176,7 +176,29 @@ Singleton {
         {
             action: "wipeclipboard",
             execute: () => {
-                Cliphist.wipe();
+                Quickshell.execDetached(["bash", "-c", "rm -f ~/.cache/cliphist/db"]);
+            }
+        },
+        {
+            action: "unsplash",
+            execute: args => {
+                if (!args || args.trim().length === 0) {
+                    Quickshell.execDetached(["notify-send", "Unsplash", Translation.tr("Usage: /unsplash YOUR_API_KEY"), "-a", "Shell"]);
+                    return;
+                }
+                KeyringStorage.setNestedField(["apiKeys", "unsplash"], args.trim());
+                Quickshell.execDetached(["notify-send", "Unsplash", Translation.tr("API key saved!"), "-a", "Shell"]);
+            }
+        },
+        {
+            action: "wallhaven",
+            execute: args => {
+                if (!args || args.trim().length === 0) {
+                    Quickshell.execDetached(["notify-send", "Wallhaven", Translation.tr("Usage: /wallhaven YOUR_API_KEY"), "-a", "Shell"]);
+                    return;
+                }
+                KeyringStorage.setNestedField(["apiKeys", "wallhaven"], args.trim());
+                Quickshell.execDetached(["notify-send", "Wallhaven", Translation.tr("API key saved!"), "-a", "Shell"]);
             }
         },
     ]

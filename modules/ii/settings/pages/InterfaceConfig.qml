@@ -582,7 +582,46 @@ ContentPage {
                     Config.options.wallpaperSelector.useSystemFileDialog = checked;
                 }
             }
-            
+
+            ConfigSwitch {
+                buttonIcon: "home"
+                text: Translation.tr('Show home directory in quick access')
+                checked: Config.options.wallpaperSelector.showHomePath
+                onCheckedChanged: {
+                    Config.options.wallpaperSelector.showHomePath = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "done"
+                text: Translation.tr('Close after selection')
+                checked: Config.options.wallpaperSelector.closeAfterSelection
+                onCheckedChanged: {
+                    Config.options.wallpaperSelector.closeAfterSelection = checked;
+                }
+            }
+
+            ConfigSwitch {
+                buttonIcon: "blur_on"
+                text: Translation.tr('Show blur background')
+                checked: Config.options.wallpaperSelector.showBlurBackground
+                onCheckedChanged: {
+                    Config.options.wallpaperSelector.showBlurBackground = checked;
+                }
+            }
+
+            ConfigSpinBox {
+                icon: "grid_on"
+                text: Translation.tr("Columns in grid view")
+                value: Config.options.wallpaperSelector.columns
+                from: 3
+                to: 10
+                stepSize: 1
+                onValueChanged: {
+                    Config.options.wallpaperSelector.columns = value;
+                }
+            }
+
             ConfigSpinBox {
                 icon: "timer"
                 text: Translation.tr("Wallpaper change interval (min)")

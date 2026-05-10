@@ -253,7 +253,7 @@ Item {
                     }
                     StyledText {
                         id: titleText
-                        Layout.topMargin: !root.activePlayer ? -13 : 0
+                        Layout.topMargin: (!root.activePlayer || root.trackArtist.length === 0) ? -13 : 0
                         text: StringUtils.cleanMusicTitle(root.trackTitle) || Translation.tr("No media")
                         font.pixelSize: Appearance.font.pixelSize.smallie
                         color: Appearance.colors.colOnSecondaryContainer

@@ -527,10 +527,6 @@ Singleton {
                     property bool enable: true
                     property bool artColors: false
                 }
-
-                property JsonObject wallpapers: JsonObject {
-                    property bool enable: true
-                }
                 
                 property JsonObject ai: JsonObject {
                     property bool textFadeIn: false
@@ -621,21 +617,11 @@ Singleton {
             
             property JsonObject wallpaperSelector: JsonObject {
                 property bool useSystemFileDialog: false
+                property bool showBlurBackground: false
+                property bool showHomePath: true
+                property int columns: 4
+                property bool closeAfterSelection: true
                 property int changeInterval: 0 
-            }
-
-            property JsonObject wallpapers: JsonObject {
-                property string service: "wallhaven"
-                property string sort: "favourites"
-                property bool showAnimeResults: false
-                property JsonObject paths: JsonObject {
-                    property string download: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers`)
-                    property string nsfw: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers/NSFW`)
-                }
-            }
-            
-            property JsonObject wallhaven: JsonObject {
-                property string apiKey: "" // opcional, solo para NSFW o más resultados
             }
 
             property JsonObject windows: JsonObject {

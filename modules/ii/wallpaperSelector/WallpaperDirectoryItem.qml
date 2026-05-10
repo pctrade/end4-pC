@@ -16,6 +16,7 @@ MouseArea {
     property alias colText: wallpaperItemName.color
     property alias radius: background.radius
     property alias margins: background.anchors.margins
+    property bool showLabel: true
     property alias padding: wallpaperItemColumnLayout.anchors.margins
     margins: Appearance.sizes.wallpaperSelectorItemMargins
     padding: Appearance.sizes.wallpaperSelectorItemPadding
@@ -110,6 +111,7 @@ MouseArea {
 
             StyledText {
                 id: wallpaperItemName
+                visible: root.showLabel 
                 Layout.fillWidth: true
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10

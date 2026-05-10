@@ -163,7 +163,7 @@ ContentPage {
             title: Translation.tr("Left Sidebar")
 
             ConfigRow {
-
+                Layout.topMargin: 10
                 // AI policy
                 ColumnLayout {
                     ContentSubsectionLabel {
@@ -228,25 +228,8 @@ ContentPage {
                 }
             }
 
-            // Wallpapers
             ColumnLayout {
                 Layout.topMargin: 15
-                ContentSubsectionLabel {
-                    text: Translation.tr("Online Wallpapers")
-                }
-
-                ConfigSwitch {
-                    buttonIcon: "panorama"
-                    text: Translation.tr('Enabled')
-                    checked: Config.options.sidebar.wallpapers.enable
-                    onCheckedChanged: {
-                        Config.options.sidebar.wallpapers.enable = checked;
-                    }
-                }
-            }
-
-            ColumnLayout {
-
                 ContentSubsectionLabel {
                     text: Translation.tr("Translator")
                 }
