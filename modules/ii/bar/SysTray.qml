@@ -15,10 +15,12 @@ Item {
     property bool showSeparator: true
     property bool showOverflowMenu: true
     property var activeMenu: null
+    readonly property bool isOnLeft: Config.options.bar.layouts.leftLayout.includes("sysTray")
 
     visible: SystemTray.items.values.length > 0
-    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : root.unpinnedItems.length > 0 ? gridLayout.implicitWidth + 4 : gridLayout.implicitWidth + 6
-    implicitHeight: vertical ? gridLayout.implicitHeight + 4 : gridLayout.implicitHeight
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : gridLayout.implicitWidth
+    implicitHeight: vertical ? gridLayout.implicitHeight : Appearance.sizes.barHeight
+
     property list<var> pinnedItems: TrayService.pinnedItems
     property list<var> unpinnedItems: TrayService.unpinnedItems
     onUnpinnedItemsChanged: {
@@ -58,22 +60,17 @@ Item {
     GridLayout {
         id: gridLayout
         columns: root.vertical ? 1 : -1
-        anchors.fill: parent
-        anchors.leftMargin:   0
-        anchors.topMargin:    0
-        anchors.bottomMargin: 0
-        rowSpacing: 8
-        columnSpacing: root.vertical ? 0 : 4
+        anchors.centerIn: parent
+        rowSpacing: 4
+        columnSpacing: 4
 
         RippleButton {
             id: trayOverflowButton
             visible: root.showOverflowMenu && root.unpinnedItems.length > 0
             toggled: root.trayOverflowOpen
-
             downAction: () => root.trayOverflowOpen = !root.trayOverflowOpen
 
-            Layout.fillHeight: !root.vertical
-            Layout.fillWidth: root.vertical
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
             background.implicitWidth: 24
             background.implicitHeight: 24
             background.anchors.centerIn: this
@@ -102,8 +99,8 @@ Item {
                     id: trayOverflowLayout
                     anchors.centerIn: parent
                     columns: Math.ceil(Math.sqrt(root.unpinnedItems.length))
-                    columnSpacing: 10
-                    rowSpacing: 10
+                    columnSpacing: 6
+                    rowSpacing: 6
 
                     Repeater {
                         model: root.unpinnedItems
@@ -125,8 +122,11 @@ Item {
             delegate: SysTrayItem {
                 required property SystemTrayItem modelData
                 item: modelData
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
                 Layout.fillHeight: !root.vertical
                 Layout.fillWidth: root.vertical
+                Layout.leftMargin:  root.isOnLeft ? 4 : 6
+                Layout.rightMargin: root.isOnLeft ? 6 : 4
                 onMenuClosed: root.releaseFocus()
                 onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
             }
