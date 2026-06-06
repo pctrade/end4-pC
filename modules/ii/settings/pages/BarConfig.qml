@@ -433,6 +433,11 @@ ContentPage {
                     }
                 }
             }
+            ConfigSwitch {
+                buttonIcon: "keep"; text: Translation.tr("Pin media controls")
+                checked: Config.options.bar.media.alwaysVisible
+                onCheckedChanged: { Config.options.bar.media.alwaysVisible = checked; }
+            }
         }
 
         ContentSection {

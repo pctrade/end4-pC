@@ -145,15 +145,18 @@ Scope {
             }
 
             Component.onCompleted: {
-                GlobalFocusGrab.addDismissable(panelWindow);
+                if (!Config.options.bar.media.alwaysVisible)
+                    GlobalFocusGrab.addDismissable(panelWindow);
             }
             Component.onDestruction: {
-                GlobalFocusGrab.removeDismissable(panelWindow);
+                if (!Config.options.bar.media.alwaysVisible)
+                    GlobalFocusGrab.removeDismissable(panelWindow);
             }
             Connections {
                 target: GlobalFocusGrab
                 function onDismissed() {
-                    GlobalStates.mediaControlsOpen = false;
+                    if (!Config.options.bar.media.alwaysVisible)
+                        GlobalStates.mediaControlsOpen = false;
                 }
             }
 

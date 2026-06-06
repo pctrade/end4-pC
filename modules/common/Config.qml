@@ -362,6 +362,7 @@ Singleton {
                 }
                 property JsonObject media: JsonObject {
                     property string preferredPlayer: ""
+                    property bool alwaysVisible: false
                 }
 
             }
