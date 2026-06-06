@@ -78,7 +78,12 @@ MouseArea {
         } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
             root.handleFilePasting(event);
         } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_F) {
-            showControls = !showControls;
+            if (Config.options.wallpaperSelector.showSearchbar) {
+                Config.options.wallpaperSelector.showSearchbar = false
+                showControls = false
+            } else {
+                showControls = !showControls
+            }
             event.accepted = true;
         } else if (event.modifiers & Qt.AltModifier && event.key === Qt.Key_Up) {
             Wallpapers.navigateUp();
