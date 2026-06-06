@@ -353,24 +353,6 @@ ContentPage {
         }
 
         ContentSection {
-            icon: "notifications"
-            shape: MaterialShape.Shape.Bun
-            title: Translation.tr("Notifications")
-
-            ConfigSpinBox {
-                icon: "av_timer"
-                text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
-                value: Config.options.notifications.timeout
-                from: 1000
-                to: 60000
-                stepSize: 1000
-                onValueChanged: {
-                    Config.options.notifications.timeout = value;
-                }
-            }
-        }
-
-        ContentSection {
             icon: "select_window"
             shape: MaterialShape.Shape.SoftBurst
             title: Translation.tr("Overlay: General")

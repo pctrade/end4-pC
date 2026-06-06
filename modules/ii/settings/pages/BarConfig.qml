@@ -218,6 +218,17 @@ ContentPage {
                 checked: Config.options.bar.indicators.notifications.showUnreadCount
                 onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
             }
+            ConfigSpinBox {
+                icon: "av_timer"
+                text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
+                value: Config.options.notifications.timeout
+                from: 1000
+                to: 60000
+                stepSize: 1000
+                onValueChanged: {
+                    Config.options.notifications.timeout = value;
+                }
+            }
         }
 
         ContentSection {
