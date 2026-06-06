@@ -166,6 +166,7 @@ Scope {
                             }
 
                             DockSeparator {
+                                visible: Config.options.dock.showPinButton || Config.options.dock.pinnedApps.length > 0
                             }
 
                             Item {
