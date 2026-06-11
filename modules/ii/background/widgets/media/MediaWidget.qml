@@ -196,6 +196,7 @@ AbstractBackgroundWidget {
                         colSymbol: Appearance.colors.colOnPrimary
                         text: root.currentPlayer?.isPlaying ? "pause" : "play_arrow"
                         iconSize: root.buttonIconSize
+                        fill: 1
                         padding: 8
 
                         MouseArea {
