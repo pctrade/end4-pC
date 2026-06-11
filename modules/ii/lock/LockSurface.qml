@@ -245,7 +245,7 @@ MouseArea {
         IconAndTextPair {
             Layout.leftMargin: 8
             icon: "account_circle"
-            visible: !Config.options.lock.showMedia
+            visible: !Config.options.lock.showMedia || MprisController.activePlayer === null
             text: SystemInfo.username
         }
 
@@ -360,9 +360,7 @@ MouseArea {
         Loader {
             Layout.rightMargin: 8
             Layout.fillHeight: true
-
-            active: true
-            visible: active && !Config.options.lock.showMedia
+            visible: !Config.options.lock.showMedia || MprisController.activePlayer === null
 
             sourceComponent: Row {
                 spacing: 8
