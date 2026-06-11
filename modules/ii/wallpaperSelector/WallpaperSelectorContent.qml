@@ -19,6 +19,7 @@ MouseArea {
     property string source: "local"
     property string selectedResolution: "1080p"
     property bool toolbarVisible: showControls || Config.options.wallpaperSelector.showSearchbar
+    property bool filterFieldFocused: false
 
     property var quickDirs: [
         { icon: "home",       name: "Home   ",       path: `${Directories.home}`,                alwaysVisible: Config.options.wallpaperSelector.showHomePath },
@@ -95,25 +96,24 @@ MouseArea {
             Wallpapers.navigateForward();
             event.accepted = true;
         } else if (event.key === Qt.Key_Left) {
-            gridLoader.item?.moveSelection(-1);
+            if (!root.filterFieldFocused) gridLoader.item?.moveSelection(-1);
             event.accepted = true;
         } else if (event.key === Qt.Key_Right) {
-            gridLoader.item?.moveSelection(1);
+            if (!root.filterFieldFocused) gridLoader.item?.moveSelection(1);
             event.accepted = true;
         } else if (event.key === Qt.Key_Up) {
-            gridLoader.item?.moveSelection(-root.columns);
+            if (!root.filterFieldFocused) gridLoader.item?.moveSelection(-root.columns);
             event.accepted = true;
         } else if (event.key === Qt.Key_Down) {
-            gridLoader.item?.moveSelection(root.columns);
+            if (!root.filterFieldFocused) gridLoader.item?.moveSelection(root.columns);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            gridLoader.item?.activateCurrent();
+            if (!root.filterFieldFocused) gridLoader.item?.activateCurrent();
             event.accepted = true;
         } else if (event.key === Qt.Key_Backspace) {
-            if (filterField.text.length > 0) {
-                filterField.text = filterField.text.substring(0, filterField.text.length - 1);
+            if (!root.filterFieldFocused) {
+                filterField.forceActiveFocus();
             }
-            filterField.forceActiveFocus();
             event.accepted = true;
         } else if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_L) {
             addressBar.focusBreadcrumb();
@@ -122,7 +122,7 @@ MouseArea {
             filterField.forceActiveFocus();
             event.accepted = true;
         } else {
-            if (event.text.length > 0) {
+            if (event.text.length > 0 && !root.filterFieldFocused) {
                 filterField.text += event.text;
                 filterField.cursorPosition = filterField.text.length;
                 filterField.forceActiveFocus();
@@ -152,7 +152,6 @@ MouseArea {
         implicitWidth: gridColumnLayout.implicitWidth
         implicitHeight: gridColumnLayout.implicitHeight
 
-        // ─── Blur Background ───
         Item {
             anchors { fill: parent; margins: 8 }
             z: 0
@@ -213,7 +212,6 @@ MouseArea {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                // ─── Top bar ───
                 Item {
                     id: topBar
                     Layout.fillWidth: true
@@ -283,7 +281,6 @@ MouseArea {
                             }
                         }
 
-                        // ─── Resolution buttons ───
                         Loader {
                             active: root.source !== "local"
                             visible: active
@@ -346,7 +343,6 @@ MouseArea {
                     }
                 }
 
-                // ─── Grid region ───
                 Item {
                     id: gridDisplayRegion
                     Layout.fillWidth: true
@@ -377,7 +373,6 @@ MouseArea {
                         }
                     }
 
-                    // ─── Extra options ───
                     Row {
                         id: extraOptions
                         anchors {
@@ -398,7 +393,6 @@ MouseArea {
                             NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                         }
 
-                        // ─── Toolbar local ───
                         Loader {
                             active: root.source === "local"
                             visible: active
@@ -415,29 +409,21 @@ MouseArea {
                                         Config.options.wallpaperSelector.useSystemFileDialog = true;
                                     }
                                     text: "open_in_new"
-                                    StyledToolTip {
-                                        text: Translation.tr("Use the system file picker instead\nRight-click to make this the default behavior")
-                                    }
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
                                     onClicked: Wallpapers.randomFromCurrentFolder()
                                     text: "ifl"
-                                    StyledToolTip { text: Translation.tr("Pick random from this folder") }
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
                                     onClicked: root.useDarkMode = !root.useDarkMode
                                     text: root.useDarkMode ? "dark_mode" : "light_mode"
-                                    StyledToolTip {
-                                        text: Translation.tr("Click to toggle light/dark mode\n(applied when wallpaper is chosen)")
-                                    }
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
                                     onClicked: root.updateThumbnails()
                                     text: "reset_image"
-                                    StyledToolTip { text: Translation.tr("Update Thumbnails") }
                                 }
                                 ToolbarTextField {
                                     id: filterField
@@ -447,11 +433,18 @@ MouseArea {
                                     clip: true
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     onTextChanged: Wallpapers.searchQuery = text
+                                    onActiveFocusChanged: root.filterFieldFocused = activeFocus
                                     Keys.onPressed: event => {
                                         if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
                                             root.handleFilePasting(event);
+                                            event.accepted = true;
                                             return;
-                                        } else if (text.length !== 0) {
+                                        }
+                                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            event.accepted = true;
+                                            return;
+                                        }
+                                        if (text.length !== 0) {
                                             if (event.key === Qt.Key_Down) { event.accepted = true; return; }
                                             if (event.key === Qt.Key_Up)   { event.accepted = true; return; }
                                         }
@@ -461,7 +454,6 @@ MouseArea {
                             }
                         }
 
-                        // ─── Toolbar online ───
                         Loader {
                             active: root.source !== "local"
                             visible: active
@@ -472,13 +464,20 @@ MouseArea {
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     onTextChanged: OnlineWallpapers.query = text
                                     onAccepted: OnlineWallpapers.fetch()
+                                    onActiveFocusChanged: root.filterFieldFocused = activeFocus
+                                    Keys.onPressed: event => {
+                                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            event.accepted = true;
+                                            return;
+                                        }
+                                        event.accepted = false;
+                                    }
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
                                     enabled: OnlineWallpapers.page > 1
                                     text: "chevron_left"
                                     onClicked: OnlineWallpapers.prevPage()
-                                    StyledToolTip { text: Translation.tr("Previous page") }
                                 }
                                 ToolbarTextField {
                                     id: pageField
@@ -513,13 +512,11 @@ MouseArea {
                                     implicitWidth: height
                                     text: "chevron_right"
                                     onClicked: OnlineWallpapers.nextPage()
-                                    StyledToolTip { text: Translation.tr("Next page") }
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
                                     text: "refresh"
                                     onClicked: OnlineWallpapers.fetch()
-                                    StyledToolTip { text: Translation.tr("Fetch new wallpapers") }
                                 }
                             }
                         }
@@ -527,7 +524,6 @@ MouseArea {
                         ToolbarPairedFab {
                             iconText: "close"
                             onClicked: GlobalStates.wallpaperSelectorOpen = false
-                            StyledToolTip { text: Translation.tr("Cancel wallpaper selection") }
                         }
                     }
                 }
