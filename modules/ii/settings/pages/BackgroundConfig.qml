@@ -113,7 +113,7 @@ ContentPage {
             id: settingsClock
             icon: "clock_loader_40"
             shape: MaterialShape.Shape.Bun
-            title: Translation.tr("Widget: Clock")
+            title: Translation.tr("Clock")
 
             function stylePresent(styleName) {
                 if (!Config.options.background.widgets.clock.showOnlyWhenLocked && Config.options.background.widgets.clock.style === styleName) {
@@ -609,72 +609,9 @@ ContentPage {
         }
 
         ContentSection {
-            icon: "weather_mix"
-            shape: MaterialShape.Shape.Pill
-            title: Translation.tr("Widget: Weather")
-
-            ConfigRow {
-                Layout.fillWidth: true
-
-                ConfigSwitch {
-                    Layout.fillWidth: false
-                    buttonIcon: "check"
-                    text: Translation.tr("Enable")
-                    checked: Config.options.background.widgets.weather.enable
-                    onCheckedChanged: {
-                        Config.options.background.widgets.weather.enable = checked;
-                    }
-                }
-                Item {
-                    Layout.fillWidth: true
-                }
-                ConfigSelectionArray {
-                    Layout.fillWidth: false
-                    currentValue: Config.options.background.widgets.weather.placementStrategy
-                    onSelected: newValue => {
-                        Config.options.background.widgets.weather.placementStrategy = newValue;
-                    }
-                    options: [
-                        {
-                            displayName: Translation.tr("Draggable"),
-                            icon: "drag_pan",
-                            value: "free"
-                        },
-                        {
-                            displayName: Translation.tr("Least busy"),
-                            icon: "category",
-                            value: "leastBusy"
-                        },
-                        {
-                            displayName: Translation.tr("Most busy"),
-                            icon: "shapes",
-                            value: "mostBusy"
-                        },
-                    ]
-                }
-            }
-        }
-
-        ContentSection {
-            icon: "image"
-            shape: MaterialShape.Shape.Flower 
-            title: Translation.tr("Widget: Image Converter")
-
-            ConfigSwitch {
-                Layout.fillWidth: true
-                buttonIcon: "check"
-                text: Translation.tr("Enable")
-                checked: Config.options.background.widgets.images.enable
-                onCheckedChanged: {
-                    Config.options.background.widgets.images.enable = checked;
-                }
-            }
-        }
-
-        ContentSection {
             icon: "panorama"
             shape: MaterialShape.Shape.SoftBoom 
-            title: Translation.tr("Widget: Custom Image")
+            title: Translation.tr("Custom Image")
 
             ConfigSwitch {
                 Layout.fillWidth: true
@@ -708,40 +645,100 @@ ContentPage {
         }
 
         ContentSection {
-            icon: "music_note"
-            shape: MaterialShape.Shape.Cookie4Sided
-            title: Translation.tr("Widget: Music")
+            icon: "widgets"
+            shape: MaterialShape.Shape.Pill
+            title: Translation.tr("Widgets")
 
-            ContentSubsection {
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 2
+                rowSpacing: 8
+                columnSpacing: 8
 
-                ConfigSwitch {
-                    Layout.fillWidth: true
-                    buttonIcon: "check"
-                    text: Translation.tr("Enable")
-                    checked: Config.options.background.widgets.media.enable
-                    onCheckedChanged: {
-                        Config.options.background.widgets.media.enable = checked;
+                Repeater {
+                    model: [
+                        {
+                            icon: "weather_mix",
+                            name: Translation.tr("Weather"),
+                            enabled: Config.options.background.widgets.weather.enable
+                        },
+                        {
+                            icon: "image",
+                            name: Translation.tr("Image converter"),
+                            enabled: Config.options.background.widgets.images.enable
+                        },
+                        {
+                            icon: "music_note",
+                            name: Translation.tr("Media Player"),
+                            enabled: Config.options.background.widgets.media.enable
+                        },
+                        {
+                            icon: "memory",
+                            name: Translation.tr("Resources"),
+                            enabled: Config.options.background.widgets.resources.enable
+                        },
+                    ]
+
+                    delegate: Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 105
+                        radius: Appearance.rounding.normal
+                        color: Appearance.colors.colLayer1
+                        border.width: 1
+                        border.color: Appearance.colors.colLayer0Border
+
+                        ColumnLayout {
+                            anchors {
+                                top: parent.top
+                                left: parent.left
+                                right: parent.right
+                                margins: 12
+                            }
+                            spacing: 0
+
+                            RowLayout {
+                                Layout.fillWidth: true
+
+                                MaterialSymbol {
+                                    text: modelData.icon
+                                    iconSize: Appearance.font.pixelSize.normal + 5
+                                    color: Appearance.colors.colPrimary
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                ConfigSwitch {
+                                    Layout.fillWidth: false
+                                    checked: modelData.enabled
+                                    onCheckedChanged: {
+                                        if (modelData.icon === "weather_mix")
+                                            Config.options.background.widgets.weather.enable = checked
+                                        else if (modelData.icon === "image")
+                                            Config.options.background.widgets.images.enable = checked
+                                        else if (modelData.icon === "music_note")
+                                            Config.options.background.widgets.media.enable = checked
+                                        else if (modelData.icon === "memory")
+                                            Config.options.background.widgets.resources.enable = checked
+                                    }
+                                }
+                            }
+
+                            StyledText {
+                                text: modelData.name
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnLayer1
+                            }
+
+                            StyledText {
+                                text: modelData.enabled ? Translation.tr("Enabled") : Translation.tr("Disabled")
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                color: Appearance.colors.colSubtext
+                            }
+                        }
                     }
                 }
             }
         }
-        ContentSection {
-            icon: "memory"
-            shape: MaterialShape.Shape.Gem
-            title: Translation.tr("Widget: Resources")
 
-            ContentSubsection {
-
-                ConfigSwitch {
-                    Layout.fillWidth: true
-                    buttonIcon: "check"
-                    text: Translation.tr("Enable")
-                    checked: Config.options.background.widgets.resources.enable
-                    onCheckedChanged: {
-                        Config.options.background.widgets.resources.enable = checked;
-                    }
-                }
-            }
-        }
     }
 }

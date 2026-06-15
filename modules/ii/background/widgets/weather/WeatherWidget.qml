@@ -55,7 +55,7 @@ AbstractBackgroundWidget {
                 StyledText {
                     id: tempText
                     font {
-                        pixelSize: 52
+                        pixelSize: 50
                         family: Appearance.font.family.expressive
                         weight: Font.Medium
                     }
