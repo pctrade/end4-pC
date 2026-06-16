@@ -14,11 +14,6 @@ DelegateChooser {
     required property real baseCellHeight
     required property real spacing
     required property int startingIndex
-    property bool isUsed: startingIndex !== -1
-    property var onDragStart: null
-    property var onDragMove: null
-    property var onDragEnd: null
-
     signal openAudioOutputDialog()
     signal openAudioInputDialog()
     signal openBluetoothDialog()
@@ -28,178 +23,241 @@ DelegateChooser {
     role: "type"
 
     DelegateChoice { roleValue: "antiFlashbang"; AndroidAntiFlashbangToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
-        onOpenMenu: root.openNightLightDialog()
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
+        onOpenMenu: {
+            root.openNightLightDialog()
+        }
     } }
 
     DelegateChoice { roleValue: "audio"; AndroidAudioToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
-        onOpenMenu: root.openAudioOutputDialog()
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
+        onOpenMenu: {
+            root.openAudioOutputDialog()
+        }
     } }
 
     DelegateChoice { roleValue: "bluetooth"; AndroidBluetoothToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
-        onOpenMenu: root.openBluetoothDialog()
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
+        onOpenMenu: {
+            root.openBluetoothDialog()
+        }
     } }
 
     DelegateChoice { roleValue: "cloudflareWarp"; AndroidCloudflareWarpToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "colorPicker"; AndroidColorPickerToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "darkMode"; AndroidDarkModeToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "easyEffects"; AndroidEasyEffectsToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "gameMode"; AndroidGameModeToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "idleInhibitor"; AndroidIdleInhibitorToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "mic"; AndroidMicToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
-        onOpenMenu: root.openAudioInputDialog()
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
+        onOpenMenu: {
+            root.openAudioInputDialog()
+        }
     } }
 
     DelegateChoice { roleValue: "musicRecognition"; AndroidMusicRecognition {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "network"; AndroidNetworkToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
-        onOpenMenu: root.openWifiDialog()
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
+        onOpenMenu: {
+            root.openWifiDialog()
+        }
     } }
 
     DelegateChoice { roleValue: "nightLight"; AndroidNightLightToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
-        onOpenMenu: root.openNightLightDialog()
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
+        onOpenMenu: {
+            root.openNightLightDialog()
+        }
     } }
 
     DelegateChoice { roleValue: "notifications"; AndroidNotificationToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "onScreenKeyboard"; AndroidOnScreenKeyboardToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "powerProfile"; AndroidPowerProfileToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 
     DelegateChoice { roleValue: "screenSnip"; AndroidScreenSnipToggle {
-        required property int index; required property var modelData
-        buttonIndex: root.startingIndex + index; buttonData: modelData
-        editMode: root.editMode; expandedSize: modelData.size > 1
-        baseCellWidth: root.baseCellWidth; baseCellHeight: root.baseCellHeight
-        cellSpacing: root.spacing; cellSize: modelData.size
-        isUsed: root.isUsed
-        onDragStart: root.onDragStart; onDragMove: root.onDragMove; onDragEnd: root.onDragEnd
+        required property int index
+        required property var modelData
+        buttonIndex: root.startingIndex + index
+        buttonData: modelData
+        editMode: root.editMode
+        expandedSize: modelData.size > 1
+        baseCellWidth: root.baseCellWidth
+        baseCellHeight: root.baseCellHeight
+        cellSpacing: root.spacing
+        cellSize: modelData.size
     } }
 }
