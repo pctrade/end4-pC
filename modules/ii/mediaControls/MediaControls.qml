@@ -118,7 +118,7 @@ Scope {
                 top: Config.options.bar.vertical
                     ? (!Config.options.bar.bottom
                         ? (root.mediaPosition === "left" ? Appearance.sizes.hyprlandGapsOut
-                            : root.mediaPosition === "right" ? panelWindow.screen.height - widgetHeight - Appearance.sizes.hyprlandGapsOut
+                            : root.mediaPosition === "right" ? panelWindow.screen.height - playerColumnLayout.implicitHeight - Appearance.sizes.hyprlandGapsOut
                             : (panelWindow.screen.height / 2) - (widgetHeight / 2))
                         : ((panelWindow.screen.height / 2) - widgetHeight * 1.5))
                     : Appearance.sizes.barHeight - Appearance.sizes.hyprlandGapsOut
