@@ -35,10 +35,8 @@ Item {
         : Appearance.sizes.barHeight
 
     transform: Scale {
-        xScale: (!root.vertical && root.mirrored) ? -1 : 1
-        yScale: (root.vertical && root.mirrored) ? -1 : 1
+        xScale: !root.vertical && root.mirrored ? -1 : 1
         origin.x: root.width / 2
-        origin.y: root.height / 2
     }
 
     Rectangle {
@@ -94,7 +92,8 @@ Item {
                     height: root.dotSize
                     property real pointValue: {
                         if (!root.isPlaying || root.points.length === 0) return root.dotSize
-                        const idx = Math.floor(index * root.points.length / root.barCount)
+                        const rawIndex = root.mirrored ? (root.barCount - 1 - index) : index
+                        const idx = Math.floor(rawIndex * root.points.length / root.barCount)
                         const v = root.points[idx] ?? 0
                         return Math.max(root.dotSize, (v / root.maxVisualizerValue) * root.maxBarHeight)
                     }
@@ -149,7 +148,8 @@ Item {
                 height: root.dotSize
                 property real pointValue: {
                     if (!root.isPlaying || root.points.length === 0) return root.dotSize
-                    const idx = Math.floor(index * root.points.length / root.barCount)
+                    const rawIndex = root.mirrored ? (root.barCount - 1 - index) : index
+                    const idx = Math.floor(rawIndex * root.points.length / root.barCount)
                     const v = root.points[idx] ?? 0
                     return Math.max(root.dotSize, (v / root.maxVisualizerValue) * root.maxBarHeight)
                 }

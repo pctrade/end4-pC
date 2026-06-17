@@ -21,7 +21,12 @@ Item {
     function getWidgetUrl(name) {
         if (!name) return "";
         let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
-        return Qt.resolvedUrl("../bar/" + formattedName + ".qml");  // ← apunta a /bar/
+        return Qt.resolvedUrl("../bar/" + formattedName + ".qml");
+    }
+
+    function getMirroredForIndex(layout, idx) {
+        const prevCount = layout.slice(0, idx).filter(w => w === "visualizer").length
+        return prevCount % 2 === 1
     }
 
     property var screen: root.QsWindow.window?.screen
@@ -67,6 +72,8 @@ Item {
                             onLoaded: {
                                 if (item && "vertical" in item)
                                     item.vertical = true
+                                if (item && item.hasOwnProperty("mirrored"))
+                                    item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.middleLayout, index)
                             }
                         }
                     }
@@ -99,6 +106,8 @@ Item {
                             onLoaded: {
                                 if (item && "vertical" in item)
                                     item.vertical = true
+                                if (item && item.hasOwnProperty("mirrored"))
+                                    item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.leftLayout, index)
                             }
                         }
                     }
@@ -131,6 +140,8 @@ Item {
                             onLoaded: {
                                 if (item && "vertical" in item)
                                     item.vertical = true
+                                if (item && item.hasOwnProperty("mirrored"))
+                                    item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.rightLayout, index)
                             }
                         }
                     }
