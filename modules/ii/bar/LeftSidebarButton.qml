@@ -3,6 +3,7 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.common.functions
 
 Item {
     id: root
@@ -95,7 +96,7 @@ Item {
             implicitHeight: distroIcon.height + buttonPadding * 2
             buttonRadius: Appearance.rounding.full
             colBackground: Appearance.colors.colPrimaryContainer
-            colBackgroundHover: Appearance.colors.colLayer1Hover
+            colBackgroundHover: Appearance.colors.colPrimaryContainerHover
             colRipple: Appearance.colors.colLayer1Active
             colBackgroundToggled: Appearance.colors.colSecondaryContainer
             colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
