@@ -15,6 +15,8 @@ Item {
     width: parent.width
     readonly property real barPadding: 0
     readonly property bool isMaterial: Config.options.bar.cornerStyle === 3
+    readonly property real centerPillX: centerPill.x
+    readonly property real centerPillWidth: centerPill.width
 
     function getWidgetUrl(name) {
         if (!name) return "";
@@ -30,16 +32,39 @@ Item {
     property var screen: root.QsWindow.window?.screen
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
 
+
     Rectangle {
         id: barBackground
-        anchors {
-            fill: parent
-            margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
-        }
-        color: Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial ? Appearance.colors.colLayer0 : "transparent"
+        anchors.fill: parent
+        anchors.margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
+        color: (!centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) 
+            ? Appearance.colors.colLayer0 : "transparent"
+        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
+        border.color: Appearance.colors.colLayer0Border
+    }
+
+    // center-only
+    readonly property bool centerOnly: !root.isMaterial
+        && Config.options.bar.layouts.leftLayout.length === 0
+        && Config.options.bar.layouts.rightLayout.length === 0
+
+    Rectangle {
+        id: centerPill
+        visible: centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: middleRow.implicitWidth + 10
+        height: parent.height - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
+        color: Appearance.colors.colLayer0
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
+
+        bottomLeftRadius:  Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        topLeftRadius:     Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
+        topRightRadius:    Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
     }
 
     Item {

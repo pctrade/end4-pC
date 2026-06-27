@@ -18,6 +18,12 @@ Item {
     readonly property real barPadding: 0
     readonly property bool isMaterial: Config.options.bar.cornerStyle === 3
 
+    readonly property bool centerOnly: !root.isMaterial
+        && Config.options.bar.layouts.leftLayout.length === 0
+        && Config.options.bar.layouts.rightLayout.length === 0
+    readonly property real centerPillY: centerPill.y
+    readonly property real centerPillHeight: centerPill.height
+
     function getWidgetUrl(name) {
         if (!name) return "";
         let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
@@ -37,10 +43,30 @@ Item {
             fill: parent
             margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
         }
-        color: Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial ? Appearance.colors.colLayer0 : "transparent"
+        color: (Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial && !root.centerOnly)
+            ? Appearance.colors.colLayer0 : "transparent"
+        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: (!root.centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
+        border.color: Appearance.colors.colLayer0Border
+    }
+
+    // centerOnly
+    Rectangle {
+        id: centerPill
+        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        height: middleCol.implicitHeight + 10
+        width: parent.width - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
+        color: Appearance.colors.colLayer0
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
+
+        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        topRightRadius:    Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        bottomLeftRadius:  Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
+        topLeftRadius:     Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
     }
 
     Item {
