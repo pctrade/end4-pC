@@ -40,19 +40,19 @@ Item {
                 spacing: root.hasAmPm ? 6 : 0
 
                 Column {
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    Layout.alignment: Qt.AlignHCenter  
                     spacing: -4
 
                     Repeater {
                         model: root.dateTimeString.split(/[: ]/)
                         delegate: StyledText {
                             required property string modelData
-                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: implicitWidth
+                            horizontalAlignment: Text.AlignHCenter 
                             font.pixelSize: {
                                 if (modelData.match(/am|pm/i))
                                     return Appearance.font.pixelSize.smaller;
                                 else
-                                    // Smaller "am"/"pm" text
                                     return Appearance.font.pixelSize.large;
                             }
                             color: Appearance.colors.colOnLayer1
@@ -60,9 +60,10 @@ Item {
                         }
                     }
                 }
+
                 StyledText {
+                    Layout.alignment: Qt.AlignHCenter  
                     Layout.bottomMargin: 5
-                    anchors.horizontalCenter: parent.horizontalCenter
                     font.pixelSize: Appearance.font.pixelSize.smallest
                     color: Appearance.colors.colOnLayer1
                     text: DateTime.shortDate
