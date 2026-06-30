@@ -161,7 +161,7 @@ ContentPage {
 
     Process {
         id: packagesProcess
-        command: ["bash", "-c", "pacman_count=$(pacman -Q | wc -l); flatpak_count=$(flatpak list 2>/dev/null | wc -l || echo 0); echo \"$pacman_count pacman, $flatpak_count flatpak\""]
+        command: ["bash", "-c", "pacman_count=$(pacman -Q | wc -l); flatpak_count=$(flatpak list 2>/dev/null | wc -l || echo 0); if [ \"$flatpak_count\" -gt 0 ]; then echo \"$pacman_count pacman, $flatpak_count flatpak\"; else echo \"$pacman_count pacman\"; fi"]
         running: false
         stdout: SplitParser {
             onRead: data => packages = data.trim()
