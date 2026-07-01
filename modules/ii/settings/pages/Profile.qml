@@ -213,7 +213,7 @@ ContentPage {
                 MaterialTextArea {
                     id: presetNameField
                     Layout.fillWidth: true
-                    placeholderText: Translation.tr("Preset name eg >> pC, this is a description")
+                    placeholderText: Translation.tr("Name, description (optional)")
                     wrapMode: TextEdit.NoWrap
                     Timer {
                         id: presetNameDebounceTimer
