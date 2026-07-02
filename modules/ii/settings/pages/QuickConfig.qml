@@ -101,8 +101,8 @@ ContentPage {
                 Layout.fillWidth: true
 
                 Item {
-                    implicitWidth: 340
-                    implicitHeight: 210
+                    implicitWidth: 380
+                    implicitHeight: 220
                     
                     StyledImage {
                         id: wallpaperPreview
@@ -115,7 +115,7 @@ ContentPage {
                         layer.enabled: true
                         layer.effect: OpacityMask {
                             maskSource: Rectangle {
-                                width: 360
+                                width: 380
                                 height: 220
                                 radius: Appearance.rounding.normal
                             }
@@ -335,6 +335,11 @@ ContentPage {
                                 displayName: Translation.tr("Islands"),
                                 icon: "crop_3_2",
                                 value: 2
+                            },
+                            {
+                                displayName: Translation.tr("M3"),
+                                icon: "interests",
+                                value: 3
                             }
                         ]
                     }

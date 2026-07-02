@@ -16,7 +16,7 @@ Rectangle {
     property var onApply: () => {}
     property var onRemove: () => {}
 
-    implicitWidth: 293 
+    implicitWidth: 330 
     implicitHeight: contentColumn.implicitHeight + 14
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1

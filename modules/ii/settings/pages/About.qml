@@ -171,6 +171,7 @@ ContentPage {
     ContentSection {
         Layout.fillWidth: true
         Layout.topMargin: 30
+        Layout.leftMargin: 50
         bgColor: "transparent"
 
         ColumnLayout {
@@ -238,11 +239,18 @@ ContentPage {
                         }
 
                         Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 1
-                            Layout.topMargin: 10
-                            color: Appearance.colors.colOnSurface
-                            opacity: 0.1
+                            width: 200
+                            Layout.topMargin: -5
+                            Layout.leftMargin: -30
+                            height: 2
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop { position: 0.0; color: "transparent" }
+                                GradientStop { position: 0.2; color: Appearance.colors.colOutline }
+                                GradientStop { position: 0.8; color: Appearance.colors.colOutline }
+                                GradientStop { position: 1.0; color: "transparent" }
+                            }
+                            opacity: 0.15
                         }
 
                         SystemInfoRow { label: Translation.tr("System Age  •"); value: installAge || "Loading..." }

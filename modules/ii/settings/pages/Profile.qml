@@ -234,6 +234,7 @@ ContentPage {
                     onClicked: {
                         page.savePreset()
                         presetNameField.text = ""
+                        page.presetNameInput = ""
                     }
                 }
             }
