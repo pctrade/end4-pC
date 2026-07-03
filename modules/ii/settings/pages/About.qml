@@ -11,6 +11,7 @@ import qs.modules.common.functions
 
 ContentPage {
     forceWidth: true
+    bottomContentPadding: 35
 
     property string kernelVersion: ""
     property string uptime: ""
@@ -161,166 +162,187 @@ ContentPage {
 
     Process {
         id: packagesProcess
-        command: ["bash", "-c", "pacman_count=$(pacman -Q | wc -l); flatpak_count=$(flatpak list 2>/dev/null | wc -l || echo 0); if [ \"$flatpak_count\" -gt 0 ]; then echo \"$pacman_count pacman, $flatpak_count flatpak\"; else echo \"$pacman_count pacman\"; fi"]
+        command: ["bash", "-c", "pacman_count=$(pacman -Q | wc -l); flatpak_count=$(flatpak list 2>/dev/null | wc -l || echo 0); if [ \"$flatpak_count\" -gt 0 ]; then echo \"$pacman_count pacman, $flatpak_count fp\"; else echo \"$pacman_count pacman\"; fi"]
         running: false
         stdout: SplitParser {
             onRead: data => packages = data.trim()
         }
     }
-
-    ContentSection {
+    
+    RowLayout {
         Layout.fillWidth: true
-        Layout.topMargin: 30
-        Layout.leftMargin: 15
-        bgColor: "transparent"
+        Layout.alignment: Qt.AlignHCenter
+        Layout.topMargin: 8
+        Layout.bottomMargin: -10
+        spacing: 16
+
+        IconImage {
+            implicitWidth: 134
+            implicitHeight: 134
+            source: Quickshell.iconPath(SystemInfo.logo)
+        }
 
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 20
+            spacing: 4
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: contentRow.implicitHeight + 40
-                radius: Appearance.rounding.full
-                color: "transparent"
-
-                RowLayout {
-                    id: contentRow
-                    anchors.fill: parent
-                    anchors.margins: 30
-                    spacing: 40
-
-                    Rectangle {
-                        Layout.preferredWidth: 180
-                        Layout.preferredHeight: 240
-                        Layout.alignment: Qt.AlignTop
-                        Layout.topMargin: 40
-                        Layout.leftMargin: -40
-                        Layout.rightMargin: 60
-                        radius: 90
-                        color: "transparent"
-
-                        IconImage {
-                            anchors.centerIn: parent
-                            implicitWidth: 240
-                            implicitHeight: 240
-                            source: Quickshell.iconPath(SystemInfo.logo)
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignTop
-                        spacing: 0
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 60
-                            color: "transparent"
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                spacing: -10
-
-                                StyledText {
-                                    text: SystemInfo.distroName
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    font.weight: Font.Bold
-                                    color: Appearance.colors.colOnSurface
-                                }
-
-                                StyledText {
-                                    text: "Kernel " + (kernelVersion || "Loading...")
-                                    font.pixelSize: Appearance.font.pixelSize.normal
-                                    color: Appearance.colors.colOnSurface
-                                    opacity: 0.7
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            width: 200
-                            Layout.topMargin: -5
-                            Layout.leftMargin: -30
-                            height: 2
-                            gradient: Gradient {
-                                orientation: Gradient.Horizontal
-                                GradientStop { position: 0.0; color: "transparent" }
-                                GradientStop { position: 0.2; color: Appearance.colors.colOutline }
-                                GradientStop { position: 0.8; color: Appearance.colors.colOutline }
-                                GradientStop { position: 1.0; color: "transparent" }
-                            }
-                            opacity: 0.15
-                        }
-
-                        SystemInfoRow { label: Translation.tr("System Age  •"); value: installAge || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("Desktop  •"); value: desktop || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("CPU  •"); value: cpu || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("GPU •"); value: gpu || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("Memory  •"); value: memory || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("Disk  •"); value: disk || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("Packages  •"); value: packages || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("Updates  •"); value: updates || "Checking..." }
-                        SystemInfoRow { label: Translation.tr("Shell  •"); value: shell || "Loading..." }
-                        SystemInfoRow { label: Translation.tr("Uptime  •"); value: uptime || "Loading..." }
-                    }
-                }
+            StyledText {
+                text: SystemInfo.distroName
+                font.pixelSize: Appearance.font.pixelSize.larger
+                font.weight: Font.Bold
+                color: Appearance.colors.colOnSurface
             }
-            Row {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: 2
-                Layout.topMargin: 20
 
-                SelectionGroupButton {
-                    leftmost: true
-                    rightmost: false
-                    buttonIcon: "app_badging"
-                    buttonText: Translation.tr("Update Dots")
-                    toggled: false
-                    onClicked: runUpdateDots()
-                }
+            StyledText {
+                text: "Kernel " + (kernelVersion || "Loading...")
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colSubtext
+            }
 
-                SelectionGroupButton {
-                    leftmost: false
-                    rightmost: true
-                    buttonIcon: "deployed_code_update"
-                    buttonText: Translation.tr("Update System")
-                    toggled: false
-                    onClicked: runSystemUpdate()
+            Item {
+                implicitWidth: colorRow.implicitWidth
+                implicitHeight: 24
+
+                Row {
+                    id: colorRow
+                    spacing: -8
+
+                    Repeater {
+                        model: [
+                            Appearance.m3colors.m3primary,
+                            Appearance.m3colors.m3secondary,
+                            Appearance.m3colors.m3tertiary,
+                            Appearance.m3colors.m3error,
+                            Appearance.m3colors.m3primaryContainer,
+                            Appearance.m3colors.m3secondaryContainer,
+                        ]
+
+                        delegate: Rectangle {
+                            required property var modelData
+                            required property int index
+                            width: 24
+                            height: 24
+                            radius: width / 2
+                            color: modelData
+                            z: index 
+                            border.width: 2
+                            border.color: Appearance.colors.colLayer1
+                        }
+                    }
                 }
             }
         }
     }
 
-    component SystemInfoRow: Rectangle {
-        property string label: ""
-        property string value: ""
-
+    ColumnLayout {
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        Layout.topMargin: 25
-        color: "transparent"
+        spacing: 8
 
         RowLayout {
-            anchors.fill: parent
-            spacing: 12
+            Layout.fillWidth: true
+            spacing: 8
 
-            StyledText {
-                Layout.preferredWidth: 40
-                text: parent.parent.label
-                font.pixelSize: Appearance.font.pixelSize.normal
-                color: Appearance.colors.colOnSurface
-                opacity: 0.7
-                horizontalAlignment: Text.AlignRight
+            AboutCard {
+                icon: "planner_review"
+                label: "CPU"
+                value: cpu || "Loading..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.Pentagon
+                Layout.fillWidth: true
             }
 
-            StyledText {
+            AboutCard {
+                icon: "monitor"
+                label: "GPU"
+                value: gpu || "sudo pacman -S mesa-utils"
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.ClamShell
                 Layout.fillWidth: true
-                text: parent.parent.value
-                font.pixelSize: Appearance.font.pixelSize.normal
-                color: Appearance.colors.colOnSurface
-                font.weight: Font.Medium
-                elide: Text.ElideRight
+            }
+        }
+
+        GridLayout {
+            columns: 3
+            Layout.fillWidth: true
+            rowSpacing: 8
+            columnSpacing: 8
+
+            AboutCard {
+                icon: "memory"
+                label: "Memory"
+                value: memory || "Loading..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.Clover4Leaf
+                Layout.fillWidth: true
+            }
+
+            AboutCard {
+                icon: "storage"
+                label: "Disk"
+                value: disk || "Loading..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.Cookie6Sided
+                Layout.fillWidth: true
+            }
+
+            AboutCard {
+                icon: "terminal"
+                label: "Shell"
+                value: shell || "Loading..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.Gem
+                Layout.fillWidth: true
+            }
+
+            AboutCard {
+                icon: "package_2"
+                label: "Packages"
+                value: packages || "Loading..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.Flower
+                Layout.fillWidth: true
+            }
+
+            AboutCard {
+                icon: "update"
+                label: "Updates"
+                value: updates || "Checking..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.SoftBurst
+                Layout.fillWidth: true
+            }
+
+            AboutCard {
+                icon: "timelapse"
+                label: "Uptime"
+                value: DateTime.uptime || "Loading..."
+                iconColor: Appearance.colors.colPrimary
+                iconShape: MaterialShape.Shape.Sunny
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 8
+
+        FloatingActionButton {
+            iconText: "circles"
+            buttonText: Translation.tr("Update Dots")
+            expanded: true
+            downAction: () => {
+                runUpdateDots()
+            }
+        }
+
+        FloatingActionButton {
+            iconText: "deployed_code_update"
+            buttonText: Translation.tr("Update System")
+            expanded: true
+            downAction: () => {
+                runSystemUpdate()
             }
         }
     }
