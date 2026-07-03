@@ -172,8 +172,7 @@ ContentPage {
     RowLayout {
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignHCenter
-        Layout.topMargin: 8
-        Layout.bottomMargin: -10
+        Layout.topMargin: 55
         spacing: 16
 
         IconImage {
@@ -188,7 +187,7 @@ ContentPage {
 
             StyledText {
                 text: SystemInfo.distroName
-                font.pixelSize: Appearance.font.pixelSize.larger
+                font.pixelSize: Appearance.font.pixelSize.hugeass
                 font.weight: Font.Bold
                 color: Appearance.colors.colOnSurface
             }
@@ -216,7 +215,6 @@ ContentPage {
                             Appearance.m3colors.m3primaryContainer,
                             Appearance.m3colors.m3secondaryContainer,
                         ]
-
                         delegate: Rectangle {
                             required property var modelData
                             required property int index
@@ -224,11 +222,49 @@ ContentPage {
                             height: 24
                             radius: width / 2
                             color: modelData
-                            z: index 
+                            z: index
                             border.width: 2
                             border.color: Appearance.colors.colLayer1
                         }
                     }
+                }
+            }
+        }
+
+        Rectangle {
+            height: 110
+            width: 2
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 0.2; color: Appearance.colors.colOutline }
+                GradientStop { position: 0.8; color: Appearance.colors.colOutline }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+            opacity: 0.15
+        }
+
+        ColumnLayout {
+            spacing: 8
+            Layout.alignment: Qt.AlignVCenter
+
+            FloatingActionButton {
+                iconText: "circles"
+                buttonText: Translation.tr("Update Dots")
+                expanded: false
+                downAction: () => runUpdateDots()
+                StyledToolTip {
+                    text: Translation.tr("Update Shell to the latest version")
+                }
+            }
+
+            FloatingActionButton {
+                iconText: "deployed_code_update"
+                buttonText: Translation.tr("Update System")
+                expanded: false
+                downAction: () => runSystemUpdate()
+                StyledToolTip {
+                    text: Translation.tr("Update your system packages")
                 }
             }
         }
@@ -319,30 +355,6 @@ ContentPage {
                 iconColor: Appearance.colors.colPrimary
                 iconShape: MaterialShape.Shape.Sunny
                 Layout.fillWidth: true
-            }
-        }
-    }
-
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignHCenter
-        spacing: 8
-
-        FloatingActionButton {
-            iconText: "circles"
-            buttonText: Translation.tr("Update Dots")
-            expanded: true
-            downAction: () => {
-                runUpdateDots()
-            }
-        }
-
-        FloatingActionButton {
-            iconText: "deployed_code_update"
-            buttonText: Translation.tr("Update System")
-            expanded: true
-            downAction: () => {
-                runSystemUpdate()
             }
         }
     }
