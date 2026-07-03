@@ -175,7 +175,7 @@ ContentPage {
                     radius: Appearance.rounding.normal
                     color: Appearance.colors.colLayer1
                     border.width: 1
-                    border.color: Appearance.colors.colLayer0Border
+                    border.color: "transparent"
 
                     ColumnLayout {
                         id: mediaCol
@@ -196,6 +196,7 @@ ContentPage {
                         Item { Layout.fillHeight: true }
                         GroupedList {
                             Layout.fillWidth: true
+                            bgcolor: Appearance.colors.colLayer2
                             ConfigSwitch {
                                 buttonIcon: "check"
                                 text: Translation.tr("Enable")
@@ -222,7 +223,7 @@ ContentPage {
                         radius: Appearance.rounding.normal
                         color: Appearance.colors.colLayer1
                         border.width: 1
-                        border.color: Appearance.colors.colLayer0Border
+                        border.color: "transparent"
 
                         ColumnLayout {
                             id: aiCol
@@ -260,7 +261,7 @@ ContentPage {
                         radius: Appearance.rounding.normal
                         color: Appearance.colors.colLayer1
                         border.width: 1
-                        border.color: Appearance.colors.colLayer0Border
+                        border.color: "transparent"
 
                         ColumnLayout {
                             id: weebCol
@@ -301,7 +302,7 @@ ContentPage {
                 radius: Appearance.rounding.normal
                 color: Appearance.colors.colLayer1
                 border.width: 1
-                border.color: Appearance.colors.colLayer0Border
+                border.color: "transparent"
 
                 ColumnLayout {
                     id: translatorCol
