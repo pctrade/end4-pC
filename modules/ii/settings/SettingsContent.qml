@@ -51,13 +51,11 @@ Item {
 
     onCurrentPageChanged: {
         if (currentPage === 7) {
-            const aboutLoader = pagesRepeater.itemAt(7);
-            if (aboutLoader && aboutLoader.item) {
-                aboutLoader.item.refresh();
-            }
+            if (SystemInfo.cpu === "") SystemInfo.refresh()
+            else SystemInfo.refreshUpdates()
         }
     }
-
+    
     property var pages: [
         { name: Translation.tr("Quick"),      icon: "instant_mix",    component: Qt.resolvedUrl("pages/QuickConfig.qml") },
         { name: Translation.tr("General"),    icon: "browse",         component: Qt.resolvedUrl("pages/GeneralConfig.qml") },
