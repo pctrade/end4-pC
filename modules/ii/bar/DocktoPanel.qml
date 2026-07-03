@@ -113,48 +113,8 @@ Item {
                     width:  root.btnSize
                     height: root.btnSize
 
-                    opacity: (root.activeDragVisualIndex === index) ? 0.0 : 1.0
+                    opacity: 1
                     Behavior on opacity { NumberAnimation { duration: 110 } }
-
-                    // ghost icon while dragging
-                    Item {
-                        visible: dragHandler.active
-                        z: 1000
-                        width:  root.btnSize
-                        height: root.btnSize
-                        anchors.centerIn: parent
-
-                        x: {
-                            if (!dragHandler.active) return 0
-                            var lp = slotItem.mapFromItem(null,
-                                dragHandler.centroid.scenePosition.x,
-                                dragHandler.centroid.scenePosition.y)
-                            return lp.x - width / 2
-                        }
-                        y: {
-                            if (!dragHandler.active || !root.vertical) return 0
-                            var lp = slotItem.mapFromItem(null,
-                                dragHandler.centroid.scenePosition.x,
-                                dragHandler.centroid.scenePosition.y)
-                            return lp.y - height / 2
-                        }
-
-                        IconImage {
-                            anchors.centerIn: parent
-                            source: Quickshell.iconPath(
-                                AppSearch.guessIcon(root._workOrder[root.activeDragVisualIndex] ?? ""),
-                                "image-missing")
-                            implicitSize: root.iconSize
-                            opacity: 0.85
-                            layer.enabled: true
-                            layer.effect: MultiEffect {
-                                shadowEnabled: true
-                                shadowVerticalOffset: 3
-                                shadowBlur: 0.6
-                                shadowColor: "#80000000"
-                            }
-                        }
-                    }
 
                     RippleButton {
                         anchors.fill: parent

@@ -198,7 +198,10 @@ ContentSubsection {
                             let list = root.layout.slice()
                             list.push(modelData.id)
                             root.onUpdate(list)
-                            dropdown.dropdownOpen = false
+                            const keepOpen = ["visualizer", "divisor"]
+                            if (!keepOpen.includes(modelData.id)) {
+                                Qt.callLater(() => { dropdown.dropdownOpen = false })
+                            }
                         }
                     }
                 }

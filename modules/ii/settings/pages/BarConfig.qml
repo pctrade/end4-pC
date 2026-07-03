@@ -51,7 +51,8 @@ ContentPage {
         { id: "updatesCount",      name: Translation.tr("Updates"),              icon: "deployed_code_update" },
         { id: "docktoPanel",       name: Translation.tr("Dock to Panel"),        icon: "apps" },
         { id: "visualizer",        name: Translation.tr("Visualizer"),           icon: "graphic_eq" },
-        { id: "hyprlandXkbIndicator",   name: Translation.tr("Keyboard Layout"),      icon: "keyboard" },
+        { id: "hyprlandXkbIndicator",   name: Translation.tr("Keyboard Layout"), icon: "keyboard" },
+        { id: "divisor",            name: Translation.tr("Divisor"),             icon: "horizontal_distribute" },
     ]
 
     function availableFor() {
@@ -60,8 +61,11 @@ ContentPage {
             ...Config.options.bar.layouts.middleLayout,
             ...Config.options.bar.layouts.rightLayout
         ]
-        const multipleAllowed = ["visualizer"]
-        return allWidgets.filter(w => !used.includes(w.id) || multipleAllowed.includes(w.id))
+        const multipleAllowed = ["visualizer", "divisor"]
+        return allWidgets.filter(w => {
+            if (w.id === "divisor" && Config.options.bar.borderless !== "transparent") return false
+            return !used.includes(w.id) || multipleAllowed.includes(w.id)
+        })
     }
 
     function getWidgetName(id) {
