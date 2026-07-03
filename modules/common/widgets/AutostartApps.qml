@@ -49,17 +49,17 @@ ColumnLayout {
 
     RowLayout {
         Layout.fillWidth: true
-
-        ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr("Enable")
-            checked: Config.options.hyprland.autostartApps.enable
-            onCheckedChanged: {
-                Config.options.hyprland.autostartApps.enable = checked
+        GroupedList {
+            Layout.fillWidth: true
+            ConfigSwitch {
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.hyprland.autostartApps.enable
+                onCheckedChanged: {
+                    Config.options.hyprland.autostartApps.enable = checked
+                }
             }
         }
-
-        Item { Layout.fillWidth: true }
 
         RippleButton {
             Layout.preferredWidth: 36

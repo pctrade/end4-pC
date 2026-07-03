@@ -137,42 +137,45 @@ ContentPage {
                     }
                 }
 
-                ConfigSpinBox {
-                    icon: "zoom_in"
-                    text: Translation.tr("Scale")
-                    value: Math.round((monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0) * 100)
-                    from: 50; to: 300; stepSize: 25
-                    onValueChanged: {
-                        const newVal = value / 100.0
-                        if (newVal === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0)) return
-                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { scale: newVal })
-                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                GroupedList {
+                    Layout.topMargin: 10
+                    ConfigSpinBox {
+                        icon: "zoom_in"
+                        text: Translation.tr("Scale")
+                        value: Math.round((monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0) * 100)
+                        from: 50; to: 300; stepSize: 25
+                        onValueChanged: {
+                            const newVal = value / 100.0
+                            if (newVal === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0)) return
+                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { scale: newVal })
+                            monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                        }
                     }
-                }
 
-                ConfigSpinBox {
-                    icon: "swap_horiz"
-                    text: Translation.tr("Position X")
-                    value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.x ?? 0
-                    from: 0; to: 7680; stepSize: 1
-                    onValueChanged: {
-                        if (value === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.x ?? 0)) return
-                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { x: value })
-                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                    ConfigSpinBox {
+                        icon: "swap_horiz"
+                        text: Translation.tr("Position X")
+                        value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.x ?? 0
+                        from: 0; to: 7680; stepSize: 1
+                        onValueChanged: {
+                            if (value === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.x ?? 0)) return
+                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { x: value })
+                            monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                        }
                     }
-                }
 
-                ConfigSpinBox {
-                    icon: "swap_vert"
-                    text: Translation.tr("Position Y")
-                    value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.y ?? 0
-                    from: 0; to: 4320; stepSize: 1
-                    onValueChanged: {
-                        if (value === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.y ?? 0)) return
-                        monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { y: value })
-                        monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                    ConfigSpinBox {
+                        icon: "swap_vert"
+                        text: Translation.tr("Position Y")
+                        value: monitorConfig.monitors[monitorCanvas.selectedIndex]?.y ?? 0
+                        from: 0; to: 4320; stepSize: 1
+                        onValueChanged: {
+                            if (value === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.y ?? 0)) return
+                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { y: value })
+                            monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
+                        }
                     }
-                }
+                }        
             }
         }
 
@@ -226,38 +229,42 @@ ContentPage {
                     onTextChanged: kbLayoutDebounceTimer.restart()
                 }
 
-                ConfigSwitch {
-                    buttonIcon: "numbers"
-                    text: Translation.tr("Numlock by default")
-                    checked: Config.options.hyprland.input.numlock
-                    onCheckedChanged: {
-                        if (checked === Config.options.hyprland.input.numlock) return
-                        Config.options.hyprland.input.numlock = checked
-                        HyprlandConfig.set("input:numlock_by_default", checked ? 1 : 0)
+                GroupedList {
+                    Layout.topMargin: 10
+                    Layout.bottomMargin: 10
+                    ConfigSwitch {
+                        buttonIcon: "numbers"
+                        text: Translation.tr("Numlock by default")
+                        checked: Config.options.hyprland.input.numlock
+                        onCheckedChanged: {
+                            if (checked === Config.options.hyprland.input.numlock) return
+                            Config.options.hyprland.input.numlock = checked
+                            HyprlandConfig.set("input:numlock_by_default", checked ? 1 : 0)
+                        }
                     }
-                }
 
-                ConfigSpinBox {
-                    icon: "keyboard_return"
-                    text: Translation.tr("Repeat delay (ms)")
-                    value: Config.options.hyprland.input.repeatDelay
-                    from: 100; to: 1000; stepSize: 10
-                    onValueChanged: {
-                        if (value === Config.options.hyprland.input.repeatDelay) return
-                        Config.options.hyprland.input.repeatDelay = value
-                        HyprlandConfig.set("input:repeat_delay", value)
+                    ConfigSpinBox {
+                        icon: "keyboard_return"
+                        text: Translation.tr("Repeat delay (ms)")
+                        value: Config.options.hyprland.input.repeatDelay
+                        from: 100; to: 1000; stepSize: 10
+                        onValueChanged: {
+                            if (value === Config.options.hyprland.input.repeatDelay) return
+                            Config.options.hyprland.input.repeatDelay = value
+                            HyprlandConfig.set("input:repeat_delay", value)
+                        }
                     }
-                }
 
-                ConfigSpinBox {
-                    icon: "speed"
-                    text: Translation.tr("Repeat rate")
-                    value: Config.options.hyprland.input.repeatRate
-                    from: 10; to: 100; stepSize: 1
-                    onValueChanged: {
-                        if (value === Config.options.hyprland.input.repeatRate) return
-                        Config.options.hyprland.input.repeatRate = value
-                        HyprlandConfig.set("input:repeat_rate", value)
+                    ConfigSpinBox {
+                        icon: "speed"
+                        text: Translation.tr("Repeat rate")
+                        value: Config.options.hyprland.input.repeatRate
+                        from: 10; to: 100; stepSize: 1
+                        onValueChanged: {
+                            if (value === Config.options.hyprland.input.repeatRate) return
+                            Config.options.hyprland.input.repeatRate = value
+                            HyprlandConfig.set("input:repeat_rate", value)
+                        }
                     }
                 }
 
@@ -278,50 +285,51 @@ ContentPage {
 
             ContentSubsection {
                 title: Translation.tr("Touchpad")
-
-                ConfigSwitch {
-                    buttonIcon: "swap_vert"
-                    text: Translation.tr("Natural scroll")
-                    checked: Config.options.hyprland.input.touchpad.naturalScroll
-                    onCheckedChanged: {
-                        if (checked === Config.options.hyprland.input.touchpad.naturalScroll) return
-                        Config.options.hyprland.input.touchpad.naturalScroll = checked
-                        HyprlandConfig.set("input:touchpad:natural_scroll", checked ? 1 : 0)
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "swap_vert"
+                        text: Translation.tr("Natural scroll")
+                        checked: Config.options.hyprland.input.touchpad.naturalScroll
+                        onCheckedChanged: {
+                            if (checked === Config.options.hyprland.input.touchpad.naturalScroll) return
+                            Config.options.hyprland.input.touchpad.naturalScroll = checked
+                            HyprlandConfig.set("input:touchpad:natural_scroll", checked ? 1 : 0)
+                        }
                     }
-                }
 
-                ConfigSwitch {
-                    buttonIcon: "keyboard_hide"
-                    text: Translation.tr("Disable while typing")
-                    checked: Config.options.hyprland.input.touchpad.disableWhileTyping
-                    onCheckedChanged: {
-                        if (checked === Config.options.hyprland.input.touchpad.disableWhileTyping) return
-                        Config.options.hyprland.input.touchpad.disableWhileTyping = checked
-                        HyprlandConfig.set("input:touchpad:disable_while_typing", checked ? 1 : 0)
+                    ConfigSwitch {
+                        buttonIcon: "keyboard_hide"
+                        text: Translation.tr("Disable while typing")
+                        checked: Config.options.hyprland.input.touchpad.disableWhileTyping
+                        onCheckedChanged: {
+                            if (checked === Config.options.hyprland.input.touchpad.disableWhileTyping) return
+                            Config.options.hyprland.input.touchpad.disableWhileTyping = checked
+                            HyprlandConfig.set("input:touchpad:disable_while_typing", checked ? 1 : 0)
+                        }
                     }
-                }
 
-                ConfigSwitch {
-                    buttonIcon: "touch_app"
-                    text: Translation.tr("Clickfinger behavior")
-                    checked: Config.options.hyprland.input.touchpad.clickfingerBehavior
-                    onCheckedChanged: {
-                        if (checked === Config.options.hyprland.input.touchpad.clickfingerBehavior) return
-                        Config.options.hyprland.input.touchpad.clickfingerBehavior = checked
-                        HyprlandConfig.set("input:touchpad:clickfinger_behavior", checked ? 1 : 0)
+                    ConfigSwitch {
+                        buttonIcon: "touch_app"
+                        text: Translation.tr("Clickfinger behavior")
+                        checked: Config.options.hyprland.input.touchpad.clickfingerBehavior
+                        onCheckedChanged: {
+                            if (checked === Config.options.hyprland.input.touchpad.clickfingerBehavior) return
+                            Config.options.hyprland.input.touchpad.clickfingerBehavior = checked
+                            HyprlandConfig.set("input:touchpad:clickfinger_behavior", checked ? 1 : 0)
+                        }
                     }
-                }
 
-                ConfigSpinBox {
-                    icon: "swipe"
-                    text: Translation.tr("Scroll factor")
-                    value: Math.round(Config.options.hyprland.input.touchpad.scrollFactor * 10)
-                    from: 1; to: 30; stepSize: 1
-                    onValueChanged: {
-                        const newVal = value / 10.0
-                        if (newVal === Config.options.hyprland.input.touchpad.scrollFactor) return
-                        Config.options.hyprland.input.touchpad.scrollFactor = newVal
-                        HyprlandConfig.set("input:touchpad:scroll_factor", newVal)
+                    ConfigSpinBox {
+                        icon: "swipe"
+                        text: Translation.tr("Scroll factor")
+                        value: Math.round(Config.options.hyprland.input.touchpad.scrollFactor * 10)
+                        from: 1; to: 30; stepSize: 1
+                        onValueChanged: {
+                            const newVal = value / 10.0
+                            if (newVal === Config.options.hyprland.input.touchpad.scrollFactor) return
+                            Config.options.hyprland.input.touchpad.scrollFactor = newVal
+                            HyprlandConfig.set("input:touchpad:scroll_factor", newVal)
+                        }
                     }
                 }
             }
@@ -333,112 +341,114 @@ ContentPage {
             shape: MaterialShape.Shape.PixelCircle
             title: Translation.tr("Visual & Aesthetics")
 
-            ConfigSpinBox {
-                icon: "rounded_corner"
-                text: Translation.tr("Window Rounding")
-                value: Config.options.hyprland.decoration.rounding
-                from: 0; to: 30; stepSize: 1
-                onValueChanged: {
-                    if (value === Config.options.hyprland.decoration.rounding) return
-                    Config.options.hyprland.decoration.rounding = value
-                    HyprlandConfig.set("decoration:rounding", value)
+            GroupedList {
+                ConfigSpinBox {
+                    icon: "rounded_corner"
+                    text: Translation.tr("Window Rounding")
+                    value: Config.options.hyprland.decoration.rounding
+                    from: 0; to: 30; stepSize: 1
+                    onValueChanged: {
+                        if (value === Config.options.hyprland.decoration.rounding) return
+                        Config.options.hyprland.decoration.rounding = value
+                        HyprlandConfig.set("decoration:rounding", value)
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "blur_on"
-                text: Translation.tr("Blur")
-                checked: Config.options.hyprland.decoration.blur.enabled
-                onCheckedChanged: {
-                    if (checked === Config.options.hyprland.decoration.blur.enabled) return
-                    Config.options.hyprland.decoration.blur.enabled = checked
-                    HyprlandConfig.set("decoration:blur:enabled", checked ? 1 : 0)
+                ConfigSwitch {
+                    buttonIcon: "blur_on"
+                    text: Translation.tr("Blur")
+                    checked: Config.options.hyprland.decoration.blur.enabled
+                    onCheckedChanged: {
+                        if (checked === Config.options.hyprland.decoration.blur.enabled) return
+                        Config.options.hyprland.decoration.blur.enabled = checked
+                        HyprlandConfig.set("decoration:blur:enabled", checked ? 1 : 0)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "blur_circular"
-                text: Translation.tr("Blur Size")
-                value: Config.options.hyprland.decoration.blur.size
-                from: 1; to: 20; stepSize: 1
-                onValueChanged: {
-                    if (value === Config.options.hyprland.decoration.blur.size) return
-                    Config.options.hyprland.decoration.blur.size = value
-                    HyprlandConfig.set("decoration:blur:size", value)
+                ConfigSpinBox {
+                    icon: "blur_circular"
+                    text: Translation.tr("Blur Size")
+                    value: Config.options.hyprland.decoration.blur.size
+                    from: 1; to: 20; stepSize: 1
+                    onValueChanged: {
+                        if (value === Config.options.hyprland.decoration.blur.size) return
+                        Config.options.hyprland.decoration.blur.size = value
+                        HyprlandConfig.set("decoration:blur:size", value)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "layers"
-                text: Translation.tr("Blur Passes")
-                value: Config.options.hyprland.decoration.blur.passes
-                from: 1; to: 6; stepSize: 1
-                onValueChanged: {
-                    if (value === Config.options.hyprland.decoration.blur.passes) return
-                    Config.options.hyprland.decoration.blur.passes = value
-                    HyprlandConfig.set("decoration:blur:passes", value)
+                ConfigSpinBox {
+                    icon: "layers"
+                    text: Translation.tr("Blur Passes")
+                    value: Config.options.hyprland.decoration.blur.passes
+                    from: 1; to: 6; stepSize: 1
+                    onValueChanged: {
+                        if (value === Config.options.hyprland.decoration.blur.passes) return
+                        Config.options.hyprland.decoration.blur.passes = value
+                        HyprlandConfig.set("decoration:blur:passes", value)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "border_outer"
-                text: Translation.tr("Border Size")
-                value: Config.options.hyprland.general.borderSize
-                from: 0; to: 10; stepSize: 1
-                onValueChanged: {
-                    if (value === Config.options.hyprland.general.borderSize) return
-                    Config.options.hyprland.general.borderSize = value
-                    HyprlandConfig.set("general:border_size", value)
+                ConfigSpinBox {
+                    icon: "border_outer"
+                    text: Translation.tr("Border Size")
+                    value: Config.options.hyprland.general.borderSize
+                    from: 0; to: 10; stepSize: 1
+                    onValueChanged: {
+                        if (value === Config.options.hyprland.general.borderSize) return
+                        Config.options.hyprland.general.borderSize = value
+                        HyprlandConfig.set("general:border_size", value)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "margin"
-                text: Translation.tr("Gaps In")
-                value: Config.options.hyprland.general.gapsIn
-                from: 0; to: 40; stepSize: 1
-                onValueChanged: {
-                    if (value === Config.options.hyprland.general.gapsIn) return
-                    Config.options.hyprland.general.gapsIn = value
-                    HyprlandConfig.set("general:gaps_in", value)
+                ConfigSpinBox {
+                    icon: "margin"
+                    text: Translation.tr("Gaps In")
+                    value: Config.options.hyprland.general.gapsIn
+                    from: 0; to: 40; stepSize: 1
+                    onValueChanged: {
+                        if (value === Config.options.hyprland.general.gapsIn) return
+                        Config.options.hyprland.general.gapsIn = value
+                        HyprlandConfig.set("general:gaps_in", value)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "open_in_full"
-                text: Translation.tr("Gaps Out")
-                value: Config.options.hyprland.general.gapsOut
-                from: 0; to: 60; stepSize: 1
-                onValueChanged: {
-                    if (value === Config.options.hyprland.general.gapsOut) return
-                    Config.options.hyprland.general.gapsOut = value
-                    HyprlandConfig.set("general:gaps_out", value)
+                ConfigSpinBox {
+                    icon: "open_in_full"
+                    text: Translation.tr("Gaps Out")
+                    value: Config.options.hyprland.general.gapsOut
+                    from: 0; to: 60; stepSize: 1
+                    onValueChanged: {
+                        if (value === Config.options.hyprland.general.gapsOut) return
+                        Config.options.hyprland.general.gapsOut = value
+                        HyprlandConfig.set("general:gaps_out", value)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "opacity"
-                text: Translation.tr("Active Opacity")
-                value: Math.round(Config.options.hyprland.decoration.activeOpacity * 100)
-                from: 10; to: 100; stepSize: 5
-                onValueChanged: {
-                    const newVal = value / 100.0
-                    if (newVal === Config.options.hyprland.decoration.activeOpacity) return
-                    Config.options.hyprland.decoration.activeOpacity = newVal
-                    HyprlandConfig.set("decoration:active_opacity", newVal)
+                ConfigSpinBox {
+                    icon: "opacity"
+                    text: Translation.tr("Active Opacity")
+                    value: Math.round(Config.options.hyprland.decoration.activeOpacity * 100)
+                    from: 10; to: 100; stepSize: 5
+                    onValueChanged: {
+                        const newVal = value / 100.0
+                        if (newVal === Config.options.hyprland.decoration.activeOpacity) return
+                        Config.options.hyprland.decoration.activeOpacity = newVal
+                        HyprlandConfig.set("decoration:active_opacity", newVal)
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "opacity"
-                text: Translation.tr("Inactive Opacity")
-                value: Math.round(Config.options.hyprland.decoration.inactiveOpacity * 100)
-                from: 10; to: 100; stepSize: 5
-                onValueChanged: {
-                    const newVal = value / 100.0
-                    if (newVal === Config.options.hyprland.decoration.inactiveOpacity) return
-                    Config.options.hyprland.decoration.inactiveOpacity = newVal
-                    HyprlandConfig.set("decoration:inactive_opacity", newVal)
+                ConfigSpinBox {
+                    icon: "opacity"
+                    text: Translation.tr("Inactive Opacity")
+                    value: Math.round(Config.options.hyprland.decoration.inactiveOpacity * 100)
+                    from: 10; to: 100; stepSize: 5
+                    onValueChanged: {
+                        const newVal = value / 100.0
+                        if (newVal === Config.options.hyprland.decoration.inactiveOpacity) return
+                        Config.options.hyprland.decoration.inactiveOpacity = newVal
+                        HyprlandConfig.set("decoration:inactive_opacity", newVal)
+                    }
                 }
             }
         }
@@ -458,15 +468,16 @@ ContentPage {
             icon: "animation"
             shape: MaterialShape.Shape.Oval
             title: Translation.tr("Animations")
-
-            ConfigSwitch {
-                buttonIcon: "check"
-                text: Translation.tr("Enable Animations")
-                checked: Config.options.hyprland.animations.enable
-                onCheckedChanged: {
-                    if (checked === Config.options.hyprland.animations.enable) return
-                    Config.options.hyprland.animations.enable = checked
-                    HyprlandConfig.set("animations:enabled", checked ? 1 : 0)
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable Animations")
+                    checked: Config.options.hyprland.animations.enable
+                    onCheckedChanged: {
+                        if (checked === Config.options.hyprland.animations.enable) return
+                        Config.options.hyprland.animations.enable = checked
+                        HyprlandConfig.set("animations:enabled", checked ? 1 : 0)
+                    }
                 }
             }
 

@@ -15,6 +15,7 @@ ContentPage {
     id: page
     forceWidth: true
     baseWidth: 720
+    bottomContentPadding: 35
 
     function goTo(term) {
         const t = term.toLowerCase().trim()

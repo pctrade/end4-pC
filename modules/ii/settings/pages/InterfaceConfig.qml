@@ -44,21 +44,35 @@ ContentPage {
             shape: MaterialShape.Shape.Gem
             title: Translation.tr("Overview")
 
-            ConfigSwitch {
-                buttonIcon: "check"
-                text: Translation.tr("Enable")
-                checked: Config.options.overview.enable
-                onCheckedChanged: {
-                    Config.options.overview.enable = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: Config.options.overview.enable
+                    onCheckedChanged: {
+                        Config.options.overview.enable = checked;
+                    }
                 }
-            }
-            ConfigSwitch {
-                buttonIcon: "center_focus_strong"
-                text: Translation.tr("Center icons")
-                checked: Config.options.overview.centerIcons
-                onCheckedChanged: {
-                    Config.options.overview.centerIcons = checked;
+                ConfigSwitch {
+                    buttonIcon: "center_focus_strong"
+                    text: Translation.tr("Center icons")
+                    checked: Config.options.overview.centerIcons
+                    onCheckedChanged: {
+                        Config.options.overview.centerIcons = checked;
+                    }
                 }
+                ConfigSpinBox {
+                    icon: "loupe"
+                    text: Translation.tr("Scale (%)")
+                    value: Config.options.overview.scale * 100
+                    from: 1
+                    to: 100
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.overview.scale = value / 100;
+                    }
+                }
+
             }
             ContentSubsection {
                 title: Translation.tr("Style")
@@ -82,40 +96,33 @@ ContentPage {
                     ]
                 }
             }
-            ConfigSpinBox {
-                icon: "loupe"
-                text: Translation.tr("Scale (%)")
-                value: Config.options.overview.scale * 100
-                from: 1
-                to: 100
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.overview.scale = value / 100;
-                }
-            }
-            ConfigRow {
-                uniform: true
+        
+            GroupedList {
                 visible: Config.options.overview.style !== "niri"
-                ConfigSpinBox {
-                    icon: "splitscreen_bottom"
-                    text: Translation.tr("Rows")
-                    value: Config.options.overview.rows
-                    from: 1
-                    to: 20
-                    stepSize: 1
-                    onValueChanged: {
-                        Config.options.overview.rows = value;
+                ConfigRow {
+                    uniform: true
+                    visible: Config.options.overview.style !== "niri"
+                    ConfigSpinBox {
+                        icon: "splitscreen_bottom"
+                        text: Translation.tr("Rows")
+                        value: Config.options.overview.rows
+                        from: 1
+                        to: 20
+                        stepSize: 1
+                        onValueChanged: {
+                            Config.options.overview.rows = value;
+                        }
                     }
-                }
-                ConfigSpinBox {
-                    icon: "splitscreen_right"
-                    text: Translation.tr("Columns")
-                    value: Config.options.overview.columns
-                    from: 1
-                    to: 20
-                    stepSize: 1
-                    onValueChanged: {
-                        Config.options.overview.columns = value;
+                    ConfigSpinBox {
+                        icon: "splitscreen_right"
+                        text: Translation.tr("Columns")
+                        value: Config.options.overview.columns
+                        from: 1
+                        to: 20
+                        stepSize: 1
+                        onValueChanged: {
+                            Config.options.overview.columns = value;
+                        }
                     }
                 }
             }
@@ -166,78 +173,61 @@ ContentPage {
             title: Translation.tr("Dock")
             shape: MaterialShape.Shape.Cookie6Sided
 
-            ConfigSwitch {
-                buttonIcon: "check"
-                text: Translation.tr("Enable")
-                checked: Config.options.dock.enable
-                onCheckedChanged: {
-                    Config.options.dock.enable = checked;
-                }
-            }
-
-            ConfigSwitch {
-                buttonIcon: "shadow"
-                text: Translation.tr("Background")
-                checked: Config.options.dock.showBackground
-                onCheckedChanged: {
-                    Config.options.dock.showBackground = checked;
-                }
-            }
-
-            ConfigSwitch {
-                buttonIcon: "music_note"
-                text: Translation.tr("Media Player")
-                checked: Config.options.dock.showMedia
-                onCheckedChanged: {
-                    Config.options.dock.showMedia = checked;
-                }
-            }
-
-            ConfigRow {
-                uniform: true
+            GroupedList {
                 ConfigSwitch {
-                    buttonIcon: "keep"
-                    text: Translation.tr("Show Pin Button")
-                    checked: Config.options.dock.showPinButton
-                    onCheckedChanged: {
-                        Config.options.dock.showPinButton = checked;
-                    }
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: Config.options.dock.enable
+                    onCheckedChanged: { Config.options.dock.enable = checked }
                 }
                 ConfigSwitch {
-                    buttonIcon: "apps"
-                    text: Translation.tr("Show Apps Button")
-                    checked: Config.options.dock.showAppsButton
-                    onCheckedChanged: {
-                        Config.options.dock.showAppsButton = checked;
-                    }
+                    buttonIcon: "background_dot_small"
+                    text: Translation.tr("Background")
+                    checked: Config.options.dock.showBackground
+                    onCheckedChanged: { Config.options.dock.showBackground = checked }
                 }
-            }
-
-            ConfigRow {
-                uniform: true
                 ConfigSwitch {
                     buttonIcon: "highlight_mouse_cursor"
                     text: Translation.tr("Hover to reveal")
                     checked: Config.options.dock.hoverToReveal
-                    onCheckedChanged: {
-                        Config.options.dock.hoverToReveal = checked;
-                    }
+                    onCheckedChanged: { Config.options.dock.hoverToReveal = checked }
                 }
                 ConfigSwitch {
-                    buttonIcon: "keep"
+                    buttonIcon: "push_pin"
                     text: Translation.tr("Pinned on startup")
                     checked: Config.options.dock.pinnedOnStartup
-                    onCheckedChanged: {
-                        Config.options.dock.pinnedOnStartup = checked;
-                    }
+                    onCheckedChanged: { Config.options.dock.pinnedOnStartup = checked }
                 }
             }
-            ConfigSwitch {
-                buttonIcon: "colors"
-                text: Translation.tr("Tint app icons")
-                checked: Config.options.dock.monochromeIcons
-                onCheckedChanged: {
-                    Config.options.dock.monochromeIcons = checked;
+
+
+            ContentSubsection {
+                title: Translation.tr("Buttons & Media")
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "music_note"
+                        text: Translation.tr("Media Player")
+                        checked: Config.options.dock.showMedia
+                        onCheckedChanged: { Config.options.dock.showMedia = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "keep"
+                        text: Translation.tr("Show Pin Button")
+                        checked: Config.options.dock.showPinButton
+                        onCheckedChanged: { Config.options.dock.showPinButton = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "apps"
+                        text: Translation.tr("Show Apps Button")
+                        checked: Config.options.dock.showAppsButton
+                        onCheckedChanged: { Config.options.dock.showAppsButton = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "colors"
+                        text: Translation.tr("Tint app icons")
+                        checked: Config.options.dock.monochromeIcons
+                        onCheckedChanged: { Config.options.dock.monochromeIcons = checked }
+                    }
                 }
             }
         }
@@ -247,118 +237,91 @@ ContentPage {
             title: Translation.tr("Lock screen")
             shape: MaterialShape.Shape.Pentagon
 
-            ConfigSwitch {
-                buttonIcon: "water_drop"
-                text: Translation.tr('Use Hyprlock (instead of Quickshell)')
-                checked: Config.options.lock.useHyprlock
-                onCheckedChanged: {
-                    Config.options.lock.useHyprlock = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "water_drop"
+                    text: Translation.tr("Use Hyprlock (instead of Quickshell)")
+                    checked: Config.options.lock.useHyprlock
+                    onCheckedChanged: { Config.options.lock.useHyprlock = checked }
                 }
-            }
-
-            ConfigSwitch {
-                buttonIcon: "account_circle"
-                text: Translation.tr('Launch on startup')
-                checked: Config.options.lock.launchOnStartup
-                onCheckedChanged: {
-                    Config.options.lock.launchOnStartup = checked;
+                ConfigSwitch {
+                    buttonIcon: "account_circle"
+                    text: Translation.tr("Launch on startup")
+                    checked: Config.options.lock.launchOnStartup
+                    onCheckedChanged: { Config.options.lock.launchOnStartup = checked }
                 }
-            }
-
-            ConfigSwitch {
-                buttonIcon: "music_note"
-                text: Translation.tr('Show media player info')
-                checked: Config.options.lock.showMedia
-                onCheckedChanged: {
-                    Config.options.lock.showMedia = checked;
+                ConfigSwitch {
+                    buttonIcon: "music_note"
+                    text: Translation.tr("Show media player info")
+                    checked: Config.options.lock.showMedia
+                    onCheckedChanged: { Config.options.lock.showMedia = checked }
                 }
             }
 
             ContentSubsection {
                 title: Translation.tr("Security")
-
-                ConfigSwitch {
-                    buttonIcon: "settings_power"
-                    text: Translation.tr('Require password to power off/restart')
-                    checked: Config.options.lock.security.requirePasswordToPower
-                    onCheckedChanged: {
-                        Config.options.lock.security.requirePasswordToPower = checked;
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "settings_power"
+                        text: Translation.tr("Require password to power off/restart")
+                        checked: Config.options.lock.security.requirePasswordToPower
+                        onCheckedChanged: { Config.options.lock.security.requirePasswordToPower = checked }
                     }
-                }
-
-                ConfigSwitch {
-                    buttonIcon: "key_vertical"
-                    text: Translation.tr('Also unlock keyring')
-                    checked: Config.options.lock.security.unlockKeyring
-                    onCheckedChanged: {
-                        Config.options.lock.security.unlockKeyring = checked;
+                    ConfigSwitch {
+                        buttonIcon: "key_vertical"
+                        text: Translation.tr("Also unlock keyring")
+                        checked: Config.options.lock.security.unlockKeyring
+                        onCheckedChanged: { Config.options.lock.security.unlockKeyring = checked }
                     }
                 }
             }
 
             ContentSubsection {
-                title: Translation.tr("Style: general")
-
-                ConfigSwitch {
-                    buttonIcon: "center_focus_weak"
-                    text: Translation.tr('Center clock')
-                    checked: Config.options.lock.centerClock
-                    onCheckedChanged: {
-                        Config.options.lock.centerClock = checked;
+                title: Translation.tr("Style: General")
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "center_focus_weak"
+                        text: Translation.tr("Center clock")
+                        checked: Config.options.lock.centerClock
+                        onCheckedChanged: { Config.options.lock.centerClock = checked }
                     }
-                }
-
-                ConfigSwitch {
-                    buttonIcon: "info"
-                    text: Translation.tr('Show "Locked" text')
-                    checked: Config.options.lock.showLockedText
-                    onCheckedChanged: {
-                        Config.options.lock.showLockedText = checked;
+                    ConfigSwitch {
+                        buttonIcon: "info"
+                        text: Translation.tr('Show "Locked" text')
+                        checked: Config.options.lock.showLockedText
+                        onCheckedChanged: { Config.options.lock.showLockedText = checked }
                     }
-                }
-
-                ConfigSwitch {
-                    buttonIcon: "shapes"
-                    text: Translation.tr('Use varying shapes for password characters')
-                    checked: Config.options.lock.materialShapeChars
-                    onCheckedChanged: {
-                        Config.options.lock.materialShapeChars = checked;
+                    ConfigSwitch {
+                        buttonIcon: "shapes"
+                        text: Translation.tr("Use varying shapes for password characters")
+                        checked: Config.options.lock.materialShapeChars
+                        onCheckedChanged: { Config.options.lock.materialShapeChars = checked }
                     }
                 }
             }
+
             ContentSubsection {
                 title: Translation.tr("Style: Blurred")
-
-                ConfigSwitch {
-                    buttonIcon: "blur_on"
-                    text: Translation.tr('Enable blur')
-                    checked: Config.options.lock.blur.enable
-                    onCheckedChanged: {
-                        Config.options.lock.blur.enable = checked;
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "blur_on"
+                        text: Translation.tr("Enable blur")
+                        checked: Config.options.lock.blur.enable
+                        onCheckedChanged: { Config.options.lock.blur.enable = checked }
                     }
-                }
-
-                ConfigSpinBox {
-                    icon: "deblur"
-                    text: Translation.tr("Samples")
-                    value: Config.options.lock.blur.size
-                    from: 20
-                    to: 200
-                    stepSize: 10
-                    onValueChanged: {
-                        Config.options.lock.blur.size = value;
+                    ConfigSpinBox {
+                        icon: "deblur"
+                        text: Translation.tr("Samples")
+                        value: Config.options.lock.blur.size
+                        from: 20; to: 200; stepSize: 10
+                        onValueChanged: { Config.options.lock.blur.size = value }
                     }
-                }                
-
-                ConfigSpinBox {
-                    icon: "loupe"
-                    text: Translation.tr("Extra wallpaper zoom (%)")
-                    value: Config.options.lock.blur.extraZoom * 100
-                    from: 1
-                    to: 150
-                    stepSize: 2
-                    onValueChanged: {
-                        Config.options.lock.blur.extraZoom = value / 100;
+                    ConfigSpinBox {
+                        icon: "loupe"
+                        text: Translation.tr("Extra wallpaper zoom (%)")
+                        value: Config.options.lock.blur.extraZoom * 100
+                        from: 1; to: 150; stepSize: 2
+                        onValueChanged: { Config.options.lock.blur.extraZoom = value / 100 }
                     }
                 }
             }
@@ -369,20 +332,22 @@ ContentPage {
             shape: MaterialShape.Shape.SoftBurst
             title: Translation.tr("Overlay: General")
 
-            ConfigSwitch {
-                buttonIcon: "high_density"
-                text: Translation.tr("Enable opening zoom animation")
-                checked: Config.options.overlay.openingZoomAnimation
-                onCheckedChanged: {
-                    Config.options.overlay.openingZoomAnimation = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "high_density"
+                    text: Translation.tr("Enable opening zoom animation")
+                    checked: Config.options.overlay.openingZoomAnimation
+                    onCheckedChanged: {
+                        Config.options.overlay.openingZoomAnimation = checked;
+                    }
                 }
-            }
-            ConfigSwitch {
-                buttonIcon: "texture"
-                text: Translation.tr("Darken screen")
-                checked: Config.options.overlay.darkenScreen
-                onCheckedChanged: {
-                    Config.options.overlay.darkenScreen = checked;
+                ConfigSwitch {
+                    buttonIcon: "texture"
+                    text: Translation.tr("Darken screen")
+                    checked: Config.options.overlay.darkenScreen
+                    onCheckedChanged: {
+                        Config.options.overlay.darkenScreen = checked;
+                    }
                 }
             }
         }
@@ -401,7 +366,7 @@ ContentPage {
 
                 Timer {
                     id: crosshairCodeDebounceTimer
-                    interval: 1000 // Ajusta este valor si lo necesitas
+                    interval: 1000
                     running: false
                     onTriggered: {
                         Config.options.crosshair.code = crosshairCodeTextArea.text;
@@ -449,7 +414,7 @@ ContentPage {
 
                 Timer {
                     id: floatingImageSourceDebounceTimer
-                    interval: 1000 // Ajusta este valor si lo necesitas
+                    interval: 1000 
                     running: false
                     onTriggered: {
                         Config.options.overlay.floatingImage.imageSource = floatingImageSourceTextArea.text;
@@ -469,7 +434,7 @@ ContentPage {
 
             ContentSubsection {
                 title: Translation.tr("Hint target regions")
-                ConfigRow {
+                GroupedList {
                     ConfigSwitch {
                         buttonIcon: "select_window"
                         text: Translation.tr('Windows')
@@ -499,7 +464,7 @@ ContentPage {
 
             ContentSubsection {
                 title: Translation.tr("Google Lens")
-
+                    
                 ConfigSelectionArray {
                     currentValue: Config.options.search.imageSearch.useCircleSelection ? "circle" : "rectangles"
                     onSelected: newValue => {
@@ -514,13 +479,14 @@ ContentPage {
 
             ContentSubsection {
                 title: Translation.tr("Rectangular selection")
-
-                ConfigSwitch {
-                    buttonIcon: "point_scan"
-                    text: Translation.tr("Show aim lines")
-                    checked: Config.options.regionSelector.rect.showAimLines
-                    onCheckedChanged: {
-                        Config.options.regionSelector.rect.showAimLines = checked;
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "point_scan"
+                        text: Translation.tr("Show aim lines")
+                        checked: Config.options.regionSelector.rect.showAimLines
+                        onCheckedChanged: {
+                            Config.options.regionSelector.rect.showAimLines = checked;
+                        }
                     }
                 }
             }
@@ -528,27 +494,29 @@ ContentPage {
             ContentSubsection {
                 title: Translation.tr("Circle selection")
 
-                ConfigSpinBox {
-                    icon: "eraser_size_3"
-                    text: Translation.tr("Stroke width")
-                    value: Config.options.regionSelector.circle.strokeWidth
-                    from: 1
-                    to: 20
-                    stepSize: 1
-                    onValueChanged: {
-                        Config.options.regionSelector.circle.strokeWidth = value;
+                GroupedList {
+                    ConfigSpinBox {
+                        icon: "eraser_size_3"
+                        text: Translation.tr("Stroke width")
+                        value: Config.options.regionSelector.circle.strokeWidth
+                        from: 1
+                        to: 20
+                        stepSize: 1
+                        onValueChanged: {
+                            Config.options.regionSelector.circle.strokeWidth = value;
+                        }
                     }
-                }
 
-                ConfigSpinBox {
-                    icon: "screenshot_frame_2"
-                    text: Translation.tr("Padding")
-                    value: Config.options.regionSelector.circle.padding
-                    from: 0
-                    to: 100
-                    stepSize: 5
-                    onValueChanged: {
-                        Config.options.regionSelector.circle.padding = value;
+                    ConfigSpinBox {
+                        icon: "screenshot_frame_2"
+                        text: Translation.tr("Padding")
+                        value: Config.options.regionSelector.circle.padding
+                        from: 0
+                        to: 100
+                        stepSize: 5
+                        onValueChanged: {
+                            Config.options.regionSelector.circle.padding = value;
+                        }
                     }
                 }
             }
@@ -558,16 +526,17 @@ ContentPage {
             icon: "voting_chip"
             shape: MaterialShape.Shape.Sunny
             title: Translation.tr("On-screen display")
-
-            ConfigSpinBox {
-                icon: "av_timer"
-                text: Translation.tr("Timeout (ms)")
-                value: Config.options.osd.timeout
-                from: 100
-                to: 3000
-                stepSize: 100
-                onValueChanged: {
-                    Config.options.osd.timeout = value;
+            GroupedList {
+                ConfigSpinBox {
+                    icon: "av_timer"
+                    text: Translation.tr("Timeout (ms)")
+                    value: Config.options.osd.timeout
+                    from: 100
+                    to: 3000
+                    stepSize: 100
+                    onValueChanged: {
+                        Config.options.osd.timeout = value;
+                    }
                 }
             }
         }
@@ -577,72 +546,74 @@ ContentPage {
             icon: "panorama"
             title: Translation.tr("Wallpaper selector")
 
-            ConfigSwitch {
-                buttonIcon: "ad"
-                text: Translation.tr('Use system file picker')
-                checked: Config.options.wallpaperSelector.useSystemFileDialog
-                onCheckedChanged: {
-                    Config.options.wallpaperSelector.useSystemFileDialog = checked;
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "ad"
+                    text: Translation.tr('Use system file picker')
+                    checked: Config.options.wallpaperSelector.useSystemFileDialog
+                    onCheckedChanged: {
+                        Config.options.wallpaperSelector.useSystemFileDialog = checked;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "home"
-                text: Translation.tr('Show home directory in quick access')
-                checked: Config.options.wallpaperSelector.showHomePath
-                onCheckedChanged: {
-                    Config.options.wallpaperSelector.showHomePath = checked;
+                ConfigSwitch {
+                    buttonIcon: "home"
+                    text: Translation.tr('Show home directory in quick access')
+                    checked: Config.options.wallpaperSelector.showHomePath
+                    onCheckedChanged: {
+                        Config.options.wallpaperSelector.showHomePath = checked;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "done"
-                text: Translation.tr('Close after selection')
-                checked: Config.options.wallpaperSelector.closeAfterSelection
-                onCheckedChanged: {
-                    Config.options.wallpaperSelector.closeAfterSelection = checked;
+                ConfigSwitch {
+                    buttonIcon: "done"
+                    text: Translation.tr('Close after selection')
+                    checked: Config.options.wallpaperSelector.closeAfterSelection
+                    onCheckedChanged: {
+                        Config.options.wallpaperSelector.closeAfterSelection = checked;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "blur_on"
-                text: Translation.tr('Show blur background')
-                checked: Config.options.wallpaperSelector.showBlurBackground
-                onCheckedChanged: {
-                    Config.options.wallpaperSelector.showBlurBackground = checked;
+                ConfigSwitch {
+                    buttonIcon: "blur_on"
+                    text: Translation.tr('Show blur background')
+                    checked: Config.options.wallpaperSelector.showBlurBackground
+                    onCheckedChanged: {
+                        Config.options.wallpaperSelector.showBlurBackground = checked;
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "grid_on"
-                text: Translation.tr("Columns in grid view")
-                value: Config.options.wallpaperSelector.columns
-                from: 3
-                to: 10
-                stepSize: 1
-                onValueChanged: {
-                    Config.options.wallpaperSelector.columns = value;
+                ConfigSpinBox {
+                    icon: "grid_on"
+                    text: Translation.tr("Columns in grid view")
+                    value: Config.options.wallpaperSelector.columns
+                    from: 3
+                    to: 10
+                    stepSize: 1
+                    onValueChanged: {
+                        Config.options.wallpaperSelector.columns = value;
+                    }
                 }
-            }
 
-            ConfigSpinBox {
-                icon: "timer"
-                text: Translation.tr("Wallpaper change interval (min)")
-                value: Config.options.wallpaperSelector.changeInterval / 60000
-                from: 0
-                to: 1440
-                stepSize: 5
-                onValueChanged: {
-                    Config.options.wallpaperSelector.changeInterval = value * 60000;
+                ConfigSpinBox {
+                    icon: "timer"
+                    text: Translation.tr("Wallpaper change interval (min)")
+                    value: Config.options.wallpaperSelector.changeInterval / 60000
+                    from: 0
+                    to: 1440
+                    stepSize: 5
+                    onValueChanged: {
+                        Config.options.wallpaperSelector.changeInterval = value * 60000;
+                    }
                 }
-            }
 
-            ConfigSwitch {
-                buttonIcon: "search"
-                text: Translation.tr('Show search bar')
-                checked: Config.options.wallpaperSelector.showSearchbar
-                onCheckedChanged: {
-                    Config.options.wallpaperSelector.showSearchbar = checked;
+                ConfigSwitch {
+                    buttonIcon: "search"
+                    text: Translation.tr('Show search bar')
+                    checked: Config.options.wallpaperSelector.showSearchbar
+                    onCheckedChanged: {
+                        Config.options.wallpaperSelector.showSearchbar = checked;
+                    }
                 }
             }
 
@@ -850,79 +821,60 @@ ContentPage {
         }
 
         ContentSection {
-            icon: "colors"
-            title: Translation.tr("Color generation")
-            shape: MaterialShape.Shape.VerySunny
+    icon: "colors"
+    title: Translation.tr("Color generation")
+    shape: MaterialShape.Shape.VerySunny
 
+    GroupedList {
+        ConfigSwitch {
+            buttonIcon: "hardware"
+            text: Translation.tr("Shell & utilities")
+            checked: Config.options.appearance.wallpaperTheming.enableAppsAndShell
+            onCheckedChanged: { Config.options.appearance.wallpaperTheming.enableAppsAndShell = checked }
+        }
+        ConfigSwitch {
+            buttonIcon: "tv_options_input_settings"
+            text: Translation.tr("Qt apps")
+            checked: Config.options.appearance.wallpaperTheming.enableQtApps
+            onCheckedChanged: { Config.options.appearance.wallpaperTheming.enableQtApps = checked }
+        }
+        ConfigSwitch {
+            buttonIcon: "terminal"
+            text: Translation.tr("Terminal")
+            checked: Config.options.appearance.wallpaperTheming.enableTerminal
+            onCheckedChanged: { Config.options.appearance.wallpaperTheming.enableTerminal = checked }
+        }
+        ConfigRow {
+            uniform: true
             ConfigSwitch {
-                buttonIcon: "hardware"
-                text: Translation.tr("Shell & utilities")
-                checked: Config.options.appearance.wallpaperTheming.enableAppsAndShell
-                onCheckedChanged: {
-                    Config.options.appearance.wallpaperTheming.enableAppsAndShell = checked;
-                }
-            }
-            ConfigSwitch {
-                buttonIcon: "tv_options_input_settings"
-                text: Translation.tr("Qt apps")
-                checked: Config.options.appearance.wallpaperTheming.enableQtApps
-                onCheckedChanged: {
-                    Config.options.appearance.wallpaperTheming.enableQtApps = checked;
-                }
-            }
-            ConfigSwitch {
-                buttonIcon: "terminal"
-                text: Translation.tr("Terminal")
-                checked: Config.options.appearance.wallpaperTheming.enableTerminal
-                onCheckedChanged: {
-                    Config.options.appearance.wallpaperTheming.enableTerminal = checked;
-                }
-            }
-            ConfigRow {
-                uniform: true
-                ConfigSwitch {
-                    buttonIcon: "dark_mode"
-                    text: Translation.tr("Force dark mode in terminal")
-                    checked: Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode
-                    onCheckedChanged: {
-                        Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode= checked;
-                    }
-                }
-            }
-
-            ConfigSpinBox {
-                icon: "invert_colors"
-                text: Translation.tr("Terminal: Harmony (%)")
-                value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmony * 100
-                from: 0
-                to: 100
-                stepSize: 10
-                onValueChanged: {
-                    Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmony = value / 100;
-                }
-            }
-            ConfigSpinBox {
-                icon: "gradient"
-                text: Translation.tr("Terminal: Harmonize threshold")
-                value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold
-                from: 0
-                to: 100
-                stepSize: 10
-                onValueChanged: {
-                    Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold = value;
-                }
-            }
-            ConfigSpinBox {
-                icon: "format_color_text"
-                text: Translation.tr("Terminal: Foreground boost (%)")
-                value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.termFgBoost * 100
-                from: 0
-                to: 100
-                stepSize: 10
-                onValueChanged: {
-                    Config.options.appearance.wallpaperTheming.terminalGenerationProps.termFgBoost = value / 100;
-                }
+                buttonIcon: "dark_mode"
+                text: Translation.tr("Force dark mode in terminal")
+                checked: Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode
+                onCheckedChanged: { Config.options.appearance.wallpaperTheming.terminalGenerationProps.forceDarkMode = checked }
             }
         }
+        ConfigSpinBox {
+            icon: "invert_colors"
+            text: Translation.tr("Terminal: Harmony (%)")
+            value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmony * 100
+            from: 0; to: 100; stepSize: 10
+            onValueChanged: { Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmony = value / 100 }
+        }
+        ConfigSpinBox {
+            icon: "gradient"
+            text: Translation.tr("Terminal: Harmonize threshold")
+            value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold
+            from: 0; to: 100; stepSize: 10
+            onValueChanged: { Config.options.appearance.wallpaperTheming.terminalGenerationProps.harmonizeThreshold = value }
+        }
+        ConfigSpinBox {
+            icon: "format_color_text"
+            text: Translation.tr("Terminal: Foreground boost (%)")
+            value: Config.options.appearance.wallpaperTheming.terminalGenerationProps.termFgBoost * 100
+            from: 0; to: 100; stepSize: 10
+            onValueChanged: { Config.options.appearance.wallpaperTheming.terminalGenerationProps.termFgBoost = value / 100 }
+        }
+    }
+}
     }
 }

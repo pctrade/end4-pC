@@ -153,7 +153,7 @@ ContentPage {
         ContentSection {
             icon: "pivot_table_chart"
             shape: MaterialShape.Shape.Gem
-            title: Translation.tr("Positioning")
+            title: Translation.tr("Positioning & Styles")
             ConfigRow {
                 ContentSubsection {
                     title: Translation.tr("Bar position"); Layout.fillWidth: true
@@ -210,11 +210,14 @@ ContentPage {
                     }
                 }
             }
-            ConfigSwitch {
-                buttonIcon: "variable_insert"
-                text: Translation.tr("Show Background")
-                checked: Config.options.bar.showBackground
-                onCheckedChanged: { Config.options.bar.showBackground = checked; }
+            GroupedList {
+                Layout.topMargin: 10
+                ConfigSwitch {
+                    buttonIcon: "variable_insert"
+                    text: Translation.tr("Show Background")
+                    checked: Config.options.bar.showBackground
+                    onCheckedChanged: { Config.options.bar.showBackground = checked; }
+                }
             }
         }
 
@@ -222,21 +225,24 @@ ContentPage {
             icon: "notifications"
             shape: MaterialShape.Shape.Bun
             title: Translation.tr("Notifications")
-            ConfigSwitch {
-                buttonIcon: "counter_2"
-                text: Translation.tr("Unread indicator: show count")
-                checked: Config.options.bar.indicators.notifications.showUnreadCount
-                onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
-            }
-            ConfigSpinBox {
-                icon: "av_timer"
-                text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
-                value: Config.options.notifications.timeout
-                from: 1000
-                to: 60000
-                stepSize: 1000
-                onValueChanged: {
-                    Config.options.notifications.timeout = value;
+            
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "counter_2"
+                    text: Translation.tr("Unread indicator: show count")
+                    checked: Config.options.bar.indicators.notifications.showUnreadCount
+                    onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
+                }
+                ConfigSpinBox {
+                    icon: "av_timer"
+                    text: Translation.tr("Timeout duration (if not defined by notification) (ms)")
+                    value: Config.options.notifications.timeout
+                    from: 1000
+                    to: 60000
+                    stepSize: 1000
+                    onValueChanged: {
+                        Config.options.notifications.timeout = value;
+                    }
                 }
             }
         }
@@ -245,15 +251,17 @@ ContentPage {
             shape: MaterialShape.Shape.Square
             icon: "inbox_customize"
             title: Translation.tr("Tray")
-            ConfigSwitch {
-                buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
-                checked: Config.options.tray.invertPinnedItems
-                onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
-            }
-            ConfigSwitch {
-                buttonIcon: "colors"; text: Translation.tr("Tint icons")
-                checked: Config.options.tray.monochromeIcons
-                onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
+                    checked: Config.options.tray.invertPinnedItems
+                    onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
+                }
+                ConfigSwitch {
+                    buttonIcon: "colors"; text: Translation.tr("Tint icons")
+                    checked: Config.options.tray.monochromeIcons
+                    onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
+                }
             }
         }
 
@@ -261,56 +269,62 @@ ContentPage {
             icon: "buttons_alt"
             shape: MaterialShape.Shape.SoftBurst
             title: Translation.tr("Utility buttons")
+
             ConfigRow {
                 uniform: true
-                ConfigSwitch {
-                    buttonIcon: "screenshot_region"; text: Translation.tr("Screen snip")
-                    checked: Config.options.bar.utilButtons.showScreenSnip
-                    onCheckedChanged: { Config.options.bar.utilButtons.showScreenSnip = checked; }
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "screenshot_region"
+                        text: Translation.tr("Screen snip")
+                        checked: Config.options.bar.utilButtons.showScreenSnip
+                        onCheckedChanged: { Config.options.bar.utilButtons.showScreenSnip = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "colorize"
+                        text: Translation.tr("Color picker")
+                        checked: Config.options.bar.utilButtons.showColorPicker
+                        onCheckedChanged: { Config.options.bar.utilButtons.showColorPicker = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "keyboard"
+                        text: Translation.tr("Keyboard toggle")
+                        checked: Config.options.bar.utilButtons.showKeyboardToggle
+                        onCheckedChanged: { Config.options.bar.utilButtons.showKeyboardToggle = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "mic"
+                        text: Translation.tr("Mic toggle")
+                        checked: Config.options.bar.utilButtons.showMicToggle
+                        onCheckedChanged: { Config.options.bar.utilButtons.showMicToggle = checked }
+                    }
                 }
-                ConfigSwitch {
-                    buttonIcon: "colorize"; text: Translation.tr("Color picker")
-                    checked: Config.options.bar.utilButtons.showColorPicker
-                    onCheckedChanged: { Config.options.bar.utilButtons.showColorPicker = checked; }
-                }
-            }
-            ConfigRow {
-                uniform: true
-                ConfigSwitch {
-                    buttonIcon: "keyboard"; text: Translation.tr("Keyboard toggle")
-                    checked: Config.options.bar.utilButtons.showKeyboardToggle
-                    onCheckedChanged: { Config.options.bar.utilButtons.showKeyboardToggle = checked; }
-                }
-                ConfigSwitch {
-                    buttonIcon: "mic"; text: Translation.tr("Mic toggle")
-                    checked: Config.options.bar.utilButtons.showMicToggle
-                    onCheckedChanged: { Config.options.bar.utilButtons.showMicToggle = checked; }
-                }
-            }
-            ConfigRow {
-                uniform: true
-                ConfigSwitch {
-                    buttonIcon: "dark_mode"; text: Translation.tr("Dark/Light toggle")
-                    checked: Config.options.bar.utilButtons.showDarkModeToggle
-                    onCheckedChanged: { Config.options.bar.utilButtons.showDarkModeToggle = checked; }
-                }
-                ConfigSwitch {
-                    buttonIcon: "speed"; text: Translation.tr("Performance Profile toggle")
-                    checked: Config.options.bar.utilButtons.showPerformanceProfileToggle
-                    onCheckedChanged: { Config.options.bar.utilButtons.showPerformanceProfileToggle = checked; }
-                }
-            }
-            ConfigRow {
-                uniform: true
-                ConfigSwitch {
-                    buttonIcon: "screen_record"; text: Translation.tr("Record")
-                    checked: Config.options.bar.utilButtons.showScreenRecord
-                    onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked; }
-                }
-                ConfigSwitch {
-                    buttonIcon: "imagesmode"; text: Translation.tr("Wallpapers Toggle")
-                    checked: Config.options.bar.utilButtons.showWallpaperToggle
-                    onCheckedChanged: { Config.options.bar.utilButtons.showWallpaperToggle = checked; }
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "dark_mode"
+                        text: Translation.tr("Dark/Light toggle")
+                        checked: Config.options.bar.utilButtons.showDarkModeToggle
+                        onCheckedChanged: { Config.options.bar.utilButtons.showDarkModeToggle = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "speed"
+                        text: Translation.tr("Performance Profile")
+                        checked: Config.options.bar.utilButtons.showPerformanceProfileToggle
+                        onCheckedChanged: { Config.options.bar.utilButtons.showPerformanceProfileToggle = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "screen_record"
+                        text: Translation.tr("Record Screen")
+                        checked: Config.options.bar.utilButtons.showScreenRecord
+                        onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "imagesmode"
+                        text: Translation.tr("Wallpapers Toggle")
+                        checked: Config.options.bar.utilButtons.showWallpaperToggle
+                        onCheckedChanged: { Config.options.bar.utilButtons.showWallpaperToggle = checked }
+                    }
                 }
             }
         }
@@ -318,21 +332,23 @@ ContentPage {
         ContentSection {
             shape: MaterialShape.Shape.Cookie12Sided
             icon: "steppers"; title: Translation.tr("Workspaces")
-            ConfigSwitch {
-                buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
-                checked: Config.options.bar.workspaces.alwaysShowNumbers
-                onCheckedChanged: { Config.options.bar.workspaces.alwaysShowNumbers = checked; }
-            }
-            ConfigSwitch {
-                buttonIcon: "award_star"; text: Translation.tr("Show app icons")
-                checked: Config.options.bar.workspaces.showAppIcons
-                onCheckedChanged: { Config.options.bar.workspaces.showAppIcons = checked; }
-            }
-            ConfigSpinBox {
-                icon: "view_column"; text: Translation.tr("Workspaces shown")
-                value: Config.options.bar.workspaces.shown
-                from: 1; to: 30
-                onValueChanged: { Config.options.bar.workspaces.shown = value; }
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
+                    checked: Config.options.bar.workspaces.alwaysShowNumbers
+                    onCheckedChanged: { Config.options.bar.workspaces.alwaysShowNumbers = checked; }
+                }
+                ConfigSwitch {
+                    buttonIcon: "award_star"; text: Translation.tr("Show app icons")
+                    checked: Config.options.bar.workspaces.showAppIcons
+                    onCheckedChanged: { Config.options.bar.workspaces.showAppIcons = checked; }
+                }
+                ConfigSpinBox {
+                    icon: "view_column"; text: Translation.tr("Workspaces shown")
+                    value: Config.options.bar.workspaces.shown
+                    from: 1; to: 30
+                    onValueChanged: { Config.options.bar.workspaces.shown = value; }
+                }
             }
         }
         
@@ -374,36 +390,42 @@ ContentPage {
             title: Translation.tr("Resources")
             ConfigRow {
                 uniform: true
-                ConfigSwitch {
-                    buttonIcon: "planner_review"; text: Translation.tr("CPU")
-                    checked: Config.options.bar.resources.alwaysShowCpu
-                    onCheckedChanged: { Config.options.bar.resources.alwaysShowCpu = checked; }
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "planner_review"
+                        text: Translation.tr("CPU")
+                        checked: Config.options.bar.resources.alwaysShowCpu
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowCpu = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "thermostat"
+                        text: Translation.tr("CPU Temperature")
+                        checked: Config.options.bar.resources.alwaysShowCpuTemp
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowCpuTemp = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "memory"
+                        text: Translation.tr("RAM")
+                        checked: Config.options.bar.resources.alwaysShowRam
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowRam = checked }
+                    }
                 }
-                ConfigSwitch {
-                    buttonIcon: "thermostat"; text: Translation.tr("Cpu Temperature")
-                    checked: Config.options.bar.resources.alwaysShowCpuTemp
-                    onCheckedChanged: { Config.options.bar.resources.alwaysShowCpuTemp = checked; }
-                }
-            }
-            ConfigRow {
-                uniform: true
-                ConfigSwitch {
-                    buttonIcon: "memory"; text: Translation.tr("RAM")
-                    checked: Config.options.bar.resources.alwaysShowRam
-                    onCheckedChanged: { Config.options.bar.resources.alwaysShowRam = checked; }
-                }
-                ConfigSwitch {
-                    buttonIcon: "storage"; text: Translation.tr("Disk")
-                    checked: Config.options.bar.resources.alwaysShowDisk
-                    onCheckedChanged: { Config.options.bar.resources.alwaysShowDisk = checked; }
-                }
-            }
-            ConfigRow {
-                uniform: true
-                ConfigSwitch {
-                    buttonIcon: "swap_horiz"; text: Translation.tr("Swap")
-                    checked: Config.options.bar.resources.alwaysShowSwap
-                    onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked; }
+
+                GroupedList {
+                    Layout.topMargin: -55
+                    ConfigSwitch {
+                        buttonIcon: "storage"
+                        text: Translation.tr("Disk")
+                        checked: Config.options.bar.resources.alwaysShowDisk
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowDisk = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "swap_horiz"
+                        text: Translation.tr("Swap")
+                        checked: Config.options.bar.resources.alwaysShowSwap
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked }
+                    }
                 }
             }
             ContentSubsection {
@@ -417,20 +439,23 @@ ContentPage {
                     ]
                 }
             }
-            ConfigSwitch {
-                buttonIcon: "decimal_increase"; text: Translation.tr("Show Percentage")
-                checked: Config.options.bar.resources.showValue
-                onCheckedChanged: { Config.options.bar.resources.showValue = checked; }
-            }
-            ConfigSpinBox {
-                icon: "av_timer"
-                text: Translation.tr("Polling interval (ms)")
-                value: Config.options.resources.updateInterval
-                from: 100
-                to: 10000
-                stepSize: 100
-                onValueChanged: {
-                    Config.options.resources.updateInterval = value;
+            GroupedList {
+                Layout.topMargin: 10
+                ConfigSwitch {
+                    buttonIcon: "decimal_increase"; text: Translation.tr("Show Percentage")
+                    checked: Config.options.bar.resources.showValue
+                    onCheckedChanged: { Config.options.bar.resources.showValue = checked; }
+                }
+                ConfigSpinBox {
+                    icon: "av_timer"
+                    text: Translation.tr("Polling interval (ms)")
+                    value: Config.options.resources.updateInterval
+                    from: 100
+                    to: 10000
+                    stepSize: 100
+                    onValueChanged: {
+                        Config.options.resources.updateInterval = value;
+                    }
                 }
             }
         }
@@ -459,25 +484,29 @@ ContentPage {
                     }
                 }
             }
-            ConfigSwitch {
-                buttonIcon: "titlecase"; text: Translation.tr("Show only title")
-                checked: Config.options.bar.media.onlyTitle
-                onCheckedChanged: { Config.options.bar.media.onlyTitle = checked; }
-            }
-            ConfigSwitch {
-                buttonIcon: "keep"; text: Translation.tr("Pin media controls")
-                checked: Config.options.bar.media.alwaysVisible
-                onCheckedChanged: { Config.options.bar.media.alwaysVisible = checked; }
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "titlecase"; text: Translation.tr("Show only title")
+                    checked: Config.options.bar.media.onlyTitle
+                    onCheckedChanged: { Config.options.bar.media.onlyTitle = checked; }
+                }
+                ConfigSwitch {
+                    buttonIcon: "keep"; text: Translation.tr("Pin media controls")
+                    checked: Config.options.bar.media.alwaysVisible
+                    onCheckedChanged: { Config.options.bar.media.alwaysVisible = checked; }
+                }
             }
         }
 
         ContentSection {
             shape: MaterialShape.Shape.Puffy
             icon: "tooltip"; title: Translation.tr("Tooltips")
-            ConfigSwitch {
-                buttonIcon: "ads_click"; text: Translation.tr("Click to show")
-                checked: Config.options.bar.tooltips.clickToShow
-                onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "ads_click"; text: Translation.tr("Click to show")
+                    checked: Config.options.bar.tooltips.clickToShow
+                    onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
+                }
             }
         }
     }

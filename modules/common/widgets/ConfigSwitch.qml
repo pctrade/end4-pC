@@ -8,6 +8,7 @@ RippleButton {
     id: root
     property string buttonIcon
     property alias iconSize: iconWidget.iconSize
+    colBackgroundHover: "transparent"
 
     Layout.fillWidth: true
     implicitHeight: contentItem.implicitHeight + 8 * 2
