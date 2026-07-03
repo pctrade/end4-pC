@@ -255,25 +255,21 @@ ContentPage {
                             }
                         }
 
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: barPosArray.implicitHeight
-
-                            ConfigSelectionArray {
-                                id: barPosArray
-                                anchors.right: parent.right
-                                currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
-                                onSelected: newValue => {
-                                    Config.options.bar.bottom = (newValue & 1) !== 0;
-                                    Config.options.bar.vertical = (newValue & 2) !== 0;
-                                }
-                                options: [
-                                    { displayName: Translation.tr("Top"), icon: "arrow_upward",   value: 0 },
-                                    { displayName: Translation.tr("Left"), icon: "arrow_back",     value: 2 },
-                                    { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
-                                    { displayName: Translation.tr("Right"), icon: "arrow_forward",  value: 3 }
-                                ]
+                        ConfigSelectionArray {
+                            id: barPosArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
+                            onSelected: newValue => {
+                                Config.options.bar.bottom = (newValue & 1) !== 0;
+                                Config.options.bar.vertical = (newValue & 2) !== 0;
                             }
+                            options: [
+                                { displayName: Translation.tr("Top"), icon: "arrow_upward",   value: 0 },
+                                { displayName: Translation.tr("Left"), icon: "arrow_back",     value: 2 },
+                                { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
+                                { displayName: Translation.tr("Right"), icon: "arrow_forward",  value: 3 }
+                            ]
                         }
                     }
                 }
@@ -306,22 +302,18 @@ ContentPage {
                             }
                         }
 
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: barStyleArray.implicitHeight
-
-                            ConfigSelectionArray {
-                                id: barStyleArray
-                                anchors.right: parent.right
-                                currentValue: Config.options.bar.cornerStyle
-                                onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
-                                options: [
-                                    { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
-                                    { displayName: Translation.tr("Float"), icon: "view_day",   value: 1 },
-                                    { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
-                                    { displayName: Translation.tr("M3"), icon: "interests",  value: 3 }
-                                ]
-                            }
+                        ConfigSelectionArray {
+                            id: barStyleArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: Config.options.bar.cornerStyle
+                            onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
+                            options: [
+                                { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
+                                { displayName: Translation.tr("Float"), icon: "view_day",   value: 1 },
+                                { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
+                                { displayName: Translation.tr("M3"), icon: "interests",  value: 3 }
+                            ]
                         }
                     }
                 }
@@ -351,20 +343,17 @@ ContentPage {
                             }
                         }
 
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: groupStyleArray.implicitHeight
-                            ConfigSelectionArray {
-                                id: groupStyleArray
-                                anchors.right: parent.right
-                                currentValue: Config.options.bar.borderless
-                                onSelected: newValue => { Config.options.bar.borderless = newValue; }
-                                options: [
-                                    { displayName: Translation.tr("No"),          icon: "close",         value: "transparent" },
-                                    { displayName: Translation.tr("Pills"),     icon: "pill",          value: "pills" },
-                                    { displayName: Translation.tr("Separated"), icon: "view_column_2", value: "separated" }
-                                ]
-                            }
+                        ConfigSelectionArray {
+                            id: groupStyleArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: Config.options.bar.borderless
+                            onSelected: newValue => { Config.options.bar.borderless = newValue; }
+                            options: [
+                                { displayName: Translation.tr("No"),          icon: "close",         value: "transparent" },
+                                { displayName: Translation.tr("Pills"),     icon: "pill",          value: "pills" },
+                                { displayName: Translation.tr("Separated"), icon: "view_column_2", value: "separated" }
+                            ]
                         }
                     }
                     
@@ -396,20 +385,17 @@ ContentPage {
                             }
                         }
 
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: screenRoundArray.implicitHeight
-                            ConfigSelectionArray {
-                                id: screenRoundArray
-                                anchors.right: parent.right
-                                currentValue: Config.options.appearance.fakeScreenRounding
-                                onSelected: newValue => { Config.options.appearance.fakeScreenRounding = newValue; }
-                                options: [
-                                    { displayName: Translation.tr("No"),                  icon: "close",           value: 0 },
-                                    { displayName: Translation.tr("Yes"),                 icon: "check",           value: 1 },
-                                    { displayName: Translation.tr("When not fullscreen"), icon: "fullscreen_exit", value: 2 }
-                                ]
-                            }
+                        ConfigSelectionArray {
+                            id: screenRoundArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: Config.options.appearance.fakeScreenRounding
+                            onSelected: newValue => { Config.options.appearance.fakeScreenRounding = newValue; }
+                            options: [
+                                { displayName: Translation.tr("No"),                  icon: "close",           value: 0 },
+                                { displayName: Translation.tr("Yes"),                 icon: "check",           value: 1 },
+                                { displayName: Translation.tr("When not fullscreen"), icon: "fullscreen_exit", value: 2 }
+                            ]
                         }
                     }
                 }
