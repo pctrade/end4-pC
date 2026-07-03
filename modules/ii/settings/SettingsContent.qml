@@ -95,7 +95,7 @@ Item {
                 id: navRailWrapper
                 Layout.fillHeight: true
                 Layout.margins: 0
-                implicitWidth: navRail.expanded ? 200 : fab.baseSize
+                implicitWidth: navRail.expanded ? 195 : fab.baseSize
                 color: Appearance.m3colors.m3surfaceContainerLow
                 radius: Appearance.rounding.normal
 
