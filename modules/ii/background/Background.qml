@@ -22,6 +22,7 @@ import qs.modules.ii.background.widgets.images
 import qs.modules.ii.background.widgets.resources
 import qs.modules.ii.background.widgets.visualizer
 import qs.modules.ii.background.widgets.calendar
+import qs.modules.ii.background.widgets.worldclock
 
 Variants {
     id: root
@@ -325,6 +326,16 @@ Variants {
                 FadeLoader {
                     shown: Config.options.background.widgets.calendar.enable
                     sourceComponent: CalendarWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: 1
+                    }
+                }
+                FadeLoader {
+                    shown: Config.options.background.widgets.worldClock.enable
+                    sourceComponent: WorldClockWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
                         scaledScreenWidth: bgRoot.screen.width

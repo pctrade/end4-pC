@@ -268,6 +268,12 @@ Singleton {
                         property real x: 400
                         property real y: 100
                     }
+                    property JsonObject worldClock: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                    }
 
                     property JsonObject images: JsonObject {
                         property bool enable: false

@@ -700,6 +700,11 @@ ContentPage {
                             name: Translation.tr("Calendar"),
                             enabled: Config.options.background.widgets.calendar.enable
                         },
+                        {
+                            icon: "public",
+                            name: Translation.tr("World Clock"),
+                            enabled: Config.options.background.widgets.worldClock.enable
+                        },
                     ]
                     delegate: Rectangle {
                         Layout.fillWidth: true
@@ -740,6 +745,8 @@ ContentPage {
                                             Config.options.background.widgets.visualizer.enable = checked
                                         else if (modelData.icon === "calendar_month")
                                             Config.options.background.widgets.calendar.enable = checked
+                                        else if (modelData.icon === "public")
+                                            Config.options.background.widgets.worldClock.enable = checked
                                     }
                                 }
                             }
@@ -758,6 +765,5 @@ ContentPage {
                 }
             }
         }
-
     }
 }
