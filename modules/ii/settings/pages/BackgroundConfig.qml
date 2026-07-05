@@ -705,6 +705,11 @@ ContentPage {
                             name: Translation.tr("World Clock"),
                             enabled: Config.options.background.widgets.worldClock.enable
                         },
+                        {
+                            icon: "person",
+                            name: Translation.tr("User Card"),
+                            enabled: Config.options.background.widgets.userCard.enable
+                        }
                     ]
                     delegate: Rectangle {
                         Layout.fillWidth: true
@@ -747,6 +752,8 @@ ContentPage {
                                             Config.options.background.widgets.calendar.enable = checked
                                         else if (modelData.icon === "public")
                                             Config.options.background.widgets.worldClock.enable = checked
+                                        else if (modelData.icon === "person")
+                                            Config.options.background.widgets.userCard.enable = checked
                                     }
                                 }
                             }

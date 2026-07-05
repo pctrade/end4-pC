@@ -158,7 +158,7 @@ AbstractBackgroundWidget {
                         Layout.fillWidth: true
                         text: root.currentPlayer?.trackArtist ?? ""
                         font.pixelSize: Appearance.font.pixelSize.normal
-                        font.weight: Font.SemiBold
+                        font.weight: Font.DemiBold
                         color: Appearance.colors.colOnPrimaryContainer
                         elide: Text.ElideRight
                     }
