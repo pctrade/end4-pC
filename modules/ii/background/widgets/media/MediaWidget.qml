@@ -115,7 +115,7 @@ AbstractBackgroundWidget {
                     implicitWidth: root.artSize
                     implicitHeight: root.artSize
                     radius: Appearance.rounding?.full ?? 999
-                    color: Appearance.colors.colSecondaryContainer
+                    color: Appearance.colors.colSurfaceContainerLow
                     Layout.alignment: Qt.AlignVCenter
                     clip: true
                     layer.enabled: true
@@ -156,7 +156,7 @@ AbstractBackgroundWidget {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: root.currentPlayer?.trackArtist ?? ""
+                        text: root.currentPlayer?.trackArtist ?? "Play"
                         font.pixelSize: Appearance.font.pixelSize.normal
                         font.weight: Font.DemiBold
                         color: Appearance.colors.colOnPrimaryContainer
@@ -165,7 +165,7 @@ AbstractBackgroundWidget {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: root.currentPlayer?.trackTitle ?? Translation.tr("No media")
+                        text: root.currentPlayer?.trackTitle ?? Translation.tr("Something")
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: Appearance.colors.colOnPrimaryContainer
                         opacity: 0.6
