@@ -75,70 +75,53 @@ Item {
 
         Component {
             id: colMaterial
-            ColumnLayout {
-                spacing: -6
-                property var timeParts: DateTime.time.split(/[: ]/)
-                property string hours: timeParts[0] ?? "00"
-                property string minutes: timeParts[1] ?? "00"
-                property string ampm: timeParts[2] ?? ""
+            Rectangle {
+                color: Appearance.colors.colPrimaryContainer
+                radius: Appearance.rounding.full
+                implicitWidth: 32
+                implicitHeight: pillCol.implicitHeight + 10
 
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    color: Appearance.colors.colPrimary
-                    radius: Appearance.rounding.full
-                    implicitWidth: 32
-                    implicitHeight: 32
-                    StyledText {
-                        anchors.centerIn: parent
-                        font.pixelSize: Appearance.font.pixelSize.normal
-                        color: Appearance.colors.colOnPrimary
-                        text: parent.parent.hours.padStart(2, "0")
-                        font.features: { "tnum": 1 }
+                ColumnLayout {
+                    id: pillCol
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    Column {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 3
+                        spacing: -4
+
+                        Repeater {
+                            model: DateTime.time.split(/[: ]/)
+                            delegate: StyledText {
+                                required property string modelData
+                                width: implicitWidth
+                                horizontalAlignment: Text.AlignHCenter
+                                font.letterSpacing: -0.2
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: modelData.match(/am|pm/i)
+                                    ? Appearance.font.pixelSize.smallest - 2
+                                    : Appearance.font.pixelSize.small
+                                color: Appearance.colors.colPrimary
+                                text: modelData.padStart(2, "0")
+                            }
+                        }
                     }
-                }
 
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    color: Appearance.colors.colPrimaryContainer
-                    radius: Appearance.rounding.full
-                    implicitWidth: 32
-                    implicitHeight: 32
-                    StyledText {
-                        anchors.centerIn: parent
-                        font.pixelSize: Appearance.font.pixelSize.normal
+                    Rectangle {
+                        width: 25
+                        height: 25
+                        radius: Appearance.rounding.full
                         color: Appearance.colors.colPrimary
-                        text: parent.parent.minutes.padStart(2, "0")
-                        font.features: { "tnum": 1 }
-                    }
-                }
+                        Layout.alignment: Qt.AlignHCenter
 
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    color: Appearance.colors.colSecondaryContainer
-                    radius: Appearance.rounding.full
-                    implicitWidth: 32
-                    implicitHeight: 18
-                    StyledText {
-                        anchors.centerIn: parent
-                        font.pixelSize: Appearance.font.pixelSize.smallest - 1
-                        color: Appearance.colors.colPrimary
-                        text: DateTime.shortDate
-                        font.features: { "tnum": 1 }
-                    }
-                }
-
-                Rectangle {
-                    visible: parent.ampm !== ""
-                    Layout.alignment: Qt.AlignHCenter
-                    color: Appearance.colors.colTertiaryContainer
-                    radius: Appearance.rounding.full
-                    implicitWidth: 30
-                    implicitHeight: 20
-                    StyledText {
-                        anchors.centerIn: parent
-                        font.pixelSize: Appearance.font.pixelSize.smaller
-                        color: Appearance.colors.colPrimary
-                        text: parent.parent.ampm
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            fill: 0
+                            text: "calendar_clock"
+                            iconSize: Appearance.font.pixelSize.normal
+                            color: Appearance.colors.colOnPrimary
+                        }
                     }
                 }
             }
