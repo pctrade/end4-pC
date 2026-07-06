@@ -37,7 +37,7 @@ Item {
             ColumnLayout {
                 id: column
                 anchors.centerIn: parent
-                spacing: root.hasAmPm ? 6 : 0
+                spacing: root.hasAmPm ? 1 : 0
 
                 Column {
                     Layout.alignment: Qt.AlignHCenter  
