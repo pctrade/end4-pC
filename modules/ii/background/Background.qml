@@ -254,7 +254,8 @@ Variants {
                 }
                 FadeLoader {
                     shown: Config.options.background.widgets.clock.enable
-                        && (Config.options.background.screenList.length === 0
+                        && (GlobalStates.screenLocked
+                            || Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
                     sourceComponent: ClockWidget {
                         screenWidth: bgRoot.screen.width
