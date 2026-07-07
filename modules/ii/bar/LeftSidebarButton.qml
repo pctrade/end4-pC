@@ -17,12 +17,8 @@ RippleButton {
 
     visible: aiChatEnabled || translatorEnabled || animeEnabled
 
-    implicitWidth: isMaterial
-        ? distroIcon.width + buttonPadding * 2
-        : (Config.options.bar.cornerStyle === 2 ? 27 : distroIcon.width + buttonPadding * 2)
-    implicitHeight: isMaterial
-        ? distroIcon.height + buttonPadding * 2
-        : (Config.options.bar.cornerStyle === 2 ? 27 : distroIcon.height + buttonPadding * 2)
+    implicitWidth: 32
+    implicitHeight: 32
 
     buttonRadius: Appearance.rounding.full
     colBackground: isMaterial ? Appearance.colors.colPrimaryContainer : "transparent"

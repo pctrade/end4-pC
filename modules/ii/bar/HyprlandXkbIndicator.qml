@@ -16,7 +16,7 @@ Loader {
 
     sourceComponent: Item {
         implicitWidth: root.vertical ? null : rowLayout.implicitWidth + 8
-        implicitHeight: root.vertical ? rowLayout.implicitHeight + 10 : null
+        implicitHeight: root.vertical ? rowLayout.implicitHeight + 6 : null
 
         RowLayout {
             id: rowLayout

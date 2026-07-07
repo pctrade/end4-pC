@@ -43,7 +43,7 @@ Item {
     }
 
     implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 6, 280)
-    implicitHeight: vertical ? iconItem.implicitHeight + 8 : Appearance.sizes.barHeight
+    implicitHeight: vertical ? iconItem.implicitHeight : Appearance.sizes.barHeight
 
     // Vertical
     Item {
