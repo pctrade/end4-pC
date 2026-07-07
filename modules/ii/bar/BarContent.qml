@@ -42,6 +42,7 @@ Item {
         if (Config.options.bar.cornerStyle !== 3) return Appearance.colors.colPrimaryContainer;
         switch(name) {
             case "media":
+            case "sysTray":
                 return Appearance.colors.colSecondaryContainer;
             case "resources":
                 return Appearance.colors.colTertiaryContainer;

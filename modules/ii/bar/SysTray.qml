@@ -60,9 +60,9 @@ Item {
 
     Rectangle {
         id: pill
-        visible: root.isMaterial
+        visible: false
         anchors.centerIn: parent
-        color: Appearance.colors.colPrimaryContainer
+        color: "transparent"
         radius: Appearance.rounding.full
         implicitWidth: root.vertical ? 32 : gridLayout.implicitWidth
         implicitHeight: root.vertical ? gridLayout.implicitHeight + 12 : 32
