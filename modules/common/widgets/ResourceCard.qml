@@ -11,69 +11,84 @@ Rectangle {
     required property var iconShape
     required property real value
     required property string sublabel
-    property color sublabelColor: Appearance.colors.colOnLayer1
-    property int cardWidth: 170
+    property color sublabelColor: Appearance.colors.colOnSurfaceVariant
+    property int cardWidth: 150 
 
     width: cardWidth
-    height: 72
-    radius: Appearance.rounding.normal - 4
-    color: Appearance.colors.colSurfaceContainerHigh
+    height: 96 
+    radius: 16 
+    
+    color: Appearance.colors.colSurfaceContainerLow
 
     function usageColor(v) {
         if (v > 0.9) return Appearance.colors.colError
-        if (v > 0.6) return Appearance.m3colors.m3tertiary
+        if (v > 0.6) return Appearance.colors.colTertiary || Appearance.m3colors.m3tertiary
         return Appearance.colors.colPrimary
     }
 
-    Row {
-        anchors { fill: parent; margins: 10 }
-        spacing: 8
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 12
+        spacing: 6
 
-        MaterialShapeWrappedMaterialSymbol {
-            anchors.verticalCenter: parent.verticalCenter
-            shape: root.iconShape
-            text: root.iconText
-            iconSize: Appearance.font.pixelSize.large
-            implicitSize: 32
-            color: Qt.alpha(root.usageColor(root.value), 0.2)
-            colSymbol: root.usageColor(root.value)
-        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 0
 
-        Column {
-            width: parent.width - 32 - 8
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 4
-
-            RowLayout {
-                width: parent.width
-                StyledText {
-                    text: root.label
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    font.weight: Font.Medium
-                    Layout.fillWidth: true
-                }
-                StyledText {
-                    text: `${Math.round(root.value * 100)}%`
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    font.weight: Font.Bold
-                    font.features: { "tnum": 1 }
-                    color: root.usageColor(root.value)
-                }
+            MaterialShapeWrappedMaterialSymbol {
+                shape: root.iconShape
+                text: root.iconText
+                iconSize: Appearance.font.pixelSize.huge
+                implicitSize: 28
+                color: "transparent" // I know that you are going to give me color one day =P
+                colSymbol: root.usageColor(root.value)
+                Layout.alignment: Qt.AlignVCenter
             }
 
-            StyledProgressBar {
-                width: parent.width
-                value: root.value
-                highlightColor: root.usageColor(root.value)
-                valueBarHeight: 6
+            Item { Layout.fillWidth: true }
+
+            StyledText {
+                text: `${Math.round(root.value * 100)}%`
+                font.pixelSize: Appearance.font.pixelSize.large || 18
+                font.weight: Font.Bold
+                font.features: { "tnum": 1 }
+                color: Appearance.colors.colOnSurface
+                Layout.alignment: Qt.AlignVCenter
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 1
+
+            StyledText {
+                text: root.label
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnSurface
+                Layout.fillWidth: true
+                elide: Text.ElideRight
             }
 
             StyledText {
                 text: root.sublabel
-                font.pixelSize: Appearance.font.pixelSize.smaller
+                font.pixelSize: Appearance.font.pixelSize.smallest || 10
                 color: root.sublabelColor
                 font.features: { "tnum": 1 }
+                Layout.fillWidth: true
+                elide: Text.ElideRight
             }
         }
+
+        StyledProgressBar {
+            Layout.fillWidth: true
+            value: root.value
+            highlightColor: root.usageColor(root.value)
+            valueBarHeight: 6 
+
+        }
     }
+
+    border.width: root.value > 0.9 ? 1.5 : 0
+    border.color: root.value > 0.9 ? Appearance.colors.colError : "transparent"
 }
