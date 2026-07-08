@@ -158,7 +158,7 @@ Item {
                             Layout.fillWidth: true
 
                             StyledText {
-                                text: Quickshell.env("USER") ?? Quickshell.env("LOGNAME") ?? "user"
+                                text: SystemInfo.username
                                 font.pixelSize: Appearance.font.pixelSize.normal
                                 color: Appearance.colors.colOnLayer1
                                 font.weight: Font.Medium
@@ -166,7 +166,6 @@ Item {
 
                             StyledText {
                                 id: distroText
-                                property string cachedDistro: ""
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 color: Appearance.colors.colSubtext
                                 elide: Text.ElideRight
@@ -175,16 +174,7 @@ Item {
                                 text: {
                                     const d = Config.options.profile.descriptionText
                                     if (d === "::uptime::") return Translation.tr("Up • %1").arg(DateTime.uptime)
-                                    return cachedDistro
-                                }
-
-                                Process {
-                                    id: distroProc
-                                    command: ["bash", "-c", "source /etc/os-release && echo $PRETTY_NAME"]
-                                    running: true
-                                    stdout: SplitParser {
-                                        onRead: data => distroText.cachedDistro = data.trim()
-                                    }
+                                    return SystemInfo.distroName
                                 }
                             }
                         }

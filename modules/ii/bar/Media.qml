@@ -251,7 +251,7 @@ Item {
                         Layout.topMargin: 2
 
                         StyledText {
-                            text: Quickshell.env("USER") ?? Quickshell.env("LOGNAME") ?? "user"
+                            text: SystemInfo.username
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: Appearance.colors.colOnSecondaryContainer
                             elide: Text.ElideRight
@@ -266,15 +266,7 @@ Item {
                             elide: Text.ElideRight
                             Layout.rightMargin: 8
                             Layout.maximumWidth: 120
-
-                            Process {
-                                id: distroProc
-                                command: ["bash", "-c", "source /etc/os-release && echo $PRETTY_NAME"]
-                                running: true
-                                stdout: SplitParser {
-                                    onRead: data => distroLabel.text = data.trim()
-                                }
-                            }
+                            text: SystemInfo.distroName
                         }
                     }
                 }
@@ -372,7 +364,7 @@ Item {
                         implicitWidth: 40
                         implicitHeight: 23
                         buttonRadius: root.isPlaying ? Appearance.rounding.normal : 13
-                        colBackground: root.isPlaying ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
+                        colBackground: root.isPlaying ? Appearance.colors.colPrimary : Appearance.colors.colSurfaceContainerLow
                         colBackgroundHover: root.isPlaying ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimaryContainerHover
                         colRipple: root.isPlaying ? Appearance.colors.colPrimaryActive : Appearance.colors.colPrimaryContainerActive
                         downAction: () => root.activePlayer?.togglePlaying()
@@ -396,6 +388,7 @@ Item {
                         colBackgroundHover: Appearance.colors.colPrimaryContainerHover
                         colRipple: Appearance.colors.colPrimaryContainerActive
                         downAction: () => root.activePlayer?.next()
+                        altAction: () => root.activePlayer?.previous()
                         contentItem: MaterialSymbol {
                             anchors.centerIn: parent
                             horizontalAlignment: Text.AlignHCenter

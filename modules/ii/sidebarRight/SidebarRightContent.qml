@@ -210,7 +210,7 @@ Item {
                                 }
 
                                 StyledText {
-                                    text: (Quickshell.env("USER") ?? "user") + "@" + hostname
+                                    text: SystemInfo.username + "@" + hostname
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     font.weight: Font.DemiBold
                                     color: Appearance.colors.colOnLayer1
