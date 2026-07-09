@@ -328,6 +328,8 @@ Singleton {
                 property bool centeredWallpaper: false
                 property string centeredWallpaperShape: "Cookie7Sided"
                 property int centeredWallpaperSize: 400
+                property string centeredWallpaperColor: "primaryContainer"
+                property bool centeredWallpaperOnlyWhenLocked: false
                 property string wallpaperAnimation: "magic"
                 property string thumbnailPath: ""
                 property bool hideWhenFullscreen: true

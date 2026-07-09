@@ -70,6 +70,20 @@ Variants {
         }
     }
 
+    function getColorFromName(name) {
+        switch (name) {
+            case "primary":            return Appearance.colors.colPrimary
+            case "secondary":          return Appearance.colors.colSecondary
+            case "tertiary":           return Appearance.colors.colTertiary
+            case "primaryContainer":   return Appearance.colors.colPrimaryContainer
+            case "secondaryContainer": return Appearance.colors.colSecondaryContainer
+            case "tertiaryContainer":  return Appearance.colors.colTertiaryContainer
+            case "layer0":             return Appearance.colors.colLayer0
+            case "layer1":             return Appearance.colors.colLayer1
+            default:                  return Appearance.colors.colPrimaryContainer
+        }
+    }
+
     PanelWindow {
         id: bgRoot
 
@@ -78,9 +92,10 @@ Variants {
         property string previousWallpaperSource: Config.options.background.wallpaperPath
 
         //centered Wallpaper
-        property bool centeredWallpaperEnabled: Config.options.background.centeredWallpaper
+        property bool centeredWallpaperEnabled: Config.options.background.centeredWallpaper && (!Config.options.background.centeredWallpaperOnlyWhenLocked || GlobalStates.screenLocked)
         property int centeredWallpaperShape: getShapeFromName(Config.options.background.centeredWallpaperShape)
         property int centeredWallpaperSize: Config.options.background.centeredWallpaperSize
+        property color centeredWallpaperColor: root.getColorFromName(Config.options.background.centeredWallpaperColor)
 
         property var shaderList: ["circlePit", "circleSelect", "magic", "Doom", "Peel", "transition", "pixelate", "stripes"]
         property string currentShader: "pixelate"
@@ -272,8 +287,13 @@ Variants {
             Rectangle {
                 id: centeredWallpaperBg
                 anchors.fill: parent
-                visible: bgRoot.centeredWallpaperEnabled
-                color: Appearance.colors.colPrimaryContainer
+                color: bgRoot.centeredWallpaperColor
+                opacity: bgRoot.centeredWallpaperEnabled ? 1 : 0
+                visible: opacity > 0
+
+                Behavior on opacity {
+                    animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+                }
             }
 
             MaterialShape {
@@ -281,9 +301,23 @@ Variants {
                 anchors.centerIn: parent
                 width: bgRoot.centeredWallpaperSize
                 height: bgRoot.centeredWallpaperSize
-                visible: bgRoot.centeredWallpaperEnabled
-                color: Appearance.colors.colPrimaryContainer
+                color: bgRoot.centeredWallpaperColor
                 shape: bgRoot.centeredWallpaperShape
+
+                transformOrigin: Item.Center
+                opacity: bgRoot.centeredWallpaperEnabled ? 1 : 0
+                scale: bgRoot.centeredWallpaperEnabled ? 1 : 0
+                visible: opacity > 0
+
+                Behavior on opacity {
+                    animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+                }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: Appearance.animation.elementMove.duration
+                        easing.type: Easing.InOutCubic
+                    }
+                }
 
                 layer.enabled: true
                 layer.effect: OpacityMask {

@@ -124,6 +124,15 @@ ContentPage {
                             Config.options.background.centeredWallpaper = checked;
                         }
                     }
+                    ConfigSwitch {
+                        Layout.fillWidth: true
+                        buttonIcon: "lock"
+                        text: Translation.tr("Show only when locked")
+                        checked: Config.options.background.centeredWallpaperOnlyWhenLocked
+                        onCheckedChanged: {
+                            Config.options.background.centeredWallpaperOnlyWhenLocked = checked;
+                        }
+                    }
                 }
 
                 ContentSubsection {
@@ -160,6 +169,15 @@ ContentPage {
                         stopIndicatorValues: [400]
                         onValueChanged: {
                             Config.options.background.centeredWallpaperSize = value;
+                        }
+                    }
+                    ColorSelectionArray {
+                        visible: Config.options.background.centeredWallpaper
+                        icon: "palette"
+                        text: Translation.tr("Color")
+                        currentValue: Config.options.background.centeredWallpaperColor
+                        onSelected: newValue => {
+                            Config.options.background.centeredWallpaperColor = newValue
                         }
                     }
                 }
