@@ -164,7 +164,7 @@ ContentPage {
                         value: Config.options.background.centeredWallpaperSize
                         usePercentTooltip: false
                         buttonIcon: "aspect_ratio"
-                        from: 100
+                        from: 400
                         to: 800
                         stopIndicatorValues: [400]
                         onValueChanged: {
