@@ -174,7 +174,7 @@ ContentPage {
                     ColorSelectionArray {
                         visible: Config.options.background.centeredWallpaper
                         icon: "palette"
-                        text: Translation.tr("Color")
+                        text: Translation.tr("Background Color")
                         currentValue: Config.options.background.centeredWallpaperColor
                         onSelected: newValue => {
                             Config.options.background.centeredWallpaperColor = newValue
