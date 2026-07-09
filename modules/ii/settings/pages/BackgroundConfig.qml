@@ -148,6 +148,7 @@ ContentPage {
                 }
                 GroupedList {
                     Layout.topMargin: 10
+                    visible: Config.options.background.centeredWallpaper
                     ConfigSlider {
                         visible: Config.options.background.centeredWallpaper
                         text: Translation.tr("Size")
