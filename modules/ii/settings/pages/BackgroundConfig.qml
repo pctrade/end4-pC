@@ -132,6 +132,7 @@ ContentPage {
                         onCheckedChanged: {
                             Config.options.background.centeredWallpaperOnlyWhenLocked = checked;
                         }
+                        enabled: Config.options.background.centeredWallpaper
                     }
                 }
 
@@ -158,6 +159,15 @@ ContentPage {
                 GroupedList {
                     Layout.topMargin: 10
                     visible: Config.options.background.centeredWallpaper
+                    ColorSelectionArray {
+                        visible: Config.options.background.centeredWallpaper
+                        icon: "palette"
+                        text: Translation.tr("Background Color")
+                        currentValue: Config.options.background.centeredWallpaperColor
+                        onSelected: newValue => {
+                            Config.options.background.centeredWallpaperColor = newValue
+                        }
+                    }
                     ConfigSlider {
                         visible: Config.options.background.centeredWallpaper
                         text: Translation.tr("Size")
@@ -169,15 +179,6 @@ ContentPage {
                         stopIndicatorValues: [400]
                         onValueChanged: {
                             Config.options.background.centeredWallpaperSize = value;
-                        }
-                    }
-                    ColorSelectionArray {
-                        visible: Config.options.background.centeredWallpaper
-                        icon: "palette"
-                        text: Translation.tr("Background Color")
-                        currentValue: Config.options.background.centeredWallpaperColor
-                        onSelected: newValue => {
-                            Config.options.background.centeredWallpaperColor = newValue
                         }
                     }
                 }
