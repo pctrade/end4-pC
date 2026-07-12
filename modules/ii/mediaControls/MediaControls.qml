@@ -39,6 +39,14 @@ Scope {
         return "center"
     }
 
+    readonly property bool barVertical: Config.options.bar.vertical
+    readonly property string barEdge: {
+        if (!barVertical) return Config.options.bar.bottom ? "bottom" : "top"
+        return Config.options.bar.bottom ? "right" : "left"
+    }
+    readonly property real gap: Config.options.bar.cornerStyle === 3 ? Appearance.sizes.hyprlandGapsOut : 0
+    readonly property real barThickness: barVertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
+
     function filterDuplicatePlayers(players) {
         let filtered = [];
         let used = new Set();
@@ -111,34 +119,23 @@ Scope {
             WlrLayershell.namespace: "quickshell:mediaControls"
 
             anchors {
-                top: !Config.options.bar.bottom || Config.options.bar.vertical
-                bottom: Config.options.bar.bottom && !Config.options.bar.vertical
-                left: !(Config.options.bar.vertical && Config.options.bar.bottom)
-                right: Config.options.bar.vertical && Config.options.bar.bottom
+                top: true
+                left: true
             }
             margins {
-                top: Config.options.bar.vertical
-                    ? (!Config.options.bar.bottom
-                        ? (root.mediaPosition === "left" ? Appearance.sizes.hyprlandGapsOut
-                            : root.mediaPosition === "right" ? panelWindow.screen.height - playerColumnLayout.implicitHeight - Appearance.sizes.hyprlandGapsOut
-                            : (panelWindow.screen.height / 2) - (widgetHeight / 2))
-                        : ((panelWindow.screen.height / 2) - widgetHeight * 1.5))
-                    : Config.options.bar.cornerStyle === 3 ? Appearance.sizes.barHeight + Appearance.sizes.hyprlandGapsOut : Appearance.sizes.barHeight - Appearance.sizes.hyprlandGapsOut
-                bottom: Appearance.sizes.barHeight
-                left: {
-                    if (Config.options.bar.vertical) {
-                        if (!Config.options.bar.bottom) return Appearance.sizes.verticalBarWidth + Appearance.sizes.hyprlandGapsOut
-                        return (panelWindow.screen.width / 2) - (widgetWidth / 2)
-                    }
-                    if (root.mediaPosition === "left") return Appearance.sizes.hyprlandGapsOut - 5
-                    if (root.mediaPosition === "center") return (panelWindow.screen.width / 2) - (widgetWidth / 2)
-                    if (root.mediaPosition === "right") return panelWindow.screen.width - widgetWidth - Appearance.sizes.hyprlandGapsOut
-                    return (panelWindow.screen.width / 2) - (widgetWidth / 2)
+                top: {
+                    if (root.barEdge === "top") return root.barThickness + root.gap
+                    if (root.barEdge === "bottom") return panelWindow.screen.height - root.barThickness - root.gap - playerColumnLayout.implicitHeight
+                    if (root.mediaPosition === "left") return root.gap
+                    if (root.mediaPosition === "right") return panelWindow.screen.height - playerColumnLayout.implicitHeight - root.gap
+                    return (panelWindow.screen.height - playerColumnLayout.implicitHeight) / 2
                 }
-                right: {
-                    if (Config.options.bar.vertical && Config.options.bar.bottom)
-                        return Appearance.sizes.verticalBarWidth + Appearance.sizes.hyprlandGapsOut
-                    return Appearance.sizes.barHeight
+                left: {
+                    if (root.barEdge === "left") return root.barThickness + root.gap
+                    if (root.barEdge === "right") return panelWindow.screen.width - root.barThickness - root.gap - root.widgetWidth
+                    if (root.mediaPosition === "left") return root.gap
+                    if (root.mediaPosition === "right") return panelWindow.screen.width - root.widgetWidth - root.gap
+                    return (panelWindow.screen.width - root.widgetWidth) / 2
                 }
             }
 
