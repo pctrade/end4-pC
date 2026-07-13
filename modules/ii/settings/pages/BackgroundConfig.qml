@@ -120,8 +120,8 @@ ContentPage {
                         buttonIcon: "check"
                         text: Translation.tr("Enable")
                         checked: Config.options.background.centeredWallpaper
-                        onCheckedChanged: {
-                            Config.options.background.centeredWallpaper = checked;
+                        onClicked: {
+                            Config.options.background.centeredWallpaper = !Config.options.background.centeredWallpaper
                         }
                     }
                     ConfigSwitch {
