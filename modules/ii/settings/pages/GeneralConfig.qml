@@ -338,6 +338,15 @@ ContentPage {
                 }
 
                 ConfigSwitch {
+                    buttonIcon: "music_note"
+                    text: Translation.tr('Media Player')
+                    checked: Config.options.sidebar.mediaPlayer
+                    onCheckedChanged: {
+                        Config.options.sidebar.mediaPlayer = checked;
+                    }
+                }
+
+                ConfigSwitch {
                     buttonIcon: "memory"
                     text: Translation.tr('Keep right sidebar loaded')
                     checked: Config.options.sidebar.keepRightSidebarLoaded

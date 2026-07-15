@@ -3,6 +3,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import Quickshell.Services.Mpris
 import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Controls
@@ -33,6 +34,19 @@ Item {
     property bool editMode: false
     property bool showIconPickerDialog: false
     property string hostname: "arch"
+
+    readonly property MprisPlayer activePlayer: MprisController.activePlayer
+    readonly property var realPlayers: MprisController.players
+    readonly property var meaningfulPlayers: {
+        const preferred = Config.options.bar.media.preferredPlayer.trim().toLowerCase()
+        if (preferred.length === 0) return filterDuplicatePlayers(realPlayers)
+        const filtered = realPlayers.filter(p =>
+            (p.identity ?? "").toLowerCase().includes(preferred) ||
+            (p.desktopEntry ?? "").toLowerCase().includes(preferred)
+        )
+        if (filtered.length === 0) return filterDuplicatePlayers(realPlayers)
+        return filterDuplicatePlayers(filtered)
+    }
 
     Connections {
         target: GlobalStates
@@ -306,6 +320,22 @@ Item {
                     return true;
                 }
                 sourceComponent: QuickSliders {}
+            }
+
+            Loader {
+                active: root.activePlayer !== null && GlobalStates.sidebarRightOpen && Config.options.sidebar.mediaPlayer
+                visible: active
+                Layout.fillWidth: true
+                Layout.topMargin: -10
+                Layout.bottomMargin: -10
+                Layout.leftMargin: -10
+                Layout.rightMargin: -10
+                sourceComponent: Player {
+                    player: root.activePlayer
+                    visualizerPoints: GlobalStates.visualizerPoints
+                    implicitHeight: 160
+                    radius: Appearance.rounding.normal
+                }
             }
 
             CenterWidgetGroup {

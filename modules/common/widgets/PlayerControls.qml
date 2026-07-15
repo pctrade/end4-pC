@@ -1,4 +1,5 @@
 pragma ComponentBehavior: Bound
+import qs
 import qs.modules.common
 import qs.modules.common.models
 import qs.modules.common.widgets
@@ -177,6 +178,7 @@ Item {
 
                     TrackChangeButton {
                         iconName: "lyrics"
+                        visible: !GlobalStates.sidebarRightOpen
                         downAction: () => root.toggleLyrics()
                     }
                 }

@@ -637,6 +637,7 @@ Singleton {
 
             property JsonObject sidebar: JsonObject {
                 property bool banner: false
+                property bool mediaPlayer: false
                 property string bannerImage: ""
                 property bool keepRightSidebarLoaded: true
                 property JsonObject translator: JsonObject {
