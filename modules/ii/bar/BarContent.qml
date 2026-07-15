@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.UPower
 import Quickshell.Hyprland
+import Quickshell.Services.SystemTray
 import qs
 import qs.services
 import qs.modules.common
@@ -17,6 +18,17 @@ Item {
     readonly property bool isMaterial: Config.options.bar.cornerStyle === 3
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
+
+    readonly property bool trayHasItems: SystemTray.items.values.length > 0
+
+    function filterLayout(layout) {
+        if (trayHasItems) return layout
+        return layout.filter(name => name !== "sysTray")
+    }
+
+    readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.layouts.leftLayout)
+    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.layouts.middleLayout)
+    readonly property var effectiveRightLayout:  filterLayout(Config.options.bar.layouts.rightLayout)
 
     function getWidgetUrl(name) {
         if (!name) return "";
@@ -70,8 +82,8 @@ Item {
 
     // center-only
     readonly property bool centerOnly: !root.isMaterial
-        && Config.options.bar.layouts.leftLayout.length === 0
-        && Config.options.bar.layouts.rightLayout.length === 0
+        && root.effectiveLeftLayout.length === 0
+        && root.effectiveRightLayout.length === 0
 
     Rectangle {
         id: centerPill
@@ -120,7 +132,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: Config.options.bar.layouts.leftLayout
+                        model: root.effectiveLeftLayout
                         delegate: leftMaterialGroupDelegate
                     }
 
@@ -129,7 +141,7 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            totalCount: Config.options.bar.layouts.leftLayout.length
+                            totalCount: root.effectiveLeftLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -137,7 +149,7 @@ Item {
                                 source: root.getWidgetUrl(modelData)
                                 onLoaded: {
                                     if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.leftLayout, index)
+                                        item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
                                 }
                             }
                         }
@@ -153,7 +165,7 @@ Item {
                 spacing: Config.options.bar.borderless === "transparent" ? -7 : 2
 
                 Repeater {
-                    model: Config.options.bar.layouts.leftLayout
+                    model: root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
                 }
 
@@ -162,13 +174,13 @@ Item {
                     BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
-                        totalCount: Config.options.bar.layouts.leftLayout.length
+                        totalCount: root.effectiveLeftLayout.length
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
                                 if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.leftLayout, index)
+                                    item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
                             }
                         }
                     }
@@ -183,7 +195,7 @@ Item {
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
                             if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.leftLayout, index)
+                                item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
                         }
                     }
                 }
@@ -213,7 +225,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: Config.options.bar.layouts.middleLayout
+                        model: root.effectiveMiddleLayout
                         delegate: middleMaterialGroupDelegate
                     }
 
@@ -222,7 +234,7 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            totalCount: Config.options.bar.layouts.middleLayout.length
+                            totalCount: root.effectiveMiddleLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -230,7 +242,7 @@ Item {
                                 source: root.getWidgetUrl(modelData)
                                 onLoaded: {
                                     if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.middleLayout, index)
+                                        item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
                                 }
                             }
                         }
@@ -246,7 +258,7 @@ Item {
                 spacing: Config.options.bar.borderless === "transparent" ? -7 : 2
 
                 Repeater {
-                    model: Config.options.bar.layouts.middleLayout
+                    model: root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
                 }
 
@@ -255,13 +267,13 @@ Item {
                     BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
-                        totalCount: Config.options.bar.layouts.middleLayout.length
+                        totalCount: root.effectiveMiddleLayout.length
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
                                 if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.middleLayout, index)
+                                    item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
                             }
                         }
                     }
@@ -275,7 +287,7 @@ Item {
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
                             if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.middleLayout, index)
+                                item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
                         }
                     }
                 }
@@ -306,7 +318,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: Config.options.bar.layouts.rightLayout
+                        model: root.effectiveRightLayout
                         delegate: rightMaterialGroupDelegate
                     }
 
@@ -315,7 +327,7 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            totalCount: Config.options.bar.layouts.rightLayout.length
+                            totalCount: root.effectiveRightLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -323,7 +335,7 @@ Item {
                                 source: root.getWidgetUrl(modelData)
                                 onLoaded: {
                                     if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.rightLayout, index)
+                                        item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
                                 }
                             }
                         }
@@ -339,7 +351,7 @@ Item {
                 spacing: Config.options.bar.borderless === "transparent" ? -7 : 2
 
                 Repeater {
-                    model: Config.options.bar.layouts.rightLayout
+                    model: root.effectiveRightLayout
                     delegate: rightBarGroupDelegate
                 }
 
@@ -348,13 +360,13 @@ Item {
                     BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
-                        totalCount: Config.options.bar.layouts.rightLayout.length
+                        totalCount: root.effectiveRightLayout.length
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
                                 if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.rightLayout, index)
+                                    item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
                             }
                         }
                     }
@@ -368,7 +380,7 @@ Item {
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
                             if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(Config.options.bar.layouts.rightLayout, index)
+                                item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
                         }
                     }
                 }
