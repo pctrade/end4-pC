@@ -342,6 +342,13 @@ Singleton {
                         property real y: 500
                     }
 
+                    property JsonObject devices: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 800
+                        property real y: 100
+                    }
+
                     property JsonObject media: JsonObject {
                         property bool enable: false
                         property bool showControls: true

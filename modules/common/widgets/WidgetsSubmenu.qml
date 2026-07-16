@@ -24,6 +24,7 @@ Item {
         { key: "userCard",    icon: "person",             name: Translation.tr("User Card") },
         { key: "notes",       icon: "note_stack_add",     name: Translation.tr("Notes") },
         { key: "github",      icon: "code",               name: Translation.tr("GitHub Heatmap") },
+        { key: "devices",     icon: "devices",            name: Translation.tr("Connected Devices") },
     ]
 
     Rectangle {

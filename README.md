@@ -49,7 +49,7 @@ Customized and maintained by **pctrade**
 
 ```bash
 cd ~/.config/quickshell/
-git clone https://github.com/pctrade/end4-pC.git
+git clone https://github.com/rubberpirate/end4-enhanced
 killall qs 2>/dev/null; qs -c end4-pC > /dev/null 2>&1 & disown
 ```
 
