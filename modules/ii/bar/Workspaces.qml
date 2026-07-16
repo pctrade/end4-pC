@@ -376,10 +376,42 @@ ButtonMouseArea {
         FadeLoader {
             shown: !wsNum.showingNumbers
             anchors.centerIn: parent
-            Circle {
+            Loader {
                 anchors.centerIn: parent
-                diameter: root.workspaceButtonWidth * 0.18
-                color: wsNum.contentColor
+                sourceComponent: (Config.options?.bar.workspaces.indicatorStyle ?? "dot") === "icon" ? iconComponent : dotComponent
+
+                Component {
+                    id: dotComponent
+                    Circle {
+                        anchors.centerIn: parent
+                        diameter: root.workspaceButtonWidth * 0.18
+                        color: wsNum.contentColor
+                    }
+                }
+
+                Component {
+                    id: iconComponent
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        iconSize: root.workspaceButtonWidth * 0.50
+                        color: wsNum.contentColor
+                        text: {
+                            switch (wsNum.wsId) {
+                                case 1:  return "code"
+                                case 2:  return "public"
+                                case 3:  return "music_note"
+                                case 4:  return "edit_square"
+                                case 5:  return "image"
+                                case 6:  return "forum"
+                                case 7:  return "browser_updated"
+                                case 8:  return "finance_mode"
+                                case 9:  return "monitor"
+                                case 10: return "analytics"
+                                default: return "circle"
+                            }
+                        }
+                    }
+                }
             }
         }
         FadeLoader {
