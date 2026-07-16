@@ -1,0 +1,727 @@
+{
+    "ai": {
+        "extraModels": [
+            {
+                "api_format": "openai",
+                "description": "This is a custom model. Edit the config to add more! | Anyway, this is DeepSeek R1 Distill LLaMA 70B",
+                "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "homepage": "https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b:free",
+                "icon": "spark-symbolic",
+                "key_get_link": "https://openrouter.ai/settings/keys",
+                "key_id": "openrouter",
+                "model": "deepseek/deepseek-r1-distill-llama-70b:free",
+                "name": "Custom: DS R1 Dstl. LLaMA 70B",
+                "requires_key": true
+            }
+        ],
+        "systemPrompt": "## Style\n- Use casual tone, don't be formal!\n- Always be brief and to the point, unless asked otherwise\n- Don't repeat the user's question\n- Be approachable: Avoid using overly complicated, domain-specific terms and provide analogies when asked to explain a concept\n\n## Context (ignore when irrelevant)\n- You are a helpful and inspiring sidebar assistant on a {DISTRO} Linux system\n- Desktop environment: {DE}\n- Current date & time: {DATETIME}\n- Focused app: {WINDOWCLASS}\n\n## Presentation\n- Use Markdown features in your response: \n  - **Bold** text to **highlight keywords** in your response\n  - **Split long information into small sections** with h2 headers and a relevant emoji at the start of it (for example `## 🐧 Linux`). Bullet points are preferred over long paragraphs, unless you're offering writing support or instructed otherwise by the user.\n- Asked to compare different options? You should firstly use a table to compare the main aspects, then elaborate or include relevant comments from online forums *after* the table. Make sure to provide a final recommendation for the user's use case!\n- Use LaTeX formatting for mathematical and scientific notations whenever appropriate. Enclose all LaTeX '$$' delimiters. NEVER generate LaTeX code in a latex block unless the user explicitly asks for it. DO NOT use LaTeX for regular documents (resumes, letters, essays, CVs, etc.).\n\nThanks!\n",
+        "tool": "functions"
+    },
+    "appearance": {
+        "extraBackgroundTint": true,
+        "fakeScreenRounding": 2,
+        "fonts": {
+            "expressive": "Space Grotesk",
+            "iconNerd": "JetBrains Mono NF",
+            "main": "Google Sans Flex",
+            "monospace": "JetBrains Mono NF",
+            "numbers": "Google Sans Flex",
+            "reading": "Readex Pro",
+            "title": "Google Sans Flex"
+        },
+        "palette": {
+            "accentColor": "",
+            "type": "auto"
+        },
+        "transparency": {
+            "automatic": true,
+            "backgroundTransparency": 0.11,
+            "contentTransparency": 0.57,
+            "enable": true
+        },
+        "wallpaperTheming": {
+            "enableAppsAndShell": true,
+            "enableQtApps": true,
+            "enableTerminal": true,
+            "terminalGenerationProps": {
+                "forceDarkMode": false,
+                "harmonizeThreshold": 100,
+                "harmony": 0.6,
+                "termFgBoost": 0.35
+            }
+        }
+    },
+    "apps": {
+        "bluetooth": "kcmshell6 kcm_bluetooth",
+        "changePassword": "kitty -1 --hold=yes fish -i -c 'passwd'",
+        "manageUser": "kcmshell6 kcm_users",
+        "network": "kcmshell6 kcm_networkmanagement",
+        "networkEthernet": "kcmshell6 kcm_networkmanagement",
+        "taskManager": "plasma-systemmonitor --page-name Processes",
+        "terminal": "kitty -1",
+        "update": "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'",
+        "volumeMixer": "~/.config/hypr/hyprland/scripts/launch_first_available.sh \"pavucontrol-qt\" \"pavucontrol\""
+    },
+    "audio": {
+        "protection": {
+            "enable": false,
+            "maxAllowed": 99,
+            "maxAllowedIncrease": 10
+        }
+    },
+    "background": {
+        "centeredWallpaper": true,
+        "centeredWallpaperColor": "layer0",
+        "centeredWallpaperOnlyWhenLocked": true,
+        "centeredWallpaperShape": "Cookie9Sided",
+        "centeredWallpaperSize": 800,
+        "hideWhenFullscreen": true,
+        "parallax": {
+            "autoVertical": false,
+            "enableSidebar": false,
+            "enableWorkspace": false,
+            "vertical": false,
+            "widgetsFactor": 1.2,
+            "workspaceZoom": 1
+        },
+        "screenList": [
+        ],
+        "thumbnailPath": "",
+        "wallpaperAnimation": "pixelate",
+        "wallpaperPath": "/home/rubberpirate/Pictures/Wallpapers/138032536_p0.jpg",
+        "widgets": {
+            "calendar": {
+                "enable": false,
+                "placementStrategy": "free",
+                "sizeMode": "2x2",
+                "x": 400,
+                "y": 100
+            },
+            "clock": {
+                "color": "",
+                "cookie": {
+                    "aiStyling": false,
+                    "constantlyRotate": false,
+                    "dateInClock": true,
+                    "dateStyle": "bubble",
+                    "dialNumberStyle": "full",
+                    "hourHandStyle": "fill",
+                    "hourMarks": false,
+                    "minuteHandStyle": "medium",
+                    "secondHandStyle": "dot",
+                    "sides": 14,
+                    "timeIndicators": true,
+                    "useSineCookie": false
+                },
+                "digital": {
+                    "adaptiveAlignment": true,
+                    "animateChange": true,
+                    "font": {
+                        "family": "Google Sans Flex",
+                        "roundness": 33.2642365456821,
+                        "size": 102.08414815394244,
+                        "weight": 1000,
+                        "width": 100
+                    },
+                    "showDate": true,
+                    "vertical": true
+                },
+                "enable": true,
+                "placementStrategy": "free",
+                "quote": {
+                    "enable": true,
+                    "followClock": true,
+                    "text": "I win just bcs i win`"
+                },
+                "showOnlyWhenLocked": false,
+                "style": "digital",
+                "styleLocked": "cookie",
+                "x": 312,
+                "y": 24
+            },
+            "customImage": {
+                "enable": true,
+                "path": "/home/rubberpirate/Pictures/1780239448198.jpg",
+                "placementStrategy": "free",
+                "shape": "Square",
+                "size": 234.5703125,
+                "x": 36,
+                "y": 36
+            },
+            "images": {
+                "enable": false,
+                "placementStrategy": "free",
+                "x": 400,
+                "y": 100
+            },
+            "media": {
+                "backgroundShape": "Cookie4Sided",
+                "enable": false,
+                "placementStrategy": "free",
+                "showControls": true,
+                "showLyrics": false,
+                "showTitles": true,
+                "x": 744,
+                "y": 72
+            },
+            "resources": {
+                "enable": true,
+                "placementStrategy": "free",
+                "vertical": true,
+                "x": 1776,
+                "y": 24
+            },
+            "userCard": {
+                "enable": true,
+                "placementStrategy": "free",
+                "x": 1464,
+                "y": 96
+            },
+            "visualizer": {
+                "enable": true,
+                "placementStrategy": "free",
+                "x": 0,
+                "y": 840
+            },
+            "weather": {
+                "enable": true,
+                "placementStrategy": "free",
+                "sizeMode": "1x3",
+                "x": 36,
+                "y": 300
+            },
+            "worldClock": {
+                "enable": false,
+                "placementStrategy": "free",
+                "sizeMode": "2x2",
+                "timezones": [
+                    "Australia/Sydney",
+                    "Asia/Tokyo",
+                    "Europe/London",
+                    "America/New_York"
+                ],
+                "x": 400,
+                "y": 100
+            }
+        },
+        "widgetsLocked": true
+    },
+    "bar": {
+        "autoHide": {
+            "enable": false,
+            "hoverRegionWidth": 2,
+            "pushWindows": false,
+            "showWhenPressingSuper": {
+                "delay": 140,
+                "enable": true
+            }
+        },
+        "borderless": "transparent",
+        "bottom": true,
+        "cornerStyle": 3,
+        "floatStyleShadow": true,
+        "indicators": {
+            "notifications": {
+                "showUnreadCount": true
+            }
+        },
+        "layouts": {
+            "leftLayout": [
+                "clockWidget",
+                "weatherBar",
+                "media"
+            ],
+            "middleLayout": [
+                "visualizer",
+                "workspaces"
+            ],
+            "rightLayout": [
+                "resources",
+                "sysTray",
+                "divisor",
+                "systemIcons",
+                "batteryIndicator",
+                "powerButton"
+            ]
+        },
+        "media": {
+            "alwaysVisible": false,
+            "maxWidth": 280,
+            "minWidth": 100,
+            "onlyTitle": false,
+            "preferredPlayer": "firefox"
+        },
+        "resources": {
+            "alwaysShowCpu": true,
+            "alwaysShowCpuTemp": false,
+            "alwaysShowDisk": false,
+            "alwaysShowRam": true,
+            "alwaysShowSwap": true,
+            "cpuWarningThreshold": 90,
+            "memoryWarningThreshold": 95,
+            "showValue": true,
+            "style": "filled",
+            "swapWarningThreshold": 85
+        },
+        "screenList": [
+        ],
+        "showBackground": true,
+        "tooltips": {
+            "clickToShow": false
+        },
+        "topLeftIcon": "spark",
+        "utilButtons": {
+            "isRecording": false,
+            "showColorPicker": false,
+            "showDarkModeToggle": true,
+            "showKeyboardToggle": true,
+            "showMicToggle": true,
+            "showPerformanceProfileToggle": false,
+            "showScreenRecord": false,
+            "showScreenSnip": true,
+            "showWallpaperToggle": false
+        },
+        "verbose": true,
+        "vertical": false,
+        "weather": {
+            "city": "",
+            "enable": false,
+            "enableGPS": true,
+            "fetchInterval": 10,
+            "useUSCS": false
+        },
+        "workspaces": {
+            "alwaysShowNumbers": true,
+            "indicatorStyle": "dot",
+            "monochromeIcons": false,
+            "numberMap": [
+                "1",
+                "2"
+            ],
+            "showAppIcons": true,
+            "showNumberDelay": 300,
+            "shown": 10,
+            "useNerdFont": false
+        }
+    },
+    "battery": {
+        "automaticSuspend": true,
+        "critical": 10,
+        "full": 100,
+        "low": 30,
+        "suspend": 3
+    },
+    "calendar": {
+        "locale": "en-GB"
+    },
+    "conflictKiller": {
+        "autoKillNotificationDaemons": false,
+        "autoKillTrays": false
+    },
+    "crosshair": {
+        "code": "0;P;d;1;0l;10;0o;2;1b;0"
+    },
+    "custom": {
+        "colorizeIcon": true,
+        "distroIcon": ""
+    },
+    "dock": {
+        "enable": false,
+        "height": 60,
+        "hoverRegionHeight": 2,
+        "hoverToReveal": true,
+        "ignoredAppRegexes": [
+        ],
+        "monochromeIcons": true,
+        "pinnedApps": [
+            "org.kde.dolphin",
+            "kitty"
+        ],
+        "pinnedOnStartup": false,
+        "showAppsButton": true,
+        "showBackground": true,
+        "showMedia": true,
+        "showPinButton": true
+    },
+    "hacks": {
+        "arbitraryRaceConditionDelay": 20
+    },
+    "hyprland": {
+        "animations": {
+            "animation": "fast",
+            "enable": true
+        },
+        "autostartApps": {
+            "apps": [
+            ],
+            "enable": false
+        },
+        "decoration": {
+            "activeOpacity": 1,
+            "blur": {
+                "enabled": true,
+                "passes": 3,
+                "size": 1
+            },
+            "inactiveOpacity": 0.9,
+            "rounding": 22,
+            "shadow": {
+                "enabled": true,
+                "range": 4
+            }
+        },
+        "general": {
+            "borderSize": 1,
+            "gapsIn": 2,
+            "gapsOut": 5,
+            "layout": "dwindle"
+        },
+        "input": {
+            "followMouse": 1,
+            "kbLayout": "us",
+            "numlock": true,
+            "repeatDelay": 250,
+            "repeatRate": 35,
+            "touchpad": {
+                "clickfingerBehavior": false,
+                "disableWhileTyping": true,
+                "naturalScroll": true,
+                "scrollFactor": 0.7
+            }
+        }
+    },
+    "interactions": {
+        "deadPixelWorkaround": {
+            "enable": false
+        },
+        "scrolling": {
+            "fasterTouchpadScroll": false,
+            "mouseScrollDeltaThreshold": 120,
+            "mouseScrollFactor": 120,
+            "touchpadScrollFactor": 450
+        }
+    },
+    "language": {
+        "translator": {
+            "engine": "auto",
+            "sourceLanguage": "auto",
+            "targetLanguage": "auto"
+        },
+        "ui": "auto"
+    },
+    "launcher": {
+        "pinnedApps": [
+            "org.kde.dolphin",
+            "kitty",
+            "cmake-gui"
+        ]
+    },
+    "light": {
+        "antiFlashbang": {
+            "enable": false
+        },
+        "night": {
+            "automatic": false,
+            "colorTemperature": 5000,
+            "from": "19:00",
+            "to": "06:30"
+        }
+    },
+    "lock": {
+        "blur": {
+            "enable": true,
+            "extraZoom": 1.1,
+            "radius": 100,
+            "size": 20
+        },
+        "centerClock": true,
+        "launchOnStartup": false,
+        "materialShapeChars": true,
+        "security": {
+            "requirePasswordToPower": false,
+            "unlockKeyring": true
+        },
+        "showLockedText": true,
+        "showMedia": true,
+        "showWidgets": true,
+        "useHyprlock": false
+    },
+    "media": {
+        "filterDuplicatePlayers": true
+    },
+    "musicRecognition": {
+        "interval": 4,
+        "timeout": 16
+    },
+    "networking": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+    },
+    "notifications": {
+        "timeout": 7000
+    },
+    "osd": {
+        "timeout": 1000
+    },
+    "osk": {
+        "layout": "qwerty_full",
+        "pinnedOnStartup": false
+    },
+    "overlay": {
+        "clickthroughOpacity": 0.8,
+        "darkenScreen": true,
+        "floatingImage": {
+            "imageSource": "https://media.tenor.com/H5U5bJzj3oAAAAAi/kukuru.gif",
+            "scale": 0.5
+        },
+        "openingZoomAnimation": true
+    },
+    "overview": {
+        "centerIcons": true,
+        "columns": 4,
+        "enable": true,
+        "orderBottomUp": false,
+        "orderRightLeft": false,
+        "rows": 2,
+        "scale": 0.18,
+        "style": "default"
+    },
+    "panelFamily": "ii",
+    "policies": {
+        "ai": 1,
+        "weeb": 1
+    },
+    "profile": {
+        "avatarPath": "",
+        "avatarPicture": "",
+        "descriptionText": "::distro::"
+    },
+    "regionSelector": {
+        "annotation": {
+            "useSatty": false
+        },
+        "circle": {
+            "padding": 10,
+            "strokeWidth": 6
+        },
+        "rect": {
+            "showAimLines": true
+        },
+        "targetRegions": {
+            "content": true,
+            "contentRegionOpacity": 0.8,
+            "layers": false,
+            "opacity": 0.3,
+            "selectionPadding": 5,
+            "showLabel": false,
+            "windows": true
+        }
+    },
+    "resources": {
+        "historyLength": 60,
+        "updateInterval": 3000
+    },
+    "screenRecord": {
+        "savePath": "/home/rubberpirate/Videos"
+    },
+    "screenSnip": {
+        "savePath": ""
+    },
+    "search": {
+        "engineBaseUrl": "https://www.google.com/search?q=",
+        "excludedSites": [
+            "quora.com",
+            "facebook.com"
+        ],
+        "imageSearch": {
+            "imageSearchEngineBaseUrl": "https://lens.google.com/uploadbyurl?url=",
+            "useCircleSelection": false
+        },
+        "nonAppResultDelay": 30,
+        "prefix": {
+            "action": "/",
+            "app": ">",
+            "clipboard": ";",
+            "emojis": ":",
+            "keybinds": "<",
+            "math": "=",
+            "shellCommand": "$",
+            "showDefaultActionsWithoutPrefix": true,
+            "symbols": ".",
+            "webSearch": "?"
+        },
+        "sloppy": false
+    },
+    "sidebar": {
+        "ai": {
+            "textFadeIn": false
+        },
+        "banner": true,
+        "bannerImage": "/home/rubberpirate/Pictures/IMG_20260602_183959.jpg",
+        "booru": {
+            "allowNsfw": false,
+            "defaultProvider": "yandere",
+            "limit": 20,
+            "zerochan": {
+                "username": "[unset]"
+            }
+        },
+        "cornerOpen": {
+            "bottom": false,
+            "clickless": false,
+            "clicklessCornerEnd": true,
+            "clicklessCornerVerticalOffset": 1,
+            "cornerRegionHeight": 5,
+            "cornerRegionWidth": 250,
+            "enable": true,
+            "valueScroll": true,
+            "visualize": false
+        },
+        "keepRightSidebarLoaded": true,
+        "media": {
+            "artColors": true,
+            "enable": true
+        },
+        "mediaPlayer": false,
+        "quickSliders": {
+            "enable": true,
+            "showBrightness": true,
+            "showMic": false,
+            "showVolume": true
+        },
+        "quickToggles": {
+            "android": {
+                "columns": 5,
+                "toggles": [
+                    {
+                        "size": 2,
+                        "type": "network"
+                    },
+                    {
+                        "size": 1,
+                        "type": "idleInhibitor"
+                    },
+                    {
+                        "size": 1,
+                        "type": "cloudflareWarp"
+                    },
+                    {
+                        "size": 1,
+                        "type": "gameMode"
+                    },
+                    {
+                        "size": 2,
+                        "type": "bluetooth"
+                    },
+                    {
+                        "size": 1,
+                        "type": "mic"
+                    },
+                    {
+                        "size": 1,
+                        "type": "audio"
+                    },
+                    {
+                        "size": 1,
+                        "type": "notifications"
+                    }
+                ]
+            },
+            "style": "android"
+        },
+        "translator": {
+            "delay": 300,
+            "enable": false
+        }
+    },
+    "sounds": {
+        "battery": true,
+        "pomodoro": false,
+        "theme": "freedesktop"
+    },
+    "time": {
+        "dateFormat": "ddd, dd/MM",
+        "dateWithYearFormat": "dd/MM/yyyy",
+        "format": "h:mm ap",
+        "pomodoro": {
+            "breakTime": 300,
+            "cyclesBeforeLongBreak": 4,
+            "focus": 1500,
+            "longBreak": 900
+        },
+        "secondPrecision": false,
+        "shortDateFormat": "dd/MM"
+    },
+    "tray": {
+        "filterPassive": true,
+        "invertPinnedItems": true,
+        "monochromeIcons": true,
+        "pinnedItems": [
+            "Fcitx"
+        ],
+        "showItemId": false
+    },
+    "updates": {
+        "adviseUpdateThreshold": 75,
+        "checkInterval": 120,
+        "enableCheck": true,
+        "stronglyAdviseUpdateThreshold": 200
+    },
+    "wallpaperSelector": {
+        "changeInterval": 0,
+        "closeAfterSelection": true,
+        "columns": 4,
+        "showBlurBackground": false,
+        "showHomePath": true,
+        "showSearchbar": true,
+        "useSystemFileDialog": false,
+        "userPath": ""
+    },
+    "windows": {
+        "centerTitle": true,
+        "showTitlebar": true
+    },
+    "workSafety": {
+        "enable": {
+            "clipboard": false,
+            "wallpaper": false
+        },
+        "triggerCondition": {
+            "fileKeywords": [
+                "anime",
+                "booru",
+                "ecchi",
+                "hentai",
+                "yande.re",
+                "konachan",
+                "breast",
+                "nipples",
+                "pussy",
+                "nsfw",
+                "spoiler",
+                "girl"
+            ],
+            "linkKeywords": [
+                "hentai",
+                "porn",
+                "sukebei",
+                "hitomi.la",
+                "rule34",
+                "gelbooru",
+                "fanbox",
+                "dlsite"
+            ],
+            "networkNameKeywords": [
+                "airport",
+                "cafe",
+                "college",
+                "company",
+                "eduroam",
+                "free",
+                "guest",
+                "public",
+                "school",
+                "university"
+            ]
+        }
+    }
+}

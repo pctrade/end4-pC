@@ -1,0 +1,1 @@
+/home/rubberpirate/.local/share/nandoroid-cli/completions/nandoroid.fish

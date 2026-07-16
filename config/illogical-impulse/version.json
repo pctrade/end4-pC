@@ -1,0 +1,19 @@
+{
+  "version": "2.27.0",
+  "commit": "01434067",
+  "installed_at": "2026-06-21T21:53:25+05:30",
+  "installedAt": "2026-06-21T21:53:25+05:30",
+  "source": "setup",
+  "repo_path": "/home/rubberpirate/inir",
+  "repoPath": "/home/rubberpirate/inir",
+  "install_mode": "repo-copy",
+  "installMode": "repo-copy",
+  "update_strategy": "repo-setup",
+  "updateStrategy": "repo-setup",
+  "package_manager": "",
+  "packageManager": "",
+  "package_name": "",
+  "packageName": "",
+  "package_update_hint": "",
+  "packageUpdateHint": ""
+}
