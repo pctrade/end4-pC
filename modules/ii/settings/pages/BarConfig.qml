@@ -368,20 +368,6 @@ ContentPage {
                     ]
                 }
             }
-
-            ContentSubsection {
-                title: Translation.tr("Indicator style")
-                ConfigSelectionArray {
-                    currentValue: Config.options.bar.workspaces.indicatorStyle ?? "icon"
-                    onSelected: newValue => {
-                        Config.options.bar.workspaces.indicatorStyle = newValue
-                    }
-                    options: [
-                        { displayName: Translation.tr("Dots"),  icon: "radio_button_checked",   value: "dot" },
-                        { displayName: Translation.tr("Icons"), icon: "interests",              value: "icon" },
-                    ]
-                }
-            }
         }
 
         ContentSection {
