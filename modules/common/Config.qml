@@ -334,6 +334,14 @@ Singleton {
                         property bool vertical: false
                     }
 
+                    property JsonObject github: JsonObject {
+                        property bool enable: false
+                        property string username: "rubberpirate"
+                        property string placementStrategy: "free"
+                        property real x: 100
+                        property real y: 500
+                    }
+
                     property JsonObject media: JsonObject {
                         property bool enable: false
                         property bool showControls: true
