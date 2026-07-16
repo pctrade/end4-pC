@@ -330,6 +330,7 @@ Singleton {
 
                     property JsonObject devices: JsonObject {
                         property bool enable: false
+                        property string sizeMode: "2x2"
                         property string placementStrategy: "free"
                         property real x: 800
                         property real y: 100

@@ -15,8 +15,17 @@ AbstractBackgroundWidget {
     configEntryName: "devices"
     hoverEnabled: true
 
-    implicitWidth: 276
-    implicitHeight: 252
+    property string sizeMode: root.configEntry.sizeMode ?? "2x2"
+
+    implicitWidth: sizeMode === "1x4" ? 400 : 276
+    implicitHeight: sizeMode === "1x4" ? 120 : 252
+
+    Behavior on implicitWidth {
+        NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
+    }
+    Behavior on implicitHeight {
+        NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
+    }
 
     property var devicesList: []
     property bool loading: true
@@ -51,9 +60,12 @@ AbstractBackgroundWidget {
         return "battery_alert";
     }
 
-    function getDeviceColor(connected, battery) {
+    function getDeviceColor(connected, battery, charging) {
         if (!connected) {
             return "#7f8c8d"; // Grey color for disconnected
+        }
+        if (charging) {
+            return "#39d353"; // Green when charging
         }
         if (battery !== null) {
             return battery < 30 ? "#f44336" : "#39d353"; // Red below 30%, otherwise Green
@@ -81,9 +93,32 @@ AbstractBackgroundWidget {
         }
     }
 
+    // Instant update trigger using dbus-monitor/udevadm background listener
+    Process {
+        id: triggerProc
+        command: ["python3", Quickshell.shellPath("scripts/devices/monitor_trigger.py")]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                triggerProc.running = false;
+                refreshDelayTimer.start();
+            }
+        }
+    }
+
+    Timer {
+        id: refreshDelayTimer
+        interval: 350 // Wait 350ms for kernel/dbus interfaces to register state changes
+        repeat: false
+        onTriggered: {
+            root.refreshDevices();
+            triggerProc.running = true;
+        }
+    }
+
     Timer {
         id: refreshTimer
-        interval: 8000 // Refresh every 8 seconds
+        interval: 30000 // Periodic backup refresh every 30 seconds
         running: true
         repeat: true
         onTriggered: refreshDevices()
@@ -107,14 +142,17 @@ AbstractBackgroundWidget {
         ColumnLayout {
             anchors {
                 fill: parent
-                margins: 16
+                margins: root.sizeMode === "1x4" ? 12 : 16
             }
-            spacing: 12
+            spacing: root.sizeMode === "1x4" ? 6 : 12
 
             // Header Section
             RowLayout {
+                id: headerSection
                 Layout.fillWidth: true
                 spacing: 10
+                visible: root.sizeMode === "2x2"
+                Layout.preferredHeight: root.sizeMode === "2x2" ? -1 : 0
 
                 MaterialShapeWrappedMaterialSymbol {
                     wrappedShape: MaterialShape.Shape.Cookie4Sided
@@ -175,18 +213,18 @@ AbstractBackgroundWidget {
                 Grid {
                     id: grid
                     anchors.centerIn: parent
-                    columns: 2
-                    rows: 2
-                    rowSpacing: 12
-                    columnSpacing: 16
+                    columns: root.sizeMode === "1x4" ? 4 : 2
+                    rows: root.sizeMode === "1x4" ? 1 : 2
+                    rowSpacing: root.sizeMode === "1x4" ? 0 : 12
+                    columnSpacing: root.sizeMode === "1x4" ? 22 : 16
                     visible: !root.loading && root.devicesList.length > 0
 
                     Repeater {
                         model: root.devicesList.slice(0, 4)
                         delegate: Item {
                             required property var modelData
-                            width: 108
-                            height: 84
+                            width: root.sizeMode === "1x4" ? 82 : 108
+                            height: root.sizeMode === "1x4" ? 92 : 84
 
                             // Circular progress battery/status ring
                             CircularProgress {
@@ -197,20 +235,33 @@ AbstractBackgroundWidget {
                                 lineWidth: 5
                                 value: modelData.connected ? (modelData.battery !== null ? modelData.battery / 100 : 1.0) : 1.0
                                 gapAngle: 0
-                                colPrimary: root.getDeviceColor(modelData.connected, modelData.battery)
+                                colPrimary: root.getDeviceColor(modelData.connected, modelData.battery, modelData.charging)
                                 colSecondary: ColorUtils.mix(Appearance.colors.colOnPrimaryContainer, Appearance.colors.colPrimaryContainer, 0.08)
                             }
 
-                            // Charging bolt at the top of the ring
-                            MaterialSymbol {
-                                text: "bolt"
-                                iconSize: 13
-                                color: "#39d353"
-                                anchors.horizontalCenter: progress.horizontalCenter
-                                anchors.bottom: progress.top
-                                anchors.bottomMargin: -6
-                                visible: modelData.charging === true
-                            }
+                             // Charging bolt at the top of the ring (dark outline)
+                             MaterialSymbol {
+                                 text: "bolt"
+                                 iconSize: 17
+                                 color: Appearance.colors.colPrimaryContainer
+                                 anchors.horizontalCenter: progress.horizontalCenter
+                                 anchors.horizontalCenterOffset: 1
+                                 anchors.verticalCenter: progress.top
+                                 visible: modelData.charging === true
+                                 z: 4
+                             }
+
+                             // Charging bolt at the top of the ring (white foreground)
+                             MaterialSymbol {
+                                 text: "bolt"
+                                 iconSize: 13
+                                 color: "#ffffff"
+                                 anchors.horizontalCenter: progress.horizontalCenter
+                                 anchors.horizontalCenterOffset: 1
+                                 anchors.verticalCenter: progress.top
+                                 visible: modelData.charging === true
+                                 z: 5
+                             }
 
                             // Center content
                             Column {
@@ -230,17 +281,20 @@ AbstractBackgroundWidget {
                                     font.pixelSize: 9
                                     font.weight: Font.Bold
                                     color: modelData.connected ? root.getDeviceColor(true, modelData.battery) : "#7f8c8d"
-                                    visible: modelData.battery !== null
+                                    visible: root.sizeMode === "2x2" && modelData.battery !== null
                                 }
                             }
 
-                            // Device Label
+                            // Device Label / Percentage Text below circle
                             StyledText {
                                 anchors.horizontalCenter: progress.horizontalCenter
                                 anchors.top: progress.bottom
-                                anchors.topMargin: 4
-                                text: modelData.name
-                                font.pixelSize: 10
+                                anchors.topMargin: root.sizeMode === "1x4" ? 8 : 4
+                                text: root.sizeMode === "1x4" ? 
+                                      (modelData.battery !== null ? modelData.battery + "%" : (modelData.connected ? "On" : "Off")) : 
+                                      modelData.name
+                                font.pixelSize: root.sizeMode === "1x4" ? 15 : 10
+                                font.weight: root.sizeMode === "1x4" ? Font.DemiBold : Font.Normal
                                 color: modelData.connected ? Appearance.colors.colOnPrimaryContainer : "#7f8c8d"
                                 width: parent.width
                                 horizontalAlignment: Text.AlignHCenter
@@ -248,6 +302,47 @@ AbstractBackgroundWidget {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // Resize Handle in bottom right corner
+        Rectangle {
+            id: resizeHandle
+            width: 14; height: 14; radius: 3
+            color: Appearance.colors.colOnPrimaryContainer
+            anchors { right: card.right; bottom: card.bottom; margins: 4 }
+            opacity: (root.containsMouse || resizeArea.containsMouse || resizeArea.pressed) ? 0.4 : 0
+            visible: opacity > 0 && !Config.options.background.widgetsLocked
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+            MouseArea {
+                id: resizeArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.SizeHorCursor
+                preventStealing: true
+                property real startWidth: 0
+                property real startX: 0
+                onPressed: (mouse) => {
+                    startWidth = root.width
+                    startX = mapToItem(null, mouse.x, mouse.y).x
+                }
+                onPositionChanged: (mouse) => {
+                    if (!pressed) return
+                    var globalX = mapToItem(null, mouse.x, mouse.y).x
+                    var dx = globalX - startX
+                    var newW = startWidth + dx
+                    
+                    // Toggle threshold mid-point (between 276 and 400 is 338)
+                    if (newW > 338) {
+                        root.sizeMode = "1x4"
+                    } else {
+                        root.sizeMode = "2x2"
+                    }
+                }
+                onReleased: {
+                    root.configEntry.sizeMode = root.sizeMode
                 }
             }
         }
