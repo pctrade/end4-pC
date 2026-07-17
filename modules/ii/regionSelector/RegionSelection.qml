@@ -192,6 +192,12 @@ PanelWindow {
         screenshotDir: root.screenshotDir
         screenshotPath: root.screenshotPath
         onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                console.warn(`[Region Selector] grim failed with exit code ${exitCode}; aborting capture.`);
+                Quickshell.execDetached(["notify-send", "Screenshot failed", "Could not capture a fresh frame. Please try again.", "-a", "Quickshell"]);
+                root.dismiss();
+                return;
+            }
             if (root.enableContentRegions) imageDetectionProcess.running = true;
             root.preparationDone = !checkRecordingProc.running;
         }

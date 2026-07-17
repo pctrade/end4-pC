@@ -48,7 +48,13 @@ PanelWindow {
         screen: root.screen
         screenshotDir: root.screenshotDir
         screenshotPath: root.screenshotPath
-        onExited: (_, __) => {
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                console.warn(`[Screen Translator] grim failed with exit code ${exitCode}; aborting capture.`);
+                Quickshell.execDetached(["notify-send", "Screen capture failed", "Could not capture a fresh frame. Please try again.", "-a", "Quickshell"]);
+                root.dismiss();
+                return;
+            }
             root.visible = true;
             root.performTranslation();
         }
