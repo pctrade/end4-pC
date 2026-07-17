@@ -14,6 +14,7 @@ StyledFlickable {
     property int selectionStart
     property int selectionEnd
     property int cursorPosition
+    property bool showCursor: true
 
     property color color: Appearance.colors.colPrimary
     property color selectedTextColor: Appearance.colors.colOnSecondaryContainer
@@ -29,6 +30,7 @@ StyledFlickable {
 
     Rectangle {
         id: cursor
+        visible: root.showCursor
         anchors {
             verticalCenter: parent.verticalCenter
             left: parent.left

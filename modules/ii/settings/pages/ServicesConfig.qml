@@ -151,9 +151,11 @@ ContentPage {
                                     }
                                 }
 
-                                ConfigPassword {
+                                ConfigInput {
                                     buttonIcon: "key"
                                     text: Translation.tr("API Key")
+                                    placeholderText: Translation.tr("Enter API key")
+                                    password: true
                                     value: KeyringStorage.loaded ? (KeyringStorage.keyringData.apiKeys?.[`custom_provider_${index}`] || "") : ""
                                     onValueChanged: {
                                         let currentText = value;
