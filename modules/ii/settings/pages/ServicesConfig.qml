@@ -164,21 +164,26 @@ ContentPage {
                                 }
                             }
 
-                            IconButton {
+                            RowLayout {
+                                id: providerActionsRow
                                 Layout.alignment: Qt.AlignRight
-                                toggled: false
-                                textString: Translation.tr("Remove Provider")
-                                iconName: "delete"
-                                textColor: Appearance.colors.colError
-                                colRipple: Appearance.colors.colErrorActive
-                                onClicked: {
-                                    const removedIndex = index;
-                                    let providers = [...Config.options.ai.customProviders];
-                                    providers.splice(removedIndex, 1);
-                                    Config.options.ai.customProviders = providers;
 
-                                    if (KeyringStorage.loaded) {
-                                        KeyringStorage.setNestedField(["apiKeys", `custom_provider_${removedIndex}`], "");
+                                IconButton {
+                                    id: removeProviderButton
+                                    toggled: false
+                                    textString: Translation.tr("Remove Provider")
+                                    iconName: "delete"
+                                    textColor: Appearance.colors.colError
+                                    colRipple: Appearance.colors.colErrorActive
+                                    onClicked: {
+                                        const removedIndex = index;
+                                        let providers = [...Config.options.ai.customProviders];
+                                        providers.splice(removedIndex, 1);
+                                        Config.options.ai.customProviders = providers;
+
+                                        if (KeyringStorage.loaded) {
+                                            KeyringStorage.setNestedField(["apiKeys", `custom_provider_${removedIndex}`], "");
+                                        }
                                     }
                                 }
                             }
@@ -186,11 +191,13 @@ ContentPage {
                     }
 
                     RowLayout {
+                        id: sectionActionsRow
                         Layout.alignment: Qt.AlignRight
                         Layout.topMargin: 10
                         spacing: 10
 
                         IconButton {
+                            id: addProviderButton
                             textString: Translation.tr("Add Provider")
                             iconName: "add"
                             onClicked: {
@@ -201,6 +208,7 @@ ContentPage {
                         }
 
                         IconButton {
+                            id: fetchModelsButton
                             toggled: false
                             textColor: Appearance.colors.colPrimary
                             textString: Translation.tr("Fetch Models")
