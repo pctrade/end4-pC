@@ -241,6 +241,24 @@ arrays, etc.) rather than static declarations - e.g. the plugin system in
   or two inside the actual delegate root throws `Required property modelData was not initialized`
   for every instance. Put the `required property` on the outermost delegate item and forward it down
   as an ordinary (non-required) property if a nested child needs it.
+- **`qs` is not a usable JS object from inside a `Qt.binding(function() {...})` closure.** It's a
+  module-namespace prefix the QML engine resolves at compile time for declarative bindings, not a
+  runtime global - `qs.modules.common.Appearance.colors[colorName]` inside an imperative closure
+  throws `ReferenceError: qs is not defined`, silently leaving that binding's target property
+  undefined (no crash, so it's easy to miss unless you actually watch the log with a plugin
+  enabled). Import the singleton directly (`import qs.modules.common`) and reference it by its bare
+  name (`Appearance.colors[colorName]`) instead. This one went unnoticed through two prior plugin
+  merges (clock, battery) because `plugins.enabled` in the shared config was empty the whole time -
+  the manifests were validated and rendered structurally, but never with `Appearance.colors.*`/
+  `Appearance.rounding.*` bindings actually resolving against a real running instance.
+- **Never `anchors.fill: parent` a `Loader` whose *own* size is meant to be derived from the loaded
+  item's implicit size.** `Loader` forces the loaded item to match the Loader's size whenever the
+  Loader itself has an explicit size (anchors count as explicit sizing) - but if the wrapping
+  `Item`'s `implicitWidth`/`implicitHeight` are themselves bound to `loader.item.implicitWidth`,
+  that's a direct cycle (item forced to match wrapper, wrapper's size derived from item) and Qt logs
+  `Binding loop detected for property "implicitWidth"` and gives up re-evaluating it. Leave the
+  Loader unanchored so it mirrors the item's natural size instead; set explicit width/height via the
+  item's own properties (e.g. manifest `props`) when a fixed size is actually wanted.
 
 ## Design language
 

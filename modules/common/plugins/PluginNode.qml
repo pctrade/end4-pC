@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
 
@@ -34,7 +35,13 @@ Item {
 
     Loader {
         id: componentLoader
-        anchors.fill: parent
+        // No anchors.fill here: rootNode's own size is *derived from* this
+        // loaded item's implicit size (see implicitWidth/implicitHeight above),
+        // so forcing the Loader to fill rootNode would force the item to match
+        // rootNode's size right back - a circular binding ("binding loop
+        // detected for property implicitWidth"). Let the Loader mirror the
+        // item's natural size instead; explicit width/height come from the
+        // manifest's own props (assigned directly onto the item in onLoaded).
         sourceComponent: {
             if (!manifestNode) return null;
             switch(manifestNode.type) {
@@ -66,10 +73,10 @@ Item {
                     
                     if (typeof val === "string" && val.startsWith("Appearance.colors.")) {
                         let colorName = val.substring(18);
-                        finalVal = Qt.binding(function() { return qs.modules.common.Appearance.colors[colorName]; });
+                        finalVal = Qt.binding(function() { return Appearance.colors[colorName]; });
                     } else if (typeof val === "string" && val.startsWith("Appearance.rounding.")) {
                         let rName = val.substring(20);
-                        finalVal = Qt.binding(function() { return qs.modules.common.Appearance.rounding[rName]; });
+                        finalVal = Qt.binding(function() { return Appearance.rounding[rName]; });
                     } else if (typeof val === "string" && val === "parent" && prop.startsWith("anchors")) {
                         finalVal = item.parent;
                     }
