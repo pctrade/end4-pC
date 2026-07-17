@@ -25,6 +25,7 @@ Item {
         { key: "notes",       icon: "note_stack_add",     name: Translation.tr("Notes") },
         { key: "github",      icon: "code",               name: Translation.tr("GitHub Heatmap") },
         { key: "devices",     icon: "devices",            name: Translation.tr("Connected Devices") },
+        { key: "screentime",  icon: "schedule",           name: Translation.tr("Screen Time") },
     ]
 
     Rectangle {
