@@ -163,6 +163,9 @@ concurrently, not as a default for every subagent dispatch.
   doesn't carry forward to later, unrelated changes.
 - `git remote -v` before assuming which remote is "upstream" vs "the fork you push to" - this repo
   has both, and they matter for where a `git pull`/`git push` actually lands.
+- **Hard rule: agents do not add themselves as co-authors** (no `Co-Authored-By: <agent/model>` or
+  similar trailer). Commits in this repo are attributed to the human maintainer only, regardless of
+  which agent or model did the work.
 
 ## Style
 
