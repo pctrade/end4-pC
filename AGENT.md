@@ -208,6 +208,8 @@ design tokens - color roles (`Appearance.colors.col*`, `Appearance.m3colors.m3*`
 (`Appearance.animation.*`). New UI should pull from these rather than hardcoding colors/sizes/
 durations, both for dark/light theme correctness and for consistency with the rest of the shell.
 
+**Strict UI Guidelines:** See [`docs/M3_GUIDELINES.md`](docs/M3_GUIDELINES.md) for the definitive rules on tokens, rounding, layering, and expressive motion that all new components must follow.
+
 Shared building blocks to reach for before writing something from scratch: `StyledText`,
 `StyledComboBox`, `StyledSlider`, `StyledToolTip`/`StyledToolTipContent`, `RippleButton`,
 `MaterialSymbol`, `ResourceCard`, `GroupedList` + `ConfigSwitch`/`ConfigSpinBox`/
