@@ -11,6 +11,11 @@ Scope {
 
     function dismiss() {
         GlobalStates.regionSelectorOpen = false
+        GlobalStates.settingsHeldForRegionSelector = false
+    }
+
+    function holdSettingsIfOpen() {
+        GlobalStates.settingsHeldForRegionSelector = GlobalStates.settingsOpen
     }
 
     property var action: RegionSelection.SnipAction.Copy
@@ -33,12 +38,14 @@ Scope {
     }
 
     function screenshot() {
+        root.holdSettingsIfOpen()
         root.action = RegionSelection.SnipAction.Copy
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 
     function search() {
+        root.holdSettingsIfOpen()
         root.action = RegionSelection.SnipAction.Search
         if (Config.options.search.imageSearch.useCircleSelection) {
             root.selectionMode = RegionSelection.SelectionMode.Circle
@@ -49,12 +56,14 @@ Scope {
     }
 
     function ocr() {
+        root.holdSettingsIfOpen()
         root.action = RegionSelection.SnipAction.CharRecognition
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
 
     function record() {
+        root.holdSettingsIfOpen()
         root.action = RegionSelection.SnipAction.Record
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
         // If already open then re-trigger to stop recording
@@ -63,6 +72,7 @@ Scope {
     }
 
     function recordWithSound() {
+        root.holdSettingsIfOpen()
         root.action = RegionSelection.SnipAction.RecordWithSound
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
         // If already open then re-trigger to stop recording

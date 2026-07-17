@@ -48,6 +48,34 @@ TestCase {
         verify(result.valid, "Docker manifest should be valid: " + (result.error ? result.error : ""));
     }
 
+    function test_validAtAGlanceManifest() {
+        var manifest = {
+            "id": "at_a_glance",
+            "name": "At a Glance",
+            "options": [
+                { "key": "showGreeting", "type": "boolean", "default": true },
+                {
+                    "key": "alignment",
+                    "type": "choice",
+                    "default": "left",
+                    "choices": [{ "displayName": "Left", "value": "left" }]
+                },
+                { "key": "fontSize", "type": "number", "default": 24, "from": 14, "to": 48 }
+            ],
+            "desktopWidget": {
+                "type": "AtAGlance",
+                "props": {
+                    "width": 420,
+                    "showQuote": true
+                },
+                "blur": false
+            }
+        };
+
+        var result = PluginValidator.validateManifest(manifest);
+        verify(result.valid, "At-a-glance manifest should be valid: " + (result.error ? result.error : ""));
+    }
+
     function test_missingId() {
         var manifest = {
             "name": "My Clock",
@@ -69,6 +97,18 @@ TestCase {
         var result = PluginValidator.validateManifest(manifest);
         verify(!result.valid);
         compare(result.error, "Invalid desktopWidget: Component type 'Process' is not whitelisted");
+    }
+
+    function test_invalidPluginOptionType() {
+        var manifest = {
+            "id": "bad_options",
+            "name": "Bad Options",
+            "options": [{ "key": "script", "type": "javascript" }],
+            "desktopWidget": { "type": "Item" }
+        };
+        var result = PluginValidator.validateManifest(manifest);
+        verify(!result.valid);
+        compare(result.error, "Unsupported plugin option type 'javascript'");
     }
 
     function test_invalidBindingTarget() {

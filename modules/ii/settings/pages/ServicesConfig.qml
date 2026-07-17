@@ -108,6 +108,8 @@ ContentPage {
                             spacing: Appearance.rounding.small
 
                             GroupedList {
+                                cohesive: true
+
                                 ConfigSwitch {
                                     text: Config.options.ai.customProviders[index].name
                                         ? Translation.tr("Enable %1").arg(Config.options.ai.customProviders[index].name)
@@ -119,71 +121,75 @@ ContentPage {
                                         Config.options.ai.customProviders = providers;
                                     }
                                 }
-                            }
 
-                            MaterialTextArea {
-                                Layout.fillWidth: true
-                                placeholderText: Translation.tr("Provider Name (e.g. OpenRouter)")
-                                text: Config.options.ai.customProviders[index].name
-                                wrapMode: TextEdit.Wrap
-                                onTextChanged: {
-                                    let providers = [...Config.options.ai.customProviders];
-                                    if (providers[index].name !== text) {
-                                        providers[index].name = text;
-                                        Config.options.ai.customProviders = providers;
-                                    }
-                                }
-                            }
-
-                            MaterialTextArea {
-                                Layout.fillWidth: true
-                                placeholderText: Translation.tr("Base URL (e.g. https://openrouter.ai/api/v1)")
-                                text: Config.options.ai.customProviders[index].baseUrl
-                                wrapMode: TextEdit.Wrap
-                                onTextChanged: {
-                                    let providers = [...Config.options.ai.customProviders];
-                                    if (providers[index].baseUrl !== text) {
-                                        providers[index].baseUrl = text;
-                                        Config.options.ai.customProviders = providers;
-                                    }
-                                }
-                            }
-
-                            MaterialTextField {
-                                Layout.fillWidth: true
-                                placeholderText: Translation.tr("API Key")
-                                text: KeyringStorage.loaded ? (KeyringStorage.keyringData.apiKeys?.[`custom_provider_${index}`] || "") : ""
-                                echoMode: TextInput.Password
-                                inputMethodHints: Qt.ImhSensitiveData
-                                onTextChanged: {
-                                    let currentText = text;
-                                    Qt.callLater(() => {
-                                        if (KeyringStorage.loaded) {
-                                            KeyringStorage.setNestedField(["apiKeys", `custom_provider_${index}`], currentText);
-                                        }
-                                    });
-                                }
-                            }
-
-                            RowLayout {
-                                id: providerActionsRow
-                                Layout.alignment: Qt.AlignRight
-
-                                IconButton {
-                                    id: removeProviderButton
-                                    toggled: false
-                                    textString: Translation.tr("Remove Provider")
-                                    iconName: "delete"
-                                    textColor: Appearance.colors.colError
-                                    colRipple: Appearance.colors.colErrorActive
-                                    onClicked: {
-                                        const removedIndex = index;
+                                MaterialTextArea {
+                                    Layout.fillWidth: true
+                                    placeholderText: Translation.tr("Provider Name (e.g. OpenRouter)")
+                                    text: Config.options.ai.customProviders[index].name
+                                    wrapMode: TextEdit.Wrap
+                                    onTextChanged: {
                                         let providers = [...Config.options.ai.customProviders];
-                                        providers.splice(removedIndex, 1);
-                                        Config.options.ai.customProviders = providers;
+                                        if (providers[index].name !== text) {
+                                            providers[index].name = text;
+                                            Config.options.ai.customProviders = providers;
+                                        }
+                                    }
+                                }
 
-                                        if (KeyringStorage.loaded) {
-                                            KeyringStorage.setNestedField(["apiKeys", `custom_provider_${removedIndex}`], "");
+                                MaterialTextArea {
+                                    Layout.fillWidth: true
+                                    placeholderText: Translation.tr("Base URL (e.g. https://openrouter.ai/api/v1)")
+                                    text: Config.options.ai.customProviders[index].baseUrl
+                                    wrapMode: TextEdit.Wrap
+                                    onTextChanged: {
+                                        let providers = [...Config.options.ai.customProviders];
+                                        if (providers[index].baseUrl !== text) {
+                                            providers[index].baseUrl = text;
+                                            Config.options.ai.customProviders = providers;
+                                        }
+                                    }
+                                }
+
+                                MaterialTextField {
+                                    Layout.fillWidth: true
+                                    placeholderText: Translation.tr("API Key")
+                                    text: KeyringStorage.loaded ? (KeyringStorage.keyringData.apiKeys?.[`custom_provider_${index}`] || "") : ""
+                                    echoMode: TextInput.Password
+                                    inputMethodHints: Qt.ImhSensitiveData
+                                    onTextChanged: {
+                                        let currentText = text;
+                                        Qt.callLater(() => {
+                                            if (KeyringStorage.loaded) {
+                                                KeyringStorage.setNestedField(["apiKeys", `custom_provider_${index}`], currentText);
+                                            }
+                                        });
+                                    }
+                                }
+
+                                RowLayout {
+                                    id: providerActionsRow
+                                    Layout.fillWidth: true
+
+                                    Item {
+                                        Layout.fillWidth: true
+                                    }
+
+                                    IconButton {
+                                        id: removeProviderButton
+                                        toggled: false
+                                        textString: Translation.tr("Remove Provider")
+                                        iconName: "delete"
+                                        textColor: Appearance.colors.colError
+                                        colRipple: Appearance.colors.colErrorActive
+                                        onClicked: {
+                                            const removedIndex = index;
+                                            let providers = [...Config.options.ai.customProviders];
+                                            providers.splice(removedIndex, 1);
+                                            Config.options.ai.customProviders = providers;
+
+                                            if (KeyringStorage.loaded) {
+                                                KeyringStorage.setNestedField(["apiKeys", `custom_provider_${removedIndex}`], "");
+                                            }
                                         }
                                     }
                                 }

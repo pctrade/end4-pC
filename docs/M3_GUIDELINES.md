@@ -34,6 +34,14 @@ Visible borders are not required for every surface. Many components rely entirel
   - Standalone popups and floating elements (like `StyledPopup`, `Toolbar`) combine `StyledRectangularShadow` with a 1px `colLayer0Border` to clearly define edges against complex backgrounds.
   - Interiors and nested menus (e.g., `GroupedList`) drop the border and shadow entirely in favor of tonal contrast (`colLayer1`+).
 
+### Grouped Settings
+
+- Use the standard `GroupedList` presentation when rows are related but remain visually distinct.
+- Use `GroupedList { cohesive: true }` when every row belongs to one continuous form or semantic
+  unit. Cohesive groups have no gaps or rounded internal seams; only the outside corners are rounded.
+- Let `GroupedList` provide the common content inset. Child controls must not add another horizontal
+  inset that makes icons, labels, or fields drift out of alignment with adjacent rows.
+
 ### Corner Rounding (Radii)
 Always use predefined rounding values from `Appearance.rounding`. Never use hardcoded pixel values (e.g., `radius: 12`) or arbitrary maximum values (e.g., `radius: 9999`).
 

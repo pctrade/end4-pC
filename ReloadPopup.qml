@@ -1,3 +1,4 @@
+import "modules/common"
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
@@ -36,8 +37,20 @@ Scope {
 			id: popup
 
 			exclusiveZone: 0
-			anchors.top: true
-			margins.top: 0
+			// Anchored to top-right rather than top-center: the OSD popup
+			// (modules/ii/onScreenDisplay/OnScreenDisplay.qml) is also top-anchored and
+			// horizontally centered, offset below the bar by the same margin - if both
+			// happen to be visible at once (e.g. a keyboard layout change right after a
+			// reload) they'd land in the exact same spot and overlap. Top-right keeps
+			// this one out of the OSD's way regardless of either popup's size.
+			anchors {
+				top: true
+				right: true
+			}
+			margins {
+				top: Appearance.sizes.barHeight + 10
+				right: 10
+			}
 
 			implicitWidth: rect.width + shadow.radius * 2
 			implicitHeight: rect.height + shadow.radius * 2

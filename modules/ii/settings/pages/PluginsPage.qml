@@ -23,37 +23,51 @@ ContentPage {
             Repeater {
                 model: PluginManager.availablePlugins
 
-                Rectangle {
-                    id: pluginRow
+                ColumnLayout {
+                    id: pluginGroup
                     required property var modelData
 
                     Layout.fillWidth: true
-                    implicitHeight: configSwitch.implicitHeight + 16
-                    color: Appearance.colors.colLayer1
-                    radius: Appearance.rounding.normal
+                    spacing: 2
 
-                    ConfigSwitch {
-                        id: configSwitch
-                        anchors.fill: parent
-                        anchors.margins: 8
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: configSwitch.implicitHeight + 16
+                        color: Appearance.colors.colLayer1
+                        radius: Appearance.rounding.normal
 
-                        property var modelData: pluginRow.modelData
-                        text: modelData.name
-                        description: modelData.description || ""
+                        ConfigSwitch {
+                            id: configSwitch
+                            anchors.fill: parent
+                            anchors.margins: 8
 
-                        property bool isEnabled: Config.options.plugins.enabled.includes(modelData.id)
-                        checked: isEnabled
-                        onCheckedChanged: {
-                            let newList = [];
-                            for (let i = 0; i < Config.options.plugins.enabled.length; i++) {
-                                newList.push(Config.options.plugins.enabled[i]);
+                            property var modelData: pluginGroup.modelData
+                            text: modelData.name
+                            description: modelData.description || ""
+
+                            property bool isEnabled: Config.options.plugins.enabled.includes(modelData.id)
+                            checked: isEnabled
+                            onCheckedChanged: {
+                                let newList = [];
+                                for (let i = 0; i < Config.options.plugins.enabled.length; i++) {
+                                    newList.push(Config.options.plugins.enabled[i]);
+                                }
+                                if (checked && !isEnabled) {
+                                    newList.push(modelData.id);
+                                } else if (!checked && isEnabled) {
+                                    newList = newList.filter(id => id !== modelData.id);
+                                }
+                                Config.setNestedValue("plugins.enabled", newList);
                             }
-                            if (checked && !isEnabled) {
-                                newList.push(modelData.id);
-                            } else if (!checked && isEnabled) {
-                                newList = newList.filter(id => id !== modelData.id);
-                            }
-                            Config.setNestedValue("plugins.enabled", newList);
+                        }
+                    }
+
+                    GroupedList {
+                        Layout.fillWidth: true
+                        visible: configSwitch.checked
+
+                        PluginOptions {
+                            manifest: pluginGroup.modelData
                         }
                     }
                 }

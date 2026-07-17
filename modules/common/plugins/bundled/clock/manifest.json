@@ -5,6 +5,7 @@
     "defaultWidth": 300,
     "defaultHeight": 120,
     "desktopWidget": {
+        "blur": true,
         "type": "Rectangle",
         "props": {
             "radius": "Appearance.rounding.large",

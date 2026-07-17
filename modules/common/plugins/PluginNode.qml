@@ -3,10 +3,13 @@ import Quickshell
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
+import "bundled/atAGlance" as AtAGlancePlugin
 
 Item {
     id: rootNode
     property var manifestNode
+    property string pluginId: ""
+    property var optionDefinitions: []
 
     implicitWidth: componentLoader.item ? (componentLoader.item.implicitWidth || componentLoader.item.width) : 0
     implicitHeight: componentLoader.item ? (componentLoader.item.implicitHeight || componentLoader.item.height) : 0
@@ -31,6 +34,13 @@ Item {
             case "Docker.totalCount": return Docker.totalCount;
             default: return undefined;
         }
+    }
+
+    function optionDefinition(propertyName) {
+        for (const definition of rootNode.optionDefinitions) {
+            if (definition.key === propertyName) return definition;
+        }
+        return null;
     }
 
     Loader {
@@ -60,6 +70,7 @@ Item {
                 case "ConfigSwitch": return configSwitchComponent;
                 case "NoticeBox": return noticeBoxComponent;
                 case "StyledPopup": return styledPopupComponent;
+                case "AtAGlance": return atAGlanceComponent;
                 default: return null;
             }
         }
@@ -70,8 +81,13 @@ Item {
                 for (let prop in manifestNode.props) {
                     let val = manifestNode.props[prop];
                     let finalVal = val;
-                    
-                    if (typeof val === "string" && val.startsWith("Appearance.colors.")) {
+
+                    const option = rootNode.optionDefinition(prop);
+                    if (option) {
+                        finalVal = Qt.binding(function() {
+                            return PluginState.option(rootNode.pluginId, prop, option.default);
+                        });
+                    } else if (typeof val === "string" && val.startsWith("Appearance.colors.")) {
                         let colorName = val.substring(18);
                         finalVal = Qt.binding(function() { return Appearance.colors[colorName]; });
                     } else if (typeof val === "string" && val.startsWith("Appearance.rounding.")) {
@@ -113,6 +129,7 @@ Item {
     Component { id: materialSymbolComponent; MaterialSymbol {} }
     Component { id: resourceCardComponent; ResourceCard {} }
     Component { id: styledImageComponent; StyledImage {} }
+    Component { id: atAGlanceComponent; AtAGlancePlugin.AtAGlance {} }
 
     Component { id: materialShapeComponent; MaterialShape {
         Repeater {

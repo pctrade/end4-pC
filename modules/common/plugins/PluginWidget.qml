@@ -9,6 +9,9 @@ AbstractBackgroundWidget {
     id: rootWidget
     required property var manifest
     required property string screenName
+    readonly property bool blurEnabled: manifest
+        ? PluginState.option(manifest.id, "blurEnabled", manifest.desktopWidget?.blur === true)
+        : false
 
     configEntryName: manifest ? "plugin_" + manifest.id : "plugin_unknown"
 
@@ -56,7 +59,7 @@ AbstractBackgroundWidget {
         id: blurredBackdrop
         anchors.fill: parent
         clip: true
-        visible: Config.options.appearance.transparency.enable
+        visible: rootWidget.blurEnabled && Config.options.appearance.transparency.enable
         layer.enabled: visible
         layer.effect: OpacityMask {
             maskSource: Rectangle {
@@ -90,6 +93,8 @@ AbstractBackgroundWidget {
     PluginNode {
         id: pluginNode
         manifestNode: rootWidget.manifest ? rootWidget.manifest.desktopWidget : null
+        pluginId: rootWidget.manifest?.id ?? ""
+        optionDefinitions: rootWidget.manifest?.options ?? []
         anchors.centerIn: parent
     }
 }

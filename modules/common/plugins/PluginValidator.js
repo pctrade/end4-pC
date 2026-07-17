@@ -3,7 +3,7 @@
 const componentWhitelist = [
     "StyledText", "StyledRectangularShadow", "MaterialSymbol", "GroupedList",
     "RippleButton", "ResourceCard", "StyledImage", "MaterialShape", "StyledPopup", "ConfigSwitch", "NoticeBox",
-    "Row", "Column", "Item", "Rectangle"
+    "Row", "Column", "Item", "Rectangle", "AtAGlance"
 ];
 
 const bindingWhitelist = [
@@ -40,6 +40,37 @@ function validateManifest(manifest) {
 
     if (!hasEntryPoint) {
         return { valid: false, error: "Manifest must have at least one entry point (e.g. desktopWidget, barWidget)" };
+    }
+
+    if (manifest.desktopWidget && manifest.desktopWidget.blur !== undefined
+            && typeof manifest.desktopWidget.blur !== "boolean") {
+        return { valid: false, error: "desktopWidget.blur must be a boolean" };
+    }
+
+    if (manifest.options !== undefined) {
+        if (!Array.isArray(manifest.options)) {
+            return { valid: false, error: "Manifest 'options' must be an array" };
+        }
+        const optionKeys = new Set();
+        for (const option of manifest.options) {
+            if (!option || typeof option !== "object" || typeof option.key !== "string" || !option.key) {
+                return { valid: false, error: "Every plugin option must have a non-empty string 'key'" };
+            }
+            if (optionKeys.has(option.key)) {
+                return { valid: false, error: "Duplicate plugin option key '" + option.key + "'" };
+            }
+            optionKeys.add(option.key);
+            if (!["boolean", "choice", "number"].includes(option.type)) {
+                return { valid: false, error: "Unsupported plugin option type '" + option.type + "'" };
+            }
+            if (option.type === "choice" && (!Array.isArray(option.choices) || option.choices.length === 0)) {
+                return { valid: false, error: "Choice option '" + option.key + "' must have choices" };
+            }
+            if (option.type === "number"
+                    && (typeof option.from !== "number" || typeof option.to !== "number" || option.from > option.to)) {
+                return { valid: false, error: "Number option '" + option.key + "' must have a valid range" };
+            }
+        }
     }
 
     return { valid: true };

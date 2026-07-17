@@ -9,7 +9,7 @@ import qs.modules.common
 Singleton {
     id: root
 
-    readonly property int schemaVersion: 1
+    readonly property int schemaVersion: 2
     readonly property string filePath: `${Directories.shellConfig}/plugin-state.json`
     property var state: root.emptyState()
     property bool ready: false
@@ -17,7 +17,8 @@ Singleton {
     function emptyState() {
         return {
             version: root.schemaVersion,
-            desktopPositions: {}
+            desktopPositions: {},
+            pluginOptions: {}
         };
     }
 
@@ -65,6 +66,25 @@ Singleton {
         writeTimer.restart();
     }
 
+    function option(pluginId, key, fallback) {
+        const value = root.state?.pluginOptions?.[pluginId]?.[key];
+        return value === undefined ? fallback : value;
+    }
+
+    function setOption(pluginId, key, value) {
+        if (!pluginId || !key) return;
+
+        const nextState = Object.assign({}, root.state);
+        const nextOptions = Object.assign({}, nextState.pluginOptions || {});
+        const nextPlugin = Object.assign({}, nextOptions[pluginId] || {});
+        nextPlugin[key] = value;
+        nextOptions[pluginId] = nextPlugin;
+        nextState.version = root.schemaVersion;
+        nextState.pluginOptions = nextOptions;
+        root.state = nextState;
+        writeTimer.restart();
+    }
+
     function loadText(text) {
         try {
             const parsed = JSON.parse(text);
@@ -77,6 +97,11 @@ Singleton {
                     && typeof parsed.desktopPositions === "object"
                     && !Array.isArray(parsed.desktopPositions)
                     ? parsed.desktopPositions
+                    : {},
+                pluginOptions: parsed.pluginOptions
+                    && typeof parsed.pluginOptions === "object"
+                    && !Array.isArray(parsed.pluginOptions)
+                    ? parsed.pluginOptions
                     : {}
             };
         } catch (error) {

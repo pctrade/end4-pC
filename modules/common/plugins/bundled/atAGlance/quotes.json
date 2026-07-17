@@ -1,0 +1,27 @@
+{
+    "morning": [
+        "Choose one meaningful thing and give it your clearest attention.",
+        "A quiet start can carry surprising momentum.",
+        "Make room for water, breakfast, and a little sunlight."
+    ],
+    "afternoon": [
+        "Unclench your shoulders and let your eyes look somewhere distant.",
+        "Small progress still changes the shape of the day.",
+        "A short pause is maintenance, not lost time."
+    ],
+    "evening": [
+        "Notice what moved forward today, however slightly.",
+        "The unfinished can wait; the evening belongs to you too.",
+        "Let the pace soften before the day ends."
+    ],
+    "midnight": [
+        "Tomorrow will be kinder after some sleep.",
+        "Rest is part of the work, not its opposite.",
+        "Save the next thought for morning."
+    ],
+    "general": [
+        "Curiosity turns ordinary minutes into useful ones.",
+        "Be precise with the work and gentle with yourself.",
+        "Consistency is often quieter than motivation."
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "id": "at_a_glance_plugin",
+    "name": "At a Glance",
+    "description": "A time-aware greeting, today's date, and a periodically rotating thought",
+    "defaultWidth": 420,
+    "defaultHeight": 150,
+    "source": "Inspired by na-ive/nandoroid-shell's AtAGlance widget",
+    "sourceUrl": "https://github.com/na-ive/nandoroid-shell/blob/main/dotfiles/.config/quickshell/nandoroid/widgets/AtAGlance.qml",
+    "options": [
+        { "key": "showGreeting", "type": "boolean", "label": "Show greeting", "icon": "waving_hand", "default": true },
+        { "key": "showDate", "type": "boolean", "label": "Show date", "icon": "calendar_month", "default": true },
+        { "key": "showQuote", "type": "boolean", "label": "Show quotes", "icon": "format_quote", "default": true },
+        {
+            "key": "alignment",
+            "type": "choice",
+            "label": "Alignment",
+            "icon": "format_align_left",
+            "default": "left",
+            "choices": [
+                { "displayName": "Left", "icon": "format_align_left", "value": "left" },
+                { "displayName": "Center", "icon": "format_align_center", "value": "center" },
+                { "displayName": "Right", "icon": "format_align_right", "value": "right" }
+            ]
+        },
+        {
+            "key": "fontFamily",
+            "type": "choice",
+            "label": "Font family",
+            "icon": "text_fields",
+            "default": "",
+            "choices": [
+                { "displayName": "Default", "value": "" },
+                { "displayName": "Google Sans Flex", "value": "Google Sans Flex" },
+                { "displayName": "Rubik", "value": "Rubik" }
+            ]
+        },
+        { "key": "fontSize", "type": "number", "label": "Font size", "icon": "format_size", "default": 24, "from": 14, "to": 48, "step": 1 }
+    ],
+    "desktopWidget": {
+        "blur": false,
+        "type": "AtAGlance",
+        "props": {
+            "width": 420,
+            "fontFamily": "",
+            "fontSize": 24,
+            "showGreeting": true,
+            "showDate": true,
+            "showQuote": true,
+            "alignment": "left"
+        }
+    }
+}

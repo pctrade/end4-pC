@@ -210,6 +210,11 @@ Two non-obvious behaviors have bitten this codebase before and are worth knowing
   *not* blurred, they just show plain unblurred transparency. This is why picking the right
   `Appearance.colors.colLayer*` token matters for a floating popup, not just picking "a" transparent
   one - see the Design language section below.
+- **The region selector intentionally takes exclusive focus.** Dismissable panels normally close
+  when `GlobalFocusGrab` is cleared, but the selector first sets
+  `GlobalStates.settingsHeldForRegionSelector` so Settings can remain visible in screenshots without
+  racing surface creation. Because clearing the grab also empties its dismissable list, Settings
+  must re-register itself when selection ends even though its own `visible` property never changed.
 
 ## Dynamic/data-driven QML gotchas
 
@@ -231,6 +236,10 @@ arrays, etc.) rather than static declarations - e.g. the plugin system in
   the renderer's list is the wider one) an unvalidated type reaching the renderer. Treat this the
   same as the Config-schema/settings-page two-sidedness described above: a change to one side isn't
   done until the other side matches.
+- Bundled plugins that need behavior the data-only node tree cannot express may use a narrowly
+  scoped renderer type, as `bundled/atAGlance/AtAGlance.qml` does for date formatting, timed quote
+  rotation, and quote-file loading. Add that type to both the validator and renderer, and keep
+  arbitrary processes or script evaluation out of manifests.
 - **`FileView` (`Quickshell.Io`) loads asynchronously - `.text()` right after calling `.reload()`
   is not guaranteed to return the new content.** The correct pattern (used throughout this codebase
   - `MaterialSymbolsSearch.qml`, `Notifications.qml`, `Emojis.qml`, `Profile.qml`) is to read
@@ -267,6 +276,11 @@ arrays, etc.) rather than static declarations - e.g. the plugin system in
   following config reload; declaring a `property var` map also segfaulted while loading it. Keep
   dynamic plugin layout in `PluginState.qml`, which parses and writes `plugin-state.json` with a raw
   `FileView`. Fixed-schema user settings still belong in `Config.qml`.
+- Plugin manifests may declare a constrained top-level `options` array (`boolean`, `choice`, or
+  `number`). `PluginOptions.qml` renders those controls and `PluginState.qml` persists their dynamic
+  values. Desktop backdrop blur is also per-plugin state: a manifest opts into its default with
+  `desktopWidget.blur: true`, while the generated **Blur background** option always lets the user
+  override it. Do not make `PluginWidget` blur every plugin unconditionally.
 
 ## Design language
 
@@ -283,6 +297,12 @@ Shared building blocks to reach for before writing something from scratch: `Styl
 `MaterialSymbol`, `ResourceCard`, `GroupedList` + `ConfigSwitch`/`ConfigSpinBox`/
 `ConfigSelectionArray` (settings rows), `StyledPopup`, `StyledRectangularShadow`. All in
 `modules/common/widgets/`.
+
+`GroupedList` normally separates and subtly rounds each row. Set `cohesive: true` when several
+controls form one continuous semantic unit (for example, the fields and actions for a single custom
+AI provider). Cohesive mode removes internal spacing and corner rounding while retaining the outer
+group corners. Controls rendered inside a group should rely on the group's inset; avoid adding a
+second horizontal inset that misaligns their icons or labels with neighboring rows.
 
 **`colLayer0` vs `colLayer1`/`colLayer2`/...** - these are not interchangeable "just pick one that
 looks transparent enough" tokens:

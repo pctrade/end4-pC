@@ -53,7 +53,22 @@ Scope {
         Connections {
             target: GlobalFocusGrab
             function onDismissed() {
-                panelWindow.hide();
+                // The region selector temporarily takes exclusive focus so it can capture
+                // pointer input. Keep Settings visible behind it so screenshots can include
+                // the panel; normal focus loss should still dismiss Settings.
+                if (!GlobalStates.settingsHeldForRegionSelector)
+                    panelWindow.hide();
+            }
+        }
+
+        Connections {
+            target: GlobalStates
+            function onRegionSelectorOpenChanged() {
+                // GlobalFocusGrab clears its dismissable list when the selector takes focus.
+                // Restore this window to the grab once selection finishes, since its visible
+                // state did not change and onVisibleChanged therefore will not run again.
+                if (!GlobalStates.regionSelectorOpen && GlobalStates.settingsOpen)
+                    GlobalFocusGrab.addDismissable(panelWindow);
             }
         }
 

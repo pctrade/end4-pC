@@ -7,6 +7,7 @@ Item {
     default property list<Item> items
     property real bigRadius: Appearance.rounding.normal
     property real smallRadius: Appearance.rounding.unsharpenmore
+    property bool cohesive: false
     property color bgcolor: Appearance.colors.colLayer1 
     Layout.fillWidth: true
     implicitHeight: col.implicitHeight
@@ -14,7 +15,7 @@ Item {
     ColumnLayout {
         id: col
         anchors.fill: parent
-        spacing: 2
+        spacing: root.cohesive ? 0 : 2
 
         Repeater {
             model: root.items.length
@@ -25,10 +26,10 @@ Item {
                 Layout.fillWidth: true
                 implicitHeight: (root.items[index]?.implicitHeight ?? 0) + 16
                 color: root.bgcolor
-                topLeftRadius:     isFirst ? root.bigRadius : root.smallRadius
-                topRightRadius:    isFirst ? root.bigRadius : root.smallRadius
-                bottomLeftRadius:  isLast  ? root.bigRadius : root.smallRadius
-                bottomRightRadius: isLast  ? root.bigRadius : root.smallRadius
+                topLeftRadius:     isFirst ? root.bigRadius : (root.cohesive ? 0 : root.smallRadius)
+                topRightRadius:    isFirst ? root.bigRadius : (root.cohesive ? 0 : root.smallRadius)
+                bottomLeftRadius:  isLast  ? root.bigRadius : (root.cohesive ? 0 : root.smallRadius)
+                bottomRightRadius: isLast  ? root.bigRadius : (root.cohesive ? 0 : root.smallRadius)
 
                 Component.onCompleted: {
                     const child = root.items[index]
