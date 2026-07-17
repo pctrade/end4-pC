@@ -6,6 +6,7 @@ import qs
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common
+import qs.modules.common.functions
 
 Rectangle {
     id: root
@@ -31,14 +32,61 @@ Rectangle {
             right: parent.right
             margins: 0
         }
-        spacing: 2
+        spacing: 6
+
+        // Header
+        RowLayout{
+            Layout.leftMargin: 10
+            Layout.topMargin: 6
+            spacing: 10
+            MaterialShapeWrappedMaterialSymbol {
+                id: avatarShape
+                shape: MaterialShape.Shape.Circle 
+                text: root.title.length > 0 ? root.title.charAt(0).toUpperCase() : "?"
+                iconSize: Appearance.font.pixelSize.normal
+                implicitSize: 36
+                font: Appearance.font.family.main
+                color: Appearance.colors.colPrimaryContainer
+                colSymbol: Appearance.colors.colOnPrimaryContainer
+                Layout.alignment: Qt.AlignVCenter
+            }
+            ColumnLayout{
+                spacing: -4
+                StyledText {
+                    Layout.fillWidth: true
+                    text: root.title
+                    font.pixelSize: Appearance.font.pixelSize.large
+                    font.weight: Font.DemiBold
+                    color: Appearance.colors.colOnLayer1
+                    elide: Text.ElideRight
+                    wrapMode: Text.NoWrap
+                }
+
+                // Description
+                StyledText {
+                    Layout.fillWidth: true
+                    visible: root.description.length > 0
+                    text: root.description
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: Appearance.colors.colSubtext
+                    elide: Text.ElideRight
+                }
+            }
+            MaterialSymbol {
+                Layout.alignment: Qt.AlignRight // im a placeholder someday I will do something =P
+                Layout.rightMargin: 12
+                font.pixelSize: Appearance.font.pixelSize.huge
+                text: "more_vert"
+            }
+        }
 
         // Wall
         Rectangle {
             id: imageRect
             Layout.fillWidth: true
+            Layout.bottomMargin: 4
             implicitHeight: 130
-            radius: Appearance.rounding.small
+            radius: 0
             color: Appearance.colors.colLayer2
             clip: true
 
@@ -70,29 +118,6 @@ Rectangle {
             }
         }
 
-        // Header
-        StyledText {
-            Layout.leftMargin: 10
-            Layout.fillWidth: true
-            text: root.title
-            font.pixelSize: Appearance.font.pixelSize.larger
-            font.weight: Font.DemiBold
-            color: Appearance.colors.colOnLayer1
-            elide: Text.ElideRight
-            wrapMode: Text.NoWrap
-        }
-
-        // Description
-        StyledText {
-            Layout.leftMargin: 10
-            Layout.fillWidth: true
-            visible: root.description.length > 0
-            text: root.description
-            font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colSubtext
-            elide: Text.ElideRight
-        }
-
         // Buttons
         RowLayout {
             Layout.fillWidth: true
@@ -113,12 +138,12 @@ Rectangle {
                 implicitHeight: 36
                 horizontalPadding: 14
                 verticalPadding: 8
-                colBackground: Appearance.colors.colPrimaryContainer
-                colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                colBackground: "transparent"
+                colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colPrimaryContainerHover, 0.8)
                 colBackgroundActive: Appearance.colors.colPrimaryContainerActive
                 contentItem: StyledText {
                     text: "Remove"
-                    color: Appearance.colors.colOnPrimaryContainer
+                    color: Appearance.colors.colPrimary
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

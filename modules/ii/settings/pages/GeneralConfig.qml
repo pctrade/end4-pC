@@ -93,6 +93,7 @@ ContentPage {
             icon: "battery_android_full"
             shape: MaterialShape.Shape.SemiCircle
             title: Translation.tr("Battery")
+            visible: Battery.available
 
             GroupedList {
                 ConfigRow {
@@ -519,6 +520,7 @@ ContentPage {
                 ConfigSwitch {
                     buttonIcon: "battery_android_full"
                     text: Translation.tr("Battery")
+                    enabled: Battery.available
                     checked: Config.options.sounds.battery
                     onCheckedChanged: {
                         Config.options.sounds.battery = checked;
