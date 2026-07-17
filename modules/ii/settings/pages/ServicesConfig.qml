@@ -56,6 +56,72 @@ ContentPage {
                     });
                 }
             }
+
+            ContentSubsection {
+                title: Translation.tr("Custom OpenAI-compatible Provider")
+                
+                GroupedList {
+                    ConfigSwitch {
+                        text: Translation.tr("Enable custom provider")
+                        checked: Config.options.ai.customProvider.enabled
+                        onCheckedChanged: {
+                            Config.options.ai.customProvider.enabled = checked;
+                        }
+                    }
+                }
+
+                MaterialTextArea {
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Provider Name (e.g. OpenRouter)")
+                    text: Config.options.ai.customProvider.name
+                    wrapMode: TextEdit.Wrap
+                    onTextChanged: {
+                        Config.options.ai.customProvider.name = text;
+                    }
+                }
+
+                MaterialTextArea {
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Base URL (e.g. https://openrouter.ai/api/v1)")
+                    text: Config.options.ai.customProvider.baseUrl
+                    wrapMode: TextEdit.Wrap
+                    onTextChanged: {
+                        Config.options.ai.customProvider.baseUrl = text;
+                    }
+                }
+
+                MaterialTextArea {
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("API Key")
+                    text: KeyringStorage.loaded ? (KeyringStorage.keyringData.apiKeys?.custom_provider || "") : ""
+                    wrapMode: TextEdit.Wrap
+                    onTextChanged: {
+                        let currentText = text;
+                        Qt.callLater(() => {
+                            if (KeyringStorage.loaded) {
+                                KeyringStorage.setNestedField(["apiKeys", "custom_provider"], currentText);
+                            }
+                        });
+                    }
+                }
+
+                RippleButton {
+                    Layout.alignment: Qt.AlignRight
+                    Layout.topMargin: 10
+                    buttonText: Translation.tr("Fetch Models")
+                    onClicked: {
+                        Ai.fetchCustomModels();
+                    }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    text: Ai.customProviderFeedbackText
+                    color: Appearance.colors.colSubtext
+                    visible: text.length > 0
+                }
+            }
         }
 
         ContentSection {
