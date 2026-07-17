@@ -14,4 +14,5 @@ Item {
     function reload() {}
     function writeAdapter() {}
     function text() { return "" }
+    function setText(newText) {}
 }
