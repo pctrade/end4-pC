@@ -40,6 +40,15 @@ Singleton {
     property list<real> diskUsageHistory: []
     property string maxAvailableDiskString: kbToGbString(diskTotal)
 
+    property real gpuTemp: 0
+    property real gpuUsage: 0
+    property real vramTotal: 1
+    property real vramUsed: 0
+    property real vramUsedPercentage: vramTotal > 0 ? vramUsed / vramTotal : 0
+    property list<real> gpuUsageHistory: []
+    property list<real> vramUsageHistory: []
+    property string maxAvailableVramString: kbToGbString(vramTotal)
+
     Process {
         id: tempProc
         command: ["bash", "-c", "sensors 2>/dev/null | grep -E 'Package id 0|Tctl|Tdie' | grep -oP '\\+\\K[0-9.]+(?=°C)' | head -1"]
@@ -65,6 +74,22 @@ Singleton {
         }
     }
 
+    Process {
+        id: gpuProc
+        command: ["bash", "-c", "nvidia-smi --query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | head -1"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = text.trim().split(",").map(s => parseFloat(s.trim()))
+                if (parts.length >= 4 && !parts.some(isNaN)) {
+                    root.gpuTemp   = parts[0]
+                    root.gpuUsage  = parts[1] / 100
+                    root.vramUsed  = parts[2] * 1024 // MiB -> KB, to match /proc/meminfo units
+                    root.vramTotal = parts[3] * 1024
+                }
+            }
+        }
+    }
+
     Timer {
         interval: Config?.options.resources.updateInterval ?? 3000
         running: true
@@ -74,6 +99,8 @@ Singleton {
             tempProc.running = true
             diskProc.running = false
             diskProc.running = true
+            gpuProc.running = false
+            gpuProc.running = true
         }
     }
 
@@ -97,11 +124,21 @@ Singleton {
         diskUsageHistory = [...diskUsageHistory, diskUsedPercentage]
         if (diskUsageHistory.length > historyLength) diskUsageHistory.shift()
     }
+    function updateGpuUsageHistory() {
+        gpuUsageHistory = [...gpuUsageHistory, gpuUsage]
+        if (gpuUsageHistory.length > historyLength) gpuUsageHistory.shift()
+    }
+    function updateVramUsageHistory() {
+        vramUsageHistory = [...vramUsageHistory, vramUsedPercentage]
+        if (vramUsageHistory.length > historyLength) vramUsageHistory.shift()
+    }
     function updateHistories() {
         updateMemoryUsageHistory()
         updateSwapUsageHistory()
         updateCpuUsageHistory()
         updateDiskUsageHistory()
+        updateGpuUsageHistory()
+        updateVramUsageHistory()
     }
 
     Timer {

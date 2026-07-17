@@ -379,9 +379,14 @@ Singleton {
                     property bool alwaysShowCpuTemp: false
                     property bool alwaysShowDisk: false
                     property bool alwaysShowRam: true
+                    property bool alwaysShowGpu: false
+                    property bool alwaysShowGpuTemp: false
+                    property bool alwaysShowVram: false
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
+                    property int gpuWarningThreshold: 90
+                    property int vramWarningThreshold: 95
                 }
 
                 property JsonObject layouts: JsonObject {

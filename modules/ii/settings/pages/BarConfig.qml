@@ -398,6 +398,12 @@ ContentPage {
                         checked: Config.options.bar.resources.alwaysShowRam
                         onCheckedChanged: { Config.options.bar.resources.alwaysShowRam = checked }
                     }
+                    ConfigSwitch {
+                        buttonIcon: "monitor"
+                        text: Translation.tr("GPU")
+                        checked: Config.options.bar.resources.alwaysShowGpu
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowGpu = checked }
+                    }
                 }
 
                 GroupedList {
@@ -413,6 +419,18 @@ ContentPage {
                         text: Translation.tr("Swap")
                         checked: Config.options.bar.resources.alwaysShowSwap
                         onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "thermostat"
+                        text: Translation.tr("GPU Temperature")
+                        checked: Config.options.bar.resources.alwaysShowGpuTemp
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowGpuTemp = checked }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "memory"
+                        text: Translation.tr("VRAM")
+                        checked: Config.options.bar.resources.alwaysShowVram
+                        onCheckedChanged: { Config.options.bar.resources.alwaysShowVram = checked }
                     }
                 }
             }

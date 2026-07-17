@@ -22,7 +22,7 @@ Item {
             margins: Appearance.sizes.elevationMargin
         }
         radius: Appearance.rounding.full
-        color: Appearance.colors.colLayer1
+        color: Appearance.colors.colLayer0
         implicitWidth: contentRow.implicitWidth + 30
         implicitHeight: contentRow.implicitHeight + 18
 
@@ -35,7 +35,7 @@ Item {
                 Layout.alignment: Qt.AlignVCenter
                 text: root.icon
                 iconSize: 25
-                color: Appearance.colors.colOnLayer1
+                color: Appearance.colors.colOnLayer0
             }
 
             ColumnLayout {
@@ -53,7 +53,7 @@ Item {
                     Layout.fillWidth: true
                     text: root.value
                     font.pixelSize: Appearance.font.pixelSize.small
-                    color: Appearance.colors.colOnLayer1
+                    color: Appearance.colors.colOnLayer0
                     elide: Text.ElideRight
                 }
             }

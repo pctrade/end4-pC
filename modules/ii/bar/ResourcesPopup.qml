@@ -56,5 +56,28 @@ StyledPopup {
                 sublabel: root.formatKB(ResourceUsage.diskUsed) + " / " + root.formatKB(ResourceUsage.diskTotal)
             }
         }
+
+        Column {
+            spacing: 5
+
+            ResourceCard {
+                label: "GPU"
+                iconText: "monitor"
+                iconShape: MaterialShape.Shape.ClamShell
+                value: ResourceUsage.gpuUsage
+                sublabel: `${Math.round(ResourceUsage.gpuTemp)}°C`
+                sublabelColor: ResourceUsage.gpuTemp > 80 ? Appearance.colors.colError
+                    : ResourceUsage.gpuTemp > 60 ? Appearance.m3colors.m3tertiary
+                    : Appearance.colors.colOnLayer1
+            }
+
+            ResourceCard {
+                label: "VRAM"
+                iconText: "memory"
+                iconShape: MaterialShape.Shape.Clover4Leaf
+                value: ResourceUsage.vramUsedPercentage
+                sublabel: root.formatKB(ResourceUsage.vramUsed) + " / " + root.formatKB(ResourceUsage.vramTotal)
+            }
+        }
     }
 }
