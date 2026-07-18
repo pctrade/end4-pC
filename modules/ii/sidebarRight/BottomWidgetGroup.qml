@@ -93,10 +93,10 @@ Rectangle {
             }
         }
 
-        spacing: 15
+        spacing: Appearance.spacing.large
 
         CalendarHeaderButton {
-            Layout.margins: 10
+            Layout.margins: Appearance.spacing.normal
             Layout.rightMargin: 0
             forceCircle: true
             downAction: () => {
@@ -112,7 +112,7 @@ Rectangle {
 
         StyledText {
             property int remainingTasks: Todo.list.filter(task => !task.done).length
-            Layout.margins: 10
+            Layout.margins: Appearance.spacing.normal
             Layout.leftMargin: 0
             // text: `${DateTime.collapsedCalendarFormat}   •   ${remainingTasks} task${remainingTasks > 1 ? "s" : ""}`
             text: Translation.tr("%1   •   %2 tasks").arg(DateTime.collapsedCalendarFormat).arg(remainingTasks)
@@ -138,21 +138,21 @@ Rectangle {
 
         anchors.fill: parent
         // implicitHeight: tabStack.implicitHeight
-        spacing: 20
+        spacing: Appearance.spacing.verylarge
 
         // Navigation rail
         Item {
             Layout.fillHeight: true
             Layout.fillWidth: false
-            Layout.leftMargin: 10
-            Layout.topMargin: 10
+            Layout.leftMargin: Appearance.spacing.normal
+            Layout.topMargin: Appearance.spacing.normal
             implicitWidth: tabBar.implicitWidth
             // Navigation rail buttons
             NavigationRailTabArray {
                 id: tabBar
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left
-                anchors.leftMargin: 5
+                anchors.leftMargin: Appearance.spacing.small
                 currentIndex: root.selectedTab
                 expanded: false
                 Repeater {

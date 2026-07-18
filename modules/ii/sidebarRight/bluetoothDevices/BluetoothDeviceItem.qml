@@ -32,7 +32,7 @@ DialogListItem {
 
         RowLayout {
             // Name
-            spacing: 10
+            spacing: Appearance.spacing.normal
 
             MaterialSymbol {
                 iconSize: Appearance.font.pixelSize.larger
@@ -41,7 +41,7 @@ DialogListItem {
             }
 
             ColumnLayout {
-                spacing: 2
+                spacing: Appearance.spacing.unsharpen
                 Layout.fillWidth: true
                 StyledText {
                     Layout.fillWidth: true
@@ -79,7 +79,7 @@ DialogListItem {
 
         RowLayout {
             visible: root.expanded
-            Layout.topMargin: 8
+            Layout.topMargin: Appearance.spacing.small
             Item {
                 Layout.fillWidth: true
             }

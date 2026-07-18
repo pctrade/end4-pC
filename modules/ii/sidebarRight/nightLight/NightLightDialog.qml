@@ -68,8 +68,8 @@ WindowDialog {
             anchors {
                 left: parent.left
                 right: parent.right
-                leftMargin: 4
-                rightMargin: 4
+                leftMargin: Appearance.spacing.verysmall
+                rightMargin: Appearance.spacing.verysmall
             }
             text: Translation.tr("Intensity")
             from: 6500
@@ -151,8 +151,8 @@ WindowDialog {
             anchors {
                 left: parent.left
                 right: parent.right
-                leftMargin: 4
-                rightMargin: 4
+                leftMargin: Appearance.spacing.verysmall
+                rightMargin: Appearance.spacing.verysmall
             }
             value: root.brightnessMonitor.brightness
             onMoved: root.brightnessMonitor.setBrightness(value)
@@ -179,8 +179,8 @@ WindowDialog {
             anchors {
                 left: parent.left
                 right: parent.right
-                leftMargin: 4
-                rightMargin: 4
+                leftMargin: Appearance.spacing.verysmall
+                rightMargin: Appearance.spacing.verysmall
             }
             from: Hyprsunset.gammaLowerLimit / 100
             value: Hyprsunset.gamma / 100

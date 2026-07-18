@@ -54,7 +54,7 @@ Item {
 
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
-            spacing: 10
+            spacing: Appearance.spacing.normal
 
             RippleButton {
                 contentItem: StyledText {

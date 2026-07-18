@@ -136,9 +136,9 @@ Item {
                                     top: parent.top
                                     left: parent.left
                                     right: parent.right
-                                    topMargin: 2
-                                    leftMargin: 2
-                                    rightMargin: 2
+                                    topMargin: Appearance.spacing.unsharpen
+                                    leftMargin: Appearance.spacing.unsharpen
+                                    rightMargin: Appearance.spacing.unsharpen
                                 }
                                 height: 120
                                 radius: sysRect.radius
@@ -183,7 +183,7 @@ Item {
                                     left: parent.left
                                     bottom: parent.bottom
                                     leftMargin: 13
-                                    bottomMargin: 8
+                                    bottomMargin: Appearance.spacing.small
                                 }
                                 spacing: 1
 
@@ -242,10 +242,10 @@ Item {
                                 anchors {
                                     right: parent.right
                                     bottom: parent.bottom
-                                    margins: 4
+                                    margins: Appearance.spacing.verysmall
                                 }
                                 color: "transparent"
-                                padding: 4
+                                padding: Appearance.spacing.verysmall
 
                                 QuickToggleButton {
                                     toggled: root.editMode
@@ -463,7 +463,7 @@ Item {
             Row {
                 id: uptimeRow
                 anchors.centerIn: parent
-                spacing: 8
+                spacing: Appearance.spacing.small
                 Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 25
@@ -501,7 +501,7 @@ Item {
                 right: parent.right
             }
             color: Appearance.colors.colLayer1
-            padding: 4
+            padding: Appearance.spacing.verysmall
 
             QuickToggleButton {
                 toggled: root.editMode
