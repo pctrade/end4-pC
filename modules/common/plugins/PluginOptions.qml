@@ -8,7 +8,7 @@ ColumnLayout {
     id: root
 
     required property var manifest
-    spacing: 2
+    spacing: Appearance.spacing.unsharpen
 
     readonly property var optionRows: [{
         key: "blurEnabled",

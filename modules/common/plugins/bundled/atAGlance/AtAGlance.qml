@@ -81,7 +81,7 @@ Item {
     Column {
         id: content
         width: root.width
-        spacing: 8
+        spacing: Appearance.spacing.small
 
         StyledText {
             visible: root.showGreeting
