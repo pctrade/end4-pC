@@ -86,7 +86,7 @@ AbstractBackgroundWidget {
                     text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
                     iconSize: 18
                     fill: 1
-                    padding: 6
+                    padding: Appearance.spacing.small
                     implicitWidth: 34
                     implicitHeight: 34
                 }
@@ -118,11 +118,11 @@ AbstractBackgroundWidget {
                     fill: parent
                     margins: 14
                 }
-                spacing: 6
+                spacing: Appearance.spacing.small
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: Appearance.spacing.small
 
                     ColumnLayout {
                         spacing: -4
@@ -158,7 +158,7 @@ AbstractBackgroundWidget {
                         text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
                         iconSize: 18
                         fill: 1
-                        padding: 6
+                        padding: Appearance.spacing.small
                         implicitWidth: 42
                         implicitHeight: 42
                     }
@@ -168,11 +168,11 @@ AbstractBackgroundWidget {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 2
-                    spacing: 12
+                    Layout.leftMargin: Appearance.spacing.unsharpen
+                    spacing: Appearance.spacing.normal
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "humidity_mid"
@@ -188,7 +188,7 @@ AbstractBackgroundWidget {
                     }
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "rainy"
@@ -204,7 +204,7 @@ AbstractBackgroundWidget {
                     }
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "air"
@@ -230,11 +230,11 @@ AbstractBackgroundWidget {
                     fill: parent
                     margins: 14
                 }
-                spacing: 8
+                spacing: Appearance.spacing.small
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: Appearance.spacing.normal
 
                     StyledText {
                         Layout.alignment: Qt.AlignTop
@@ -248,7 +248,7 @@ AbstractBackgroundWidget {
 
                     ColumnLayout {
                         Layout.alignment: Qt.AlignVCenter
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
 
                         StyledText {
                             text: Weather.data?.description ?? ""
@@ -277,7 +277,7 @@ AbstractBackgroundWidget {
                         text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
                         iconSize: 24
                         fill: 1
-                        padding: 10
+                        padding: Appearance.spacing.normal
                         implicitWidth: 50
                         implicitHeight: 50
                     }
@@ -287,11 +287,11 @@ AbstractBackgroundWidget {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 5
-                    spacing: 16
+                    Layout.leftMargin: Appearance.spacing.small
+                    spacing: Appearance.spacing.large
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "humidity_mid"
@@ -307,7 +307,7 @@ AbstractBackgroundWidget {
                     }
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "rainy"
@@ -323,7 +323,7 @@ AbstractBackgroundWidget {
                     }
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "air"
@@ -339,7 +339,7 @@ AbstractBackgroundWidget {
                     }
 
                     RowLayout {
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
                         MaterialSymbol {
                             iconSize: Appearance.font.pixelSize.smaller
                             text: "visibility"
@@ -358,10 +358,10 @@ AbstractBackgroundWidget {
 
                     ColumnLayout{
                         Layout.topMargin: -5
-                        Layout.rightMargin: 5
+                        Layout.rightMargin: Appearance.spacing.small
                         spacing: 1
                         RowLayout {
-                            spacing: 4
+                            spacing: Appearance.spacing.verysmall
                             MaterialSymbol {
                                 iconSize: Appearance.font.pixelSize.smaller
                                 text: "wb_twilight"
@@ -377,7 +377,7 @@ AbstractBackgroundWidget {
                         }
 
                         RowLayout {
-                            spacing: 4
+                            spacing: Appearance.spacing.verysmall
                             MaterialSymbol {
                                 iconSize: Appearance.font.pixelSize.smaller
                                 text: "nights_stay"
@@ -405,7 +405,7 @@ AbstractBackgroundWidget {
             anchors {
                 right: card.right
                 bottom: card.bottom
-                margins: 4
+                margins: Appearance.spacing.verysmall
             }
             opacity: (root.containsMouse || resizeArea.containsMouse || resizeArea.pressed) ? 0.5 : 0
             visible: opacity > 0 && !Config.options.background.widgetsLocked

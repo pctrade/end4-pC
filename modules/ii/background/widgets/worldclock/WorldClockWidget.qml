@@ -70,13 +70,13 @@ AbstractBackgroundWidget {
             // 2x2
             ColumnLayout {
                 id: mainColumn
-                anchors { fill: parent; margins: 12 }
-                spacing: 10
+                anchors { fill: parent; margins: Appearance.spacing.normal }
+                spacing: Appearance.spacing.normal
                 visible: sizeMode === "2x2" && !root.showingSettings
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: Appearance.spacing.verysmall
 
                     MaterialSymbol {
                         iconSize: Appearance.font.pixelSize.hugeass
@@ -155,8 +155,8 @@ AbstractBackgroundWidget {
                             Behavior on color { ColorAnimation { duration: 400 } }
 
                             ColumnLayout {
-                                anchors { fill: parent; margins: 8 }
-                                spacing: 2
+                                anchors { fill: parent; margins: Appearance.spacing.small }
+                                spacing: Appearance.spacing.unsharpen
                                 RowLayout {
                                     Layout.fillWidth: true
                                     StyledText {
@@ -174,7 +174,7 @@ AbstractBackgroundWidget {
                                     }
                                 }
                                 RowLayout {
-                                    Layout.fillWidth: true; spacing: 4
+                                    Layout.fillWidth: true; spacing: Appearance.spacing.verysmall
                                     StyledText {
                                         font.pixelSize: Appearance.font.pixelSize.normal
                                         font.weight: Font.Bold
@@ -200,11 +200,11 @@ AbstractBackgroundWidget {
                 visible: sizeMode === "2x2" && root.showingSettings
 
                 ColumnLayout {
-                    anchors { fill: parent; margins: 12 }
-                    spacing: 10
+                    anchors { fill: parent; margins: Appearance.spacing.normal }
+                    spacing: Appearance.spacing.normal
 
                     RowLayout {
-                        Layout.fillWidth: true; spacing: 8
+                        Layout.fillWidth: true; spacing: Appearance.spacing.small
                         Rectangle {
                             radius: Appearance.rounding.full
                             color: "transparent"
@@ -254,8 +254,8 @@ AbstractBackgroundWidget {
 
             // 4x1
             RowLayout {
-                anchors { fill: parent; margins: 8 }
-                spacing: 8
+                anchors { fill: parent; margins: Appearance.spacing.small }
+                spacing: Appearance.spacing.small
                 visible: sizeMode === "4x1"
 
                 Repeater {
@@ -302,7 +302,7 @@ AbstractBackgroundWidget {
                 id: toggleHandle
                 width: 16; height: 16; radius: Appearance.rounding.unsharpenslight
                 color: Appearance.colors.colOnPrimaryContainer
-                anchors { right: parent.right; bottom: parent.bottom; margins: 4 }
+                anchors { right: parent.right; bottom: parent.bottom; margins: Appearance.spacing.verysmall }
                 opacity: (root.containsMouse || toggleArea.containsMouse || toggleArea.pressed) ? 0.5 : 0
                 visible: opacity > 0 && !Config.options.background.widgetsLocked
 
