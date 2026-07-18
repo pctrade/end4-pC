@@ -15,7 +15,7 @@ Item {
     id: root
 
     // Sizes
-    property real padding: 4
+    property real padding: Appearance.spacing.verysmall
 
     // Widgets
     property var inputField: inputCanvas.inputTextArea
@@ -111,7 +111,7 @@ Item {
             fill: parent
             margins: root.padding
         }
-        spacing: 10
+        spacing: Appearance.spacing.normal
 
         TextCanvas {
             id: inputCanvas
@@ -157,7 +157,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 20
+            spacing: Appearance.spacing.verylarge
 
             Item { Layout.fillWidth: true }
 

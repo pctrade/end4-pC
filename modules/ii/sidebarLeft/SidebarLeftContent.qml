@@ -72,7 +72,7 @@ Item {
             SwipeView { // Content pages
                 id: swipeView
                 anchors.fill: parent
-                spacing: 10
+                spacing: Appearance.spacing.normal
                 currentIndex: tabBar.currentIndex
 
                 clip: true

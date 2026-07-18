@@ -13,7 +13,7 @@ import Quickshell.Io
 
 Item {
     id: root
-    property real padding: 4
+    property real padding: Appearance.spacing.verysmall
     property var inputField: messageInputField
     property string commandPrefix: "/"
 
@@ -321,7 +321,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 RowLayout {
                     id: statusRowLayout
                     anchors.centerIn: parent
-                    spacing: 10
+                    spacing: Appearance.spacing.normal
 
                     StatusItem {
                         icon: Ai.currentModelHasApiKey ? "key" : "key_off"
@@ -356,7 +356,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 id: messageListView
                 z: 0
                 anchors.fill: parent
-                spacing: 10
+                spacing: Appearance.spacing.normal
                 popin: false
                 topMargin: statusBg.implicitHeight + statusBg.anchors.topMargin * 2
 
@@ -418,7 +418,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
             visible: root.suggestionList.length > 0 && messageInputField.text.length > 0
             property int selectedIndex: 0
             Layout.fillWidth: true
-            spacing: 5
+            spacing: Appearance.spacing.small
 
             Repeater {
                 id: suggestionRepeater
@@ -471,7 +471,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
         Rectangle { // Input area
             id: inputWrapper
-            property real spacing: 5
+            property real spacing: Appearance.spacing.small
             Layout.fillWidth: true
             radius: Appearance.rounding.normal - root.padding
             color: Appearance.colors.colLayer2
@@ -500,7 +500,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     bottom: commandButtonsRow.top
                     left: parent.left
                     right: parent.right
-                    bottomMargin: 5
+                    bottomMargin: Appearance.spacing.small
                 }
                 spacing: 0
 
@@ -515,7 +515,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                         id: messageInputField
                         anchors.fill: parent
                         wrapMode: TextArea.Wrap
-                        padding: 10
+                        padding: Appearance.spacing.normal
                         color: activeFocus ? Appearance.m3colors.m3onSurface : Appearance.m3colors.m3onSurfaceVariant
                         placeholderText: Translation.tr('Message the model... "%1" for commands').arg(root.commandPrefix)
 
@@ -697,7 +697,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 RippleButton { // Send button
                     id: sendButton
                     Layout.alignment: Qt.AlignBottom
-                    Layout.rightMargin: 5
+                    Layout.rightMargin: Appearance.spacing.small
                     implicitWidth: 40
                     implicitHeight: 40
                     buttonRadius: Appearance.rounding.small
@@ -729,10 +729,10 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 5
-                anchors.leftMargin: 10
-                anchors.rightMargin: 5
-                spacing: 4
+                anchors.bottomMargin: Appearance.spacing.small
+                anchors.leftMargin: Appearance.spacing.normal
+                anchors.rightMargin: Appearance.spacing.small
+                spacing: Appearance.spacing.verysmall
 
                 property var commandsShown: [
                     {
