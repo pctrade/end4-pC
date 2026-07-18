@@ -302,6 +302,19 @@ arrays, etc.) rather than static declarations - e.g. the plugin system in
   nothing. This only surfaces where focus is obtained by clicking - `LockSurface.qml`'s password box
   uses the identical overlay structure but never hit this, since it `forceActiveFocus()`s itself
   programmatically instead of depending on a click.
+- **A QML property binding that calls a C++ invokable method (not a property read) will not
+  re-evaluate when that method's underlying data changes.** `DesktopEntries.applications` takes a
+  few seconds to populate after `qs` starts. `DragApps.qml`'s pinned-app launcher bound
+  `deskEntry: appEntry ? DesktopEntries.heuristicLookup(appId) : null` once at delegate creation -
+  since `heuristicLookup()` is a plain invokable, not a property, the binding engine can't see it
+  depends on `applications`, so `deskEntry` came back `null` (evaluated before the scan finished)
+  and then never updated. Any pinned app that wasn't already running at shell startup became
+  permanently unlaunchable for that session - clicking it silently no-op'd via `deskEntry?.execute()`.
+  `DockAppButton.qml` and `DocktoPanel.qml` already work around this with an explicit
+  `Connections { target: DesktopEntries; function onApplicationsChanged() { ... } }` that reassigns
+  the property by hand; `DragApps.qml` was missing the same fix. When a binding depends on the
+  result of an invokable rather than a property, add an explicit `Connections` re-fetch on the
+  relevant `*Changed` signal instead of trusting the binding to track it.
 
 ## Design language
 
