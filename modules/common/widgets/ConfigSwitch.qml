@@ -11,7 +11,7 @@ RippleButton {
     colBackgroundHover: "transparent"
 
     Layout.fillWidth: true
-    implicitHeight: contentItem.implicitHeight + 8 * 2
+    implicitHeight: contentItem.implicitHeight + 8 
     font.pixelSize: Appearance.font.pixelSize.small
     
     onClicked: checked = !checked

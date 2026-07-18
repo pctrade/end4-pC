@@ -23,7 +23,7 @@ Item {
                 readonly property bool isFirst: index === 0
                 readonly property bool isLast: index === root.items.length - 1
                 Layout.fillWidth: true
-                implicitHeight: (root.items[index]?.implicitHeight ?? 0) + 16
+                implicitHeight: (root.items[index]?.implicitHeight ?? 0) + 16 + 8
                 color: root.bgcolor
                 topLeftRadius:     isFirst ? root.bigRadius : root.smallRadius
                 topRightRadius:    isFirst ? root.bigRadius : root.smallRadius
