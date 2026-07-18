@@ -33,9 +33,9 @@ Item {
 
         RowLayout { 
             id: valueRow
-            Layout.margins: 10
+            Layout.margins: Appearance.spacing.normal
             anchors.fill: parent
-            spacing: 10
+            spacing: Appearance.spacing.normal
 
             StyledSlider {
                 id: valueProgressBar
@@ -52,7 +52,7 @@ Item {
                     anchors {
                         verticalCenter: valueProgressBar.verticalCenter
                         left: handlePassed ? valueProgressBar.left : valueProgressBar.handle.left
-                        leftMargin: 5
+                        leftMargin: Appearance.spacing.small
                     }
                     color: handlePassed ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
                     renderType: Text.QtRendering
