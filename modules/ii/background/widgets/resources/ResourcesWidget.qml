@@ -57,7 +57,7 @@ AbstractBackgroundWidget {
                 text: statCard.icon
                 iconSize: 18
                 fill: 1
-                padding: 6
+                padding: Appearance.spacing.small
                 implicitWidth: 34
                 implicitHeight: 34
             }

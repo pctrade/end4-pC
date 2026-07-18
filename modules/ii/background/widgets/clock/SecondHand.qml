@@ -30,7 +30,7 @@ Item {
         anchors {
             left: parent.left
             verticalCenter: parent.verticalCenter
-            leftMargin: 10 + (root.style === "dot" ? root.dotSize : 0)
+            leftMargin: Appearance.spacing.normal + (root.style === "dot" ? root.dotSize : 0)
         }
         implicitWidth: root.style === "dot" ? root.dotSize : root.handLength
         implicitHeight: root.style === "dot" ? root.dotSize : root.handWidth

@@ -7,7 +7,7 @@ import QtQuick
 Item {
     id: root
     property real numberSize: 80
-    property real margins: 10
+    property real margins: Appearance.spacing.normal
     property color color: Appearance.colors.colOnSecondaryContainer
 
     property int hours: 12

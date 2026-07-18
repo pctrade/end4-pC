@@ -7,7 +7,7 @@ import QtQuick
 Item {
     id: root
     property real implicitSize: 12
-    property real margins: 10
+    property real margins: Appearance.spacing.normal
     property color color: Appearance.colors.colOnSecondaryContainer
 
     Repeater {

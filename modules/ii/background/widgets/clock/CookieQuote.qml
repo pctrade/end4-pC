@@ -34,7 +34,7 @@ Item {
         Row {
             id: quoteRow
             anchors.centerIn: parent
-            spacing: 4
+            spacing: Appearance.spacing.verysmall
             
             MaterialSymbol {
                 id: quoteIcon

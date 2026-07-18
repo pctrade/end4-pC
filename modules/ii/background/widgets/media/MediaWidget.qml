@@ -157,7 +157,7 @@ AbstractBackgroundWidget {
                         right: parent.right
                         top: parent.top
                         bottom: parent.bottom
-                        leftMargin: 16
+                        leftMargin: Appearance.spacing.large
                         rightMargin: 14
                     }
                     spacing: -10
@@ -166,7 +166,7 @@ AbstractBackgroundWidget {
                     ColumnLayout {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
-                        spacing: 2
+                        spacing: Appearance.spacing.unsharpen
 
                         StyledText {
                             Layout.fillWidth: true
@@ -199,7 +199,7 @@ AbstractBackgroundWidget {
                         RowLayout {
                             id: controlsRow
                             anchors.centerIn: parent
-                            spacing: 2
+                            spacing: Appearance.spacing.unsharpen
                     
                             RippleButton {
                                 implicitWidth: root.buttonSize
@@ -230,7 +230,7 @@ AbstractBackgroundWidget {
                                 text: root.currentPlayer?.isPlaying ? "pause" : "play_arrow"
                                 iconSize: root.buttonIconSize + 12
                                 fill: 1
-                                padding: 8
+                                padding: Appearance.spacing.small
 
                                 MouseArea {
                                     anchors.fill: parent
@@ -289,8 +289,8 @@ AbstractBackgroundWidget {
 
                 Lyrics {
                     anchors.fill: parent
-                    anchors.leftMargin: 16
-                    anchors.rightMargin: 16
+                    anchors.leftMargin: Appearance.spacing.large
+                    anchors.rightMargin: Appearance.spacing.large
                     textAlignment: Text.AlignHCenter
                     textColor: Appearance.colors.colOnPrimaryContainer
                     activeColor: Appearance.colors.colPrimary

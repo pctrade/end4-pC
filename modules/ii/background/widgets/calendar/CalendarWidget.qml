@@ -161,7 +161,7 @@ AbstractBackgroundWidget {
 
                         RowLayout {
                             anchors.centerIn: parent
-                            spacing: 4
+                            spacing: Appearance.spacing.verysmall
                             StyledText {
                                 text: root.today.toLocaleDateString(Qt.locale(), "MMM").toUpperCase()
                                 font.pixelSize: Appearance.font.pixelSize.normal
@@ -199,10 +199,10 @@ AbstractBackgroundWidget {
             id: oneByTwoContent
             ColumnLayout {
                 anchors { fill: parent; margins: 14 }
-                spacing: 8
+                spacing: Appearance.spacing.small
 
                 Rectangle {
-                    Layout.leftMargin: 3
+                    Layout.leftMargin: Appearance.spacing.verysmall
                     implicitHeight: 28
                     implicitWidth: monthText.implicitWidth + 20
                     radius: Appearance.rounding.full
@@ -223,7 +223,7 @@ AbstractBackgroundWidget {
                     rowSpacing: 4
                     columnSpacing: 0
                     Layout.fillWidth: true
-                    Layout.topMargin: 4
+                    Layout.topMargin: Appearance.spacing.verysmall
 
                     Repeater {
                         model: ["Mo","Tu","We","Th","Fr","Sa","Su"]
@@ -277,12 +277,12 @@ AbstractBackgroundWidget {
         Component {
             id: twoByTwoContent
             ColumnLayout {
-                anchors { fill: parent; margins: 16 }
-                spacing: 4
+                anchors { fill: parent; margins: Appearance.spacing.large }
+                spacing: Appearance.spacing.verysmall
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: Appearance.spacing.verysmall
 
                     StyledText {
                         Layout.fillWidth: true
@@ -331,7 +331,7 @@ AbstractBackgroundWidget {
 
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
-                    spacing: 4
+                    spacing: Appearance.spacing.verysmall
                     Repeater {
                         model: ["Mo","Tu","We","Th","Fr","Sa","Su"]
                         delegate: StyledText {
@@ -360,7 +360,7 @@ AbstractBackgroundWidget {
                             model: root.weeks
                             delegate: RowLayout {
                                 required property var modelData
-                                spacing: 4
+                                spacing: Appearance.spacing.verysmall
                                 Repeater {
                                     model: parent.modelData
                                     delegate: DayCell {
@@ -381,7 +381,7 @@ AbstractBackgroundWidget {
             id: resizeHandle
             width: 16; height: 16; radius: Appearance.rounding.unsharpenslight
             color: Appearance.colors.colOnPrimaryContainer
-            anchors { right: card.right; bottom: card.bottom; margins: 4 }
+            anchors { right: card.right; bottom: card.bottom; margins: Appearance.spacing.verysmall }
             opacity: (root.containsMouse || resizeArea.containsMouse || resizeArea.pressed) ? 0.5 : 0
             visible: opacity > 0 && !Config.options.background.widgetsLocked
             Behavior on opacity { NumberAnimation { duration: Appearance.animation.elementMoveFaster.duration } }
@@ -417,7 +417,7 @@ AbstractBackgroundWidget {
             id: toggleHandle
             width: 16; height: 16; radius: Appearance.rounding.unsharpenslight
             color: Appearance.colors.colOnPrimaryContainer
-            anchors { left: card.left; bottom: card.bottom; margins: 4 }
+            anchors { left: card.left; bottom: card.bottom; margins: Appearance.spacing.verysmall }
             opacity: (root.containsMouse || toggleArea.containsMouse) && root.sizeMode !== "1x1" ? 0.5 : 0
             visible: opacity > 0 && !Config.options.background.widgetsLocked
             Behavior on opacity { NumberAnimation { duration: Appearance.animation.elementMoveFaster.duration } }

@@ -107,10 +107,10 @@ AbstractBackgroundWidget {
                     top: parent.top
                     left: parent.left
                     right: parent.right
-                    margins: 16
+                    margins: Appearance.spacing.large
                 }
                 Layout.topMargin: root.avatarSize / 2 + 4
-                spacing: 10
+                spacing: Appearance.spacing.normal
 
                 Item {
                     Layout.fillWidth: true
@@ -119,11 +119,11 @@ AbstractBackgroundWidget {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 6
+                    spacing: Appearance.spacing.small
 
                     MaterialSymbol {
                         Layout.alignment: Qt.AlignTop
-                        Layout.topMargin: 2
+                        Layout.topMargin: Appearance.spacing.unsharpen
                         iconSize: Appearance.font.pixelSize.normal
                         text: root.currentQuip.icon
                         color: Appearance.colors.colOnPrimaryContainer
@@ -142,8 +142,8 @@ AbstractBackgroundWidget {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.topMargin: 4
-                    spacing: 8
+                    Layout.topMargin: Appearance.spacing.verysmall
+                    spacing: Appearance.spacing.small
 
                     Rectangle {
                         Layout.fillWidth: true
@@ -153,7 +153,7 @@ AbstractBackgroundWidget {
 
                         RowLayout {
                             anchors.centerIn: parent
-                            spacing: 4
+                            spacing: Appearance.spacing.verysmall
                             MaterialSymbol {
                                 iconSize: Appearance.font.pixelSize.normal
                                 text: "lock"
@@ -231,7 +231,7 @@ AbstractBackgroundWidget {
             Image {
                 id: avatarImage
                 anchors.fill: parent
-                anchors.margins: 3
+                anchors.margins: Appearance.spacing.verysmall
                 source: Config.options.profile.avatarPath !== ""
                     ? "file://" + Config.options.profile.avatarPicture
                     : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"

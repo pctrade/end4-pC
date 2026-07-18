@@ -161,7 +161,7 @@ AbstractBackgroundWidget {
             anchors {
                 right: imageShape.right
                 bottom: imageShape.bottom
-                margins: 6
+                margins: Appearance.spacing.small
             }
             opacity: (root.containsMouse || resizeArea.containsMouse || resizeArea.pressed) ? 0.5 : 0
             visible: opacity > 0 && !Config.options.background.widgetsLocked

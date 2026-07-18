@@ -154,9 +154,9 @@ AbstractBackgroundWidget {
                 left: parent.left
                 right: parent.right
                 top: parent.top
-                margins: 16
+                margins: Appearance.spacing.large
             }
-            spacing: 12
+            spacing: Appearance.spacing.normal
 
             StyledText {
                 Layout.fillWidth: true
@@ -286,10 +286,10 @@ AbstractBackgroundWidget {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: Appearance.spacing.small
 
                 StyledText {
-                    Layout.leftMargin: 3
+                    Layout.leftMargin: Appearance.spacing.verysmall
                     text: "Convert to:"
                     font.pixelSize: Appearance.font.pixelSize.small
                     color: Appearance.colors.colOnLayer1
