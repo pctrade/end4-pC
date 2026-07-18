@@ -11,7 +11,7 @@ StyledPopup {
     ColumnLayout {
         id: mainLayout
         implicitWidth: 340 
-        spacing: 8
+        spacing: Appearance.spacing.small
 
         Layout.topMargin: -8
         Layout.leftMargin: -8
@@ -33,7 +33,7 @@ StyledPopup {
 
             Item {
                 anchors.fill: parent
-                anchors.margins: 16 
+                anchors.margins: Appearance.spacing.large 
 
                 ColumnLayout {
                     anchors.left: parent.left
@@ -60,7 +60,7 @@ StyledPopup {
                     anchors.left: parent.left
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: -8
-                    spacing: 4
+                    spacing: Appearance.spacing.verysmall
 
                     StyledText {
                         text: Weather.data?.temp ?? "3"
@@ -85,12 +85,12 @@ StyledPopup {
                 ColumnLayout {
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    anchors.rightMargin: 6
+                    anchors.rightMargin: Appearance.spacing.small
                     anchors.bottomMargin: -1
                     spacing: -2
 
                     RowLayout {
-                        spacing: 4
+                        spacing: Appearance.spacing.verysmall
                         Layout.alignment: Qt.AlignRight
                         MaterialSymbol {
                             text: "wb_twilight"
@@ -106,7 +106,7 @@ StyledPopup {
                     }
 
                     RowLayout {
-                        spacing: 4
+                        spacing: Appearance.spacing.verysmall
                         Layout.alignment: Qt.AlignRight
                         MaterialSymbol {
                             text: "bedtime"
@@ -131,9 +131,9 @@ StyledPopup {
             columnSpacing: 4
             uniformCellWidths: true
             
-            Layout.leftMargin: 2
-            Layout.rightMargin: 2
-            Layout.bottomMargin: 2
+            Layout.leftMargin: Appearance.spacing.unsharpen
+            Layout.rightMargin: Appearance.spacing.unsharpen
+            Layout.bottomMargin: Appearance.spacing.unsharpen
             Layout.fillWidth: true
 
             WeatherCard {

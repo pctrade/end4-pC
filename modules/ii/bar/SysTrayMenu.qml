@@ -62,7 +62,7 @@ PopupWindow {
 
         Rectangle {
             id: popupBackground
-            readonly property real padding: 4
+            readonly property real padding: Appearance.spacing.verysmall
             anchors {
                 left: parent.left
                 right: parent.right
@@ -164,7 +164,7 @@ PopupWindow {
                         leftMargin: backButton.horizontalPadding
                         rightMargin: backButton.horizontalPadding
                     }
-                    spacing: 8
+                    spacing: Appearance.spacing.small
                     MaterialSymbol {
                         iconSize: 20
                         text: "chevron_left"
@@ -197,7 +197,7 @@ PopupWindow {
                     leftMargin: pinEntry.horizontalPadding
                     rightMargin: pinEntry.horizontalPadding
                 }
-                spacing: 8
+                spacing: Appearance.spacing.small
 
                 MaterialSymbol {
                     iconSize: 18
@@ -215,8 +215,8 @@ PopupWindow {
             Layout.fillWidth: true
             implicitHeight: 1
             color: Appearance.colors.colSubtext
-            Layout.topMargin: 4
-            Layout.bottomMargin: 4
+            Layout.topMargin: Appearance.spacing.verysmall
+            Layout.bottomMargin: Appearance.spacing.verysmall
         }
 
         Repeater {

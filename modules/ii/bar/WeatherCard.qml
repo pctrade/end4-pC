@@ -20,7 +20,7 @@ Rectangle {
         id: columnLayout
         anchors {
             fill: parent
-            margins: 10
+            margins: Appearance.spacing.normal
         }
         spacing: -4
 

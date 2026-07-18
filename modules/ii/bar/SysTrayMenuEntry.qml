@@ -58,7 +58,7 @@ RippleButton {
             leftMargin: root.horizontalPadding
             rightMargin: root.horizontalPadding
         }
-        spacing: 8
+        spacing: Appearance.spacing.small
         visible: !root.menuEntry.isSeparator
 
         // Interaction: checkbox or radio button

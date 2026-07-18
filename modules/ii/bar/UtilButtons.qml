@@ -131,7 +131,7 @@ Item {
                 Revealer {
                     id: timerRevealer
                     anchors.left: btn.right
-                    anchors.leftMargin: 8
+                    anchors.leftMargin: Appearance.spacing.small
                     anchors.verticalCenter: btn.verticalCenter
                     reveal: recordingItem.isRecording && !root.vertical
 
@@ -142,7 +142,7 @@ Item {
                         font.features: { "tnum": 1 }
                         font.letterSpacing: -0.3
                         color: Appearance.colors.colOnLayer2
-                        rightPadding: 8
+                        rightPadding: Appearance.spacing.small
                         Component.onCompleted: width = implicitWidth
                     }
                 }

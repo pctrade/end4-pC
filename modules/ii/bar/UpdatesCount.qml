@@ -75,8 +75,8 @@ MouseArea {
     Component {
         id: textComp
         StyledText {
-            leftPadding: 5
-            rightPadding: 3
+            leftPadding: Appearance.spacing.small
+            rightPadding: Appearance.spacing.verysmall
             font.pixelSize: Appearance.font.pixelSize.small
             color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1
             text: Updates.count
@@ -86,8 +86,8 @@ MouseArea {
     Component {
         id: spinnerComp
         MaterialSymbol {
-            leftPadding: 5
-            rightPadding: 3
+            leftPadding: Appearance.spacing.small
+            rightPadding: Appearance.spacing.verysmall
             text: "progress_activity"
             iconSize: Appearance.font.pixelSize.normal
             color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1
@@ -109,7 +109,7 @@ MouseArea {
     Component {
         id: rowContent
         RowLayout {
-            spacing: 4
+            spacing: Appearance.spacing.verysmall
 
             // Default
             MaterialSymbol {
@@ -150,7 +150,7 @@ MouseArea {
     Component {
         id: colContent
         ColumnLayout {
-            spacing: 4
+            spacing: Appearance.spacing.verysmall
 
             MaterialSymbol {
                 visible: !root.isMaterial
