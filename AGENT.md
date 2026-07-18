@@ -191,6 +191,18 @@ this query against a hardcoded `6500` to infer active state (also just factually
 restart. Don't rely on querying `hyprsunset`'s live state at all; track on/off intent yourself
 (see how `Hyprsunset.qml` now persists it via `Persistent.qml` instead).
 
+**That same bare `--temperature 6000` default also bit the daemon's cold start, not just state
+queries.** `Hyprsunset.qml` used to spawn `hyprsunset` with no flags (`pidof hyprsunset ||
+hyprsunset`) and immediately fire a separate, fire-and-forget `hyprctl hyprsunset identity`/
+`temperature` correction right after via `execDetached`. On a warm system that correction reaches
+the already-running daemon fine, but on a cold start (nothing running yet) it races the daemon's
+IPC socket coming up and can silently fail, leaving `hyprsunset` stuck at its own 6000K default
+indefinitely - toggling night light off after a restart looked like it did nothing, and toggling it
+on read as the tint "intensifying" (6000K → the configured, warmer temperature) rather than turning
+on from neutral. Fixed by launching `hyprsunset` with the target state already as CLI flags
+(`--temperature N` / `--identity`) instead of spawning bare and correcting after the fact - a
+freshly-spawned daemon now starts in the right state with no window where it's wrong.
+
 ## Layer-shell (wlr-layer-shell) gotchas
 
 Widgets that are `PanelWindow`s pick a `WlrLayershell.layer` (`Background < Bottom < Top < Overlay`).
