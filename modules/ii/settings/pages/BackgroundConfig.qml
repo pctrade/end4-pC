@@ -1013,6 +1013,11 @@ ContentPage {
                             icon: "hourglass_empty",
                             name: Translation.tr("Screen Time"),
                             enabled: Config.options.background.widgets.screentime.enable
+                        },
+                        {
+                            icon: "code",
+                            name: Translation.tr("GitHub Heatmap"),
+                            enabled: Config.options.background.widgets.github.enable
                         }
                     ]
                     delegate: Rectangle {
@@ -1064,6 +1069,8 @@ ContentPage {
                                             Config.options.background.widgets.devices.enable = checked
                                         else if (modelData.icon === "hourglass_empty")
                                             Config.options.background.widgets.screentime.enable = checked
+                                        else if (modelData.icon === "code")
+                                            Config.options.background.widgets.github.enable = checked
                                     }
                                 }
                             }
@@ -1076,6 +1083,66 @@ ContentPage {
                                 text: modelData.enabled ? Translation.tr("Enabled") : Translation.tr("Disabled")
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 color: Appearance.colors.colSubtext
+                            }
+                        }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("GitHub Heatmap Settings")
+                visible: Config.options.background.widgets.github.enable
+
+                GroupedList {
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.margins: 10
+                        spacing: 12
+
+                        MaterialSymbol {
+                            text: "account_circle"
+                            iconSize: Appearance.font.pixelSize.normal + 6
+                            color: Appearance.colors.colPrimary
+                        }
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.fillWidth: true
+
+                            StyledText {
+                                text: Translation.tr("GitHub Username")
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                font.weight: Font.DemiBold
+                                color: Appearance.colors.colOnLayer1
+                            }
+
+                            StyledText {
+                                text: Translation.tr("Username for heatmaps and contribution stats")
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                color: Appearance.colors.colSubtext
+                            }
+                        }
+
+                        Rectangle {
+                            implicitWidth: 170
+                            implicitHeight: 32
+                            radius: 8
+                            color: Appearance.colors.colLayer0
+                            border.width: 1
+                            border.color: Appearance.colors.colLayer0Border
+
+                            StyledTextInput {
+                                anchors {
+                                    fill: parent
+                                    leftMargin: 10
+                                    rightMargin: 10
+                                    topMargin: 4
+                                    bottomMargin: 4
+                                }
+                                text: Config.options.background.widgets.github.username ?? "rubberpirate"
+                                onEditingFinished: {
+                                    Config.options.background.widgets.github.username = text;
+                                }
                             }
                         }
                     }
