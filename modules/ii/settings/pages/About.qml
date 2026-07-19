@@ -31,42 +31,66 @@ ContentPage {
         Qt.callLater(() => GlobalStates.settingsOpen = false)
     }
     
-    RowLayout {
+
+
+    Rectangle {
         Layout.fillWidth: true
-        Layout.alignment: Qt.AlignHCenter
-        Layout.topMargin: 50
-        spacing: 16
+        Layout.preferredHeight: 156 
+        Layout.topMargin: 35
+        Layout.leftMargin: 16
+        Layout.rightMargin: 16
 
-        IconImage {
-            implicitWidth: 134
-            implicitHeight: 134
-            source: Quickshell.iconPath(SystemInfo.logo)
-        }
+        radius: 24
+        color: Appearance.colors.colLayer1
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 4
+        RowLayout {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 24
+            spacing: 24
 
-            StyledText {
-                text: SystemInfo.distroName
-                font.pixelSize: Appearance.font.pixelSize.hugeass
-                font.weight: Font.Bold
-                color: Appearance.colors.colOnSurface
+            Rectangle {
+                Layout.alignment: Qt.AlignVCenter
+                implicitWidth: 110
+                implicitHeight: 110
+                radius: 20
+                color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.9)
+
+                IconImage {
+                    anchors.centerIn: parent
+                    implicitWidth: 72
+                    implicitHeight: 72
+                    source: Quickshell.iconPath(SystemInfo.logo)
+                }
             }
 
-            StyledText {
-                text: "Kernel " + (SystemInfo.kernelVersion || "Loading...")
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colSubtext
-            }
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 4
 
-            Item {
-                implicitWidth: colorRow.implicitWidth
-                implicitHeight: 24
+                StyledText {
+                    Layout.fillWidth: true
+                    text: SystemInfo.distroName
+                    font.pixelSize: Appearance.font.pixelSize.hugeass
+                    font.weight: Font.ExtraBold
+                    color: Appearance.colors.colOnSurface
+                    elide: Text.ElideRight
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: "Kernel " + (SystemInfo.kernelVersion || "Loading...")
+                    font.pixelSize: Appearance.font.pixelSize.normal
+                    font.weight: Font.Medium
+                    color: Appearance.colors.colSubtext
+                    elide: Text.ElideRight
+                }
 
                 Row {
                     id: colorRow
-                    spacing: -8
+                    spacing: -6
 
                     Repeater {
                         model: [
@@ -80,14 +104,34 @@ ContentPage {
                         delegate: Rectangle {
                             required property var modelData
                             required property int index
-                            width: 24
-                            height: 24
+                            width: 28
+                            height: 28
                             radius: width / 2
                             color: modelData
                             z: index
                             border.width: 2
                             border.color: Appearance.colors.colLayer1
                         }
+                    }
+                }
+            }
+            RowLayout {
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+                anchors.margins: 0
+                spacing: 8
+                RippleButton {
+                    buttonText: Translation.tr("Update Dots")
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: Appearance.colors.colPrimaryContainer
+                    colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                    Layout.preferredHeight: 44
+                    downAction: () => runUpdateDots()
+                    contentItem: StyledText {
+                        text: parent.buttonText
+                        horizontalAlignment: Text.AlignHCenter
+                        leftPadding: 10
+                        rightPadding: 10
                     }
                 }
             }
@@ -98,12 +142,13 @@ ContentPage {
         Layout.fillWidth: true
         spacing: 8
 
-        RowLayout {
+        RowLayout { //This is not in the grid because I was planning to do something else.
             Layout.fillWidth: true
             spacing: 8
 
             AboutCard {
                 icon: "planner_review"
+                iconShape: MaterialShape.Shape.Pentagon
                 label: "CPU"
                 value: SystemInfo.cpu || "Loading..."
                 Layout.fillWidth: true
@@ -111,6 +156,7 @@ ContentPage {
 
             AboutCard {
                 icon: "monitor"
+                iconShape: MaterialShape.Shape.ClamShell
                 label: "GPU"
                 value: SystemInfo.gpu || "N/A"
                 Layout.fillWidth: true
@@ -132,6 +178,7 @@ ContentPage {
 
             AboutCard {
                 icon: "storage"
+                iconShape: MaterialShape.Shape.Cookie6Sided
                 label: "Disk"
                 value: SystemInfo.disk || "Loading..."
                 Layout.fillWidth: true
@@ -140,6 +187,7 @@ ContentPage {
             AboutCard {
                 icon: "terminal"
                 label: "Shell"
+                iconShape: MaterialShape.Shape.Gem
                 value: SystemInfo.shell || "Loading..."
                 Layout.fillWidth: true
             }
@@ -147,6 +195,7 @@ ContentPage {
             AboutCard {
                 icon: "package_2"
                 label: "Packages"
+                iconShape: MaterialShape.Shape.Sunny
                 value: SystemInfo.packages || "Loading..."
                 Layout.fillWidth: true
             }
@@ -154,53 +203,20 @@ ContentPage {
             AboutCard {
                 icon: "update"
                 label: "Updates"
+                iconShape: MaterialShape.Shape.Cookie9Sided
                 value: Updates.checking ? "Checking..." : (Updates.count === 0 ? "Up to date" : `${Updates.count}`)
                 Layout.fillWidth: true
+                clickAction: () => {
+                    runSystemUpdate()
+                }
             }
 
             AboutCard {
                 icon: "timelapse"
                 label: "Uptime"
+                iconShape: MaterialShape.Shape.Cookie12Sided
                 value: DateTime.uptime || "Loading..."
                 Layout.fillWidth: true
-            }
-        }
-    }
-
-    RowLayout {
-        spacing: 8
-        Layout.alignment: Qt.AlignRight
-
-        RippleButton {
-            buttonText: Translation.tr("Update System")
-            buttonRadius: Appearance.rounding.full
-            border: true
-            colBackground: "transparent"
-            colBackgroundHover: Appearance.colors.colLayer1Hover
-            Layout.preferredHeight: 44
-            downAction: () => runSystemUpdate()
-
-            contentItem: StyledText {
-                text: parent.buttonText
-                horizontalAlignment: Text.AlignHCenter
-                leftPadding: 10
-                rightPadding: 10
-            }
-        }
-
-        RippleButton {
-            buttonText: Translation.tr("Update Dots")
-            buttonRadius: Appearance.rounding.full
-            colBackground: Appearance.colors.colPrimaryContainer
-            colBackgroundHover: Appearance.colors.colPrimaryContainerHover
-            Layout.preferredHeight: 44
-            downAction: () => runUpdateDots()
-
-            contentItem: StyledText {
-                text: parent.buttonText
-                horizontalAlignment: Text.AlignHCenter
-                leftPadding: 10
-                rightPadding: 10
             }
         }
     }
