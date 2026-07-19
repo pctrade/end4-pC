@@ -346,6 +346,14 @@ Singleton {
                         property real y: 200
                     }
 
+                    property JsonObject ducky: JsonObject {
+                        property bool enable: false
+                        property string sizeMode: "2x2"
+                        property string placementStrategy: "free"
+                        property real x: 500
+                        property real y: 200
+                    }
+
                     property JsonObject media: JsonObject {
                         property bool enable: false
                         property bool showControls: true
