@@ -25,7 +25,6 @@ Item {
         { key: "github",      icon: "code",               name: Translation.tr("GitHub Heatmap") },
         { key: "devices",     icon: "devices",            name: Translation.tr("Connected Devices") },
         { key: "screentime",  icon: "schedule",           name: Translation.tr("Screen Time") },
-        { key: "ducky",       icon: "pets",               name: Translation.tr("Buffer Ducky") },
     ]
 
     Rectangle {
