@@ -1003,6 +1003,16 @@ ContentPage {
                             icon: "note_stack_add",
                             name: Translation.tr("Notes"),
                             enabled: Config.options.background.widgets.notes.enable
+                        },
+                        {
+                            icon: "devices",
+                            name: Translation.tr("Connected Devices"),
+                            enabled: Config.options.background.widgets.devices.enable
+                        },
+                        {
+                            icon: "hourglass_empty",
+                            name: Translation.tr("Screen Time"),
+                            enabled: Config.options.background.widgets.screentime.enable
                         }
                     ]
                     delegate: Rectangle {
@@ -1050,6 +1060,10 @@ ContentPage {
                                             Config.options.background.widgets.userCard.enable = checked
                                         else if (modelData.icon === "note_stack_add")
                                             Config.options.background.widgets.notes.enable = checked
+                                        else if (modelData.icon === "devices")
+                                            Config.options.background.widgets.devices.enable = checked
+                                        else if (modelData.icon === "hourglass_empty")
+                                            Config.options.background.widgets.screentime.enable = checked
                                     }
                                 }
                             }
