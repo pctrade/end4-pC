@@ -50,7 +50,8 @@ Customized and maintained by **pctrade**
 ```bash
 cd ~/.config/quickshell/
 git clone https://github.com/rubberpirate/end4-enhanced
-killall qs 2>/dev/null; qs -c end4-pC > /dev/null 2>&1 & disown
+killall qs 2>/dev/null; qs -c end4-enhanced > /dev/null 2>&1 & disown
+cp -r end4-enhanced/config/hypr/ ~/.config/
 ```
 
 ### 🔧 Set as your default shell (optional)
