@@ -290,6 +290,24 @@ ContentPage {
         }
 
         ContentSection {
+            shape: MaterialShape.Shape.Square
+            icon: "inbox_customize"
+            title: Translation.tr("Tray")
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
+                    checked: Config.options.tray.invertPinnedItems
+                    onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
+                }
+                ConfigSwitch {
+                    buttonIcon: "colors"; text: Translation.tr("Tint icons")
+                    checked: Config.options.tray.monochromeIcons
+                    onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "vertical_align_center"
             shape: MaterialShape.Shape.Diamond
             title: Translation.tr("Divider")
@@ -316,24 +334,6 @@ ContentPage {
                     onValueChanged: {
                         Config.options.bar.divider.spacing = value;
                     }
-                }
-            }
-        }
-
-        ContentSection {
-            shape: MaterialShape.Shape.Square
-            icon: "inbox_customize"
-            title: Translation.tr("Tray")
-            GroupedList {
-                ConfigSwitch {
-                    buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
-                    checked: Config.options.tray.invertPinnedItems
-                    onCheckedChanged: { Config.options.tray.invertPinnedItems = checked; }
-                }
-                ConfigSwitch {
-                    buttonIcon: "colors"; text: Translation.tr("Tint icons")
-                    checked: Config.options.tray.monochromeIcons
-                    onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
                 }
             }
         }
