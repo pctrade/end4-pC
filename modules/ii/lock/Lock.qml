@@ -44,7 +44,7 @@ LockScreen {
             if (GlobalStates.screenLocked) {
                 if (Config.options.background.lockWall !== "") {
                     Quickshell.execDetached(["bash", "-c",
-                        `${Directories.wallpaperSwitchScriptPath} --lock-colors-only '${Config.options.background.lockWall}' --mode ${Appearance.m3colors.darkmode ? "dark" : "light"}`
+                        `${Directories.wallpaperSwitchScriptPath} --mode ${Appearance.m3colors.darkmode ? "dark" : "light"} --noswitch --image '${Config.options.background.lockWall}'`
                     ]);
                 }
 
@@ -64,6 +64,11 @@ LockScreen {
                 root.savedWorkspaces = next
                 Quickshell.execDetached(["bash", "-c", batch])
             } else {
+                if (Config.options.background.lockWall !== "") {
+                    Quickshell.execDetached(["bash", "-c",
+                        `${Directories.wallpaperSwitchScriptPath} --mode ${Appearance.m3colors.darkmode ? "dark" : "light"} --noswitch`
+                    ]);
+                }
                 restoreTimer.start()
             }
         }

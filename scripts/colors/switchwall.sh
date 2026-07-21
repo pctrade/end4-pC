@@ -12,15 +12,6 @@ SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 MATUGEN_DIR="$XDG_CONFIG_HOME/matugen"
 terminalscheme="$SCRIPT_DIR/terminal/scheme-base.json"
 
-allowed_types=(scheme-content scheme-expressive scheme-fidelity scheme-fruit-salad scheme-monochrome scheme-neutral scheme-rainbow scheme-tonal-spot auto)
-
-detect_scheme_type_from_image() {
-    local img="$1"
-    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-    "$SCRIPT_DIR"/scheme_for_image.py "$img" 2>/dev/null | tr -d '\n'
-    deactivate
-}
-
 handle_kde_material_you_colors() {
     # Check if Qt app theming is enabled in config
     if [ -f "$SHELL_CONFIG_FILE" ]; then
@@ -168,68 +159,6 @@ categorize_wallpaper() {
     img_cat=$("$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh" "$1")
     # notify-send "Wallpaper category" "$img_cat"
     echo "$img_cat" > "$STATE_DIR/user/generated/wallpaper/category.txt"
-}
-
-switch_lock_only() {
-    local imgpath="$1"
-    local mode_flag="$2"
-    local type_flag="$3"
-
-    if [[ -z "$imgpath" ]]; then
-        echo 'Aborted'
-        exit 0
-    fi
-
-    if is_video "$imgpath"; then
-        mkdir -p "$THUMBNAIL_DIR"
-        local thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath")-lock.jpg"
-        ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
-        imgpath="$thumbnail"
-    fi
-
-    if [[ -z "$mode_flag" ]]; then
-        current_mode=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | tr -d "'")
-        if [[ "$current_mode" == "prefer-dark" ]]; then
-            mode_flag="dark"
-        else
-            mode_flag="light"
-        fi
-    fi
-
-    if [[ -z "$type_flag" ]]; then
-        type_flag=$(jq -r '.appearance.palette.type' "$SHELL_CONFIG_FILE" 2>/dev/null)
-    fi
-
-    if [[ -z "$type_flag" || "$type_flag" == "auto" || "$type_flag" == "null" ]]; then
-        if [[ -f "$imgpath" ]]; then
-            detected_type="$(detect_scheme_type_from_image "$imgpath")"
-            valid_detected=0
-            for t in "${allowed_types[@]}"; do
-                if [[ "$detected_type" == "$t" && "$detected_type" != "auto" ]]; then
-                    valid_detected=1
-                    break
-                fi
-            done
-            if [[ $valid_detected -eq 1 ]]; then
-                type_flag="$detected_type"
-            else
-                type_flag="scheme-tonal-spot"
-            fi
-        else
-            type_flag="scheme-tonal-spot"
-        fi
-    fi
-
-    mkdir -p "$STATE_DIR"/user/generated
-
-    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
-    python3 "$SCRIPT_DIR/generate_colors_material.py" \
-        --path "$imgpath" \
-        --mode "$mode_flag" \
-        --scheme "$type_flag" \
-        --json-output "$STATE_DIR/user/generated/colors-lock.json" \
-        > /dev/null
-    deactivate
 }
 
 switch() {
@@ -391,7 +320,6 @@ switch() {
     matugen "${matugen_args[@]}"
     source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
     python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
-        --json-output "$STATE_DIR/user/generated/colors.json" \
         > "$STATE_DIR"/user/generated/material_colors.scss
     deactivate
     "$SCRIPT_DIR"/applycolor.sh
@@ -411,7 +339,6 @@ main() {
     noswitch_flag=""
     colors_only_flag=""
     explicit_image=""
-    lock_colors_only_flag=""
 
     get_type_from_config() {
         jq -r '.appearance.palette.type' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "auto"
@@ -422,6 +349,13 @@ main() {
     set_accent_color() {
         local color="$1"
         jq --arg color "$color" '.appearance.palette.accentColor = $color' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+    }
+
+    detect_scheme_type_from_image() {
+        local img="$1"
+        source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
+        "$SCRIPT_DIR"/scheme_for_image.py "$img" 2>/dev/null | tr -d '\n'
+        deactivate
     }
 
     while [[ $# -gt 0 ]]; do
@@ -458,11 +392,6 @@ main() {
                 fi
                 shift
                 ;;
-            --lock-colors-only)
-                lock_colors_only_flag="1"
-                imgpath="$2"
-                shift 2
-                ;;
             *)
                 if [[ -z "$imgpath" ]]; then
                     imgpath="$1"
@@ -471,11 +400,6 @@ main() {
                 ;;
         esac
     done
-
-    if [[ -n "$lock_colors_only_flag" ]]; then
-        switch_lock_only "$imgpath" "$mode_flag" "$type_flag"
-        exit 0
-    fi
 
     if [[ -n "$noswitch_flag" && -n "$explicit_image" ]]; then
         colors_only_flag="1"
@@ -494,6 +418,7 @@ main() {
     fi
 
     # Validate type_flag (allow 'auto' as well)
+    allowed_types=(scheme-content scheme-expressive scheme-fidelity scheme-fruit-salad scheme-monochrome scheme-neutral scheme-rainbow scheme-tonal-spot auto)
     valid_type=0
     for t in "${allowed_types[@]}"; do
         if [[ "$type_flag" == "$t" ]]; then
