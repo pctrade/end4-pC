@@ -44,10 +44,9 @@ LockScreen {
             if (GlobalStates.screenLocked) {
                 if (Config.options.background.lockWall !== "") {
                     Quickshell.execDetached(["bash", "-c",
-                        `cp '${Directories.generatedMaterialThemePath}' '${Directories.generatedLiveMaterialThemeBackupPath}' 2>/dev/null; ` +
-                        `${Directories.wallpaperSwitchScriptPath} --mode ${Appearance.m3colors.darkmode ? "dark" : "light"} --colors_lock --image '${Config.options.background.lockWall}' && ` +
-                        `cp '${Directories.generatedLockMaterialThemePath}' '${Directories.generatedMaterialThemePath}'`
+                        `${Directories.wallpaperSwitchScriptPath} --mode ${Appearance.m3colors.darkmode ? "dark" : "light"} --colors_lock --image '${Config.options.background.lockWall}'`
                     ]);
+                    MaterialThemeLoader.useLockTheme()
                 }
 
                 // Lock: save workspace per monitor and move all to temp workspace in one batch
@@ -67,10 +66,7 @@ LockScreen {
                 Quickshell.execDetached(["bash", "-c", batch])
             } else {
                 if (Config.options.background.lockWall !== "") {
-                    // Restore whatever theme was live before we locked.
-                    Quickshell.execDetached(["bash", "-c",
-                        `cp '${Directories.generatedLiveMaterialThemeBackupPath}' '${Directories.generatedMaterialThemePath}' 2>/dev/null`
-                    ]);
+                    MaterialThemeLoader.useLiveTheme()
                 }
                 restoreTimer.start()
             }

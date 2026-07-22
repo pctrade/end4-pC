@@ -1,6 +1,7 @@
 pragma Singleton
 pragma ComponentBehavior: Bound
 
+import qs
 import qs.modules.common
 import QtQuick
 import Quickshell
@@ -28,12 +29,21 @@ Singleton {
                 Appearance.m3colors[m3Key] = json[key]
             }
         }
-        
         Appearance.m3colors.darkmode = (Appearance.m3colors.m3background.hslLightness < 0.5)
     }
 
     function resetFilePathNextTime() {
         resetFilePathNextWallpaperChange.enabled = true
+    }
+
+    function useLockTheme() {
+        root.filePath = ""
+        root.filePath = Directories.generatedLockMaterialThemePath
+    }
+
+    function useLiveTheme() {
+        root.filePath = ""
+        root.filePath = Directories.generatedMaterialThemePath
     }
 
     Connections {
@@ -57,7 +67,7 @@ Singleton {
         }
     }
 
-	FileView { 
+    FileView {
         id: themeFileView
         path: Qt.resolvedUrl(root.filePath)
         watchChanges: true
