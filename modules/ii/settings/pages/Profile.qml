@@ -47,7 +47,6 @@ ContentPage {
         target: SystemInfo
         function onHostnameChanged() {
             hostnameField.value = Qt.binding(() => SystemInfo.hostname)
-            hostnameField.confirming = false
         }
     }
 
