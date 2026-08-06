@@ -30,8 +30,6 @@ ContentPage {
         ])
         Qt.callLater(() => GlobalStates.settingsOpen = false)
     }
-    
-
 
     Rectangle {
         Layout.fillWidth: true

@@ -87,8 +87,34 @@ Scope { // Scope
         
         sourceComponent: PanelWindow { // Window
             id: panelWindow
-            visible: GlobalStates.sidebarLeftOpen
-            
+
+            readonly property bool animatedEntrance: WM.compositor !== "hyprland"
+
+            property bool reallyVisible: false
+            visible: reallyVisible
+
+            Component.onCompleted: reallyVisible = GlobalStates.sidebarLeftOpen
+
+            Connections {
+                target: GlobalStates
+                function onSidebarLeftOpenChanged() {
+                    if (GlobalStates.sidebarLeftOpen) {
+                        closeAnimTimer.stop();
+                        panelWindow.reallyVisible = true;
+                    } else if (panelWindow.animatedEntrance) {
+                        closeAnimTimer.restart();
+                    } else {
+                        panelWindow.reallyVisible = false;
+                    }
+                }
+            }
+
+            Timer {
+                id: closeAnimTimer
+                interval: Appearance.animation.elementMoveExit.duration
+                onTriggered: panelWindow.reallyVisible = false
+            }
+
             property bool extend: false
             property real sidebarWidth: panelWindow.extend ? Appearance.sizes.sidebarWidthExtended : Appearance.sizes.sidebarWidth
             property var contentParent: sidebarLeftBackground
@@ -125,7 +151,7 @@ Scope { // Scope
             }
 
             mask: Region {
-                item: sidebarLeftBackground
+                item: panelWindow.animatedEntrance ? fullMaskArea : sidebarLeftBackground
             }
 
             onVisibleChanged: {
@@ -143,6 +169,19 @@ Scope { // Scope
             }
 
             // Content
+            Item {
+                id: fullMaskArea
+                anchors.fill: parent
+            }
+
+            MouseArea {
+                id: outsideClickArea
+                anchors.fill: parent
+                enabled: panelWindow.animatedEntrance
+                visible: panelWindow.animatedEntrance
+                onClicked: panelWindow.hide()
+            }
+
             StyledRectangularShadow {
                 target: sidebarLeftBackground
                 radius: sidebarLeftBackground.radius
@@ -150,9 +189,7 @@ Scope { // Scope
             Rectangle {
                 id: sidebarLeftBackground
                 anchors.top: parent.top
-                anchors.left: parent.left
                 anchors.topMargin: Appearance.sizes.hyprlandGapsOut
-                anchors.leftMargin: Appearance.sizes.hyprlandGapsOut
                 width: panelWindow.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
                 height: parent.height - Appearance.sizes.hyprlandGapsOut * 2
                 color: Appearance.colors.colLayer0
@@ -160,8 +197,32 @@ Scope { // Scope
                 border.color: Appearance.colors.colLayer0Border
                 radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
+                readonly property bool animatedEntrance: panelWindow.animatedEntrance
+                readonly property bool sidebarOpen: GlobalStates.sidebarLeftOpen
+                x: Appearance.sizes.hyprlandGapsOut - (animatedEntrance && !sidebarOpen ? width : 0)
+
+                Behavior on x {
+                    enabled: sidebarLeftBackground.animatedEntrance
+                    NumberAnimation {
+                        duration: sidebarLeftBackground.sidebarOpen
+                            ? Appearance.animation.elementMoveEnter.duration
+                            : Appearance.animation.elementMoveExit.duration
+                        easing.type: sidebarLeftBackground.sidebarOpen
+                            ? Appearance.animation.elementMoveEnter.type
+                            : Appearance.animation.elementMoveExit.type
+                        easing.bezierCurve: sidebarLeftBackground.sidebarOpen
+                            ? Appearance.animation.elementMoveEnter.bezierCurve
+                            : Appearance.animation.elementMoveExit.bezierCurve
+                    }
+                }
+
                 Behavior on width {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: (mouse) => { mouse.accepted = true }
                 }
 
                 Keys.onPressed: (event) => {
@@ -230,7 +291,7 @@ Scope { // Scope
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "sidebarLeftToggle"
         description: "Toggles left sidebar on press"
 
@@ -239,7 +300,7 @@ Scope { // Scope
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "sidebarLeftOpen"
         description: "Opens left sidebar on press"
 
@@ -248,7 +309,7 @@ Scope { // Scope
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "sidebarLeftClose"
         description: "Closes left sidebar on press"
 
@@ -257,7 +318,7 @@ Scope { // Scope
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "sidebarLeftToggleDetach"
         description: "Detach left sidebar into a window/Attach it back"
 

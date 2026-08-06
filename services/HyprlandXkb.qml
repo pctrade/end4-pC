@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import qs.modules.common
+import qs.services
 
 /**
  * Exposes the active Hyprland Xkb keyboard layout name and code for indicators.
@@ -23,6 +24,7 @@ Singleton {
     // Update the layout code according to the layout name (Hyprland gives the name not the code)
     onCurrentLayoutNameChanged: root.updateLayoutCode()
     function updateLayoutCode() {
+        if (WM.compositor !== "hyprland") return;
         if (cachedLayoutCodes.hasOwnProperty(currentLayoutName)) {
             root.currentLayoutCode = cachedLayoutCodes[currentLayoutName];
         } else {
@@ -65,9 +67,6 @@ Singleton {
                     
                     return false;
                 });
-                // console.log("[HyprlandXkb] Found line:", foundLine);
-                // console.log("[HyprlandXkb] Layout:", root.currentLayoutName, "| Code:", root.currentLayoutCode);
-                // console.log("[HyprlandXkb] Cached layout codes:", JSON.stringify(root.cachedLayoutCodes, null, 2));
             }
         }
     }
@@ -75,7 +74,7 @@ Singleton {
     // Find out available layouts and current active layout. Should only be necessary on init
     Process {
         id: fetchLayoutsProc
-        running: true
+        running: WM.compositor === "hyprland"
         command: ["hyprctl", "-j", "devices"]
 
         stdout: StdioCollector {
@@ -85,8 +84,6 @@ Singleton {
                 const hyprlandKeyboard = parsedOutput["keyboards"].find(kb => kb.main === true);
                 root.layoutCodes = hyprlandKeyboard["layout"].split(",");
                 root.currentLayoutName = hyprlandKeyboard["active_keymap"];
-                // console.log("[HyprlandXkb] Fetched | Layouts (multiple: " + (root.layoutCodes.length > 1) + "): "
-                //     + root.layoutCodes.join(", ") + " | Active: " + root.currentLayoutName);
             }
         }
     }
@@ -94,6 +91,7 @@ Singleton {
     // Update the layout name when it changes
     Connections {
         target: Hyprland
+        enabled: WM.compositor === "hyprland"
         function onRawEvent(event) {
             if (event.name === "activelayout") {
                 if (root.needsLayoutRefresh) {
@@ -101,17 +99,13 @@ Singleton {
                     fetchLayoutsProc.running = true;
                 }
 
-                // If there's only one layout, the updated layout is always the same
                 if (root.layoutCodes.length <= 1) return;
 
-                // Update when layout might have changed
                 const dataString = event.data;
                 root.currentLayoutName = dataString.substring(dataString.indexOf(",") + 1);
 
-                // Update layout for on-screen keyboard (osk)
                 Config.options.osk.layout = root.currentLayoutName.split(" (")[0];
             } else if (event.name == "configreloaded") {
-                // Mark layout code list to be updated when config is reloaded
                 root.needsLayoutRefresh = true;
             }
         }

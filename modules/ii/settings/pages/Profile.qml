@@ -10,7 +10,6 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 import qs.modules.common.models
-import Quickshell.Hyprland
 
 ContentPage {
     id: page
@@ -18,7 +17,7 @@ ContentPage {
         if (Config.options.profile.descriptionText === "::uptime::") return "uptime"
         return "distro"
     }
-    property string presetNameInput: ""
+    property string hostnameInput: SystemInfo.hostname
 
     FolderListModel {
         id: avatarFolderModel
@@ -27,58 +26,27 @@ ContentPage {
         nameFilters: ["*.png", "*.svg", "*.jpg", "*.jpeg", "*.webp"]
     }
 
-    FolderListModel {
-        id: presetsFolderModel
-        folder: Qt.resolvedUrl(Directories.userPresetsPath)
-        showDirs: false
-        nameFilters: ["*.json"]
-    }
-
     Process {
-        id: saveProc
-        onExited: refreshPresetsFolder()
-    }
-
-    Process {
-        id: deleteProc
-        onExited: refreshPresetsFolder()
-    }
-
-    function refreshPresetsFolder() {
-        const current = presetsFolderModel.folder
-        presetsFolderModel.folder = ""
-        presetsFolderModel.folder = current
-    }
-
-    function savePreset() {
-        const raw = page.presetNameInput.trim()
-        if (raw.length === 0) return
-
-        const commaIndex = raw.indexOf(",")
-        let name = raw
-        let description = ""
-
-        if (commaIndex !== -1) {
-            name = raw.substring(0, commaIndex).trim()
-            description = raw.substring(commaIndex + 1).trim()
+        id: hostnameSetProc
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0) {
+                SystemInfo.refreshHostname()
+            }
         }
-
-        name = name.replace(/\s/g, "_")
-        if (name.length === 0) return
-
-        saveProc.command = ["bash", Directories.presetsScriptPath, "--save", name, description]
-        saveProc.running = true
-        page.presetNameInput = ""
     }
 
-    function applyPreset(name) {
-        GlobalStates.settingsOpen = false // sorry I can't stay open while changing the preset =(
-        Quickshell.execDetached(["bash", Directories.presetsScriptPath, "--apply", name])
+    function applyHostname() {
+        const newName = page.hostnameInput.trim()
+        if (newName.length === 0 || newName === SystemInfo.hostname) return
+        hostnameSetProc.command = ["hostnamectl", "set-hostname", newName]
+        hostnameSetProc.running = true
     }
 
-    function deletePreset(name) {
-        deleteProc.command = ["bash", Directories.presetsScriptPath, "--remove", name]
-        deleteProc.running = true
+    Connections {
+        target: SystemInfo
+        function onHostnameChanged() {
+            hostnameField.value = Qt.binding(() => SystemInfo.hostname)
+        }
     }
 
     ColumnLayout {
@@ -92,114 +60,179 @@ ContentPage {
             shape: MaterialShape.Shape.Circle
             title: Translation.tr("Avatar")
 
-            ConfigRow {
-                MaterialTextArea {
+            GroupedList {
+                ConfigTextArea {
+                    id: avatarField
                     Layout.fillWidth: true
-                    placeholderText: Translation.tr("Avatar path (leave empty to use ~/.face) eg /home/youruser/Pictures/avatar")
-                    text: Config.options.profile.avatarPath
-                    wrapMode: TextEdit.Wrap
+                    buttonIcon: "folder_open"
+                    text: Translation.tr("Avatar path")
+                    placeholderText: Translation.tr("Leave empty to use ~/.face, e.g. /home/youruser/Pictures/avatar")
+                    value: Config.options.profile.avatarPath
+                    onValueChanged: {
+                        avatarDebounceTimer.restart()
+                    }
 
                     Timer {
                         id: avatarDebounceTimer
                         interval: 1000
-                        running: false
+                        repeat: false
                         onTriggered: {
-                            Config.options.profile.avatarPath = parent.text
+                            Config.options.profile.avatarPath = avatarField.value
                         }
                     }
 
-                    onTextChanged: {
-                        avatarDebounceTimer.restart()
-                    }
-                }
-                ToolbarPairedFab {
-                    visible: Config.options.profile.avatarPath !== ""
-                    iconText: "add"
-                    onClicked: {
+                    confirmButtonVisible: Config.options.profile.avatarPath !== ""
+                    confirmButtonIcon: "add"
+                    onConfirmClicked: {
                         GlobalStates.settingsOpen = false
                         if (Config.options.profile.avatarPath !== "") {
                             Quickshell.execDetached(["dolphin", Config.options.profile.avatarPath])
                         }
                     }
                 }
-            }
 
-            Flow {
-                Layout.topMargin: 10
-                Layout.bottomMargin: 10
-                Layout.fillWidth: true
-                spacing: 12
-                visible: Config.options.profile.avatarPath !== ""
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: Config.options.profile.avatarPath === "" ? placeholderCol.implicitHeight : avatarFlow.implicitHeight
 
-                Repeater {
-                    model: avatarFolderModel
-                    delegate: Rectangle {
-                        required property string fileName
-                        required property string filePath
-                        width: 64
-                        height: 64
-                        radius: width / 2
-                        color: Appearance.colors.colLayer2
+                    Flow {
+                        id: avatarFlow
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 8
+                        spacing: 8
 
-                        property bool isSelected: FileUtils.trimFileProtocol(filePath.toString()) === Config.options.profile.avatarPicture
+                        Repeater {
+                            model: avatarFolderModel
+                            delegate: Rectangle {
+                                required property string fileName
+                                required property string filePath
+                                width: 64
+                                height: 64
+                                radius: width / 2
+                                color: Appearance.colors.colLayer2
 
-                        Image {
-                            id: avatarImage
-                            anchors.fill: parent
-                            source: filePath
-                            fillMode: Image.PreserveAspectCrop
-                            sourceSize.width: avatarImage.width * 2
-                            sourceSize.height: avatarImage.height * 2
-                            layer.enabled: true
-                            layer.effect: OpacityMask {
-                                maskSource: Rectangle {
-                                    width: 64; height: width; radius: width / 2 
+                                property bool isSelected: FileUtils.trimFileProtocol(filePath.toString()) === Config.options.profile.avatarPicture
+
+                                Image {
+                                    id: avatarImage
+                                    anchors.fill: parent
+                                    source: filePath
+                                    fillMode: Image.PreserveAspectCrop
+                                    sourceSize.width: avatarImage.width * 2
+                                    sourceSize.height: avatarImage.height * 2
+                                    layer.enabled: true
+                                    layer.effect: OpacityMask {
+                                        maskSource: Rectangle {
+                                            width: 64; height: width; radius: width / 2 
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: parent.isSelected
+                                    anchors.right: parent.right
+                                    anchors.bottom: parent.bottom
+                                    anchors.rightMargin: 2
+                                    anchors.bottomMargin: 2
+                                    width: 20
+                                    height: width
+                                    radius: width / 2
+                                    color: Appearance.colors.colPrimary
+
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "check"
+                                        iconSize: Appearance.font.pixelSize.small
+                                        color: Appearance.colors.colOnPrimary
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Config.options.profile.avatarPicture = FileUtils.trimFileProtocol(filePath.toString())
                                 }
                             }
                         }
+                    }
 
-                        Rectangle {
-                            visible: parent.isSelected
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            anchors.rightMargin: 2
-                            anchors.bottomMargin: 2
-                            width: 20
-                            height: width
-                            radius: width / 2
-                            color: Appearance.colors.colPrimary
+                    ColumnLayout {
+                        id: placeholderCol
+                        visible: Config.options.profile.avatarPath === ""
+                        anchors.centerIn: parent
+                        z: 1
+                        spacing: 4
 
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "check"
-                                iconSize: Appearance.font.pixelSize.small
-                                color: Appearance.colors.colOnPrimary
-                            }
+                        MaterialSymbol {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "image"
+                            iconSize: 32
+                            color: Appearance.colors.colSubtext
                         }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Config.options.profile.avatarPicture = FileUtils.trimFileProtocol(filePath.toString())
+                        StyledText {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: Translation.tr("Pick a folder above to see avatars here")
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            color: Appearance.colors.colSubtext
                         }
                     }
                 }
             }
 
             ContentSubsection {
-                title: Translation.tr("Description Text")
+                title: Translation.tr("Identity")
 
-                ConfigSelectionArray {
-                    currentValue: Config.options.profile.descriptionText === "::uptime::" ? "uptime" : "distro"
-                    onSelected: newValue => {
-                        page.descriptionMode = newValue
-                        if (newValue === "distro") Config.options.profile.descriptionText = "::distro::"
-                        if (newValue === "uptime") Config.options.profile.descriptionText = "::uptime::"
+                GroupedList {
+                    ConfigTextArea {
+                        id: displayNameField
+                        buttonIcon: "badge"
+                        placeholderText: SystemInfo.username
+                        text: Translation.tr("Display name")
+                        value: Config.options.profile.displayName
+
+                        Timer {
+                            id: displayNameDebounceTimer
+                            interval: 800
+                            running: false
+                            onTriggered: {
+                                Config.options.profile.displayName = displayNameField.value
+                            }
+                        }
+                        onValueChanged: displayNameDebounceTimer.restart()
                     }
-                    options: [
-                        { displayName: Translation.tr("Distro"), icon: "deployed_code", value: "distro" },
-                        { displayName: Translation.tr("Uptime"), icon: "timelapse",     value: "uptime" },
-                    ]
+
+                    ConfigTextArea {
+                        id: hostnameField
+                        Layout.fillWidth: true
+                        buttonIcon: "dns"
+                        placeholderText: SystemInfo.hostname
+                        text: Translation.tr("Hostname")
+                        description: Translation.tr("Requires authentication to change")
+                        value: page.hostnameInput
+                        onValueChanged: page.hostnameInput = value
+
+                        confirmButtonVisible: page.hostnameInput.trim() !== "" && page.hostnameInput.trim() !== SystemInfo.hostname
+                        onConfirmClicked: {
+                            page.applyHostname();
+                        }
+                    }
+
+                    ConfigSelectionArray {
+                        text: Translation.tr("Description text")
+                        icon: "subtitles"
+                        currentValue: page.descriptionMode
+                        onSelected: newValue => {
+                            page.descriptionMode = newValue
+                            if (newValue === "distro") Config.options.profile.descriptionText = "::distro::"
+                            if (newValue === "uptime") Config.options.profile.descriptionText = "::uptime::"
+                        }
+                        options: [
+                            { displayName: Translation.tr("Distro"), icon: "deployed_code", value: "distro" },
+                            { displayName: Translation.tr("Uptime"), icon: "timelapse",     value: "uptime" },
+                        ]
+                    }
                 }
             }
         }
@@ -209,32 +242,20 @@ ContentPage {
             shape: MaterialShape.Shape.Pentagon
             title: Translation.tr("Presets")
 
-            ConfigRow {
-                MaterialTextArea {
+            GroupedList {
+                ConfigTextArea {
                     id: presetNameField
                     Layout.fillWidth: true
+                    fieldWidth: 300
+                    buttonIcon: "newsmode"
+                    text: Translation.tr("Save as")
                     placeholderText: Translation.tr("Name, description (optional)")
-                    wrapMode: TextEdit.NoWrap
-                    Timer {
-                        id: presetNameDebounceTimer
-                        interval: 1000
-                        running: false
-                        onTriggered: {
-                            page.presetNameInput = parent.text
-                        }
-                    }
-                    onTextChanged: {
-                        presetNameDebounceTimer.restart()
-                    }
-                }
 
-                ToolbarPairedFab {
-                    visible: page.presetNameInput.trim() !== ""
-                    iconText: "save"
-                    onClicked: {
-                        page.savePreset()
-                        presetNameField.text = ""
-                        page.presetNameInput = ""
+                    confirmButtonVisible: presetNameField.value.trim() !== ""
+                    confirmButtonIcon: "save"
+                    onConfirmClicked: {
+                        Presets.save(presetNameField.value)
+                        presetNameField.value = ""
                     }
                 }
             }
@@ -242,7 +263,7 @@ ContentPage {
             StyledText {
                 Layout.fillWidth: true
                 Layout.topMargin: 40
-                visible: presetsFolderModel.count === 0
+                visible: Presets.folderModel.count === 0
                 horizontalAlignment: Text.AlignHCenter
                 text: Translation.tr("No presets yet")
                 color: Appearance.colors.colSubtext
@@ -254,10 +275,10 @@ ContentPage {
                 Layout.fillWidth: true
                 width: parent.width
                 spacing: 12
-                visible: presetsFolderModel.count > 0
+                visible: Presets.folderModel.count > 0
 
                 Repeater {
-                    model: presetsFolderModel
+                    model: Presets.folderModel
                     delegate: PresetsCard {
                         id: presetDelegate
                         required property string fileName
@@ -272,7 +293,11 @@ ContentPage {
                             onLoaded: {
                                 try {
                                     const data = JSON.parse(text())
-                                    presetDelegate.presetWallpaper = data?.background?.wallpaperPath ?? ""
+                                    const rawWallpaper = data?.background?.wallpaperPath ?? ""
+                                    const isVideo = /\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaper)
+                                    presetDelegate.presetWallpaper = isVideo
+                                        ? (data?.background?.thumbnailPath ?? "")
+                                        : rawWallpaper
                                     presetDelegate.presetDescription = data?._presetMeta?.description ?? ""
                                 } catch (e) {
                                     console.log("Failed to parse preset:", e)
@@ -283,8 +308,8 @@ ContentPage {
                         imageSource: presetDelegate.presetWallpaper
                         title: presetDelegate.presetName
                         description: presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset")
-                        onApply: () => page.applyPreset(presetDelegate.presetName)
-                        onRemove: () => page.deletePreset(presetDelegate.presetName)
+                        onApply: () => Presets.apply(presetDelegate.presetName)
+                        onRemove: () => Presets.remove(presetDelegate.presetName)
                     }
                 }
             }

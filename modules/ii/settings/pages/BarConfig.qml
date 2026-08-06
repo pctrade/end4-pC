@@ -42,6 +42,7 @@ ContentPage {
         { id: "media",             name: Translation.tr("Media"),                icon: "music_note" },
         { id: "resources",         name: Translation.tr("Resources"),            icon: "empty_dashboard" },
         { id: "systemIcons",       name: Translation.tr("System Icons"),         icon: "info" },
+        { id: "networkSpeed",      name: Translation.tr("Network Speed"),        icon: "network_check" },
         { id: "clockWidget",       name: Translation.tr("Clock"),                icon: "schedule" },
         { id: "utilButtons",       name: Translation.tr("Util Buttons"),         icon: "toggle_on" },
         { id: "sysTray",           name: Translation.tr("Tray"),                 icon: "inbox" },
@@ -53,6 +54,7 @@ ContentPage {
         { id: "visualizer",        name: Translation.tr("Visualizer"),           icon: "graphic_eq" },
         { id: "hyprlandXkbIndicator",   name: Translation.tr("Keyboard Layout"), icon: "keyboard" },
         { id: "divisor",            name: Translation.tr("Divider"),             icon: "horizontal_distribute" },
+        { id: "launcherButton",     name: Translation.tr("Launcher Button"),     icon: "search" },
     ]
 
     function availableFor() {
@@ -86,35 +88,80 @@ ContentPage {
             title: Translation.tr("Screens")
             ContentSubsection {
                 title: Translation.tr("Show bar on")
-                Flow {
-                    Layout.fillWidth: true; spacing: 2
-                    SelectionGroupButton {
-                        leftmost: true; rightmost: Hyprland.monitors.length === 0
-                        buttonIcon: "tv_displays"; buttonText: Translation.tr("All")
-                        toggled: Config.options.bar.screenList.length === 0
-                        onClicked: Config.options.bar.screenList = []
-                    }
-                    Repeater {
-                        model: Hyprland.monitors
-                        delegate: SelectionGroupButton {
-                            required property var modelData; required property int index
-                            leftmost: false; rightmost: index === Hyprland.monitors.length - 1
-                            buttonIcon: "monitor"; buttonText: modelData.name
-                            toggled: Config.options.bar.screenList.includes(modelData.name)
-                            onClicked: {
-                                const allNames = Array.from({length: Hyprland.monitors.length}, (_, i) => Hyprland.monitors[i].name)
-                                let list = Config.options.bar.screenList.length === 0 ? allNames.slice() : Config.options.bar.screenList.slice()
-                                if (toggled) list = list.filter(s => s !== modelData.name)
-                                else list.push(modelData.name)
-                                Config.options.bar.screenList = list.length === allNames.length ? [] : list
+
+                ColumnLayout {
+                    id: monitorsCol
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Rectangle {
+                        id: allRow
+                        Layout.fillWidth: true
+                        implicitHeight: allSwitchItem.implicitHeight + 16 + 8
+                        color: Appearance.colors.colLayer1
+                        topLeftRadius: Appearance.rounding.normal
+                        topRightRadius: Appearance.rounding.normal
+                        bottomLeftRadius: Appearance.rounding.unsharpenmore
+                        bottomRightRadius: Appearance.rounding.unsharpenmore
+
+                        ConfigSwitch {
+                            id: allSwitchItem
+                            anchors { fill: parent; margins: 8 }
+                            buttonIcon: "tv_displays"
+                            text: Translation.tr("All")
+                            onCheckedChanged: {
+                                if (checked) Config.options.bar.screenList = []
+                            }
+
+                            Binding {
+                                target: allSwitchItem
+                                property: "checked"
+                                value: Config.options.bar.screenList.length === 0
+                                restoreMode: Binding.RestoreBinding
                             }
                         }
                     }
-                    SelectionGroupButton {
-                        leftmost: false
-                        rightmost: true
-                        buttonIcon: "page_footer"
-                        buttonText: Translation.tr("")
+
+                    Repeater {
+                        model: Hyprland.monitors
+                        delegate: Rectangle {
+                            id: monitorRow
+                            required property var modelData
+                            required property int index
+                            readonly property bool isLast: index === Hyprland.monitors.values.length - 1
+
+                            Layout.fillWidth: true
+                            implicitHeight: switchItem.implicitHeight + 16 + 8
+                            color: Appearance.colors.colLayer1
+                            topLeftRadius:     Appearance.rounding.unsharpenmore
+                            topRightRadius:    Appearance.rounding.unsharpenmore
+                            bottomLeftRadius:  isLast ? Appearance.rounding.normal : Appearance.rounding.unsharpenmore
+                            bottomRightRadius: isLast ? Appearance.rounding.normal : Appearance.rounding.unsharpenmore
+
+                            ConfigSwitch {
+                                id: switchItem
+                                anchors { fill: parent; margins: 8 }
+                                buttonIcon: "monitor"
+                                text: monitorRow.modelData.name
+                                onCheckedChanged: {
+                                    const allNames = Hyprland.monitors.values.map(m => m.name)
+                                    let list = Config.options.bar.screenList.length === 0 ? allNames.slice() : Config.options.bar.screenList.slice()
+                                    if (checked) {
+                                        if (!list.includes(monitorRow.modelData.name)) list.push(monitorRow.modelData.name)
+                                    } else {
+                                        list = list.filter(s => s !== monitorRow.modelData.name)
+                                    }
+                                    Config.options.bar.screenList = list.length === allNames.length ? [] : list
+                                }
+
+                                Binding {
+                                    target: switchItem
+                                    property: "checked"
+                                    value: Config.options.bar.screenList.length === 0 || Config.options.bar.screenList.includes(monitorRow.modelData.name)
+                                    restoreMode: Binding.RestoreBinding
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -125,28 +172,30 @@ ContentPage {
             shape: MaterialShape.Shape.Cookie6Sided
             title: Translation.tr("Bar layout")
 
-            LayoutSection {
-                sectionTitle: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
-                layout: Config.options.bar.layouts.leftLayout
-                availableWidgets: page.availableFor()
-                getWidgetName: page.getWidgetName
-                onUpdate: list => Config.options.bar.layouts.leftLayout = list
-            }
+            GroupedList {
+                LayoutSection {
+                    sectionTitle: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
+                    layout: Config.options.bar.layouts.leftLayout
+                    availableWidgets: page.availableFor()
+                    getWidgetName: page.getWidgetName
+                    onUpdate: list => Config.options.bar.layouts.leftLayout = list
+                }
 
-            LayoutSection {
-                sectionTitle: Translation.tr("Center")
-                layout: Config.options.bar.layouts.middleLayout
-                availableWidgets: page.availableFor()
-                getWidgetName: page.getWidgetName
-                onUpdate: list => Config.options.bar.layouts.middleLayout = list
-            }
+                LayoutSection {
+                    sectionTitle: Translation.tr("Center")
+                    layout: Config.options.bar.layouts.middleLayout
+                    availableWidgets: page.availableFor()
+                    getWidgetName: page.getWidgetName
+                    onUpdate: list => Config.options.bar.layouts.middleLayout = list
+                }
 
-            LayoutSection {
-                sectionTitle: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
-                layout: Config.options.bar.layouts.rightLayout
-                availableWidgets: page.availableFor()
-                getWidgetName: page.getWidgetName
-                onUpdate: list => Config.options.bar.layouts.rightLayout = list
+                LayoutSection {
+                    sectionTitle: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
+                    layout: Config.options.bar.layouts.rightLayout
+                    availableWidgets: page.availableFor()
+                    getWidgetName: page.getWidgetName
+                    onUpdate: list => Config.options.bar.layouts.rightLayout = list
+                }
             }
         }
 
@@ -222,6 +271,41 @@ ContentPage {
             title: Translation.tr("Notifications")
             
             GroupedList {
+                ConfigComboBox { // too much items for configselectionarray - I know it's not the best place to put this but I can change it later
+                    text: Translation.tr("Popup position")
+                    buttonIcon: "my_location" 
+                    currentValue: Config.options.notifications.position
+                    fieldWidth: 50
+                    onSelected: newValue => {
+                        Config.options.notifications.position = newValue;
+                    }
+                    model: [
+                        {
+                            displayName: Translation.tr("Top left"),
+                            value: "top_left"
+                        },
+                        {
+                            displayName: Translation.tr("Top center"),
+                            value: "top_center"
+                        },
+                        {
+                            displayName: Translation.tr("Top right"),
+                            value: "top_right"
+                        },
+                        {
+                            displayName: Translation.tr("Bottom left"),
+                            value: "bottom_left"
+                        },
+                        {
+                            displayName: Translation.tr("Bottom center"),
+                            value: "bottom_center"
+                        },
+                        {
+                            displayName: Translation.tr("Bottom right"),
+                            value: "bottom_right"
+                        }
+                    ]
+                }
                 ConfigSwitch {
                     buttonIcon: "counter_2"
                     text: Translation.tr("Unread indicator: show count")
@@ -256,6 +340,38 @@ ContentPage {
                     buttonIcon: "colors"; text: Translation.tr("Tint icons")
                     checked: Config.options.tray.monochromeIcons
                     onCheckedChanged: { Config.options.tray.monochromeIcons = checked; }
+                }
+            }
+        }
+
+        ContentSection {
+            icon: "vertical_align_center"
+            shape: MaterialShape.Shape.Diamond
+            title: Translation.tr("Divider")
+
+            GroupedList {
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "style"
+                    currentValue: Config.options.bar.divider.style
+                    onSelected: newValue => { Config.options.bar.divider.style = newValue; }
+                    options: [
+                        { displayName: Translation.tr("Line"),  icon: "more_vert",       value: "rect" },
+                        { displayName: Translation.tr("Dot"),   icon: "fiber_manual_record", value: "dot" },
+                        { displayName: Translation.tr("Space"), icon: "space_bar",       value: "space" }
+                    ]
+                }
+                ConfigSpinBox {
+                    icon: "width"
+                    enabled: Config.options.bar.divider.style === "space"
+                    text: Translation.tr("Space width (px)")
+                    value: Config.options.bar.divider.spacing
+                    from: 4
+                    to: 400
+                    stepSize: 2
+                    onValueChanged: {
+                        Config.options.bar.divider.spacing = value;
+                    }
                 }
             }
         }

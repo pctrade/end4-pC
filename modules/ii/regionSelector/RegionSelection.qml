@@ -10,7 +10,6 @@ import Qt.labs.synchronizer
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Hyprland
 
 PanelWindow {
     id: root
@@ -63,11 +62,12 @@ PanelWindow {
     readonly property real falsePositivePreventionRatio: 0.5
 
     // Screen & interaction vars
-    readonly property HyprlandMonitor hyprlandMonitor: Hyprland.monitorFor(screen)
-    readonly property real monitorScale: hyprlandMonitor.scale
-    readonly property real monitorOffsetX: hyprlandMonitor.x
-    readonly property real monitorOffsetY: hyprlandMonitor.y
-    property int activeWorkspaceId: hyprlandMonitor.activeWorkspace?.id ?? 0
+    readonly property var monitor: WM.monitorFor(screen)
+    readonly property var monitorGeometry: WM.monitorGeometry(screen)
+    readonly property real monitorScale: monitorGeometry.scale
+    readonly property real monitorOffsetX: monitorGeometry.x
+    readonly property real monitorOffsetY: monitorGeometry.y
+    property int activeWorkspaceId: WM.activeWorkspaceForMonitor(root.monitor?.name)?.id ?? 0
     property string screenshotPath: `${root.screenshotDir}/image-${screen.name}`
     property real dragStartX: 0
     property real dragStartY: 0
@@ -92,7 +92,7 @@ PanelWindow {
         }
     })
     readonly property list<var> layerRegions: {
-        const layersOfThisMonitor = root.layers[root.hyprlandMonitor.name]
+        const layersOfThisMonitor = root.layers[root.monitor?.name]
         const topLayers = layersOfThisMonitor?.levels["2"]
         if (!topLayers) return [];
         const nonBarTopLayers = topLayers
@@ -218,6 +218,15 @@ PanelWindow {
         root.visible = true;
     }
 
+    Connections {
+        target: Persistent.states.record
+        function onEnableChanged() {
+            if (!Persistent.states.record.enable && root.isRecording) {
+                root.dismiss();
+            }
+        }
+    }
+
     Process {
         id: imageDetectionProcess
         command: ["bash", "-c", `${Directories.scriptPath}/images/find-regions-venv.sh ` 
@@ -314,7 +323,7 @@ PanelWindow {
         focus: root.visible
         Keys.onPressed: (event) => { // Esc to close
             if (event.key === Qt.Key_Escape) {
-                root.dismiss();
+                Qt.callLater(root.dismiss);
             }
         }
     }

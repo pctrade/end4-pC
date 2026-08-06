@@ -15,6 +15,7 @@ Singleton {
     property string category:   "general"    // wallhaven: "general"|"anime"|"people" / unsplash: "nature"|"city"|...
     property string purity:     "sfw"        // wallhaven: "sfw"|"sketchy"|"nsfw"
     property bool   loading:    false
+    property bool   appending:  false 
     property int    page:       1
     property string seed:       ""          
     property var    results:    []           // list [ {thumb, full, id, provider} ]
@@ -58,12 +59,15 @@ Singleton {
         if (root.loading) return;
         root.page = 1;
         root.seed = "";
+        root.appending = false;
         root.results = [];
         _doFetch();
     }
 
     function nextPage() {
         if (root.loading) return;
+        if (root.provider !== "unsplash" && root.totalPages > 0 && root.page >= root.totalPages) return;  // NUEVO: no pedir de más
+        root.appending = true;   
         root.page += 1;
         _doFetch();
     }
@@ -128,13 +132,11 @@ Singleton {
     function _parseWallhaven(jsonStr) {
         try {
             const data = JSON.parse(jsonStr);
-
             if (data.meta?.seed && root.seed.length === 0) {
                 root.seed = data.meta.seed;
             }
-            
             root.totalPages = data.meta?.last_page ?? 0
-            root.results = data.data.map(item => ({
+            const newItems = data.data.map(item => ({
                 id:               item.id,
                 thumb:            item.thumbs.large,
                 full:             item.path,
@@ -147,7 +149,7 @@ Singleton {
                 height:           item.dimension_y ?? 0,
                 downloadLocation: "",
             }));
-
+            root.results = root.appending ? root.results.concat(newItems) : newItems;   // CAMBIO
             root.fetched();
         } catch (e) {
             root.fetchError("Wallhaven parse error: " + e);
@@ -159,7 +161,7 @@ Singleton {
             const data = JSON.parse(jsonStr);
             const resSuffix = root.resolutionMap["unsplash"][root.resolution] ?? "&w=1920&h=1080&fit=crop";
 
-            root.results = data.map(item => ({
+            const newItems = data.map(item => ({
                 id:               item.id,
                 thumb:            item.urls.small,
                 full: item.urls.raw + (root.resolution === "4K" ? "&w=3840&h=2160&fit=crop&fm=jpg&q=85"
@@ -175,6 +177,7 @@ Singleton {
                 downloadLocation: item.links?.download_location ?? "",
             }));
 
+            root.results = root.appending ? root.results.concat(newItems) : newItems;
             root.fetched();
         } catch (e) {
             root.fetchError("Unsplash parse error: " + e);
@@ -187,7 +190,7 @@ Singleton {
             const resSuffix = root.resolutionMap["pexels"][root.resolution] ?? "&w=1920&h=1080&fit=crop";
 
             root.totalPages = Math.ceil((data.total_results ?? 0) / 24);
-            root.results = data.photos.map(item => ({
+            const newItems = data.photos.map(item => ({
                 id:               String(item.id),
                 thumb:            item.src.large,
                 full: root.resolution === "4K" ? item.src.original + "?auto=compress&cs=tinysrgb&w=3840&h=2160&fit=crop"
@@ -204,6 +207,7 @@ Singleton {
                 downloadLocation: "",
             }));
 
+            root.results = root.appending ? root.results.concat(newItems) : newItems;
             root.fetched();
         } catch (e) {
             root.fetchError("Pexels parse error: " + e);

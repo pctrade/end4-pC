@@ -25,7 +25,7 @@ TextArea {
 
     background: Rectangle {
         implicitHeight: 56
-        color: Config.options.appearance.transparency.enable ? ColorUtils.transparentize(Appearance.m3colors.m3surface, 0.8) : Appearance.m3colors.m3surface
+        color: Appearance.colors.colLayer1 
         topLeftRadius: 4
         topRightRadius: 4
         Rectangle {

@@ -29,6 +29,13 @@ Scope {
         GlobalStates.desktopMenuOpen = true
     }
 
+    function displayPathFor(path) {
+        if (!path) return path
+        return /\.(mp4|webm|mkv|avi|mov)$/i.test(path)
+            ? Config.options.background.thumbnailPath
+            : path
+    }
+
     // Wallpaper folder images
     FolderListModel {
         id: wallpaperFolder
@@ -60,8 +67,8 @@ Scope {
 
     property var carouselModel: {
         const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
-        if (!current || current.length === 0) return randomWallpapers
-        return [current, ...randomWallpapers]
+        if (!current || current.length === 0) return randomWallpapers.map(p => root.displayPathFor(p))
+        return [root.displayPathFor(current), ...randomWallpapers.map(p => root.displayPathFor(p))]
     }
 
     // Menu window
@@ -157,6 +164,7 @@ Scope {
 
                     GroupedList {
                         Layout.fillWidth: true
+                        itemVerticalPadding: 16
                         bgcolor: Appearance.colors.colLayer0
 
                         // Wallpapers
@@ -219,6 +227,64 @@ Scope {
                                         submenuCloseTimer.restart()
                                     }
                                 }
+                            }
+                        }
+
+                        RippleButton {
+                            implicitHeight: 40
+                            colBackground: "transparent"
+                            colBackgroundHover: Appearance.colors.colLayer2
+                            contentItem: RowLayout {
+                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                                spacing: 12
+                                MaterialSymbol { text: "stacks"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
+                                StyledText { Layout.fillWidth: true; text: "DropShelf"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
+                                StyledText {
+                                    visible: DropShelf.items.length > 0
+                                    text: DropShelf.items.length
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    color: Appearance.colors.colOnLayer1
+                                    opacity: 0.6
+                                }
+                                MaterialSymbol {
+                                    visible: DropShelf.items.length === 0
+                                    text: "chevron_right"
+                                    iconSize: Appearance.font.pixelSize.normal
+                                    color: Appearance.colors.colOnLayer1
+                                    opacity: 0.4
+                                }
+                            }
+                            onClicked: {
+                                GlobalStates.desktopMenuOpen = false
+                                GlobalStates.dropShelfX = GlobalStates.desktopMenuX
+                                GlobalStates.dropShelfY = GlobalStates.desktopMenuY
+                                GlobalStates.dropShelfOpen = true
+                            }
+                        }
+
+                        RippleButton {
+                            implicitHeight: 40
+                            colBackground: "transparent"
+                            colBackgroundHover: Appearance.colors.colLayer2
+                            contentItem: RowLayout {
+                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                                spacing: 12
+                                MaterialSymbol { text: "video_template"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
+                                StyledText { Layout.fillWidth: true; text: "Live Wallpaper"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
+                                MaterialSymbol {
+                                    visible: DropShelf.items.length === 0
+                                    text: "chevron_right"
+                                    iconSize: Appearance.font.pixelSize.normal
+                                    color: Appearance.colors.colOnLayer1
+                                    opacity: 0.4
+                                }
+                            }
+                            onClicked: {
+                                GlobalStates.desktopMenuOpen = false
+                                Wallpapers.openFallbackPicker(
+                                    Appearance.m3colors.darkmode,
+                                    Config.options.wallpaperSelector.liveWallpapersPath ?? ""
+                                )
                             }
                         }
 

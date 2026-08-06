@@ -24,6 +24,7 @@ import qs.modules.ii.background.widgets.visualizer
 import qs.modules.ii.background.widgets.calendar
 import qs.modules.ii.background.widgets.worldclock
 import qs.modules.ii.background.widgets.usercard
+import qs.modules.ii.background.widgets.notes
 import qs.modules.ii.background.widgets.github
 import qs.modules.ii.background.widgets.devices
 import qs.modules.ii.background.widgets.screentime
@@ -94,6 +95,7 @@ Variants {
         required property var modelData
         property string currentWallpaperSource: Config.options.background.wallpaperPath
         property string previousWallpaperSource: Config.options.background.wallpaperPath
+        property bool videoRevealed: false
 
         //centered Wallpaper
         property bool centeredWallpaperEnabled: Config.options.background.centeredWallpaper && (!Config.options.background.centeredWallpaperOnlyWhenLocked || GlobalStates.screenLocked)
@@ -111,9 +113,11 @@ Variants {
 
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
-        property string effectiveWallpaperPath: (GlobalStates.screenLocked && Config.options.background.lockWall !== "")
-            ? Config.options.background.lockWall
-            : Config.options.background.wallpaperPath
+        property string effectiveWallpaperPath: {
+            if (GlobalStates.screenLocked && Config.options.background.lockWall !== "")
+                return Config.options.background.lockWall;
+            return Wallpapers.previewPath || Wallpapers.confirmedPath || Config.options.background.wallpaperPath;
+        }
 
         property bool wallpaperIsVideo: bgRoot.effectiveWallpaperPath.endsWith(".mp4") || bgRoot.effectiveWallpaperPath.endsWith(".webm") || bgRoot.effectiveWallpaperPath.endsWith(".mkv") || bgRoot.effectiveWallpaperPath.endsWith(".avi") || bgRoot.effectiveWallpaperPath.endsWith(".mov")
         property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : bgRoot.effectiveWallpaperPath
@@ -171,9 +175,11 @@ Variants {
                     ? bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
                     : bgRoot.wallpaperAnimation
             }
+            bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
         }
 
         onWallpaperPathChanged: {
+            bgRoot.videoRevealed = false
             if (wallpaperSafetyTriggered) {
                 previousWallpaper.source = ""
                 wallpaper.source = ""
@@ -183,6 +189,8 @@ Variants {
             if (bgRoot.wallpaperAnimation === "") {
                 wallpaper.source = wallpaperPath
                 bgRoot.currentWallpaperSource = wallpaperPath
+                if (!bgRoot.wallpaperIsVideo) return
+                bgRoot.videoRevealed = true
                 return
             }
 
@@ -209,6 +217,7 @@ Variants {
                 previousWallpaper.source = ""
                 bgRoot.previousWallpaperSource = ""
                 bgRoot.transitionProgress = 1.0
+                bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
             }
         }
 
@@ -220,6 +229,15 @@ Variants {
             onTriggered: {
                 if (Wallpapers.folderModel.count > 0) {
                     Wallpapers.randomFromCurrentFolder()
+                }
+            }
+        }
+
+        Connections {
+            target: GlobalStates
+            function onScreenLockedChanged() {
+                if (!GlobalStates.screenLocked) {
+                    bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
                 }
             }
         }
@@ -246,7 +264,7 @@ Variants {
                 smooth: true
                 asynchronous: true
                 layer.enabled: true
-                visible: bgRoot.wallpaperAnimation === "" && !blurLoader.active && !bgRoot.centeredWallpaperEnabled
+                visible: bgRoot.wallpaperAnimation === "" && !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                 onStatusChanged: {
                     if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
                         transitionAnim.restart()
@@ -257,7 +275,7 @@ Variants {
             ShaderEffect {
                 id: transitionEffect
                 anchors.fill: parent
-                visible: !blurLoader.active && bgRoot.wallpaperAnimation !== "" && !bgRoot.centeredWallpaperEnabled
+                visible: !blurLoader.active && bgRoot.wallpaperAnimation !== "" && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                 property var fromImage: previousWallpaper
                 property var toImage: wallpaper
                 property real progress: bgRoot.transitionProgress
@@ -367,6 +385,78 @@ Variants {
                 }
             }
 
+            DropArea {
+                id: wallpaperDropArea
+                anchors.fill: parent
+                keys: ["text/uri-list"]
+
+                property var currentUrls: []
+
+                onEntered: (drag) => {
+                    drag.accepted = drag.hasUrls
+                    wallpaperDropArea.currentUrls = drag.hasUrls ? drag.urls : []
+                }
+
+                onExited: {
+                    wallpaperDropArea.currentUrls = []
+                }
+
+                onDropped: (drop) => {
+                    if (!drop.hasUrls) {
+                        drop.accepted = false
+                        wallpaperDropArea.currentUrls = []
+                        return
+                    }
+
+                    if (drop.urls.length === 1) {
+                        const path = CF.FileUtils.trimFileProtocol(decodeURIComponent(drop.urls[0].toString()))
+                        const validExt = /\.(png|jpe?g|webp|bmp|gif)$/i.test(path)
+                        if (validExt) {
+                            Wallpapers.select(path, Appearance.m3colors.darkmode)
+                        } else {
+                            const globalPos = wallpaperDropArea.mapToGlobal(drop.x, drop.y)
+                            DropShelf.show(drop.urls, globalPos.x, globalPos.y)
+                        }
+                    } else {
+                        const globalPos = wallpaperDropArea.mapToGlobal(drop.x, drop.y)
+                        DropShelf.show(drop.urls, globalPos.x, globalPos.y)
+                    }
+                    drop.accept()
+                    wallpaperDropArea.currentUrls = []
+                }
+
+                Rectangle {
+                    id: dropOverlay
+                    anchors.fill: parent
+                    visible: wallpaperDropArea.containsDrag
+                    color: CF.ColorUtils.transparentize(Appearance.colors.colPrimary, 0.6)
+
+                    property bool isSingleImage: wallpaperDropArea.currentUrls.length === 1
+                        && /\.(png|jpe?g|webp|bmp|gif)$/i.test(
+                            CF.FileUtils.trimFileProtocol(wallpaperDropArea.currentUrls[0].toString())
+                        )
+
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 8
+                        MaterialSymbol {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: dropOverlay.isSingleImage ? "wallpaper" : "stacks"
+                            iconSize: 64
+                            color: Appearance.colors.colOnPrimary
+                        }
+                        StyledText {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: dropOverlay.isSingleImage
+                                ? Translation.tr("Drop to set as wallpaper")
+                                : Translation.tr("Drop to add to shelf")
+                            font.pixelSize: Appearance.font.pixelSize.large
+                            color: Appearance.colors.colOnPrimary
+                        }
+                    }
+                }
+            }
+
             WidgetCanvas {
                 id: widgetCanvas
                 anchors.fill: parent
@@ -444,6 +534,18 @@ Variants {
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
+                    }
+                }
+                FadeLoader {
+                    shown: Config.options.background.widgets.notes.enable
+                        && (Config.options.background.screenList.length === 0
+                            || Config.options.background.screenList.includes(bgRoot.screen.name))
+                    sourceComponent: NotesWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: 1
                     }
                 }
                 FadeLoader {
@@ -565,6 +667,7 @@ Variants {
                     }
                 }
             }
+
             MouseArea {
                 id: desktopRightClickArea
                 anchors.fill: parent

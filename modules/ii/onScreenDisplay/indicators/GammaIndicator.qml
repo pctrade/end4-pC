@@ -1,7 +1,6 @@
 import qs.services
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import qs.modules.ii.onScreenDisplay
 
 OsdValueIndicator {

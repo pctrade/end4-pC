@@ -9,6 +9,8 @@
 **A personal fork of [illogical-impulse](https://github.com/end-4/dots-hyprland) by [@end-4](https://github.com/end-4)**  
 Customized and maintained by **pctrade**
 
+[English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+
 </div>
 
 ---
@@ -86,6 +88,20 @@ hl.bind("SUPER + escape", hl.dsp.global("quickshell:settingsToggle"), {descripti
 ```
 
 > **Note:** Settings is an overlay panel, not a regular window — `Super + Q` won't close it. Use the same keybind to toggle it or press `Escape`.
+
+---
+
+## ❓ FAQ
+
+### How do I see my keybinds?
+
+Open the launcher (`SUPER`) and type `<` — it'll show you the full list of configured keybinds.
+
+### Why doesn't Settings have a search bar?
+
+It doesn't need one — the launcher already does that job. Open the launcher (`SUPER`) and just type what you're looking for (e.g. `wallpaper`, `bar`, `blur`); it'll match against page names and section keywords and jump you straight to the right Settings page, so there's no need for a separate search inside Settings itself.
+
+---
 
 ## 🙏 Credits
 

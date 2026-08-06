@@ -99,7 +99,7 @@ Item {
         anchors.topMargin:    Appearance.sizes.hyprlandGapsOut
         anchors.bottomMargin: Appearance.sizes.hyprlandGapsOut
         anchors.leftMargin:   Appearance.sizes.hyprlandGapsOut
-        anchors.rightMargin:  Appearance.sizes.hyprlandGapsOut
+        anchors.rightMargin:  Appearance.sizes.hyprlandGapsOut - 2
         radius: Appearance.rounding.normal
         color:  "transparent"
 

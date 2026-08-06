@@ -66,6 +66,11 @@ MouseArea {
                     GlobalStates.wallpaperSelectorOpen = false;
                 });
             } else {
+                // Stop preview FIRST so wallpaperPath reverts to the old wallpaper,
+                // then select() sets confirmedPath to the new one — this causes
+                // onWallpaperPathChanged to fire with the real transition animation.
+                if (Config.options.background.enableWallpaperPreview)
+                    Wallpapers.stopPreview();
                 Wallpapers.select(filePath, root.useDarkMode);
             }
         }
@@ -82,6 +87,7 @@ MouseArea {
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
+            Wallpapers.stopPreview();
             GlobalStates.wallpaperSelectorOpen = false;
             event.accepted = true;
         } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
@@ -145,6 +151,7 @@ MouseArea {
     StyledRectangularShadow {
         target: wallpaperGridBackground
     }
+
     Rectangle {
         id: wallpaperGridBackground
         anchors {
@@ -486,12 +493,19 @@ MouseArea {
                             visible: active
                             sourceComponent: Toolbar {
                                 ToolbarTextField {
+                                    id: onlineSearchField
                                     placeholderText: Translation.tr("Search online wallpapers")
                                     clip: true
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     onTextChanged: OnlineWallpapers.query = text
                                     onAccepted: OnlineWallpapers.fetch()
                                     onActiveFocusChanged: root.filterFieldFocused = activeFocus
+                                    Connections {
+                                        target: GlobalStates
+                                        function onWallpaperSelectorOpenChanged() {
+                                            if (!GlobalStates.wallpaperSelectorOpen) onlineSearchField.text = ""
+                                        }
+                                    }
                                     Keys.onPressed: event => {
                                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                                             event.accepted = true;
@@ -499,46 +513,6 @@ MouseArea {
                                         }
                                         event.accepted = false;
                                     }
-                                }
-                                IconToolbarButton {
-                                    implicitWidth: height
-                                    enabled: OnlineWallpapers.page > 1
-                                    text: "chevron_left"
-                                    onClicked: OnlineWallpapers.prevPage()
-                                }
-                                ToolbarTextField {
-                                    id: pageField
-                                    implicitWidth: Math.max(40, pageField.contentWidth + 24)
-                                    horizontalAlignment: Text.AlignHCenter
-                                    text: OnlineWallpapers.page.toString()
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    inputMethodHints: Qt.ImhDigitsOnly
-                                    validator: IntValidator { bottom: 1 }
-                                    onAccepted: {
-                                        const p = parseInt(text);
-                                        if (p > 0) {
-                                            OnlineWallpapers.page = p;
-                                            OnlineWallpapers._doFetch();
-                                        }
-                                    }
-                                    Connections {
-                                        target: OnlineWallpapers
-                                        function onFetched() {
-                                            pageField.text = OnlineWallpapers.page.toString();
-                                        }
-                                    }
-                                }
-                                StyledText {
-                                    visible: root.source !== "unsplash"
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "/ " + OnlineWallpapers.totalPages
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colSubtext
-                                }
-                                IconToolbarButton {
-                                    implicitWidth: height
-                                    text: "chevron_right"
-                                    onClicked: OnlineWallpapers.nextPage()
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
@@ -550,7 +524,10 @@ MouseArea {
 
                         ToolbarPairedFab {
                             iconText: "close"
-                            onClicked: GlobalStates.wallpaperSelectorOpen = false
+                            onClicked: {
+                                Wallpapers.stopPreview();
+                                GlobalStates.wallpaperSelectorOpen = false;
+                            }
                         }
                     }
                 }
@@ -566,6 +543,8 @@ MouseArea {
                     filterField.forceActiveFocus()
                 else
                     root.forceActiveFocus()
+            } else if (!GlobalStates.wallpaperSelectorOpen) {
+                Wallpapers.stopPreview();
             }
         }
     }

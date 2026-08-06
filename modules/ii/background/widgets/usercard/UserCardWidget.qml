@@ -19,8 +19,8 @@ AbstractBackgroundWidget {
     property int cardWidth: 276
     property int blurMargin: 18   
     property int avatarSize: 64
-    property string hostname: Quickshell.env("HOSTNAME") ?? "host"
-    property string username: SystemInfo.username
+    property string hostname: SystemInfo.hostname
+    property string username: Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName
     property string userDisplay: username.length > 10 ? username : (username + "@" + hostname)
     property var currentQuip: weatherQuip()
     
@@ -37,18 +37,6 @@ AbstractBackgroundWidget {
         if (desc.includes("snow"))
             return { text: `• snowing`, icon: "ac_unit" };
         return { text: `• ${Weather.data?.description ?? ""}`, icon: "thermostat" };
-    }
-
-    Process {
-        id: hostnameProcess
-        command: ["cat", "/etc/hostname"]
-        running: true
-        stdout: StdioCollector {
-            id: hostnameOutput
-        }
-        onExited: {
-            hostname = hostnameOutput.text.trim()
-        }
     }
 
     StyledDropShadow {

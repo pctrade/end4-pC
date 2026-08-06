@@ -15,6 +15,8 @@ ContentSubsection {
 
     title: sectionTitle
     Layout.fillWidth: true
+    Layout.leftMargin: 8
+    Layout.topMargin: -4
 
     RowLayout {
         Layout.fillWidth: true
@@ -148,6 +150,8 @@ ContentSubsection {
         }
 
         ToolbarPairedFab {
+            Layout.rightMargin: 8
+            Layout.topMargin: -20
             Layout.alignment: Qt.AlignVCenter
             iconText: dropdown.dropdownOpen ? "keyboard_arrow_up" : "add"
             onClicked: dropdown.dropdownOpen = !dropdown.dropdownOpen
@@ -177,11 +181,9 @@ ContentSubsection {
             anchors.top: parent.top
             anchors.topMargin: 4
             width: parent.width
-            implicitHeight: dropdownFlow.implicitHeight + 16
-            color: Appearance.colors.colLayer1
+            implicitHeight: dropdownFlow.implicitHeight + 8
+            color: "transparent"
             radius: Appearance.rounding.large
-            border.width: 1
-            border.color: Appearance.colors.colLayer0Border
 
             Flow {
                 id: dropdownFlow

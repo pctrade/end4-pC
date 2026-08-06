@@ -45,6 +45,7 @@ Scope {
         onVisibleChanged: {
             if (visible) {
                 GlobalFocusGrab.addDismissable(panelWindow);
+                settingsWindow.userMoved = false;
             } else {
                 GlobalFocusGrab.removeDismissable(panelWindow);
             }
@@ -74,7 +75,6 @@ Scope {
 
         Rectangle {
             id: settingsWindow
-            anchors.centerIn: parent
             width: Math.min(parent.width - 80, 980)
             height: Math.min(parent.height - 80, 665)
             color: Appearance.colors.colLayer0
@@ -82,6 +82,9 @@ Scope {
             border.color: Appearance.colors.colLayer0Border
             radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5
             z: 1
+
+            property bool userMoved: false
+            anchors.centerIn: userMoved ? undefined : parent
 
             opacity: GlobalStates.settingsOpen ? 1 : 0
             scale: GlobalStates.settingsOpen ? 1 : 0.95
@@ -99,6 +102,25 @@ Scope {
                 }
             }
 
+            Rectangle {
+                id: dragHandle
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 32
+                color: "transparent"
+                z: 2
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.SizeAllCursor
+                    drag.target: settingsWindow
+                    drag.axis: Drag.XAndYAxis
+                    onPressed: settingsWindow.userMoved = true
+                    onDoubleClicked: settingsWindow.userMoved = false
+                }
+            }
+
             SettingsContent {
                 anchors.fill: parent
             }
@@ -112,7 +134,7 @@ Scope {
         function close(): void  { GlobalStates.settingsOpen = false; }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "settingsToggle"
         description: "Toggles settings panel"
         onPressed: GlobalStates.settingsOpen = !GlobalStates.settingsOpen;

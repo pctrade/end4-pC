@@ -22,8 +22,25 @@ getdate() {
 getaudiooutput() {
     pactl list sources | grep 'Name' | grep 'monitor' | cut -d ' ' -f2
 }
+
+detect_compositor() {
+    local combined
+    combined="$(echo "${XDG_CURRENT_DESKTOP:-} ${XDG_SESSION_DESKTOP:-}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$combined" == *"niri"* ]]; then
+        echo "niri"
+    elif [[ "$combined" == *"hyprland"* ]]; then
+        echo "hyprland"
+    else
+        echo "unknown"
+    fi
+}
+
 getactivemonitor() {
-    hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .name'
+    if [[ "$(detect_compositor)" == "niri" ]]; then
+        niri msg -j workspaces | jq -r '.[] | select(.is_focused == true) | .output'
+    else
+        hyprctl monitors -j | jq -r '.[] | select(.focused == true) | .name'
+    fi
 }
 
 mkdir -p "$RECORDING_DIR"

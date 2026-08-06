@@ -9,15 +9,13 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 
 ButtonMouseArea {
     id: root
 
-    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
     WorkspaceModel {
         id: wsModel
-        monitor: root.monitor
+        screen: root.QsWindow.window?.screen
     }
 
     property bool vertical: Config.options.bar.vertical
@@ -30,7 +28,7 @@ ButtonMouseArea {
     property real workspaceIconSizeShrinked: workspaceButtonWidth * 0.55
     property real workspaceIconOpacityShrinked: 1
     property real workspaceIconMarginShrinked: -4
-    property int workspaceIndexInGroup: (monitor?.activeWorkspace?.id - 1) % wsModel.shownCount
+    property int workspaceIndexInGroup: (wsModel.activeNumber - 1) % wsModel.shownCount
     property real specialTextSize: workspaceButtonWidth * 0.5
 
     Layout.alignment: vertical ? Qt.AlignHCenter : Qt.AlignVCenter
@@ -54,7 +52,7 @@ ButtonMouseArea {
     }
 
     function switchWorkspaceToHovered() {
-        Hyprland.dispatch(`hl.dsp.focus({workspace = ${wsModel.getWorkspaceIdAt(hoverIndex)}})`);
+        WM.switchWorkspace(wsModel.getWorkspaceIdAt(hoverIndex));
     }
     onPressed: mouse => {
         if (mouse.button == Qt.LeftButton)
@@ -64,9 +62,9 @@ ButtonMouseArea {
     }
     onWheel: event => {
         if (event.angleDelta.y < 0)
-            Hyprland.dispatch(`hl.dsp.focus({workspace = "r+1"})`);
+            WM.switchWorkspaceRelative("next");
         else if (event.angleDelta.y > 0)
-            Hyprland.dispatch(`hl.dsp.focus({workspace = "r-1"})`);
+            WM.switchWorkspaceRelative("prev");
     }
 
     // Indications

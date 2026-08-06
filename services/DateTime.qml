@@ -23,6 +23,12 @@ Singleton {
     property string date: Qt.locale().toString(clock.date, Config.options?.time.dateWithYearFormat ?? "dd/MM/yyyy")
     property string longDate: Qt.locale().toString(clock.date, Config.options?.time.dateFormat ?? "dddd, dd/MM")
     property string collapsedCalendarFormat: Qt.locale().toString(clock.date, "dddd, MMMM dd")
+    readonly property string hourStr: Qt.locale().toString(clock.date, "HH")
+    readonly property string minuteStr: Qt.locale().toString(clock.date, "mm")
+    readonly property string digitH0: hourStr.charAt(0)
+    readonly property string digitH1: hourStr.charAt(1)
+    readonly property string digitM0: minuteStr.charAt(0)
+    readonly property string digitM1: minuteStr.charAt(1)
     property string uptime: "0h, 0m"
 
     Timer {

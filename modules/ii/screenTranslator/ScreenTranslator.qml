@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import qs
+import qs.services
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -48,7 +49,7 @@ Scope {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "screenTranslate"
         description: "Translates screen content"
         onPressed: root.translate()

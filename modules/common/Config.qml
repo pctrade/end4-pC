@@ -153,6 +153,7 @@ Singleton {
                 property string avatarPath: ""
                 property string avatarPicture: ""
                 property string descriptionText: "::distro::"
+                property string displayName: ""
 
             }
 
@@ -254,6 +255,9 @@ Singleton {
                                 property real roundness: 0
                             }
                         }
+                        property JsonObject pixel: JsonObject {
+                            property string orientation: "vertical"
+                        }
                         property JsonObject quote: JsonObject {
                             property bool enable: false
                             property string text: ""
@@ -282,6 +286,13 @@ Singleton {
                         property real x: 400
                         property real y: 100
                         property string sizeMode: "2x2" 
+                    }
+
+                    property JsonObject notes: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
                     }
 
                     property JsonObject userCard: JsonObject {
@@ -374,6 +385,7 @@ Singleton {
                 property string centeredWallpaperColor: "primaryContainer"
                 property bool centeredWallpaperOnlyWhenLocked: false
                 property string wallpaperAnimation: "magic"
+                property bool enableWallpaperPreview: false
                 property string thumbnailPath: ""
                 property bool hideWhenFullscreen: true
                 property JsonObject parallax: JsonObject {
@@ -415,6 +427,10 @@ Singleton {
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85
                     property int cpuWarningThreshold: 90
+                }
+                property JsonObject divider: JsonObject {
+                    property string style: "rect" // rect - dot - space
+                    property int spacing: 20
                 }
 
                 property JsonObject layouts: JsonObject {
@@ -550,6 +566,7 @@ Singleton {
                 property bool launchOnStartup: false
                 property bool showWidgets: false
                 property bool showMedia: true
+                property bool showToolbars: true
                 property JsonObject blur: JsonObject {
                     property bool enable: true
                     property real radius: 100
@@ -576,6 +593,7 @@ Singleton {
 
             property JsonObject notifications: JsonObject {
                 property int timeout: 7000
+                property string position: "top_right"
             }
 
             property JsonObject osd: JsonObject {
@@ -753,6 +771,7 @@ Singleton {
             property JsonObject time: JsonObject {
                 // https://doc.qt.io/qt-6/qtime.html#toString
                 property string format: "hh:mm"
+                property bool showDate: true
                 property string shortDateFormat: "dd/MM"
                 property string dateWithYearFormat: "dd/MM/yyyy"
                 property string dateFormat: "ddd, dd/MM"
@@ -777,6 +796,7 @@ Singleton {
                 property bool showBlurBackground: false
                 property bool showHomePath: true
                 property string userPath: "" // This can be set to any path and it will show up as a quick access in the wallpaper selector"
+                property string liveWallpapersPath: ""
                 property bool showSearchbar: true
                 property int columns: 4
                 property bool closeAfterSelection: true

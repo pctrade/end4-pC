@@ -378,42 +378,6 @@ AbstractBackgroundWidget {
         }
 
         Rectangle {
-            id: resizeHandle
-            width: 16; height: 16; radius: 4
-            color: Appearance.colors.colOnPrimaryContainer
-            anchors { right: card.right; bottom: card.bottom; margins: 4 }
-            opacity: (root.containsMouse || resizeArea.containsMouse || resizeArea.pressed) ? 0.5 : 0
-            visible: opacity > 0 && !Config.options.background.widgetsLocked
-            Behavior on opacity { NumberAnimation { duration: 150 } }
-
-            MouseArea {
-                id: resizeArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.SizeHorCursor
-                preventStealing: true
-                property real startWidth: 0
-                property real startX: 0
-                onPressed: (mouse) => {
-                    startWidth = root.widgetWidth
-                    startX = mapToItem(null, mouse.x, mouse.y).x
-                }
-                onPositionChanged: (mouse) => {
-                    if (!pressed) return
-                    var globalX = mapToItem(null, mouse.x, mouse.y).x
-                    var dx = globalX - startX
-                    var newW = startWidth + dx
-                    var mid = (root.snapWidth1 + root.snapWidth2) / 2
-                    if (newW < mid) root.sizeMode = "1x1"
-                    else if (root.sizeMode === "1x1") root.sizeMode = "2x2"
-                }
-                onReleased: {
-                    root.configEntry.sizeMode = root.sizeMode
-                }
-            }
-        }
-
-        Rectangle {
             id: toggleHandle
             width: 16; height: 16; radius: 4
             color: Appearance.colors.colOnPrimaryContainer
@@ -438,6 +402,21 @@ AbstractBackgroundWidget {
                     root.sizeMode = root.sizeMode === "2x2" ? "1x2" : "2x2"
                     root.configEntry.sizeMode = root.sizeMode
                 }
+            }
+        }
+
+        ResizeHandler {
+            anchorItem: card
+            hoverActive: root.containsMouse
+            locked: Config.options.background.widgetsLocked
+            currentWidth: root.widgetWidth
+            onResized: (newWidth) => {
+                var mid = (root.snapWidth1 + root.snapWidth2) / 2
+                if (newWidth < mid) root.sizeMode = "1x1"
+                else if (root.sizeMode === "1x1") root.sizeMode = "2x2"
+            }
+            onResizeFinished: {
+                root.configEntry.sizeMode = root.sizeMode
             }
         }
     }

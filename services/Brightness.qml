@@ -257,13 +257,13 @@ Singleton {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "brightnessIncrease"
         description: "Increase brightness"
         onPressed: root.increaseBrightness()
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "brightnessDecrease"
         description: "Decrease brightness"
         onPressed: root.decreaseBrightness()

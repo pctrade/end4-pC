@@ -10,7 +10,6 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Widgets
-import Quickshell.Hyprland
 
 Item {
     id: root
@@ -18,7 +17,6 @@ Item {
     property real iconSize:      23
     property real btnSize:       28
     property real btnSpacing:    2
-    property real buttonPadding: 4
     property bool vertical:    Config.options.bar.vertical
     property bool isMaterial:  Config.options.bar.cornerStyle === 3
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
@@ -27,8 +25,135 @@ Item {
     )
     property bool showSeparator: _workOrder.length > 0 && activeUnpinned.length > 0
     property var  _workOrder:            pinnedApps.slice()
-    property int  activeDragVisualIndex: -1
     property bool _dragging:             false
+
+    property bool dragging: false
+    property bool _suppressTranslateAnim: false
+    property int dragSourceIndex: -1
+    property int _dragTargetIndex: -1
+    property real dragCursorX: 0
+    property real dragStartCursorX: 0
+    property real slotWidth: root.btnSize + root.btnSpacing
+
+    Layout.fillHeight: !vertical
+    Layout.fillWidth: vertical
+
+    function _getPinnedItemWrapper(index) {
+        return pinnedRepeater.itemAt(index)
+    }
+
+    function _getPinnedItemWidth(index) {
+        var wrapper = _getPinnedItemWrapper(index)
+        return wrapper ? (root.vertical ? wrapper.height : wrapper.width) : root.btnSize
+    }
+
+    function _getMaxDragOffset(index) {
+        var count = _workOrder.length
+        if (count <= 1) return { left: 0, right: 0 }
+        var left = 0, right = 0
+        for (var i = 0; i < count; i++) {
+            var w = _getPinnedItemWidth(i) + root.btnSpacing
+            if (i < index) left += w
+            else if (i > index) right += w
+        }
+        return { left: -left, right: right }
+    }
+
+    function _recomputeDragTarget() {
+        if (!dragging) {
+            _dragTargetIndex = dragSourceIndex
+            return
+        }
+
+        var count = _workOrder.length
+        if (count <= 1) {
+            _dragTargetIndex = dragSourceIndex
+            return
+        }
+
+        var delta = dragCursorX - dragStartCursorX
+        var draggedCenter = delta
+        var target = dragSourceIndex
+
+        if (delta > 0) {
+            var pos = 0
+            for (var i = dragSourceIndex + 1; i < count; ++i) {
+                pos += (_getPinnedItemWidth(i - 1) + root.btnSpacing) / 2
+                pos += (_getPinnedItemWidth(i) + root.btnSpacing) / 2
+
+                if (draggedCenter >= pos)
+                    target = i
+                else
+                    break
+            }
+        } else if (delta < 0) {
+            var pos = 0
+            for (var i = dragSourceIndex - 1; i >= 0; --i) {
+                pos -= (_getPinnedItemWidth(i + 1) + root.btnSpacing) / 2
+                pos -= (_getPinnedItemWidth(i) + root.btnSpacing) / 2
+
+                if (draggedCenter <= pos)
+                    target = i
+                else
+                    break
+            }
+        }
+
+        _dragTargetIndex = target
+    }
+
+    function _startPinnedItemDrag(index) {
+        _suppressTranslateAnim = true
+        dragSourceIndex = index
+        _dragTargetIndex = index
+        slotWidth = root.btnSize + root.btnSpacing
+        dragStartCursorX = 0
+        dragCursorX = 0
+        dragging = true
+        Qt.callLater(function() { _suppressTranslateAnim = false })
+    }
+
+    function _endPinnedItemDrag() {
+        _suppressTranslateAnim = true
+
+        var src = dragSourceIndex
+        var tgt = _dragTargetIndex
+
+        if (dragging &&
+            src >= 0 &&
+            tgt >= 0 &&
+            src < _workOrder.length &&
+            tgt < _workOrder.length &&
+            src !== tgt) {
+
+            var arr = _workOrder.slice()
+
+            var item = arr[src]
+            arr.splice(src, 1)
+            arr.splice(tgt, 0, item)
+
+            _workOrder = arr
+            Config.options.dock.pinnedApps = arr
+        }
+
+        dragging = false
+        dragSourceIndex = -1
+        _dragTargetIndex = -1
+        dragCursorX = 0
+        dragStartCursorX = 0
+
+        Qt.callLater(function() {
+            _suppressTranslateAnim = false
+        })
+    }
+
+    function _cancelPinnedDrag() {
+        _suppressTranslateAnim = true
+        dragging = false
+        dragSourceIndex = -1
+        _dragTargetIndex = -1
+        Qt.callLater(function() { _suppressTranslateAnim = false })
+    }
 
     onPinnedAppsChanged: {
         if (!_dragging)
@@ -88,7 +213,6 @@ Item {
             flow:    root.vertical ? Flow.TopToBottom : Flow.LeftToRight
             spacing: root.btnSpacing
 
-            // ── 1. PINNED APPS ───────────────────────────────────────────
             Repeater {
                 id: pinnedRepeater
                 model: root._workOrder.length
@@ -103,6 +227,53 @@ Item {
                     property bool   appActive:    appEntry?.toplevels?.find(t => t.activated) !== undefined
                     property int    _lastFocused: -1
 
+                    readonly property bool isDragged: root.dragging && index === root.dragSourceIndex
+                    readonly property real dragTranslate: {
+                        if (!root.dragging) return 0
+                        if (isDragged) {
+                            var raw = root.dragCursorX - root.dragStartCursorX
+                            var maxOff = root._getMaxDragOffset(index)
+                            var clamped = Math.max(maxOff.left, Math.min(maxOff.right, raw))
+                            return clamped
+                        }
+                        var src = root.dragSourceIndex
+                        var tgt = root._dragTargetIndex
+                        var idx = index
+                        var sw = root.slotWidth
+                        if (src < tgt && idx > src && idx <= tgt) return -sw
+                        if (src > tgt && idx >= tgt && idx < src) return sw
+                        return 0
+                    }
+
+                    z: isDragged ? 100 : 0
+                    opacity: isDragged ? 0.85 : 1
+                    scale: isDragged ? 1.05 : 1
+
+                    Behavior on opacity {
+                        enabled: !root._suppressTranslateAnim
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
+                    Behavior on scale {
+                        enabled: !root._suppressTranslateAnim
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
+
+                    transform: Translate {
+                        x: root.vertical ? 0 : slotItem.dragTranslate
+                        y: root.vertical ? slotItem.dragTranslate : 0
+                        Behavior on x {
+                            enabled: !slotItem.isDragged && !root._suppressTranslateAnim
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                        }
+                        Behavior on y {
+                            enabled: !slotItem.isDragged && !root._suppressTranslateAnim
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                        }
+                    }
+
+                    width:  root.btnSize
+                    height: root.btnSize
+
                     Connections {
                         target: DesktopEntries
                         function onApplicationsChanged() {
@@ -110,11 +281,31 @@ Item {
                         }
                     }
 
-                    width:  root.btnSize
-                    height: root.btnSize
+                    DragHandler {
+                        id: dragHandler
+                        target: null
+                        grabPermissions: PointerHandler.CanTakeOverFromAnything
 
-                    opacity: 1
-                    Behavior on opacity { NumberAnimation { duration: 110 } }
+                        onActiveChanged: {
+                            if (active) {
+                                root._startPinnedItemDrag(index)
+                                var pos = root.vertical ? centroid.scenePosition.y : centroid.scenePosition.x
+                                root.dragStartCursorX = pos
+                                root.dragCursorX = pos
+                            } else {
+                                if (root.dragging) {
+                                    root._endPinnedItemDrag()
+                                }
+                            }
+                        }
+
+                        onCentroidChanged: {
+                            if (!active || !root.dragging) return
+                            var pos = root.vertical ? centroid.scenePosition.y : centroid.scenePosition.x
+                            root.dragCursorX = pos
+                            root._recomputeDragTarget()
+                        }
+                    }
 
                     RippleButton {
                         anchors.fill: parent
@@ -122,6 +313,7 @@ Item {
                         hoverEnabled: true
 
                         onClicked: {
+                            if (root.dragging) return
                             const entry = slotItem.appEntry
                             if (!entry || entry.toplevels.length === 0) {
                                 slotItem.deskEntry?.execute()
@@ -156,7 +348,7 @@ Item {
                                     }
                                     ColorOverlay {
                                         anchors.fill: desat; source: desat
-                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.9)
+                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.8)
                                     }
                                 }
                             }
@@ -191,63 +383,9 @@ Item {
                             }
                         }
                     }
-
-                    DragHandler {
-                        id: dragHandler
-                        target: null
-                        grabPermissions: PointerHandler.CanTakeOverFromAnything
-
-                        onActiveChanged: {
-                            if (active) {
-                                root._dragging = true
-                                root.activeDragVisualIndex = index
-                                return
-                            }
-                            root.activeDragVisualIndex = -1
-                            root._dragging = false
-                            root.commitOrder()
-                        }
-
-                        onCentroidChanged: {
-                            if (!active) return
-                            const currentIdx = root.activeDragVisualIndex
-                            if (currentIdx < 0) return
-
-                            const dragPos = root.vertical
-                                ? dragHandler.centroid.scenePosition.y
-                                : dragHandler.centroid.scenePosition.x
-
-                            let minDist = Infinity, nearest = currentIdx
-
-                            for (let i = 0; i < pinnedRepeater.count; i++) {
-                                if (i === currentIdx) continue
-                                const child = pinnedRepeater.itemAt(i)
-                                if (!child) continue
-                                const cc = child.mapToItem(null, child.width / 2, child.height / 2)
-                                const ccPos = root.vertical ? cc.y : cc.x
-                                const dist  = Math.abs(dragPos - ccPos)
-                                if (dist < minDist) { minDist = dist; nearest = i }
-                            }
-
-                            if (nearest !== currentIdx) {
-                                const nb = pinnedRepeater.itemAt(nearest)
-                                if (!nb) return
-                                const nc = nb.mapToItem(null, nb.width / 2, nb.height / 2)
-                                const ncPos = root.vertical ? nc.y : nc.x
-                                const shouldSwap = (nearest > currentIdx)
-                                    ? (dragPos >= ncPos)
-                                    : (dragPos <= ncPos)
-                                if (shouldSwap) {
-                                    root.swapSlots(currentIdx, nearest)
-                                    root.activeDragVisualIndex = nearest
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
-            // ── 2. SEPARATOR ─────────────────────────────────────────────
             Item {
                 width:   root.vertical ? root.btnSize          : (root.showSeparator ? (1 + root.btnSpacing * 3) : 0)
                 height:  root.vertical ? (root.showSeparator ? (1 + root.btnSpacing * 3) : 0) : root.btnSize
@@ -261,7 +399,6 @@ Item {
                 }
             }
 
-            // ── 3. ACTIVE UNPINNED APPS ───────────────────────────────────
             Repeater {
                 id: activeRepeater
                 model: ScriptModel { values: root.activeUnpinned }
@@ -316,7 +453,7 @@ Item {
                                     }
                                     ColorOverlay {
                                         anchors.fill: desat2; source: desat2
-                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.9)
+                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.8)
                                     }
                                 }
                             }

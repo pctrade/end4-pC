@@ -111,7 +111,7 @@ Scope {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "lock"
         description: "Locks the screen"
 
@@ -120,7 +120,7 @@ Scope {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "lockFocus"
         description: "Re-focuses the lock screen. This is because Hyprland after waking up for whatever reason"
             + "decides to keyboard-unfocus the lock screen"

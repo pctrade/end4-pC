@@ -14,15 +14,10 @@ QuickToggleModel {
 
     toggled: Hyprsunset.temperatureActive
     icon: auto ? "night_sight_auto" : "bedtime"
-    
     mainAction: () => {
         Hyprsunset.toggleTemperature()
     }
     hasMenu: true
 
-    Component.onCompleted: {
-        Hyprsunset.fetchState()
-    }
-    
     tooltipText: Translation.tr("Night Light | Right-click to configure")
 }

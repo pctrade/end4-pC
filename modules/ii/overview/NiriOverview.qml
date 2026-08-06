@@ -1,4 +1,5 @@
 pragma ComponentBehavior: Bound
+
 import qs
 import qs.services
 import qs.modules.common
@@ -24,9 +25,9 @@ Item {
         return Math.max(1, Math.min(100, id))
     }
 
-    readonly property int maxWorkspaces: Config.options.bar.workspaces.shown ?? 10
-    readonly property real wsHeight: (screen?.height ?? 1080) * 0.18
-    readonly property real wsPadding: 10
+    readonly property int maxWorkspaces: Math.max(20, Config.options?.bar?.workspaces?.shown ?? 10)
+    readonly property real wsHeight: (screen?.height ?? 1080) * Config.options.overview.scale
+    readonly property real wsPadding: 28
     readonly property real scale: Config.options.overview.scale
 
     readonly property real monitorW: screen?.width ?? 1920
@@ -142,8 +143,8 @@ Item {
     function getFitScale(wins) {
         if (!wins || wins.length === 0) return 1.0
         var bbox = getWindowsBBox(wins)
-        var availW = bbox.w * root.scale * 0.92
-        var availH = root.wsHeight * 0.96
+        var availW = bbox.w * root.scale * 0.90
+        var availH = root.wsHeight * 0.88
         var contentW = bbox.w * root.scale
         var contentH = bbox.h * root.scale
         return Math.min(availW / contentW, availH / contentH, 1.0)
@@ -222,8 +223,8 @@ Item {
         id: dragGhost
         parent: root
         visible: root.isDragging
-        width: 120
-        height: 80
+        width: 160
+        height: 100
         x: root.ghostX - width / 2
         y: root.ghostY - height / 2
         z: 9999
@@ -235,7 +236,7 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            color: ColorUtils.transparentize(Appearance.colors.colSecondary, 0.6)
+            color: ColorUtils.transparentize(Appearance.colors.colSecondary, 0.5)
             radius: Appearance.rounding.normal
             border.width: 2
             border.color: Appearance.colors.colSecondary
@@ -318,32 +319,43 @@ Item {
                         }
                     }
 
-                    // Empty Workspace 
+                    // Wallpaper
                     Rectangle {
-                        visible: rowItem.wsWindows.length === 0
+                        id: wsCard
                         anchors.centerIn: parent
-                        width: root.monitorW * 0.15
-                        height: root.wsHeight
-                        radius: Appearance.rounding.normal
-                        color: Appearance.colors.colSurfaceContainerLow
-                        z: 1
+                        width: parent.width * Config.options.overview.scale
+                        height: parent.height
+                        radius: Appearance.rounding.large
+                        color: "red"
+
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                        Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                        Image {
+                            id: ovBgSource
+                            anchors.fill: parent
+                            source: Config.options.background.wallpaperPath
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            cache: true
+                        }
 
                         StyledText {
+                            visible: rowItem.wsWindows.length === 0
                             anchors.centerIn: parent
                             text: rowItem.wsId
                             font {
-                                pixelSize: root.wsHeight * 0.55
+                                pixelSize: root.wsHeight * 0.38
                                 weight: Font.DemiBold
                                 family: Appearance.font.family.expressive
                             }
-                            color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.8)
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
+                            color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.4)
+                            z: 2
                         }
 
                         MouseArea {
                             anchors.fill: parent
-                            enabled: !root.isDragging
+                            enabled: !root.isDragging && rowItem.wsWindows.length === 0
                             onClicked: {
                                 GlobalStates.overviewOpen = false
                                 Hyprland.dispatch(`hl.dsp.focus({ workspace = ${rowItem.wsId} })`)
@@ -351,7 +363,7 @@ Item {
                         }
                     }
 
-                    // Active Window
+                    // Border
                     Rectangle {
                         visible: rowItem.isActiveWs && rowItem.activeWin !== null
                         x: root.getWinXInRow(rowItem.activeWin, rowItem.activeMonData, rowItem.wsFitScale, rowItem.wsBBox)
@@ -361,23 +373,12 @@ Item {
                         radius: Appearance.rounding.normal
                         color: "transparent"
                         border.width: 2
-                        border.color: Appearance.colors.colSecondary
+                        border.color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.5) 
                         z: 10
                         Behavior on x { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
                         Behavior on y { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
                         Behavior on width { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
                         Behavior on height { NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
-                    }
-
-                    // Highlight drop target
-                    Rectangle {
-                        visible: rowItem.isDragTarget && root.isDragging
-                        anchors.fill: parent
-                        radius: Appearance.rounding.normal
-                        color: ColorUtils.transparentize(Appearance.colors.colSecondary, 0.88)
-                        border.width: 2
-                        border.color: Appearance.colors.colSecondary
-                        z: 0
                     }
 
                     Repeater {
@@ -390,8 +391,8 @@ Item {
                             property var winMonData: root.getMonitorDataForWindow(win)
                             property bool isActiveWin: index === rowItem.activeWinIdx && rowItem.isActiveWs
                             property bool isBeingDragged: root.isDragging &&
-                                root.dragFromWs === rowItem.wsId &&
-                                root.dragFromPos === index
+                                                            root.dragFromWs === rowItem.wsId &&
+                                                            root.dragFromPos === index
 
                             x: root.getWinXInRow(win, winMonData, rowItem.wsFitScale, rowItem.wsBBox)
                             y: root.getWinYInRow(win, winMonData, rowItem.wsFitScale, rowItem.wsBBox)
@@ -429,7 +430,8 @@ Item {
                                 scale: root.scale * rowItem.wsFitScale
                                 xOffset: 0
                                 yOffset: 0
-                                opacity: winContainer.isActiveWin ? 1.0 : 0.75
+                                // Apps
+                                opacity: winContainer.isActiveWin ? 1.0 : 0.80
 
                                 topLeftRadius: Appearance.rounding.normal
                                 topRightRadius: Appearance.rounding.normal
@@ -482,7 +484,7 @@ Item {
                                     var elapsed = Date.now() - dragStartTime
 
                                     if (!dragStarted && (dx > 12 || dy > 12 ||
-                                        (elapsed > 200 && (dx > 6 || dy > 6)))) {
+                                                        (elapsed > 200 && (dx > 6 || dy > 6)))) {
                                         dragStarted = true
                                         root.isDragging = true
                                     }

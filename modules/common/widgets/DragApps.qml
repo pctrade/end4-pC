@@ -12,7 +12,6 @@ import Quickshell.Io
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Wayland
-import Quickshell.Hyprland
 
 Item {
     id: root
@@ -81,8 +80,15 @@ Item {
             height: root.implicitHeight
             x:      index * (root.btnSize + root.btnSpacing)
 
+            Behavior on x {
+                enabled: root.activeDragVisualIndex !== slotItem.index
+                animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+            }
+
             opacity: (root.activeDragVisualIndex === index) ? 0.0 : 1.0
-            Behavior on opacity { NumberAnimation { duration: 110 } }
+            scale:   (root.activeDragVisualIndex === index) ? 0.7 : 1.0
+            Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+            Behavior on scale   { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
             Item {
                 visible: dragHandler.active
@@ -99,6 +105,11 @@ Item {
                     return lp.x - width / 2
                 }
 
+                scale: dragHandler.active ? 1.15 : 0.9
+                Behavior on scale {
+                    NumberAnimation { duration: 220; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+                }
+
                 IconImage {
                     id: ghostIcon
                     anchors.centerIn: parent
@@ -111,9 +122,12 @@ Item {
                     layer.enabled: true
                     layer.effect: MultiEffect {
                         shadowEnabled: true
-                        shadowVerticalOffset: 4
-                        shadowBlur: 0.65
+                        shadowVerticalOffset: dragHandler.active ? 7 : 4
+                        shadowBlur: dragHandler.active ? 0.85 : 0.65
                         shadowColor: "#80000000"
+
+                        Behavior on shadowVerticalOffset { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                        Behavior on shadowBlur { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                     }
                 }
             }
@@ -124,8 +138,8 @@ Item {
 
                 property var appToplevel: slotItem.appEntry
 
-                topInset:    Appearance.sizes.hyprlandGapsOut + root.buttonPadding
-                bottomInset: Appearance.sizes.hyprlandGapsOut + root.buttonPadding
+                topInset:    Appearance.sizes.hyprlandGapsOut + 8
+                bottomInset: Appearance.sizes.hyprlandGapsOut + 8
 
                 implicitWidth: implicitHeight - topInset - bottomInset
 
@@ -265,7 +279,8 @@ Item {
         id: previewPopup
         property var appTopLevel: root.lastHoveredButton?.appToplevel ?? null
 
-        property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
+        property bool shouldShow: WM.compositor === "hyprland"
+                                  && (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
                                   && appTopLevel
                                   && appTopLevel.toplevels
@@ -361,7 +376,7 @@ Item {
 
                     Repeater {
                         model: ScriptModel {
-                            values: previewPopup.appTopLevel?.toplevels ?? []
+                            values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
                         }
 
                         RippleButton {

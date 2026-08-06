@@ -13,7 +13,10 @@ NestableObject {
     property bool set
     property var value
 
-    Component.onCompleted: fetch()
+    Component.onCompleted: {
+        if (WM.compositor === "hyprland")
+            fetch();
+    }
 
     onValueChanged: {
         if (root.fetching) return
@@ -21,21 +24,25 @@ NestableObject {
 
     Connections {
         target: HyprlandConfig
+        enabled: WM.compositor === "hyprland"
         function onReloaded() {
             root.fetch();
         }
     }
 
     function fetch() {
+        if (WM.compositor !== "hyprland") return;
         fetchProc.command = fetchProc.baseCommand.concat([root.key]);
         fetchProc.running = true;
     }
 
     function setValue(newValue) {
+        if (WM.compositor !== "hyprland") return;
         HyprlandConfig.set(root.key, newValue)
     }
 
     function reset() {
+        if (WM.compositor !== "hyprland") return;
         HyprlandConfig.reset(root.key)
     }
 
@@ -48,8 +55,6 @@ NestableObject {
                     return;
                 try {
                     const obj = JSON.parse(text);
-                    // Note that the value is returned as "<data type>": <value>
-                    // It's the only field that isn't always in the same key so we put it in an else
                     for (const key in obj) {
                         if (key == "option")
                             continue;

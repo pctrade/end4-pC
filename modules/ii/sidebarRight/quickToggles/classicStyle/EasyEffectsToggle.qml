@@ -4,7 +4,6 @@ import qs.services
 import QtQuick
 import Quickshell.Io
 import Quickshell
-import Quickshell.Hyprland
 
 QuickToggleButton {
     id: root

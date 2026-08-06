@@ -59,12 +59,15 @@ AbstractBackgroundWidget {
             }
         }
 
-        StyledDropShadow { target: contentRect }
+        StyledDropShadow { 
+            target: contentRect 
+            visible: sizeMode !== "4x1"
+        }
 
         Rectangle {
             id: contentRect
             anchors.fill: parent
-            color:  Appearance.colors.colPrimaryContainer
+            color: sizeMode === "4x1" ? "transparent" : Appearance.colors.colPrimaryContainer
             radius: Appearance.rounding?.verylarge ?? 30
 
             // 2x2
@@ -254,8 +257,8 @@ AbstractBackgroundWidget {
 
             // 4x1
             RowLayout {
-                anchors { fill: parent; margins: 8 }
-                spacing: 8
+                anchors { fill: parent; margins: 0 }
+                spacing: 12
                 visible: sizeMode === "4x1"
 
                 Repeater {
@@ -269,7 +272,7 @@ AbstractBackgroundWidget {
 
                         backgroundColor: cityData?.isDay ?? true
                             ? Appearance.colors.colPrimary
-                            : Appearance.colors.colSurfaceContainerLow
+                            : Appearance.colors.colPrimaryContainer
                         handColor: cityData?.isDay ?? true
                             ? Appearance.colors.colOnPrimary
                             : Appearance.colors.colOnLayer0

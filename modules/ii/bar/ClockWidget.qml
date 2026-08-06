@@ -7,7 +7,7 @@ import QtQuick.Layouts
 BarWidgetSwitcher {
     id: root
     property bool borderless: Config.options.bar.borderless
-    property bool showDate: Config.options.bar.verbose
+    property bool showDate: Config.options.time.showDate
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
     readonly property bool hasAmPm: dateTimeString.toLowerCase().includes("am") || dateTimeString.toLowerCase().includes("pm")
@@ -136,9 +136,8 @@ BarWidgetSwitcher {
             id: pill
 
             property var timeParts: DateTime.time.split(/[: ]/)
-            property string hours: timeParts[0] ?? "00"
-            property string minutes: timeParts[1] ?? "00"
-            property string ampm: timeParts[2] ?? ""
+            property string ampm: timeParts.find(part => /^(am|pm)$/i.test(part)) ?? ""
+            property string time: timeParts.filter(part => !/^(am|pm)$/i.test(part)).join(":")
 
             StyledText {
                 visible: root.showDate
@@ -161,7 +160,7 @@ BarWidgetSwitcher {
                     font.pixelSize: Appearance.font.pixelSize.smallie
                     color: Appearance.colors.colOnPrimary
                     font.weight: Font.Bold
-                    text: pill.ampm !== "" ? pill.hours.padStart(2, "0") + ":" + pill.minutes.padStart(2, "0") : DateTime.time
+                    text: pill.time
                     font.features: { "tnum": 1 }
                     font.letterSpacing: -0.4
                 }

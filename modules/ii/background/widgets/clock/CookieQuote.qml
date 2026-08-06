@@ -25,7 +25,8 @@ Item {
     
     Rectangle {
         id: quoteBox
-
+        y: Config.options.background.widgets.clock.style === "pixel" && Config.options.background.widgets.clock.pixel.orientation === "horizontal" ? -26 : 0
+        x: Config.options.background.widgets.clock.style === "pixel" && Config.options.background.widgets.clock.pixel.orientation === "horizontal" ? -20 : 0
         implicitWidth: quoteRow.implicitWidth + 8 * 2
         implicitHeight: quoteRow.implicitHeight + 4 * 2
         radius: Appearance.rounding.small

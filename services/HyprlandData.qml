@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import qs.services
 
 /**
  * Provides access to some Hyprland data not available in Quickshell.Hyprland.
@@ -47,23 +48,28 @@ Singleton {
     // Internals
 
     function updateWindowList() {
+        if (WM.compositor !== "hyprland") return;
         getClients.running = true;
     }
 
     function updateLayers() {
+        if (WM.compositor !== "hyprland") return;
         getLayers.running = true;
     }
 
     function updateMonitors() {
+        if (WM.compositor !== "hyprland") return;
         getMonitors.running = true;
     }
 
     function updateWorkspaces() {
+        if (WM.compositor !== "hyprland") return;
         getWorkspaces.running = true;
         getActiveWorkspace.running = true;
     }
 
     function updateAll() {
+        if (WM.compositor !== "hyprland") return;
         updateWindowList();
         updateMonitors();
         updateLayers();
@@ -85,9 +91,9 @@ Singleton {
 
     Connections {
         target: Hyprland
+        enabled: WM.compositor === "hyprland"
 
         function onRawEvent(event) {
-            // console.log("Hyprland raw event:", event.name);
             if (["openlayer", "closelayer", "screencast"].includes(event.name)) return;
             updateAll()
         }
@@ -140,7 +146,6 @@ Singleton {
             id: workspacesCollector
             onStreamFinished: {
                 var rawWorkspaces = JSON.parse(workspacesCollector.text);
-                // Filter out invalid workspace ids (e.g. lock-screen temp workspace 2147483647 - N)
                 root.workspaces = rawWorkspaces.filter(ws => ws.id >= 1 && ws.id <= 100);
                 let tempWorkspaceById = {};
                 for (var i = 0; i < root.workspaces.length; ++i) {

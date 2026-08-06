@@ -37,6 +37,12 @@ ContentPage {
         }
     }
 
+    function displayPathFor(path) {
+        return /\.(mp4|webm|mkv|avi|mov)$/i.test(path)
+            ? Config.options.background.thumbnailPath
+            : path
+    }
+
     ColumnLayout {
         id: mainLayout 
         Layout.fillWidth: true   
@@ -50,6 +56,7 @@ ContentPage {
 
             Rectangle {
                 Layout.fillWidth: true
+                visible: WM.compositor !== "niri"
                 implicitHeight: wrapperCol.implicitHeight + 16
                 topLeftRadius: Appearance.rounding.verylarge
                 topRightRadius: Appearance.rounding.verylarge
@@ -70,10 +77,12 @@ ContentPage {
                         mediumItemWidthRatio: 0.485
                         itemSpacing: 8
                         model: [
-                            Config.options.background.wallpaperPath,
-                            Config.options.background.lockWall !== ""
-                                ? Config.options.background.lockWall
-                                : Config.options.background.wallpaperPath
+                            page.displayPathFor(Config.options.background.wallpaperPath),
+                            page.displayPathFor(
+                                Config.options.background.lockWall !== ""
+                                    ? Config.options.background.lockWall
+                                    : Config.options.background.wallpaperPath
+                            )
                         ]
                         wheelEnabled: false
                         dragEnabled: false
@@ -136,6 +145,63 @@ ContentPage {
                 }
             }
 
+            Rectangle {
+                Layout.fillWidth: true
+                visible: WM.compositor === "niri"
+                implicitHeight: niriWrapperCol.implicitHeight + 16
+                topLeftRadius: Appearance.rounding.verylarge
+                topRightRadius: Appearance.rounding.verylarge
+                bottomLeftRadius: Appearance.rounding.normal
+                bottomRightRadius: Appearance.rounding.normal
+                color: Appearance.colors.colLayer1
+
+                ColumnLayout {
+                    id: niriWrapperCol
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 8
+
+                    Carousel {
+                        Layout.fillWidth: true
+                        implicitHeight: 280
+                        largeItemWidthRatio: 1
+                        mediumItemWidthRatio: 0
+                        itemSpacing: 8
+                        model: [page.displayPathFor(Config.options.background.wallpaperPath)]
+                        wheelEnabled: false
+                        dragEnabled: false
+                        clickAction: (index, modelData) => {
+                            GlobalStates.wallpaperSelectorTarget = "wallpaper"
+                            GlobalStates.wallpaperSelectorOpen = true
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 24
+                        radius: Appearance.rounding.normal
+                        color: "transparent"
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            MaterialSymbol {
+                                text: "image"
+                                iconSize: Appearance.font.pixelSize.larger
+                                color: Appearance.colors.colPrimary
+                            }
+                            StyledText {
+                                text: Config.options.background.wallpaperPath.split("/").pop()
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                font.weight: Font.Medium
+                                color: Appearance.colors.colOnLayer1
+                                elide: Text.ElideMiddle
+                            }
+                        }
+                    }
+                }
+            }
+
             GroupedList {
                 Layout.topMargin: -2
 
@@ -148,6 +214,15 @@ ContentPage {
                         if (checked) {
                             Config.options.background.lockWall = "";
                         }
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "preview"
+                    text: Translation.tr("Preview wallpaper")
+                    checked: Config.options.background.enableWallpaperPreview
+                    onCheckedChanged: {
+                        Config.options.background.enableWallpaperPreview = checked;
                     }
                 }
 
@@ -216,7 +291,7 @@ ContentPage {
                         onCheckedChanged: {
                             Config.options.background.centeredWallpaperOnlyWhenLocked = checked;
                         }
-                        enabled: Config.options.background.centeredWallpaper
+                        enabled: Config.options.background.centeredWallpaper && WM.compositor !== "niri"
                     }
                 }
 
@@ -297,6 +372,7 @@ ContentPage {
                 ConfigSwitch {
                     buttonIcon: "lock_clock"
                     text: Translation.tr("Show only when locked")
+                    enabled: WM.compositor !== "niri"
                     checked: Config.options.background.widgets.clock.showOnlyWhenLocked
                     onCheckedChanged: {
                         Config.options.background.widgets.clock.showOnlyWhenLocked = checked;
@@ -345,6 +421,11 @@ ContentPage {
                             displayName: Translation.tr("Cookie"),
                             icon: "cookie",
                             value: "cookie"
+                        },
+                        {
+                            displayName: Translation.tr("Pixel"),
+                            icon: "grid_view",
+                            value: "pixel"
                         }
                     ]
                 }
@@ -365,6 +446,11 @@ ContentPage {
                             displayName: Translation.tr("Cookie"),
                             icon: "cookie",
                             value: "cookie"
+                        },
+                        {
+                            displayName: Translation.tr("Pixel"),
+                            icon: "grid_view",
+                            value: "pixel"
                         }
                     ]
                 }
@@ -744,6 +830,35 @@ ContentPage {
                     ]
                 }
             }
+            
+            ContentSubsection {
+                visible: Config.options.background.widgets.clock.style === "pixel"
+                title: Translation.tr("Pixel Clock Settings")
+                GroupedList {
+                    visible: Config.options.background.widgets.clock.style === "pixel"
+                    ConfigSelectionArray {
+                        text: Translation.tr("Pixel clock orientation")
+                        visible: Config.options.background.widgets.clock.style === "pixel"
+                        icon: "screen_rotation"
+                        currentValue: Config.options.background.widgets.clock.pixel.orientation
+                        onSelected: newValue => {
+                            Config.options.background.widgets.clock.pixel.orientation = newValue;
+                        }
+                        options: [
+                            {
+                                displayName: Translation.tr("Horizontal"),
+                                icon: "swap_horiz",
+                                value: "horizontal"
+                            },
+                            {
+                                displayName: Translation.tr("Vertical"),
+                                icon: "swap_vert",
+                                value: "vertical"
+                            }
+                        ]
+                    }
+                }
+            }
 
             ContentSubsection {
                 title: Translation.tr("Quote")
@@ -759,6 +874,7 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "font_download"
                         text: Translation.tr("Follow Clock Font")
+                        enabled: Config.options.background.widgets.clock.style !== "pixel"
                         checked: Config.options.background.widgets.clock.quote.followClock
                         onCheckedChanged: {
                             Config.options.background.widgets.clock.quote.followClock = checked;
@@ -838,7 +954,7 @@ ContentPage {
             
             GridLayout {
                 Layout.fillWidth: true
-                columns: 2
+                columns: 3
                 rowSpacing: 8
                 columnSpacing: 8
                 Repeater {
@@ -882,6 +998,11 @@ ContentPage {
                             icon: "person",
                             name: Translation.tr("User Card"),
                             enabled: Config.options.background.widgets.userCard.enable
+                        },
+                        {
+                            icon: "note_stack_add",
+                            name: Translation.tr("Notes"),
+                            enabled: Config.options.background.widgets.notes.enable
                         },
                         {
                             icon: "devices",
@@ -942,6 +1063,8 @@ ContentPage {
                                             Config.options.background.widgets.worldClock.enable = checked
                                         else if (modelData.icon === "person")
                                             Config.options.background.widgets.userCard.enable = checked
+                                        else if (modelData.icon === "note_stack_add")
+                                            Config.options.background.widgets.notes.enable = checked
                                         else if (modelData.icon === "devices")
                                             Config.options.background.widgets.devices.enable = checked
                                         else if (modelData.icon === "hourglass_empty")

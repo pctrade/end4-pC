@@ -133,6 +133,9 @@ Item {
         function moveSelection(delta) {
             currentIndex = Math.max(0, Math.min(grid.model.count - 1, currentIndex + delta));
             positionViewAtIndex(currentIndex, GridView.Contain);
+            const filePath = grid.model.get(currentIndex, "filePath");
+            const isDir = grid.model.get(currentIndex, "fileIsDir");
+            if (!isDir && filePath && Config.options.background.enableWallpaperPreview) Wallpapers.startPreview(filePath);
         }
 
         function activateCurrent() {
@@ -141,7 +144,7 @@ Item {
         }
 
         model: Wallpapers.folderModel
-        onModelChanged: currentIndex = 0
+        onModelChanged: { currentIndex = 0; Wallpapers.stopPreview(); }
 
         delegate: WallpaperDirectoryItem {
             required property var modelData
@@ -176,6 +179,10 @@ Item {
             }
 
             onEntered: grid.currentIndex = index
+            onPreviewRequested: {
+                grid.currentIndex = index;
+                if (!fileModelData.fileIsDir && Config.options.background.enableWallpaperPreview) Wallpapers.startPreview(fileModelData.filePath);
+            }
             onActivated: root.wallpaperSelected(fileModelData.filePath)
         }
 

@@ -34,6 +34,11 @@ Singleton {
 
     property string networkName: ""
     property int networkStrength
+    property string networkInterface: ""
+    property string ipAddress: ""
+    property string publicIpAddress: ""
+    property string gateway: ""
+    property string macAddress: ""
     property string materialSymbol: root.ethernet
         ? "lan"
         : (root.wifiEnabled && root.wifiStatus === "connected")
@@ -158,6 +163,8 @@ Singleton {
         wifiStatusProcess.running = true
         updateNetworkName.running = true;
         updateNetworkStrength.running = true;
+        updateNetworkDetails.running = true;
+        updatePublicIp.running = true;
     }
 
     Process {
@@ -237,6 +244,55 @@ Singleton {
         stdout: SplitParser {
             onRead: data => {
                 root.networkStrength = parseInt(data);
+            }
+        }
+    }
+
+    Process {
+        id: updateNetworkDetails
+        running: true
+        command: ["sh", "-c", "device=$(nmcli -t -f DEVICE,TYPE,STATE device status | awk -F: '$3 == \"connected\" && $2 ~ /^(wifi|ethernet)$/ { print $1; exit }'); if [ -n \"$device\" ]; then nmcli -t -f GENERAL.DEVICE,GENERAL.HWADDR,IP4.ADDRESS,IP4.GATEWAY device show \"$device\"; fi"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let networkInterface = "";
+                let ipAddress = "";
+                let gateway = "";
+                let macAddress = "";
+
+                for (const line of text.trim().split("\n")) {
+                    const separator = line.indexOf(":");
+                    if (separator < 0) continue;
+
+                    const key = line.slice(0, separator);
+                    const value = line.slice(separator + 1);
+                    if (key === "GENERAL.DEVICE")
+                        networkInterface = value;
+                    else if (key === "GENERAL.HWADDR")
+                        macAddress = value;
+                    else if (key.startsWith("IP4.ADDRESS") && ipAddress === "")
+                        ipAddress = value.split("/")[0];
+                    else if (key === "IP4.GATEWAY")
+                        gateway = value;
+                }
+
+                root.networkInterface = networkInterface;
+                root.ipAddress = ipAddress;
+                root.gateway = gateway;
+                root.macAddress = macAddress;
+            }
+        }
+    }
+
+    Process {
+        id: updatePublicIp
+        running: true
+        command: ["curl", "-fsS", "--max-time", "5", "https://api.ipify.org"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const candidate = text.trim();
+                root.publicIpAddress = /^[0-9a-fA-F:.]+$/.test(candidate)
+                    ? candidate
+                    : "";
             }
         }
     }

@@ -72,9 +72,12 @@ Item {
     Connections {
         target: OnlineWallpapers
         function onFetched() {
-            wallpaperModel.clear()
-            root.hoveredItem = null
-            for (const item of OnlineWallpapers.results) {
+            if (!OnlineWallpapers.appending) {
+                wallpaperModel.clear()
+                root.hoveredItem = null
+            }
+            const startIndex = wallpaperModel.count
+            for (const item of OnlineWallpapers.results.slice(startIndex)) {
                 wallpaperModel.append(item)
             }
         }
@@ -143,7 +146,7 @@ Item {
                     : Translation.tr("Open the launcher and run:\n/pexels YOUR_API_KEY")
                 color: Appearance.colors.colSubtext
                 font.pixelSize: Appearance.font.pixelSize.normal
-                font.family: Appearance.font.family.mono
+                font.family: Appearance.font.family.main
             }
 
             StyledText {
@@ -284,6 +287,12 @@ Item {
                     width: grid.width
                     height: grid.height
                     radius: Appearance.rounding.screenRounding + 5
+                }
+            }
+            onContentYChanged: {
+                if (!OnlineWallpapers.loading
+                    && contentY + height >= contentHeight - cellHeight * 1.5) {
+                    OnlineWallpapers.nextPage()
                 }
             }
         }

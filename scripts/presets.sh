@@ -8,8 +8,8 @@
 CONFIG_DIR="$HOME/.config/illogical-impulse"
 CONFIG_FILE="$CONFIG_DIR/config.json"
 PRESETS_DIR="$CONFIG_DIR/presets"
-SCRIPT_DIR="$HOME/.config/quickshell/end4-pC/scripts"
-SWITCHWALL="$HOME/.config/quickshell/end4-pC/scripts/colors/switchwall.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SWITCHWALL="$SCRIPT_DIR/colors/switchwall.sh"
 
 mkdir -p "$PRESETS_DIR"
 

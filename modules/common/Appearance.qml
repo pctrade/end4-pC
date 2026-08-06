@@ -382,7 +382,39 @@ Singleton {
             property int duration: 350
             property int type: Easing.OutExpo
         }
+
+        property QtObject sidebarSlideEnter: QtObject {
+            property int duration: 300
+            property int type: Easing.BezierSpline
+            property list<real> bezierCurve: animationCurves.standardDecel
+            property int velocity: 650
+            property Component numberAnimation: Component {
+                NumberAnimation {
+                    alwaysRunToEnd: true
+                    duration: root.animation.sidebarSlideEnter.duration
+                    easing.type: root.animation.sidebarSlideEnter.type
+                    easing.bezierCurve: root.animation.sidebarSlideEnter.bezierCurve
+                }
+            }
+        }
+
+        property QtObject sidebarSlideExit: QtObject {
+            property int duration: 250
+            property int type: Easing.BezierSpline
+            property list<real> bezierCurve: animationCurves.standardAccel
+            property int velocity: 650
+            property Component numberAnimation: Component {
+                NumberAnimation {
+                    alwaysRunToEnd: true
+                    duration: root.animation.sidebarSlideExit.duration
+                    easing.type: root.animation.sidebarSlideExit.type
+                    easing.bezierCurve: root.animation.sidebarSlideExit.bezierCurve
+                }
+            }
+        }
     }
+
+    
 
     sizes: QtObject {
         property real baseBarHeight: 40

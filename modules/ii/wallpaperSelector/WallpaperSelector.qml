@@ -13,14 +13,36 @@ import Quickshell.Hyprland
 Scope {
     id: root
 
+    property bool reallyOpen: false
+
+    Connections {
+        target: GlobalStates
+        function onWallpaperSelectorOpenChanged() {
+            if (GlobalStates.wallpaperSelectorOpen) {
+                closeAnimTimer.stop();
+                root.reallyOpen = true;
+            } else {
+                closeAnimTimer.restart();
+            }
+        }
+    }
+
+    Timer {
+        id: closeAnimTimer
+        interval: Appearance.animation.sidebarSlideExit.duration
+        onTriggered: root.reallyOpen = false
+    }
+
     Loader {
         id: wallpaperSelectorLoader
-        active: GlobalStates.wallpaperSelectorOpen
+        active: root.reallyOpen
 
         sourceComponent: PanelWindow {
             id: panelWindow
-            readonly property HyprlandMonitor monitor: Hyprland.monitorFor(panelWindow.screen)
-            property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)
+            readonly property var monitor: WM.monitorFor(panelWindow.screen)
+            property bool monitorIsFocused: WM.compositor === "hyprland"
+                ? (Hyprland.focusedMonitor?.name == monitor?.name)
+                : (WM.focusedMonitor?.name == monitor?.name)
 
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "quickshell:wallpaperSelector"
@@ -42,6 +64,7 @@ Scope {
 
             Component.onCompleted: {
                 GlobalFocusGrab.addDismissable(panelWindow);
+                content.slideIn();
             }
             Component.onDestruction: {
                 GlobalFocusGrab.removeDismissable(panelWindow);
@@ -55,8 +78,41 @@ Scope {
 
             WallpaperSelectorContent {
                 id: content
-                anchors {
-                    fill: parent
+                width: parent.width
+                height: parent.height
+                x: 0
+                y: 0
+
+                function slideIn() {
+                    content.y = -content.height;
+                    if (WM.compositor === "niri") {
+                        Qt.callLater(() => { Qt.callLater(() => { content.y = 0; }); });
+                    } else {
+                        Qt.callLater(() => { content.y = 0; });
+                    }
+                }
+
+                Connections {
+                    target: GlobalStates
+                    function onWallpaperSelectorOpenChanged() {
+                        if (!GlobalStates.wallpaperSelectorOpen) {
+                            content.y = -content.height;
+                        }
+                    }
+                }
+
+                Behavior on y {
+                    NumberAnimation {
+                        duration: WM.compositor === "niri"
+                            ? Appearance.animation.sidebarSlideEnter.duration
+                            : Appearance.animation.sidebarSlideExit.duration
+                        easing.type: GlobalStates.wallpaperSelectorOpen
+                            ? Appearance.animation.sidebarSlideEnter.type
+                            : Appearance.animation.sidebarSlideExit.type
+                        easing.bezierCurve: GlobalStates.wallpaperSelectorOpen
+                            ? Appearance.animation.sidebarSlideEnter.bezierCurve
+                            : Appearance.animation.sidebarSlideExit.bezierCurve
+                    }
                 }
             }
         }
@@ -82,7 +138,7 @@ Scope {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "wallpaperSelectorToggle"
         description: "Toggle wallpaper selector"
         onPressed: {
@@ -90,7 +146,7 @@ Scope {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "wallpaperSelectorRandom"
         description: "Select random wallpaper in current folder"
         onPressed: {

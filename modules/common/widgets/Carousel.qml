@@ -10,7 +10,7 @@ Item {
 
     property var model: []
     property Component delegate: null
-
+    property bool showCurrentIndicator: true
     property real largeItemWidthRatio: 0.52
     property real mediumItemWidthRatio: 0.32
     property real smallItemWidthRatio: 0.12
@@ -112,7 +112,7 @@ Item {
 
                 Rectangle { // later I'll see if I remove it
                     id: currentIndicator
-                    visible: itemRoot.index === 0
+                    visible: itemRoot.index === 0 && root.showCurrentIndicator
                     anchors.centerIn: parent
                     width: 32
                     height: 32

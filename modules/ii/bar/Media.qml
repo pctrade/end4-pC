@@ -258,7 +258,7 @@ Item {
                         Layout.topMargin: 2
 
                         StyledText {
-                            text: SystemInfo.username
+                            text: Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: Appearance.colors.colOnSecondaryContainer
                             elide: Text.ElideRight

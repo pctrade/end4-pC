@@ -2,24 +2,21 @@ pragma Singleton
 
 import QtQuick
 import qs.modules.common
+import qs.services
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
-/**
- * Simple hyprsunset service with automatic mode.
- * In theory we don't need this because hyprsunset has a config file, but it somehow doesn't work.
- * It should also be possible to control it via hyprctl, but it doesn't work consistently either so we're just killing and launching.
- */
 Singleton {
     id: root
     signal gammaChangeAttempt()
 
     readonly property real gammaLowerLimit: 25
+    readonly property bool isNiri: WM.compositor === "niri"
 
-    property string from: Config.options?.light?.night?.from ?? "19:00" 
+    property string from: Config.options?.light?.night?.from ?? "19:00"
     property string to: Config.options?.light?.night?.to ?? "06:30"
-    property bool automatic: Config.options?.light?.night?.automatic && (Config?.ready ?? true)
+    property bool automatic: (Config.options?.light?.night?.automatic ?? false) && (Config?.ready ?? true)
     property int colorTemperature: Config.options?.light?.night?.colorTemperature ?? 5000
     property int gamma: 100
     property bool shouldBeOn
@@ -49,7 +46,6 @@ Singleton {
         if (from < to) {
             return (t >= from && t <= to);
         } else {
-            // Wrapped around midnight
             return (t >= from || t <= to);
         }
     }
@@ -64,15 +60,20 @@ Singleton {
             root.manualActive = undefined;
         }
         root.shouldBeOn = inBetween(t, from, to);
+
         if (firstEvaluation) {
             firstEvaluation = false;
-            root.ensureState();
+            return;
         }
+        root.ensureState();
     }
 
-    onShouldBeOnChanged: ensureState()
+    onShouldBeOnChanged: {
+        if (!root.firstEvaluation)
+            root.ensureState();
+    }
+
     function ensureState() {
-        // console.log("[Hyprsunset] Ensuring state:", root.shouldBeOn, "Automatic mode:", root.automatic);
         if (!root.automatic || root.manualActive !== undefined)
             return;
         if (root.shouldBeOn) {
@@ -83,54 +84,71 @@ Singleton {
     }
 
     function startHyprsunset() {
+        if (root.isNiri) return;
         Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset`]);
     }
 
     function load() {
-        root.startHyprsunset();
-        root.ensureState();
-    }
-
-    Timer {
-        id: updateHyprsunset
-        interval: 100
-        repeat: false
-        onTriggered: {
-            root.ensureState();
-            root.setGamma(root.gamma);
+        if (root.isNiri) {
+            root.disableTemperature();
+            return;
         }
+        Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset & disown; sleep 0.3; hyprctl hyprsunset identity`]);
+        root.temperatureActive = false;
     }
 
     function enableTemperature() {
+        if (root.isNiri) {
+            root.startNiriSunset(root.colorTemperature);
+        } else {
+            root.startHyprsunset();
+            Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset temperature ${root.colorTemperature}`]);
+        }
         root.temperatureActive = true;
-
-        // console.log("[Hyprsunset] Enabling");
-        root.startHyprsunset();
-        Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset temperature ${root.colorTemperature}`]);
     }
 
     function disableTemperature() {
+        if (root.isNiri) {
+            root.stopNiriSunset();
+        } else {
+            Quickshell.execDetached(["hyprctl", "hyprsunset", "identity"]);
+        }
         root.temperatureActive = false;
-        // console.log("[Hyprsunset] Disabling");
-        Quickshell.execDetached(["hyprctl", "hyprsunset", "identity"]);
     }
 
     function setGamma(gamma) {
         root.gamma = Math.max(root.gammaLowerLimit, Math.min(100, gamma));
-
         root.gammaChangeAttempt();
 
+        if (root.isNiri) {
+            return;
+        }
         root.startHyprsunset();
         Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset gamma ${root.gamma}`]);
     }
 
+    function startNiriSunset(temp) {
+        const low = temp;
+        const high = temp + 50;
+        Quickshell.execDetached(["bash", "-c",
+            `pkill -x wlsunset; sleep 0.05; wlsunset -T ${high} -t ${low} -S 23:59 -s 00:00 -d 1 & disown`]);
+    }
+
+    function stopNiriSunset() {
+        Quickshell.execDetached(["bash", "-c", "pkill -x wlsunset"]);
+    }
+
     function fetchState() {
-        fetchProc.running = true;
+        if (root.isNiri) {
+            niriFetchProc.running = true;
+        } else {
+            fetchProc.running = true;
+        }
     }
 
     Process {
         id: fetchProc
-        running: true
+        running: false
         command: ["bash", "-c", "hyprctl hyprsunset temperature"]
         stdout: StdioCollector {
             id: stateCollector
@@ -139,8 +157,19 @@ Singleton {
                 if (output.length == 0 || output.startsWith("Couldn't"))
                     root.temperatureActive = false;
                 else
-                    root.temperatureActive = (output != "6500"); // 6500 is the default when off
-                // console.log("[Hyprsunset] Fetched state:", output, "->", root.temperatureActive);
+                    root.temperatureActive = (output != "6500");
+            }
+        }
+    }
+
+    Process {
+        id: niriFetchProc
+        running: false
+        command: ["bash", "-c", "pgrep -x wlsunset"]
+        stdout: StdioCollector {
+            id: niriStateCollector
+            onStreamFinished: {
+                root.temperatureActive = niriStateCollector.text.trim().length > 0;
             }
         }
     }
@@ -160,12 +189,15 @@ Singleton {
         }
     }
 
-    // Change temp
     Connections {
         target: Config.options.light.night
         function onColorTemperatureChanged() {
             if (!root.temperatureActive) return;
-            Quickshell.execDetached(["hyprctl", "hyprsunset", "temperature", `${Config.options.light.night.colorTemperature}`]);
+            if (root.isNiri) {
+                root.startNiriSunset(Config.options.light.night.colorTemperature);
+            } else {
+                Quickshell.execDetached(["hyprctl", "hyprsunset", "temperature", `${Config.options.light.night.colorTemperature}`]);
+            }
         }
     }
 }

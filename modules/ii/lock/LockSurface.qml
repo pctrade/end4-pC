@@ -110,6 +110,31 @@ MouseArea {
     //     }
     // }
 
+    Loader {
+        anchors.fill: parent
+        z: -1
+        active: WM.compositor === "niri"
+
+        sourceComponent: Item {
+            anchors.fill: parent
+
+            Image {
+                id: lockBgSource
+                anchors.fill: parent
+                source: Config.options.background.wallpaperPath
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                visible: false
+            }
+            FastBlur {
+                anchors.fill: parent
+                source: lockBgSource
+                radius: 0 // fixme
+            }
+        }
+    }
+
     // Main toolbar: password box
     Toolbar {
         id: mainIsland
@@ -245,6 +270,7 @@ MouseArea {
     // Left toolbar
     Toolbar {
         id: leftIsland
+        visible: Config.options.lock.showToolbars
         anchors {
             right: mainIsland.left
             top: mainIsland.top
@@ -431,6 +457,7 @@ MouseArea {
     // Right toolbar
     Toolbar {
         id: rightIsland
+        visible: Config.options.lock.showToolbars
         anchors {
             left: mainIsland.right
             top: mainIsland.top

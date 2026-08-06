@@ -26,6 +26,15 @@ RowLayout {
     property color colLabel: Appearance.colors.colOnSecondaryContainer
     property real cornerRadius: rounded ? Appearance.rounding.large : Appearance.rounding.small
 
+    // Optional trailing confirm button
+    property bool confirmButtonVisible: false
+    property string confirmButtonIcon: "check"
+    property color colConfirmBackground: Appearance.colors.colPrimaryContainer
+    property color colConfirmBackgroundHover: Appearance.colors.colPrimaryContainerHover
+    property color colConfirmBackgroundActive: Appearance.colors.colPrimaryContainerActive
+    property color colOnConfirmBackground: Appearance.colors.colOnPrimaryContainer
+    signal confirmClicked()
+
     spacing: 10
     Layout.leftMargin: 8
     Layout.rightMargin: 8
@@ -103,6 +112,37 @@ RowLayout {
                 hintingPreference: Font.PreferFullHinting
                 variableAxes: Appearance.font.variableAxes.main
             }
+        }
+    }
+
+    Rectangle {
+        id: confirmBtn
+        visible: root.confirmButtonVisible
+        Layout.preferredWidth: 40
+        Layout.preferredHeight: 40
+        Layout.alignment: Qt.AlignVCenter
+        radius: Appearance.rounding.small
+        color: confirmMouseArea.pressed
+            ? root.colConfirmBackgroundActive
+            : (confirmMouseArea.containsMouse ? root.colConfirmBackgroundHover : root.colConfirmBackground)
+
+        Behavior on color {
+            ColorAnimation { duration: Appearance.animation.elementMoveFast.duration }
+        }
+
+        MaterialSymbol {
+            anchors.centerIn: parent
+            text: root.confirmButtonIcon
+            iconSize: Appearance.font.pixelSize.large
+            color: root.colOnConfirmBackground
+        }
+
+        MouseArea {
+            id: confirmMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.confirmClicked()
         }
     }
 }

@@ -31,6 +31,11 @@ AbstractBackgroundWidget {
     y: forceCenter ? ((root.screenHeight - root.height) / 2) : targetY
     visibleWhenLocked: true
 
+    function restoreXYBinding() {
+        root.x = Qt.binding(() => root.forceCenter ? ((root.screenWidth - root.width) / 2) : root.targetX);
+        root.y = Qt.binding(() => root.forceCenter ? ((root.screenHeight - root.height) / 2) : root.targetY);
+    }
+
     property var textHorizontalAlignment: {
         if (!Config.options.background.widgets.clock.digital.adaptiveAlignment || root.forceCenter || Config.options.background.widgets.clock.digital.vertical) 
             return Text.AlignHCenter;
@@ -51,16 +56,8 @@ AbstractBackgroundWidget {
             anchors.horizontalCenter: parent.horizontalCenter
             shown: root.clockStyle === "cookie" && (root.shouldShow)
             fade: false
-            sourceComponent: Column {
-                spacing: 10
-                CookieClock {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
-                FadeLoader {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    shown: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text !== ""
-                    sourceComponent: CookieQuote {}
-                }
+            sourceComponent: CookieClock {
+                anchors.horizontalCenter: parent.horizontalCenter
             }
         }
 
@@ -74,6 +71,22 @@ AbstractBackgroundWidget {
                 textHorizontalAlignment: root.textHorizontalAlignment
             }
         }
+
+        FadeLoader {
+            id: pixelClockLoader
+            anchors.horizontalCenter: parent.horizontalCenter
+            shown: root.clockStyle === "pixel" && (root.shouldShow)
+            fade: false
+            sourceComponent: PixelClock {}
+        }
+
+        FadeLoader {
+            id: quoteLoader
+            anchors.horizontalCenter: parent.horizontalCenter
+            shown: Config.options.background.widgets.clock.quote.enable && (root.clockStyle === "pixel" || root.clockStyle === "cookie") && Config.options.background.widgets.clock.quote.text !== "" && root.shouldShow
+            sourceComponent: CookieQuote {}
+        }
+
         StatusRow {
             anchors.horizontalCenter: parent.horizontalCenter
         }

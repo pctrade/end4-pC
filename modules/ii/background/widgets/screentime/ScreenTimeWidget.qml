@@ -64,13 +64,9 @@ AbstractBackgroundWidget {
     }
 
     function formatHourAxis(seconds) {
-        if (seconds <= 0) return "0";
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        if (h > 0) {
-            return h + "h";
-        }
-        return m + "m";
+        if (seconds <= 0) return "0h/hr";
+        const h = (seconds / 3600).toFixed(1);
+        return h + "h/hr";
     }
 
     Process {
@@ -99,96 +95,89 @@ AbstractBackgroundWidget {
     Rectangle {
         id: card
         anchors.fill: parent
-        radius: Appearance.rounding?.verylarge ?? 30
-        color: Appearance.colors.colPrimaryContainer
+        radius: Appearance.rounding?.verylarge ?? 24
+        color: Appearance.colors.colLayer0
 
         StyledRectangularShadow {
             target: card
             z: -2
         }
 
-        // Layout for variation 1: 2x2 Square layout
+        // Layout for 2x2 Square mode (Material 3 Android Wellbeing style)
         ColumnLayout {
             visible: root.sizeMode === "2x2"
             anchors {
                 fill: parent
-                margins: 16
+                margins: 14
             }
-            spacing: 8
+            spacing: 6
 
-            // Header Section
+            // Top Header Row
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                MaterialSymbol {
+                    text: "hourglass_bottom"
+                    iconSize: 18
+                    color: Appearance.colors.colOnLayer0
+                }
+
+                StyledText {
+                    text: "Screen Time"
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    color: Appearance.colors.colOnLayer0
+                    Layout.fillWidth: true
+                }
+
+                StyledText {
+                    text: "24h History"
+                    font.pixelSize: 11
+                    color: Appearance.colors.colSubtext
+                }
+            }
+
+            // Main Metric Readout + Peak rate
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
-
-                MaterialShapeWrappedMaterialSymbol {
-                    wrappedShape: MaterialShape.Shape.Cookie4Sided
-                    color: Appearance.colors.colPrimary
-                    colSymbol: Appearance.colors.colOnPrimary
-                    text: "schedule"
-                    iconSize: 20
-                    fill: 1
-                    padding: 6
-                    implicitWidth: 32
-                    implicitHeight: 32
-                }
-
-                ColumnLayout {
-                    spacing: -2
-                    Layout.fillWidth: true
-
-                    StyledText {
-                        text: "Screen Time"
-                        font.pixelSize: Appearance.font.pixelSize.normal
-                        font.weight: Font.Bold
-                        color: Appearance.colors.colOnPrimaryContainer
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                    }
-
-                    StyledText {
-                        text: "Active window usage"
-                        font.pixelSize: Appearance.font.pixelSize.smallest
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.6
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                    }
-                }
-            }
-
-            // Stats Section
-            ColumnLayout {
-                spacing: 0
-                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                 StyledText {
                     text: root.formatTime(root.totalScreentime)
-                    font.pixelSize: 26
+                    font.pixelSize: 28
                     font.weight: Font.Bold
-                    color: Appearance.colors.colOnPrimaryContainer
+                    color: Appearance.colors.colOnLayer0
                 }
 
                 StyledText {
-                    text: "Uptime: " + root.formatTime(root.totalUptime)
-                    font.pixelSize: 10
-                    color: Appearance.colors.colOnPrimaryContainer
-                    opacity: 0.5
+                    property real maxVal: {
+                        let max = 0;
+                        for (let i = 0; i < 24; i++) {
+                            let val = root.hourlyUsage[i.toString()] ?? 0;
+                            if (val > max) max = val;
+                        }
+                        return max;
+                    }
+                    text: "Peak: " + root.formatHourAxis(maxVal)
+                    font.pixelSize: 11
+                    color: Appearance.colors.colSubtext
+                    Layout.alignment: Qt.AlignBottom
+                    Layout.bottomMargin: 4
                 }
             }
 
-            // Bar Chart Section
+            // Material 3 Bar Chart with 0-24 Full Day Timeline
             ColumnLayout {
-                spacing: 2
+                id: chartContainer2x2
                 Layout.fillWidth: true
-                Layout.alignment: Qt.AlignHCenter
-                Layout.bottomMargin: 14
+                spacing: 3
 
                 Item {
                     id: chart2x2
-                    width: 196
-                    height: 50
-                    Layout.alignment: Qt.AlignHCenter
+                    Layout.fillWidth: true
+                    implicitHeight: 38
 
                     property real maxVal: {
                         let max = 0;
@@ -199,229 +188,154 @@ AbstractBackgroundWidget {
                         return max > 0 ? max : 1;
                     }
 
-                    // Horizontal Gridlines
-                    Rectangle {
-                        width: 166
-                        height: 1
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.08
-                        anchors.top: parent.top
-                    }
-                    Rectangle {
-                        width: 166
-                        height: 1
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.08
-                        anchors.verticalCenter: parent.top
-                        anchors.verticalCenterOffset: parent.height / 2
-                    }
-                    Rectangle {
-                        width: 166
-                        height: 1
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.08
-                        anchors.bottom: parent.bottom
-                    }
+                    property int currentHour: new Date().getHours()
 
-                    // Vertical Dashed Gridlines & Horizontal Labels
-                    Repeater {
-                        model: [0, 6, 12, 18]
-                        delegate: Item {
-                            required property int modelData
-                            anchors.fill: parent
-
-                            // Dashed Line Column
-                            Column {
-                                spacing: 2
-                                anchors.horizontalCenter: parent.left
-                                anchors.horizontalCenterOffset: modelData * 7 + 2.5
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                
-                                Repeater {
-                                    model: Math.floor(chart2x2.height / 4)
-                                    delegate: Rectangle {
-                                        width: 1
-                                        height: 2
-                                        color: Appearance.colors.colOnPrimaryContainer
-                                        opacity: 0.12
-                                    }
-                                }
-                            }
-
-                            // Horizontal hour label (00, 06, 12, 18)
-                            StyledText {
-                                text: modelData < 10 ? "0" + modelData : modelData.toString()
-                                font.pixelSize: 8
-                                color: Appearance.colors.colOnPrimaryContainer
-                                opacity: 0.4
-                                anchors.horizontalCenter: parent.left
-                                anchors.horizontalCenterOffset: modelData * 7 + 2.5
-                                anchors.top: parent.bottom
-                                anchors.topMargin: 4
-                            }
-                        }
-                    }
-
-                    // Vertical Axis Labels (on the right)
-                    StyledText {
-                        text: root.formatHourAxis(chart2x2.maxVal)
-                        font.pixelSize: 8
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.4
-                        anchors.left: parent.left
-                        anchors.leftMargin: 172
-                        anchors.verticalCenter: parent.top
-                    }
-                    StyledText {
-                        text: root.formatHourAxis(chart2x2.maxVal / 2)
-                        font.pixelSize: 8
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.4
-                        anchors.left: parent.left
-                        anchors.leftMargin: 172
-                        anchors.verticalCenter: parent.top
-                        anchors.verticalCenterOffset: parent.height / 2
-                    }
-                    StyledText {
-                        text: "0"
-                        font.pixelSize: 8
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.4
-                        anchors.left: parent.left
-                        anchors.leftMargin: 172
-                        anchors.verticalCenter: parent.bottom
-                    }
-
-                    // The Active Bars
                     Row {
-                        id: barsRow2x2
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        spacing: 2
+                        anchors.centerIn: parent
+                        spacing: 3
 
                         Repeater {
                             model: 24
-                            delegate: Rectangle {
+                            delegate: Item {
                                 required property int index
-                                width: 5
-                                height: Math.max(2, ((root.hourlyUsage[index.toString()] ?? 0) / chart2x2.maxVal) * chart2x2.height)
-                                radius: 1.2
-                                color: Appearance.colors.colPrimary
-                                opacity: {
-                                    const val = root.hourlyUsage[index.toString()] ?? 0;
-                                    if (val === 0) return 0.0;
-                                    return new Date().getHours() === index ? 1.0 : 0.6;
+                                property int hourIndex: index
+                                property real hourVal: root.hourlyUsage[hourIndex.toString()] ?? 0
+                                property bool isCurrentHour: hourIndex === chart2x2.currentHour
+
+                                width: 6
+                                height: chart2x2.implicitHeight
+
+                                Rectangle {
+                                    width: parent.width
+                                    height: Math.max(4, (hourVal / chart2x2.maxVal) * chart2x2.implicitHeight)
+                                    radius: width / 2
+                                    anchors.bottom: parent.bottom
+
+                                    color: isCurrentHour ? Appearance.colors.colSecondaryContainer :
+                                            (hourVal > 0 ? ColorUtils.mix(Appearance.colors.colPrimary, Appearance.colors.colLayer0, 0.45)
+                                                         : ColorUtils.mix(Appearance.colors.colOnLayer0, Appearance.colors.colLayer0, 0.12))
+                                    border.width: isCurrentHour ? 1 : 0
+                                    border.color: Appearance.colors.colOnPrimaryContainer
                                 }
-                                anchors.bottom: parent.bottom
                             }
                         }
                     }
                 }
+
+                // 0-24 Hour Timeline Markings Row
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 10
+                    Layout.rightMargin: 10
+
+                    StyledText { text: "00"; font.pixelSize: 9; color: Appearance.colors.colSubtext }
+                    Item { Layout.fillWidth: true }
+                    StyledText { text: "06"; font.pixelSize: 9; color: Appearance.colors.colSubtext }
+                    Item { Layout.fillWidth: true }
+                    StyledText { text: "12"; font.pixelSize: 9; color: Appearance.colors.colSubtext }
+                    Item { Layout.fillWidth: true }
+                    StyledText { text: "18"; font.pixelSize: 9; color: Appearance.colors.colSubtext }
+                    Item { Layout.fillWidth: true }
+                    StyledText { text: "24"; font.pixelSize: 9; color: Appearance.colors.colSubtext }
+                }
             }
 
-            // Top Apps Grid
-            Grid {
-                columns: 2
-                columnSpacing: 16
-                rowSpacing: 8
+            // Top Apps Usage List (Android M3 Rows)
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.topMargin: 4
+                spacing: 5
 
                 Repeater {
-                    model: root.getSortedApps().slice(0, 4)
+                    model: root.getSortedApps().slice(0, 3)
                     delegate: RowLayout {
                         required property var modelData
-                        spacing: 8
-                        width: 114
+                        Layout.fillWidth: true
+                        spacing: 10
 
+                        // Squircle Icon Box
                         Rectangle {
-                            width: 22
-                            height: 22
-                            radius: 5
-                            color: "transparent"
-                            clip: true
+                            width: 26
+                            height: 26
+                            radius: 8
+                            color: Appearance.colors.colLayer1
 
                             IconImage {
-                                anchors.fill: parent
+                                anchors.centerIn: parent
+                                width: 16
+                                height: 16
                                 source: Quickshell.iconPath(AppSearch.guessIcon(modelData.name), "image-missing")
                             }
                         }
 
-                        ColumnLayout {
-                            spacing: -3
+                        StyledText {
+                            text: root.formatAppName(modelData.name)
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
+                            color: Appearance.colors.colOnLayer0
                             Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
 
-                            StyledText {
-                                text: root.formatAppName(modelData.name)
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                                color: Appearance.colors.colOnPrimaryContainer
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
-
-                            StyledText {
-                                text: root.formatTime(modelData.time)
-                                font.pixelSize: 9
-                                color: Appearance.colors.colOnPrimaryContainer
-                                opacity: 0.6
-                                Layout.fillWidth: true
-                            }
+                        StyledText {
+                            text: root.formatTime(modelData.time)
+                            font.pixelSize: 12
+                            color: Appearance.colors.colSubtext
                         }
                     }
                 }
             }
         }
 
-        // Layout for variation 2: 1x4 Horizontal layout
+        // Layout for 1x4 Horizontal mode
         RowLayout {
             visible: root.sizeMode === "1x4"
             anchors {
                 fill: parent
                 margins: 12
             }
-            spacing: 12
+            spacing: 14
 
-            // Left Column (Stats & Chart)
+            // Left Column (Stats & Bar Chart)
             ColumnLayout {
                 Layout.fillHeight: true
-                Layout.preferredWidth: 236
+                Layout.preferredWidth: 210
                 spacing: 4
 
-                ColumnLayout {
-                    spacing: -4
+                RowLayout {
                     Layout.fillWidth: true
+                    spacing: 6
 
-                    StyledText {
-                        text: root.formatTime(root.totalScreentime)
-                        font.pixelSize: 22
-                        font.weight: Font.Bold
-                        color: Appearance.colors.colOnPrimaryContainer
+                    MaterialSymbol {
+                        text: "hourglass_bottom"
+                        iconSize: 16
+                        color: Appearance.colors.colOnLayer0
                     }
 
                     StyledText {
-                        text: "Uptime: " + root.formatTime(root.totalUptime)
-                        font.pixelSize: 9
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.5
+                        text: "Screen Time"
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                        color: Appearance.colors.colOnLayer0
                     }
                 }
 
-                // Small Bar Chart Section
+                StyledText {
+                    text: root.formatTime(root.totalScreentime)
+                    font.pixelSize: 22
+                    font.weight: Font.Bold
+                    color: Appearance.colors.colOnLayer0
+                }
+
+                // Small M3 Bar Chart with 0-24 Timeline
                 ColumnLayout {
-                    spacing: 2
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 14
+                    spacing: 2
 
                     Item {
                         id: chart1x4
-                        width: 196
-                        height: 40
-                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
+                        implicitHeight: 28
 
                         property real maxVal: {
                             let max = 0;
@@ -432,173 +346,102 @@ AbstractBackgroundWidget {
                             return max > 0 ? max : 1;
                         }
 
-                        // Horizontal Gridlines
-                        Rectangle {
-                            width: 166
-                            height: 1
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.08
-                            anchors.top: parent.top
-                        }
-                        Rectangle {
-                            width: 166
-                            height: 1
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.08
-                            anchors.verticalCenter: parent.top
-                            anchors.verticalCenterOffset: parent.height / 2
-                        }
-                        Rectangle {
-                            width: 166
-                            height: 1
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.08
-                            anchors.bottom: parent.bottom
-                        }
+                        property int currentHour: new Date().getHours()
 
-                        // Vertical Dashed Gridlines & Horizontal Labels
-                        Repeater {
-                            model: [0, 6, 12, 18]
-                            delegate: Item {
-                                required property int modelData
-                                anchors.fill: parent
-
-                                // Dashed Line Column
-                                Column {
-                                    spacing: 2
-                                    anchors.horizontalCenter: parent.left
-                                    anchors.horizontalCenterOffset: modelData * 7 + 2.5
-                                    anchors.top: parent.top
-                                    anchors.bottom: parent.bottom
-                                    
-                                    Repeater {
-                                        model: Math.floor(chart1x4.height / 4)
-                                        delegate: Rectangle {
-                                            width: 1
-                                            height: 2
-                                            color: Appearance.colors.colOnPrimaryContainer
-                                            opacity: 0.12
-                                        }
-                                    }
-                                }
-
-                                // Horizontal hour label (00, 06, 12, 18)
-                                StyledText {
-                                    text: modelData < 10 ? "0" + modelData : modelData.toString()
-                                    font.pixelSize: 8
-                                    color: Appearance.colors.colOnPrimaryContainer
-                                    opacity: 0.4
-                                    anchors.horizontalCenter: parent.left
-                                    anchors.horizontalCenterOffset: modelData * 7 + 2.5
-                                    anchors.top: parent.bottom
-                                    anchors.topMargin: 4
-                                }
-                            }
-                        }
-
-                        // Vertical Axis Labels (on the right)
-                        StyledText {
-                            text: root.formatHourAxis(chart1x4.maxVal)
-                            font.pixelSize: 8
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.4
-                            anchors.left: parent.left
-                            anchors.leftMargin: 172
-                            anchors.verticalCenter: parent.top
-                        }
-                        StyledText {
-                            text: root.formatHourAxis(chart1x4.maxVal / 2)
-                            font.pixelSize: 8
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.4
-                            anchors.left: parent.left
-                            anchors.leftMargin: 172
-                            anchors.verticalCenter: parent.top
-                            anchors.verticalCenterOffset: parent.height / 2
-                        }
-                        StyledText {
-                            text: "0"
-                            font.pixelSize: 8
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.4
-                            anchors.left: parent.left
-                            anchors.leftMargin: 172
-                            anchors.verticalCenter: parent.bottom
-                        }
-
-                        // The Active Bars
                         Row {
-                            id: barsRow1x4
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            spacing: 2
+                            anchors.centerIn: parent
+                            spacing: 3
 
                             Repeater {
                                 model: 24
-                                delegate: Rectangle {
+                                delegate: Item {
                                     required property int index
+                                    property int hourIndex: index
+                                    property real hourVal: root.hourlyUsage[hourIndex.toString()] ?? 0
+                                    property bool isCurrentHour: hourIndex === chart1x4.currentHour
+
                                     width: 5
-                                    height: Math.max(2, ((root.hourlyUsage[index.toString()] ?? 0) / chart1x4.maxVal) * chart1x4.height)
-                                    radius: 1.2
-                                    color: Appearance.colors.colPrimary
-                                    opacity: {
-                                        const val = root.hourlyUsage[index.toString()] ?? 0;
-                                        if (val === 0) return 0.0;
-                                        return new Date().getHours() === index ? 1.0 : 0.6;
+                                    height: chart1x4.implicitHeight
+
+                                    Rectangle {
+                                        width: parent.width
+                                        height: Math.max(3, (hourVal / chart1x4.maxVal) * chart1x4.implicitHeight)
+                                        radius: width / 2
+                                        anchors.bottom: parent.bottom
+
+                                        color: isCurrentHour ? Appearance.colors.colSecondaryContainer :
+                                                (hourVal > 0 ? ColorUtils.mix(Appearance.colors.colPrimary, Appearance.colors.colLayer0, 0.45)
+                                                             : ColorUtils.mix(Appearance.colors.colOnLayer0, Appearance.colors.colLayer0, 0.12))
+                                        border.width: isCurrentHour ? 1 : 0
+                                        border.color: Appearance.colors.colOnPrimaryContainer
                                     }
-                                    anchors.bottom: parent.bottom
                                 }
                             }
                         }
                     }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 6
+                        Layout.rightMargin: 6
+
+                        StyledText { text: "00"; font.pixelSize: 8; color: Appearance.colors.colSubtext }
+                        Item { Layout.fillWidth: true }
+                        StyledText { text: "12"; font.pixelSize: 8; color: Appearance.colors.colSubtext }
+                        Item { Layout.fillWidth: true }
+                        StyledText { text: "24"; font.pixelSize: 8; color: Appearance.colors.colSubtext }
+                    }
                 }
             }
 
-            // Vertical Divider
+            // Divider
             Rectangle {
                 width: 1
                 Layout.fillHeight: true
-                color: Appearance.colors.colOnPrimaryContainer
-                opacity: 0.08
+                color: Appearance.colors.colLayer0Border
+                opacity: 0.5
             }
 
-            // Right Column (Apps List - Minimal)
+            // Right Column (App List)
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 spacing: 4
-                Layout.alignment: Qt.AlignTop
 
                 Repeater {
-                    model: root.getSortedApps().slice(0, 4)
+                    model: root.getSortedApps().slice(0, 3)
                     delegate: RowLayout {
                         required property var modelData
-                        spacing: 8
                         Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 8
 
                         Rectangle {
-                            width: 18
-                            height: 18
-                            radius: 4
-                            color: "transparent"
-                            clip: true
+                            width: 22
+                            height: 22
+                            radius: 6
+                            color: Appearance.colors.colLayer1
 
                             IconImage {
-                                anchors.fill: parent
+                                anchors.centerIn: parent
+                                width: 14
+                                height: 14
                                 source: Quickshell.iconPath(AppSearch.guessIcon(modelData.name), "image-missing")
                             }
                         }
 
                         StyledText {
-                            text: root.formatTime(modelData.time)
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.8
+                            text: root.formatAppName(modelData.name)
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: Appearance.colors.colOnLayer0
                             Layout.fillWidth: true
                             elide: Text.ElideRight
+                        }
+
+                        StyledText {
+                            text: root.formatTime(modelData.time)
+                            font.pixelSize: 11
+                            color: Appearance.colors.colSubtext
                         }
                     }
                 }

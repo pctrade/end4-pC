@@ -9,6 +9,7 @@ import Quickshell.Io
 
 Singleton {
     id: root
+
     // property string cliphistBinary: FileUtils.trimFileProtocol(`${Directories.home}/.cargo/bin/stash`)
     property string cliphistBinary: "cliphist"
     property real pasteDelay: 0.05
@@ -16,10 +17,12 @@ Singleton {
     property bool sloppySearch: Config.options?.search.sloppy ?? false
     property real scoreThreshold: 0.2
     property list<string> entries: []
+
     readonly property var preparedEntries: entries.map(a => ({
         name: Fuzzy.prepare(`${a.replace(/^\s*\S+\s+/, "")}`),
         entry: a
     }))
+
     function fuzzyQuery(search: string): var {
         if (search.trim() === "") {
             return entries;
@@ -30,8 +33,7 @@ Singleton {
                 score: Levendist.computeTextMatchScore(str.toLowerCase(), search.toLowerCase())
             })).filter(item => item.score > root.scoreThreshold)
                 .sort((a, b) => b.score - a.score)
-            return results
-                .map(item => item.entry)
+            return results.map(item => item.entry)
         }
 
         return Fuzzy.go(search, preparedEntries, {
@@ -100,13 +102,15 @@ Singleton {
 
     Process {
         id: wipeProc
-        command: [root.cliphistBinary, "wipe"]
+        command: ["bash", "-c", `${root.cliphistBinary} wipe; rm -rf ~/.cache/cliphist/db`]
         onExited: (exitCode, exitStatus) => {
+            root.entries = [];
             root.refresh();
         }
     }
 
     function wipe() {
+        root.entries = [];
         wipeProc.running = true;
     }
 
@@ -142,6 +146,7 @@ Singleton {
             if (exitCode === 0) {
                 root.entries = readProc.buffer
             } else {
+                root.entries = []
                 console.error("[Cliphist] Failed to refresh with code", exitCode, "and status", exitStatus)
             }
         }

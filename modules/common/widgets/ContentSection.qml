@@ -19,7 +19,7 @@ ColumnLayout {
         spacing: 6
         MaterialShapeWrappedMaterialSymbol {
             text: root.icon
-            iconSize: Appearance.font.pixelSize.larger
+            iconSize: Appearance.font.pixelSize.large + 1
             wrappedShape: root.shape
             color: bgColor
         }

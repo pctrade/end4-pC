@@ -13,11 +13,8 @@ Item {
     property bool scaleIcon: false
     property alias from: valueProgressBar.from
     property alias to: valueProgressBar.to
-    property real valueIndicatorVerticalPadding: 9
-    property real valueIndicatorLeftPadding: 10
-    property real valueIndicatorRightPadding: 20 // An icon is circle ish, a column isn't, hence the extra padding
 
-    implicitWidth: Appearance.sizes.osdWidth + 4 * Appearance.sizes.elevationMargin
+    implicitWidth: Appearance.sizes.osdWidth + 4 * Appearance.sizes.elevationMargin + 80
     implicitHeight: valueIndicator.implicitHeight + 2 * Appearance.sizes.elevationMargin
 
     Rectangle {
@@ -27,34 +24,28 @@ Item {
             margins: Appearance.sizes.elevationMargin
         }
         radius: Appearance.rounding.full
-        color: "transparent"
+        color: Appearance.colors.colLayer0
         implicitWidth: valueRow.implicitWidth
         implicitHeight: valueRow.implicitHeight
 
         RowLayout { 
             id: valueRow
-            Layout.margins: 10
             anchors.fill: parent
-            spacing: 10
+            anchors.margins: 6
+            spacing: 8
 
-            StyledSlider {
-                id: valueProgressBar
-                Layout.fillWidth: true
+            Rectangle {
+                id: iconBg
+                Layout.fillHeight: true
                 Layout.alignment: Qt.AlignVCenter
-                Layout.rightMargin: root.valueIndicatorRightPadding
-                Layout.leftMargin: root.valueIndicatorLeftPadding
-                configuration: StyledSlider.Configuration.M
-                stopIndicatorValues: []
-                value: root.value
+                width: 40
+                radius: height / 2
+                color: Appearance.colors.colSecondaryContainer
 
-               MaterialSymbol {
-                    property bool handlePassed: valueProgressBar.value >= 0.15
-                    anchors {
-                        verticalCenter: valueProgressBar.verticalCenter
-                        left: handlePassed ? valueProgressBar.left : valueProgressBar.handle.left
-                        leftMargin: 5
-                    }
-                    color: handlePassed ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+                MaterialSymbol {
+                    id: iconSymbol
+                    anchors.centerIn: parent
+                    color: Appearance.colors.colOnSecondaryContainer
                     renderType: Text.QtRendering
                     text: root.icon
                     iconSize: 25
@@ -66,31 +57,35 @@ Item {
                     Behavior on rotation {
                         animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
                     }
-                    Behavior on anchors.leftMargin {
-                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                    }
                 }
+            }
+
+            StyledSlider {
+                id: valueProgressBar
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignVCenter
+                configuration: StyledSlider.Configuration.M
+                stopIndicatorValues: []
+                value: root.value
+            }
+
+            Rectangle {
+                id: valueTextBg
+                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignVCenter
+                width: 46
+                radius: height / 2
+                color: Appearance.colors.colTertiaryContainer
 
                 StyledText { 
                     id: valueText
-                    property bool nearFull: valueProgressBar.value >= 0.85
-                    anchors {
-                        verticalCenter: valueProgressBar.verticalCenter
-                        right: nearFull ? valueProgressBar.handle.right : valueProgressBar.right
-                        rightMargin: nearFull ? 14 : 10
-                    }
-                    color: nearFull ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
-                    font.pixelSize: Appearance.font.pixelSize.small
+                    anchors.centerIn: parent
+                    color: Appearance.colors.colOnTertiaryContainer
+                    font.pixelSize: Appearance.font.pixelSize.normal
                     font.features: { "tnum": 1 }
                     font.letterSpacing: 0.2
                     text: Math.round(root.value * 100)
-
-                    Behavior on color {
-                        animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-                    }
-                    Behavior on anchors.rightMargin {
-                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                    }
                 }
             }
         }

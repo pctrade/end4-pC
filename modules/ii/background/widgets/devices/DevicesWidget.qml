@@ -50,27 +50,27 @@ AbstractBackgroundWidget {
         }
     }
 
-    function getBatteryIcon(val) {
-        if (val === undefined || val === null) return "";
-        if (val >= 90) return "battery_full";
-        if (val >= 70) return "battery_5_bar";
-        if (val >= 50) return "battery_4_bar";
-        if (val >= 30) return "battery_3_bar";
-        if (val >= 15) return "battery_1_bar";
-        return "battery_alert";
+    function getDeviceSubtitle(dev) {
+        if (!dev.connected) return "Disconnected";
+        if (dev.charging) return "Charging • Main Station";
+        if (dev.battery !== null) {
+            if (dev.battery < 20) return "Battery Low";
+            return "Connected • Active";
+        }
+        return "Connected • System";
     }
 
     function getDeviceColor(connected, battery, charging) {
         if (!connected) {
-            return "#7f8c8d"; // Grey color for disconnected
+            return Appearance.colors.colSubtext;
         }
         if (charging) {
             return "#39d353"; // Green when charging
         }
         if (battery !== null) {
-            return battery < 30 ? "#f44336" : "#39d353"; // Red below 30%, otherwise Green
+            return battery < 20 ? "#f44336" : Appearance.colors.colSecondaryContainer;
         }
-        return "#39d353"; // Green for connected non-battery devices
+        return Appearance.colors.colSecondaryContainer;
     }
 
     Process {
@@ -108,7 +108,7 @@ AbstractBackgroundWidget {
 
     Timer {
         id: refreshDelayTimer
-        interval: 350 // Wait 350ms for kernel/dbus interfaces to register state changes
+        interval: 350
         repeat: false
         onTriggered: {
             root.refreshDevices();
@@ -118,7 +118,7 @@ AbstractBackgroundWidget {
 
     Timer {
         id: refreshTimer
-        interval: 30000 // Periodic backup refresh every 30 seconds
+        interval: 30000
         running: true
         repeat: true
         onTriggered: refreshDevices()
@@ -131,66 +131,50 @@ AbstractBackgroundWidget {
     Rectangle {
         id: card
         anchors.fill: parent
-        radius: Appearance.rounding?.verylarge ?? 30
-        color: Appearance.colors.colPrimaryContainer
+        radius: Appearance.rounding?.verylarge ?? 24
+        color: Appearance.colors.colLayer0
 
         StyledRectangularShadow {
             target: card
             z: -2
         }
 
+        // Layout for 2x2 Mode (Android M3 Vertical Rows List style)
         ColumnLayout {
+            visible: root.sizeMode === "2x2"
             anchors {
                 fill: parent
-                margins: root.sizeMode === "1x4" ? 12 : 16
+                margins: 14
             }
-            spacing: root.sizeMode === "1x4" ? 6 : 12
+            spacing: 10
 
-            // Header Section
+            // Header Row
             RowLayout {
-                id: headerSection
                 Layout.fillWidth: true
-                spacing: 10
-                visible: root.sizeMode === "2x2"
-                Layout.preferredHeight: root.sizeMode === "2x2" ? -1 : 0
+                spacing: 8
 
-                MaterialShapeWrappedMaterialSymbol {
-                    wrappedShape: MaterialShape.Shape.Cookie4Sided
-                    color: Appearance.colors.colPrimary
-                    colSymbol: Appearance.colors.colOnPrimary
+                MaterialSymbol {
                     text: "devices"
-                    iconSize: 20
-                    fill: 1
-                    padding: 6
-                    implicitWidth: 32
-                    implicitHeight: 32
+                    iconSize: 18
+                    color: Appearance.colors.colOnLayer0
                 }
 
-                ColumnLayout {
-                    spacing: -2
+                StyledText {
+                    text: "Devices"
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    color: Appearance.colors.colOnLayer0
                     Layout.fillWidth: true
+                }
 
-                    StyledText {
-                        text: "Devices"
-                        font.pixelSize: Appearance.font.pixelSize.normal
-                        font.weight: Font.Bold
-                        color: Appearance.colors.colOnPrimaryContainer
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                    }
-
-                    StyledText {
-                        text: root.loading ? "Updating..." : "Connected accessories"
-                        font.pixelSize: Appearance.font.pixelSize.smallest
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.6
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                    }
+                Rectangle {
+                    width: 8
+                    height: 3
+                    radius: 1.5
+                    color: "#39d353"
                 }
             }
 
-            // Grid Section
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -204,101 +188,166 @@ AbstractBackgroundWidget {
                 StyledText {
                     anchors.centerIn: parent
                     text: "No devices connected"
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: Appearance.colors.colOnPrimaryContainer
-                    opacity: 0.4
+                    font.pixelSize: 12
+                    color: Appearance.colors.colSubtext
                     visible: !root.loading && root.devicesList.length === 0
                 }
 
-                Grid {
-                    id: grid
-                    anchors.centerIn: parent
-                    columns: root.sizeMode === "1x4" ? 4 : 2
-                    rows: root.sizeMode === "1x4" ? 1 : 2
-                    rowSpacing: root.sizeMode === "1x4" ? 0 : 12
-                    columnSpacing: root.sizeMode === "1x4" ? 22 : 16
+                // Vertical Device Items List
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 10
                     visible: !root.loading && root.devicesList.length > 0
 
                     Repeater {
-                        model: root.devicesList.slice(0, 4)
-                        delegate: Item {
+                        model: root.devicesList.slice(0, 3)
+                        delegate: RowLayout {
                             required property var modelData
-                            width: root.sizeMode === "1x4" ? 82 : 108
-                            height: root.sizeMode === "1x4" ? 92 : 84
+                            Layout.fillWidth: true
+                            spacing: 12
 
-                            // Circular progress battery/status ring
-                            CircularProgress {
-                                id: progress
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.top: parent.top
-                                implicitSize: 56
-                                lineWidth: 5
-                                value: modelData.connected ? (modelData.battery !== null ? modelData.battery / 100 : 1.0) : 1.0
-                                gapAngle: 0
-                                colPrimary: root.getDeviceColor(modelData.connected, modelData.battery, modelData.charging)
-                                colSecondary: ColorUtils.mix(Appearance.colors.colOnPrimaryContainer, Appearance.colors.colPrimaryContainer, 0.08)
-                            }
+                            // Battery Progress Ring with Center Icon
+                            Item {
+                                width: 42
+                                height: 42
 
-                             // Charging bolt at the top of the ring (dark outline)
-                             MaterialSymbol {
-                                 text: "bolt"
-                                 iconSize: 17
-                                 color: Appearance.colors.colPrimaryContainer
-                                 anchors.horizontalCenter: progress.horizontalCenter
-                                 anchors.horizontalCenterOffset: 1
-                                 anchors.verticalCenter: progress.top
-                                 visible: modelData.charging === true
-                                 z: 4
-                             }
-
-                             // Charging bolt at the top of the ring (white foreground)
-                             MaterialSymbol {
-                                 text: "bolt"
-                                 iconSize: 13
-                                 color: "#ffffff"
-                                 anchors.horizontalCenter: progress.horizontalCenter
-                                 anchors.horizontalCenterOffset: 1
-                                 anchors.verticalCenter: progress.top
-                                 visible: modelData.charging === true
-                                 z: 5
-                             }
-
-                            // Center content
-                            Column {
-                                anchors.centerIn: progress
-                                spacing: -2
+                                CircularProgress {
+                                    id: progress
+                                    anchors.centerIn: parent
+                                    implicitSize: 42
+                                    lineWidth: 4
+                                    value: modelData.connected ? (modelData.battery !== null ? modelData.battery / 100 : 1.0) : 1.0
+                                    gapAngle: 0
+                                    colPrimary: root.getDeviceColor(modelData.connected, modelData.battery, modelData.charging)
+                                    colSecondary: ColorUtils.mix(Appearance.colors.colOnLayer0, Appearance.colors.colLayer0, 0.12)
+                                }
 
                                 MaterialSymbol {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: root.getDeviceIcon(modelData.type)
-                                    iconSize: 20
-                                    color: modelData.connected ? Appearance.colors.colOnPrimaryContainer : "#7f8c8d"
+                                    anchors.centerIn: parent
+                                    text: modelData.charging ? "bolt" : root.getDeviceIcon(modelData.type)
+                                    iconSize: 16
+                                    color: root.getDeviceColor(modelData.connected, modelData.battery, modelData.charging)
+                                }
+                            }
+
+                            // Device Title & Subtitle
+                            ColumnLayout {
+                                spacing: 1
+                                Layout.fillWidth: true
+
+                                StyledText {
+                                    text: modelData.name
+                                    font.pixelSize: 13
+                                    font.weight: Font.DemiBold
+                                    color: Appearance.colors.colOnLayer0
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
                                 }
 
                                 StyledText {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: modelData.battery !== null ? modelData.battery + "%" : ""
-                                    font.pixelSize: 9
-                                    font.weight: Font.Bold
-                                    color: modelData.connected ? root.getDeviceColor(true, modelData.battery) : "#7f8c8d"
-                                    visible: root.sizeMode === "2x2" && modelData.battery !== null
+                                    text: root.getDeviceSubtitle(modelData)
+                                    font.pixelSize: 11
+                                    color: Appearance.colors.colSubtext
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
                                 }
                             }
 
-                            // Device Label / Percentage Text below circle
+                            // Battery Percentage Text
                             StyledText {
-                                anchors.horizontalCenter: progress.horizontalCenter
-                                anchors.top: progress.bottom
-                                anchors.topMargin: root.sizeMode === "1x4" ? 8 : 4
-                                text: root.sizeMode === "1x4" ? 
-                                      (modelData.battery !== null ? modelData.battery + "%" : (modelData.connected ? "On" : "Off")) : 
-                                      modelData.name
-                                font.pixelSize: root.sizeMode === "1x4" ? 15 : 10
-                                font.weight: root.sizeMode === "1x4" ? Font.DemiBold : Font.Normal
-                                color: modelData.connected ? Appearance.colors.colOnPrimaryContainer : "#7f8c8d"
-                                width: parent.width
-                                horizontalAlignment: Text.AlignHCenter
+                                text: modelData.battery !== null ? modelData.battery + "%" : (modelData.connected ? "On" : "Off")
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
+                                color: modelData.battery !== null && modelData.battery < 20 ? "#f44336" : Appearance.colors.colOnLayer0
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Layout for 1x4 Horizontal Mode (Resized & Optimized)
+        RowLayout {
+            visible: root.sizeMode === "1x4"
+            anchors {
+                fill: parent
+                margins: 14
+            }
+            spacing: 12
+
+            // Compact Header Icon on the left
+            MaterialSymbol {
+                text: "devices"
+                iconSize: 22
+                color: Appearance.colors.colOnLayer0
+            }
+
+            // Divider Line
+            Rectangle {
+                width: 1
+                Layout.fillHeight: true
+                Layout.topMargin: 4
+                Layout.bottomMargin: 4
+                color: Appearance.colors.colLayer0Border
+                opacity: 0.4
+            }
+
+            // Expanded Horizontal Devices Row
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 14
+
+                Repeater {
+                    model: root.devicesList.slice(0, 3)
+                    delegate: RowLayout {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        spacing: 10
+
+                        // Circular Progress Ring
+                        Item {
+                            width: 38
+                            height: 38
+
+                            CircularProgress {
+                                anchors.centerIn: parent
+                                implicitSize: 38
+                                lineWidth: 3
+                                value: modelData.connected ? (modelData.battery !== null ? modelData.battery / 100 : 1.0) : 1.0
+                                gapAngle: 0
+                                colPrimary: root.getDeviceColor(modelData.connected, modelData.battery, modelData.charging)
+                                colSecondary: ColorUtils.mix(Appearance.colors.colOnLayer0, Appearance.colors.colLayer0, 0.12)
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: modelData.charging ? "bolt" : root.getDeviceIcon(modelData.type)
+                                iconSize: 15
+                                color: root.getDeviceColor(modelData.connected, modelData.battery, modelData.charging)
+                            }
+                        }
+
+                        // Device Details (Name & Subtitle/Battery)
+                        ColumnLayout {
+                            spacing: 0
+                            Layout.fillWidth: true
+
+                            StyledText {
+                                text: modelData.name
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                                color: Appearance.colors.colOnLayer0
                                 elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+
+                            StyledText {
+                                text: modelData.battery !== null ? modelData.battery + "%" + (modelData.charging ? " • Charging" : "") : "Connected"
+                                font.pixelSize: 11
+                                color: Appearance.colors.colSubtext
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
                             }
                         }
                     }
@@ -334,7 +383,6 @@ AbstractBackgroundWidget {
                     var dx = globalX - startX
                     var newW = startWidth + dx
                     
-                    // Toggle threshold mid-point (between 276 and 400 is 338)
                     if (newW > 338) {
                         root.sizeMode = "1x4"
                     } else {

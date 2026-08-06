@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.UPower
-import Quickshell.Hyprland
 import Quickshell.Services.SystemTray
 import qs
 import qs.services

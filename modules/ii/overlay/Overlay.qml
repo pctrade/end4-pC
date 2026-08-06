@@ -83,7 +83,7 @@ Scope {
         }
     }
 
-    GlobalShortcut {
+    CompositorGlobalShortcut {
         name: "overlayToggle"
         description: "Toggles overlay on press"
 

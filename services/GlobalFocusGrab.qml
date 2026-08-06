@@ -3,12 +3,14 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import qs.services
 
 /**
  * Manages a HyprlandFocusGrab that's to be shared by all windows.
  * "Persistent" is for windows that should always be included but not closed on dismiss, like bar and onscreen keyboard.
- * "Dismissable" is for stuff like sidebars
- */ 
+ * "Dismissable" is for stuff like sidebars.
+ **/
+ 
 Singleton {
     id: root
 
@@ -23,7 +25,7 @@ Singleton {
     }
 
     Component.onCompleted: {
-        console.log("[GlobalFocusGrab] Initialized");
+        console.log("[GlobalFocusGrab] Initialized" + (WM.compositor !== "hyprland" ? " (inactive, non-Hyprland compositor)" : ""));
     }
 
     function addPersistent(window) {
@@ -62,11 +64,10 @@ Singleton {
 
     HyprlandFocusGrab {
         id: grab
-        windows: root.dismissable.every(w => !w?.focusable) || root.dismissable.some(w => hasActive(w?.contentItem)) ? [...root.dismissable, ...root.persistent] : [...root.dismissable]
-        active: root.dismissable.length > 0
+        windows: root.dismissable.every(w => !w?.focusable) || root.dismissable.some(w => root.hasActive(w?.contentItem)) ? [...root.dismissable, ...root.persistent] : [...root.dismissable]
+        active: WM.compositor === "hyprland" && root.dismissable.length > 0
         onCleared: () => {
             root.dismiss();
         }
     }
-
 }
