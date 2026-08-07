@@ -260,6 +260,39 @@ ContentPage {
                 }
             }
 
+            ContentSubsection {
+                title: Translation.tr("GameMode preset")
+
+                GroupedList {
+                    ConfigSwitch {
+                        text: Translation.tr("Use GameMode preset")
+                        checked: Config.options.profile.gameModePresetEnabled
+                        onCheckedChanged: {
+                            Config.options.profile.gameModePresetEnabled = checked
+                        }
+                    }
+
+                    ConfigSwitch {
+                        text: Translation.tr("Show GameMode preset in settings")
+                        checked: Config.options.profile.gameModePresetVisible
+                        onCheckedChanged: {
+                            Config.options.profile.gameModePresetVisible = checked
+                        }
+                    }
+
+                    ConfigTextArea {
+                        Layout.fillWidth: true
+                        buttonIcon: "stadia_controller"
+                        text: Translation.tr("GameMode preset name")
+                        placeholderText: Translation.tr("GameMode")
+                        value: Config.options.profile.gameModePresetName
+                        onValueChanged: {
+                            Config.options.profile.gameModePresetName = value.trim() || "GameMode"
+                        }
+                    }
+                }
+            }
+
             StyledText {
                 Layout.fillWidth: true
                 Layout.topMargin: 40
@@ -285,6 +318,7 @@ ContentPage {
                         required property string filePath
 
                         property string presetName: fileName.replace(".json", "")
+                        property bool isGameModePreset: presetName === Config.options.profile.gameModePresetName
                         property string presetWallpaper: ""
                         property string presetDescription: ""
 
@@ -305,6 +339,7 @@ ContentPage {
                             }
                         }
 
+                        visible: !(presetDelegate.isGameModePreset && !Config.options.profile.gameModePresetVisible)
                         imageSource: presetDelegate.presetWallpaper
                         title: presetDelegate.presetName
                         description: presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset")
