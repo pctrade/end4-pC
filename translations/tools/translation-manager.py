@@ -210,6 +210,44 @@ class TranslationManager:
         if self.temp_extracted_file and os.path.exists(self.temp_extracted_file):
             os.unlink(self.temp_extracted_file)
 
+
+def check_translation_drift(
+    manager: TranslationManager,
+    extracted_texts: Set[str],
+    languages: List[str]
+) -> int:
+    """Report translation drift without modifying translation files."""
+    print("\n=== Translation Drift Check ===")
+    drifted_languages = 0
+
+    for lang in languages:
+        missing_keys, extra_keys = manager.compare_translations(extracted_texts, lang)
+        translations = manager.load_translation_file(lang)
+        ignored_extra_keys = {
+            key for key in extra_keys
+            if isinstance(translations.get(key, ""), str)
+            and translations.get(key, "").strip().endswith("/*keep*/")
+        }
+        actionable_extra_keys = extra_keys - ignored_extra_keys
+        has_drift = bool(missing_keys or actionable_extra_keys)
+
+        if has_drift:
+            drifted_languages += 1
+
+        status = "DRIFT" if has_drift else "OK"
+        print(
+            f"  {lang}: {status} "
+            f"(missing: {len(missing_keys)}, extra: {len(actionable_extra_keys)}, "
+            f"ignored: {len(ignored_extra_keys)})"
+        )
+
+    if drifted_languages:
+        print(f"\nTranslation drift detected in {drifted_languages} language file(s).")
+        return 1
+
+    print("\nNo translation drift detected.")
+    return 0
+
 def main():
     parser = argparse.ArgumentParser(description="Translation file management tool")
     parser.add_argument("--translations-dir", "-t", 
@@ -224,6 +262,8 @@ def main():
                        help="Only extract translatable texts to temporary file")
     parser.add_argument("--show-temp", action="store_true",
                        help="Show temporary extracted file content")
+    parser.add_argument("--check", action="store_true",
+                       help="Check for translation drift without modifying files")
     parser.add_argument("-y", "--yes", action="store_true",
                        help="Skip all confirmation prompts (auto-confirm)")
     
@@ -265,6 +305,17 @@ def main():
         
         # Get available languages
         available_languages = manager.get_available_languages()
+
+        if args.check:
+            if not available_languages:
+                print("Error: No translation files found")
+                return 2
+            if args.language and args.language not in available_languages:
+                print(f"Error: Translation file does not exist: {args.language}.json")
+                return 2
+
+            check_languages = [args.language] if args.language else available_languages
+            return check_translation_drift(manager, extracted_texts, check_languages)
         
         if args.language:
             target_languages = [args.language]
@@ -331,4 +382,4 @@ def main():
         manager.cleanup()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
