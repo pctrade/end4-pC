@@ -13,23 +13,87 @@ Scope {
     id: screenCorners
     readonly property Toplevel activeWindow: ToplevelManager.activeToplevel
 
+    function isCornerOpen(corner) {
+        switch (corner) {
+            case RoundCorner.CornerEnum.TopLeft: return GlobalStates.sidebarLeftOpen;
+            case RoundCorner.CornerEnum.TopRight: return GlobalStates.sidebarRightOpen;
+            case RoundCorner.CornerEnum.BottomLeft: {
+                let act = Config.options.sidebar.cornerOpen.bottomLeftAction;
+                return act && act !== "none" ? !!GlobalStates[act] : false;
+            }
+            case RoundCorner.CornerEnum.BottomRight: {
+                let act = Config.options.sidebar.cornerOpen.bottomRightAction;
+                return act && act !== "none" ? !!GlobalStates[act] : false;
+            }
+            default: return false;
+        }
+    }
+
+    function openCorner(corner) {
+        switch (corner) {
+            case RoundCorner.CornerEnum.TopLeft:
+                if (!GlobalStates.sidebarLeftOpen) GlobalStates.sidebarLeftOpen = true;
+                break;
+            case RoundCorner.CornerEnum.TopRight:
+                if (!GlobalStates.sidebarRightOpen) GlobalStates.sidebarRightOpen = true;
+                break;
+            case RoundCorner.CornerEnum.BottomLeft:
+                if (Config.options.sidebar.cornerOpen.bottomLeftAction && Config.options.sidebar.cornerOpen.bottomLeftAction !== "none")
+                    GlobalStates[Config.options.sidebar.cornerOpen.bottomLeftAction] = true;
+                break;
+            case RoundCorner.CornerEnum.BottomRight:
+                if (Config.options.sidebar.cornerOpen.bottomRightAction && Config.options.sidebar.cornerOpen.bottomRightAction !== "none")
+                    GlobalStates[Config.options.sidebar.cornerOpen.bottomRightAction] = true;
+                break;
+        }
+    }
+
+    function toggleCorner(corner) {
+        switch (corner) {
+            case RoundCorner.CornerEnum.TopLeft:
+                GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
+                break;
+            case RoundCorner.CornerEnum.TopRight:
+                GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
+                break;
+            case RoundCorner.CornerEnum.BottomLeft:
+                GlobalStates.toggleState(Config.options.sidebar.cornerOpen.bottomLeftAction);
+                break;
+            case RoundCorner.CornerEnum.BottomRight:
+                GlobalStates.toggleState(Config.options.sidebar.cornerOpen.bottomRightAction);
+                break;
+        }
+    }
+
     property var actionForCorner: ({
-        [RoundCorner.CornerEnum.TopLeft]: () => GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen,
-        [RoundCorner.CornerEnum.BottomLeft]: () => GlobalStates.toggleState(Config.options.sidebar.cornerOpen.bottomLeftAction),
-        [RoundCorner.CornerEnum.TopRight]: () => GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen,
-        [RoundCorner.CornerEnum.BottomRight]: () => GlobalStates.toggleState(Config.options.sidebar.cornerOpen.bottomRightAction)
+        [RoundCorner.CornerEnum.TopLeft]: () => screenCorners.toggleCorner(RoundCorner.CornerEnum.TopLeft),
+        [RoundCorner.CornerEnum.BottomLeft]: () => screenCorners.toggleCorner(RoundCorner.CornerEnum.BottomLeft),
+        [RoundCorner.CornerEnum.TopRight]: () => screenCorners.toggleCorner(RoundCorner.CornerEnum.TopRight),
+        [RoundCorner.CornerEnum.BottomRight]: () => screenCorners.toggleCorner(RoundCorner.CornerEnum.BottomRight)
     })
 
     component CornerPanelWindow: PanelWindow {
         id: cornerPanelWindow
         property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
         property bool fullscreen
-        visible: (Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen))
+        readonly property bool showFakeRounding: (Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen))
+        readonly property bool showCornerOpen: Config.options.sidebar.cornerOpen.enable && !fullscreen
+
+        visible: showFakeRounding || showCornerOpen
         property var corner
+        readonly property bool isCurrentCornerOpen: screenCorners.isCornerOpen(cornerPanelWindow.corner)
+
+        onIsCurrentCornerOpenChanged: {
+            if (!isCurrentCornerOpen && sidebarCornerOpenInteractionLoader.item && typeof sidebarCornerOpenInteractionLoader.item.triggerCooldown === "function") {
+                sidebarCornerOpenInteractionLoader.item.triggerCooldown();
+            }
+        }
 
         exclusionMode: ExclusionMode.Ignore
         mask: Region {
-            item: sidebarCornerOpenInteractionLoader.active ? sidebarCornerOpenInteractionLoader : null
+            item: sidebarCornerOpenInteractionLoader.active
+                ? sidebarCornerOpenInteractionLoader 
+                : (cornerPanelWindow.showFakeRounding ? cornerWidget : null)
         }
         WlrLayershell.namespace: "quickshell:screenCorners"
         WlrLayershell.layer: WlrLayer.Overlay
@@ -53,6 +117,7 @@ Scope {
             id: cornerWidget
             anchors.fill: parent
             corner: cornerPanelWindow.corner
+            drawCorner: cornerPanelWindow.showFakeRounding
             rightVisualMargin: (Config.options.interactions.deadPixelWorkaround.enable && cornerPanelWindow.anchors.right) * 1
             bottomVisualMargin: (Config.options.interactions.deadPixelWorkaround.enable && cornerPanelWindow.anchors.bottom) * 1
 
@@ -79,22 +144,77 @@ Scope {
                     implicitWidth: Config.options.sidebar.cornerOpen.cornerRegionWidth
                     implicitHeight: Config.options.sidebar.cornerOpen.cornerRegionHeight
                     hoverEnabled: true
-                    onPositionChanged: {
-                        if (cornerWidget.isBottom) return;
-                        if (!Config.options.sidebar.cornerOpen.clicklessCornerEnd) return;
+                    property bool armed: true
+                    property bool inCooldown: false
+
+                    Timer {
+                        id: cooldownTimer
+                        interval: 400
+                        onTriggered: mouseArea.inCooldown = false
+                    }
+
+                    function triggerCooldown() {
+                        mouseArea.inCooldown = true;
+                        mouseArea.armed = false;
+                        cooldownTimer.restart();
+                    }
+
+                    function checkHotspot() {
+                        if (!Config.options.sidebar.cornerOpen.clicklessCornerEnd) {
+                            return Config.options.sidebar.cornerOpen.clickless;
+                        }
                         const verticalOffset = Config.options.sidebar.cornerOpen.clicklessCornerVerticalOffset;
                         const correctX = (cornerWidget.isRight && mouseArea.mouseX >= mouseArea.width - 2) || (cornerWidget.isLeft && mouseArea.mouseX <= 2);
-                        const correctY = (cornerWidget.isTop && mouseArea.mouseY > verticalOffset || cornerWidget.isBottom && mouseArea.mouseY < mouseArea.height - verticalOffset);
-                        if (correctX && correctY)
-                            screenCorners.actionForCorner[cornerPanelWindow.corner]();
+                        const correctY = (cornerWidget.isTop && mouseArea.mouseY >= verticalOffset) || (cornerWidget.isBottom && mouseArea.mouseY <= mouseArea.height - verticalOffset);
+                        return correctX && correctY;
                     }
+
+                    onExited: {
+                        if (!mouseArea.inCooldown) {
+                            mouseArea.armed = true;
+                        }
+                    }
+
+                    onPositionChanged: {
+                        if (mouseArea.inCooldown) return;
+                        if (screenCorners.isCornerOpen(cornerPanelWindow.corner)) {
+                            mouseArea.armed = false;
+                            return;
+                        }
+                        if (checkHotspot()) {
+                            if (mouseArea.armed) {
+                                mouseArea.armed = false;
+                                screenCorners.openCorner(cornerPanelWindow.corner);
+                            }
+                        } else {
+                            mouseArea.armed = true;
+                        }
+                    }
+
                     onEntered: {
-                        if (cornerWidget.isBottom) return;
-                        if (Config.options.sidebar.cornerOpen.clickless)
-                            screenCorners.actionForCorner[cornerPanelWindow.corner]();
+                        if (mouseArea.inCooldown) return;
+                        if (screenCorners.isCornerOpen(cornerPanelWindow.corner)) {
+                            mouseArea.armed = false;
+                            return;
+                        }
+                        if (Config.options.sidebar.cornerOpen.clickless && !Config.options.sidebar.cornerOpen.clicklessCornerEnd) {
+                            if (mouseArea.armed) {
+                                mouseArea.armed = false;
+                                screenCorners.openCorner(cornerPanelWindow.corner);
+                            }
+                        }
                     }
+
                     onPressed: {
-                        screenCorners.actionForCorner[cornerPanelWindow.corner]();
+                        if (screenCorners.isCornerOpen(cornerPanelWindow.corner)) {
+                            mouseArea.triggerCooldown();
+                            screenCorners.toggleCorner(cornerPanelWindow.corner);
+                        } else {
+                            if (checkHotspot() || !Config.options.sidebar.cornerOpen.clickless) {
+                                mouseArea.triggerCooldown();
+                                screenCorners.openCorner(cornerPanelWindow.corner);
+                            }
+                        }
                     }
                     onScrollDown: {
                         if (!Config.options.sidebar.cornerOpen.valueScroll)

@@ -14,6 +14,7 @@ Item {
 
     property int implicitSize: 25
     property color color: "#000000"
+    property bool drawCorner: true
 
     implicitWidth: implicitSize
     implicitHeight: implicitSize
@@ -29,6 +30,7 @@ Item {
 
     Shape {
         id: shape
+        visible: root.drawCorner && root.implicitSize > 0
         anchors {
             top: root.isTop ? parent.top : undefined
             bottom: root.isBottom ? parent.bottom : undefined

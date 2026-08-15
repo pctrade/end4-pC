@@ -61,6 +61,25 @@ Scope {
             }
         }
 
+        Connections {
+            target: GlobalStates
+            function onSidebarLeftOpenChanged() {
+                if (GlobalStates.sidebarLeftOpen) panelWindow.hide();
+            }
+            function onSidebarRightOpenChanged() {
+                if (GlobalStates.sidebarRightOpen) panelWindow.hide();
+            }
+            function onOverviewOpenChanged() {
+                if (GlobalStates.overviewOpen) panelWindow.hide();
+            }
+            function onSessionOpenChanged() {
+                if (GlobalStates.sessionOpen) panelWindow.hide();
+            }
+            function onWallpaperSelectorOpenChanged() {
+                if (GlobalStates.wallpaperSelectorOpen) panelWindow.hide();
+            }
+        }
+
         Rectangle {
             anchors.fill: parent
             color: "transparent"
