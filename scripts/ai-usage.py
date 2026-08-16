@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Read native Codex, Claude Code, and Antigravity-adjacent usage sources.
+"""Read native Claude Code, Antigravity, z.ai/ZCode, and Kimi Code usage sources.
 
 The QML services call this helper for providers that do not expose a stable
 stdio API. It deliberately emits one small JSON object and never logs the
@@ -11,15 +11,18 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import pty
 import re
 import select
 import signal
+import socket
 import ssl
 import subprocess
 import sys
 import time
 import urllib.error
+from urllib.parse import urlparse, urlunparse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -103,14 +106,492 @@ def timestamp(value: Any) -> Optional[float]:
         return None
 
 
-def fetch_json(url: str, headers: dict[str, str], timeout: float = 8) -> Optional[dict[str, Any]]:
+def request_json(
+    url: str,
+    headers: dict[str, str],
+    timeout: float = 8,
+) -> tuple[int, Optional[dict[str, Any]]]:
     request = urllib.request.Request(url, headers=headers, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8", "replace"))
-        return payload if isinstance(payload, dict) else None
-    except (OSError, ValueError, urllib.error.HTTPError):
+        return response.status, payload if isinstance(payload, dict) else None
+    except urllib.error.HTTPError as error:
+        return error.code, None
+    except (OSError, ValueError):
+        return 0, None
+
+
+def fetch_json(url: str, headers: dict[str, str], timeout: float = 8) -> Optional[dict[str, Any]]:
+    _, payload = request_json(url, headers, timeout)
+    return payload
+
+
+def read_json_file(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def clean_string(value: Any) -> Optional[str]:
+    if not isinstance(value, str):
         return None
+    value = value.strip()
+    return value or None
+
+
+def first_string(*values: Any) -> Optional[str]:
+    for value in values:
+        cleaned = clean_string(value)
+        if cleaned:
+            return cleaned
+    return None
+
+
+def https_endpoint(raw: str, path: str) -> Optional[str]:
+    value = raw.strip()
+    if not value:
+        return None
+    if "://" not in value:
+        value = f"https://{value}"
+    parsed = urlparse(value)
+    if parsed.scheme.lower() != "https" or not parsed.netloc or parsed.username or parsed.password:
+        return None
+    endpoint_path = parsed.path.rstrip("/")
+    if not endpoint_path or endpoint_path == "/":
+        endpoint_path = path
+    return urlunparse(parsed._replace(path=endpoint_path))
+
+
+def https_origin(raw: str) -> Optional[str]:
+    value = raw.strip()
+    if not value:
+        return None
+    if "://" not in value:
+        value = f"https://{value}"
+    parsed = urlparse(value)
+    if parsed.scheme.lower() != "https" or not parsed.netloc or parsed.username or parsed.password:
+        return None
+    return urlunparse(parsed._replace(path="", params="", query="", fragment=""))
+
+
+def zcode_home() -> Path:
+    return Path(os.environ.get("ZCODE_HOME", str(Path.home() / ".zcode"))).expanduser()
+
+
+def z_ai_candidate_credentials() -> list[tuple[str, str]]:
+    candidates: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+
+    def add(token: Any, base: Any) -> None:
+        cleaned_token = clean_string(token)
+        cleaned_base = clean_string(base)
+        if not cleaned_token or cleaned_token.startswith("enc:v1:"):
+            return
+        origin = https_origin(cleaned_base or "https://api.z.ai")
+        if not origin:
+            return
+        key = (cleaned_token, origin)
+        if key in seen:
+            return
+        seen.add(key)
+        candidates.append(key)
+
+    configured_host = clean_string(os.environ.get("Z_AI_API_HOST"))
+    add(os.environ.get("Z_AI_API_KEY"), configured_host or "https://api.z.ai")
+    add(os.environ.get("ZAI_API_KEY"), configured_host or "https://api.z.ai")
+    for key in ("BIGMODEL_API_KEY", "ZHIPU_API_KEY", "ZHIPUAI_API_KEY", "GLM_API_KEY"):
+        add(os.environ.get(key), configured_host or "https://open.bigmodel.cn")
+
+    config = read_json_file(zcode_home() / "v2" / "config.json")
+    providers = config.get("provider")
+    if isinstance(providers, dict):
+        provider_items = sorted(
+            providers.items(),
+            key=lambda item: (
+                0 if "coding-plan" in str(item[0]).lower() else
+                1 if "start-plan" in str(item[0]).lower() else 2,
+                str(item[0]),
+            ),
+        )
+        for provider_id, provider in provider_items:
+            if not isinstance(provider, dict):
+                continue
+            normalized_id = str(provider_id).lower()
+            if "zai" not in normalized_id and "bigmodel" not in normalized_id:
+                continue
+            options = provider.get("options")
+            if not isinstance(options, dict):
+                continue
+            default_host = "https://open.bigmodel.cn" if "bigmodel" in normalized_id else "https://api.z.ai"
+            add(options.get("apiKey"), options.get("baseURL") or default_host)
+
+    credentials = read_json_file(zcode_home() / "v2" / "credentials.json")
+    # ZCode may encrypt this OAuth value at rest. The encrypted form is not an
+    # API credential that this small read-only helper can safely reuse.
+    add(credentials.get("oauth:zai:access_token"), configured_host or "https://api.z.ai")
+    return candidates
+
+
+def z_ai_quota_url(base: str) -> Optional[str]:
+    quota_path = "/api/monitor/usage/quota/limit"
+    override = clean_string(os.environ.get("Z_AI_QUOTA_URL"))
+    if override:
+        return https_endpoint(override, quota_path)
+
+    host_override = clean_string(os.environ.get("Z_AI_API_HOST"))
+    return https_endpoint(https_origin(host_override or base) or "", quota_path)
+
+
+def zai_duration_minutes(unit: Any, amount: Any) -> Optional[int]:
+    unit_number = number(unit)
+    unit_text = str(unit).strip().lower() if unit is not None else ""
+    multipliers = {
+        "minute": 1,
+        "minutes": 1,
+        "min": 1,
+        "hour": 60,
+        "hours": 60,
+        "hr": 60,
+        "day": 24 * 60,
+        "days": 24 * 60,
+        "week": 7 * 24 * 60,
+        "weeks": 7 * 24 * 60,
+        "month": 30 * 24 * 60,
+        "months": 30 * 24 * 60,
+    }
+    if unit_number is not None:
+        numeric_units = {
+            1: 24 * 60,
+            3: 60,
+            5: 30 * 24 * 60,
+            6: 7 * 24 * 60,
+        }
+        multiplier = numeric_units.get(int(unit_number))
+    else:
+        multiplier = multipliers.get(unit_text)
+    amount_number = number(amount)
+    if multiplier is None or amount_number is None or amount_number <= 0:
+        return None
+    return max(1, round(multiplier * amount_number))
+
+
+def usage_window_label(minutes: Optional[int], fallback: str = "Usage") -> str:
+    if minutes == 5 * 60:
+        return "5h"
+    if minutes is not None and minutes >= 7 * 24 * 60:
+        return "Weekly"
+    if minutes is None or minutes <= 0:
+        return fallback
+    if minutes % (7 * 24 * 60) == 0:
+        return f"{minutes // (7 * 24 * 60)}w"
+    if minutes % (24 * 60) == 0:
+        return f"{minutes // (24 * 60)}d"
+    if minutes % 60 == 0:
+        return f"{minutes // 60}h"
+    return f"{minutes}m"
+
+
+def zai_remaining_percent(limit: dict[str, Any]) -> Optional[float]:
+    total_number = number(limit.get("usage"))
+    if total_number is None:
+        total_number = number(limit.get("limit"))
+    if total_number is None:
+        total_number = number(limit.get("total"))
+    current = number(limit.get("currentValue"))
+    remaining = number(limit.get("remaining"))
+    if total_number is not None and total_number > 0:
+        if remaining is not None:
+            return max(0, min(100, remaining / total_number * 100))
+        if current is not None:
+            return max(0, min(100, 100 - current / total_number * 100))
+
+    # `percentage` is the used percentage in the z.ai response.
+    used_percent = number(limit.get("percentage"))
+    if used_percent is not None:
+        return max(0, min(100, 100 - used_percent))
+    return None
+
+
+def zai_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return []
+    limits = data.get("limits")
+    if not isinstance(limits, list):
+        return []
+
+    token_by_duration: dict[int, dict[str, Any]] = {}
+    token_without_duration: list[dict[str, Any]] = []
+    time_limits: list[dict[str, Any]] = []
+    for index, limit in enumerate(limits):
+        if not isinstance(limit, dict):
+            continue
+        limit_type = str(limit.get("type") or "").upper()
+        if limit_type not in ("TOKENS_LIMIT", "CREDIT_LIMIT", "TIME_LIMIT"):
+            continue
+        remaining = zai_remaining_percent(limit)
+        if remaining is None:
+            continue
+        minutes = zai_duration_minutes(limit.get("unit"), limit.get("number"))
+        item = {
+            "id": f"zai_{limit_type.lower()}_{index}",
+            "label": "MCP" if limit_type == "TIME_LIMIT" else usage_window_label(minutes, "Usage"),
+            "remainingPercent": remaining,
+            "resetAt": timestamp(limit.get("nextResetTime")),
+            "minutes": minutes,
+        }
+        if limit_type == "TIME_LIMIT":
+            time_limits.append(item)
+        elif minutes is None:
+            token_without_duration.append(item)
+        else:
+            previous = token_by_duration.get(minutes)
+            if previous is None or item["remainingPercent"] < previous["remainingPercent"]:
+                token_by_duration[minutes] = item
+
+    windows = [token_by_duration[key] for key in sorted(token_by_duration)]
+    if len(windows) > 2:
+        windows = [windows[0], windows[-1]]
+    if not windows and token_without_duration:
+        windows = token_without_duration[:1]
+    if not windows and time_limits:
+        # TIME_LIMIT is the separate MCP/search lane. Keep the label explicit
+        # rather than presenting it as a coding-plan weekly window.
+        windows = [time_limits[0]]
+
+    for window in windows:
+        window.pop("minutes", None)
+    return windows
+
+
+def fetch_zai() -> None:
+    candidates = z_ai_candidate_credentials()
+    if not candidates:
+        emit("zai", error="z.ai API credentials unavailable")
+        return
+
+    last_status = 0
+    for token, base in candidates:
+        url = z_ai_quota_url(base)
+        if not url:
+            continue
+        status, payload = request_json(
+            url,
+            {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+                "User-Agent": "quickshell-usage-widget",
+            },
+        )
+        last_status = status
+        if not payload:
+            continue
+        windows = zai_windows(payload)
+        if not windows:
+            continue
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        plan = first_string(
+            data.get("planName"),
+            data.get("plan"),
+            data.get("plan_type"),
+            data.get("packageName"),
+            data.get("level"),
+        ) or ""
+        emit("zai", plan_type=plan, windows=windows)
+        return
+
+    if last_status in (401, 403):
+        emit("zai", error="z.ai credentials rejected")
+    elif last_status == 0:
+        emit("zai", error="z.ai usage unavailable")
+    else:
+        emit("zai", error="No active z.ai Coding Plan")
+
+
+def kimi_home() -> Path:
+    return Path(os.environ.get("KIMI_CODE_HOME", str(Path.home() / ".kimi-code"))).expanduser()
+
+
+def kimi_native_credentials() -> tuple[Optional[str], str]:
+    credentials = read_json_file(kimi_home() / "credentials" / "kimi-code.json")
+    token = clean_string(credentials.get("access_token"))
+    if not token:
+        return None, "missing"
+    expires_at = timestamp(credentials.get("expires_at"))
+    if expires_at is None or expires_at <= time.time() + 60:
+        return None, "expired"
+    return token, "native"
+
+
+def safe_header(value: Any, fallback: str = "unknown") -> str:
+    text = str(value or "")
+    ascii_text = "".join(character for character in text if 0x20 <= ord(character) <= 0x7E).strip()
+    return ascii_text or fallback
+
+
+def kimi_identity_headers() -> dict[str, str]:
+    headers = {
+        "User-Agent": "quickshell-usage-widget",
+        "X-Msh-Platform": "kimi_code_cli",
+        "X-Msh-Version": safe_header(os.environ.get("KIMI_CODE_VERSION")),
+        "X-Msh-Device-Name": safe_header(socket.gethostname()),
+        "X-Msh-Device-Model": safe_header(f"{platform.system()} {platform.machine()}"),
+        "X-Msh-Os-Version": safe_header(platform.release()),
+    }
+    try:
+        device_id = (kimi_home() / "device_id").read_text(encoding="utf-8").strip()
+    except OSError:
+        device_id = ""
+    if device_id:
+        headers["X-Msh-Device-Id"] = safe_header(device_id)
+    return headers
+
+
+def kimi_code_endpoint() -> Optional[str]:
+    raw = clean_string(os.environ.get("KIMI_CODE_BASE_URL")) or "https://api.kimi.com"
+    value = raw if "://" in raw else f"https://{raw}"
+    parsed = urlparse(value)
+    if parsed.scheme.lower() != "https" or not parsed.netloc or parsed.username or parsed.password:
+        return None
+    base_path = parsed.path.rstrip("/")
+    if base_path.endswith("/coding/v1"):
+        endpoint_path = f"{base_path}/usages"
+    elif base_path.endswith("/coding"):
+        endpoint_path = f"{base_path}/v1/usages"
+    else:
+        endpoint_path = f"{base_path}/coding/v1/usages" if base_path else "/coding/v1/usages"
+    return urlunparse(parsed._replace(path=endpoint_path))
+
+
+def kimi_duration_minutes(window: Any) -> Optional[int]:
+    if not isinstance(window, dict):
+        return None
+    duration = number(window.get("duration"))
+    unit = str(window.get("timeUnit") or window.get("unit") or "").lower()
+    if duration is None or duration <= 0:
+        return None
+    if "minute" in unit or unit in ("m", "min"):
+        multiplier = 1
+    elif "hour" in unit or unit in ("h", "hr"):
+        multiplier = 60
+    elif "day" in unit or unit == "d":
+        multiplier = 24 * 60
+    elif "week" in unit or unit == "w":
+        multiplier = 7 * 24 * 60
+    else:
+        return None
+    return max(1, round(duration * multiplier))
+
+
+def kimi_detail_window(detail: Any, window_id: str, label: str) -> Optional[dict[str, Any]]:
+    if not isinstance(detail, dict):
+        return None
+    limit = number(detail.get("limit"))
+    if limit is None or limit <= 0:
+        return None
+    remaining = number(detail.get("remaining"))
+    used = number(detail.get("used"))
+    if remaining is not None:
+        remaining_percent = remaining / limit * 100
+    elif used is not None:
+        remaining_percent = 100 - used / limit * 100
+    else:
+        return None
+    return {
+        "id": window_id,
+        "label": label,
+        "remainingPercent": max(0, min(100, remaining_percent)),
+        "resetAt": timestamp(first_string(
+            detail.get("resetTime"),
+            detail.get("resetAt"),
+            detail.get("reset_time"),
+            detail.get("reset_at"),
+        )),
+    }
+
+
+def kimi_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    weekly_detail = payload.get("usage")
+    rate_limits = payload.get("limits")
+    if not isinstance(weekly_detail, dict):
+        usages = payload.get("usages")
+        coding_usage = next(
+            (
+                usage for usage in usages
+                if isinstance(usage, dict) and usage.get("scope") == "FEATURE_CODING"
+            ),
+            None,
+        ) if isinstance(usages, list) else None
+        if isinstance(coding_usage, dict):
+            weekly_detail = coding_usage.get("detail")
+            rate_limits = coding_usage.get("limits")
+
+    weekly = kimi_detail_window(weekly_detail, "weekly", "Weekly")
+    candidates: list[tuple[int, int, dict[str, Any]]] = []
+    if isinstance(rate_limits, list):
+        for index, rate_limit in enumerate(rate_limits):
+            if not isinstance(rate_limit, dict):
+                continue
+            minutes = kimi_duration_minutes(rate_limit.get("window"))
+            detail = rate_limit.get("detail")
+            if minutes is None:
+                continue
+            label = usage_window_label(minutes, "Rate limit")
+            rate_window = kimi_detail_window(detail, "five_hour" if minutes == 5 * 60 else f"rate_{index}", label)
+            if rate_window:
+                candidates.append((minutes, index, rate_window))
+
+    windows: list[dict[str, Any]] = []
+    if candidates:
+        candidates.sort(key=lambda item: (item[0], item[1]))
+        windows.append(candidates[0][2])
+    if weekly:
+        windows.append(weekly)
+    return windows
+
+
+def fetch_kimi() -> None:
+    api_key = clean_string(os.environ.get("KIMI_CODE_API_KEY"))
+    token = api_key
+    source = "api-key" if api_key else ""
+    if not token:
+        if clean_string(os.environ.get("KIMI_CODE_BASE_URL")):
+            emit("kimi", error="Kimi Code API key required for a custom endpoint")
+            return
+        token, source = kimi_native_credentials()
+    if not token:
+        message = "Kimi Code credentials expired" if source == "expired" else "Kimi Code credentials unavailable"
+        emit("kimi", error=message)
+        return
+
+    endpoint = kimi_code_endpoint()
+    if not endpoint:
+        emit("kimi", error="Kimi Code endpoint must use HTTPS")
+        return
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+    }
+    if source == "native":
+        headers.update(kimi_identity_headers())
+
+    status, payload = request_json(endpoint, headers)
+    if status in (401, 403):
+        emit("kimi", error="Kimi Code credentials rejected")
+        return
+    if not payload:
+        emit("kimi", error="Kimi Code usage unavailable")
+        return
+    windows = kimi_windows(payload)
+    if not windows:
+        emit("kimi", error="Kimi Code response had no usage limits")
+        return
+    usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
+    plan = first_string(payload.get("plan"), payload.get("planName"), usage.get("planName")) or ""
+    emit("kimi", plan_type=plan, windows=windows)
 
 
 def native_claude_credentials() -> tuple[Optional[str], str]:
@@ -491,6 +972,10 @@ def main() -> None:
         fetch_claude()
     elif provider == "antigravity":
         fetch_antigravity()
+    elif provider == "zai":
+        fetch_zai()
+    elif provider == "kimi":
+        fetch_kimi()
     else:
         emit(provider or "unknown", error="Unknown usage provider")
 

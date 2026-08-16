@@ -77,7 +77,7 @@ ContentPage {
     }
 
     function setUsageProvider(providerId, enabled) {
-        let providers = (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).slice()
+        let providers = (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).slice()
         if (enabled) {
             if (!providers.includes(providerId))
                 providers.push(providerId)
@@ -225,7 +225,7 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Codex")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).includes("codex")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("codex")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -240,7 +240,7 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Claude Code")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).includes("claude")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("claude")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -255,13 +255,43 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Antigravity")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).includes("antigravity")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("antigravity")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
                         onCheckedChanged: {
                             if (switchReady)
                                 page.setUsageProvider("antigravity", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "zai-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("GLM (z.ai)")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("zai")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("zai", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "kimi-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Kimi Code")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("kimi")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("kimi", checked)
                         }
                     }
                 }

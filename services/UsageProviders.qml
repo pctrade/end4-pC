@@ -31,9 +31,23 @@ Singleton {
             service: AntigravityUsageService,
             url: "https://antigravity.google/",
         },
+        {
+            id: "zai",
+            name: Translation.tr("GLM (z.ai)"),
+            icon: "zai-symbolic",
+            service: ZaiUsageService,
+            url: "https://z.ai/manage-apikey/coding-plan/personal/my-plan",
+        },
+        {
+            id: "kimi",
+            name: Translation.tr("Kimi Code"),
+            icon: "kimi-symbolic",
+            service: KimiUsageService,
+            url: "https://www.kimi.com/code/console",
+        },
     ]
 
-    readonly property var selectedProviderIds: Config.options?.bar?.usageProviders ?? ["codex", "claude", "antigravity"]
+    readonly property var selectedProviderIds: Config.options?.bar?.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]
     readonly property var activeProviders: definitions.filter(provider =>
         root.selectedProviderIds.includes(provider.id))
 }
