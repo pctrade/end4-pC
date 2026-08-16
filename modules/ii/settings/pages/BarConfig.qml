@@ -50,7 +50,7 @@ ContentPage {
         { id: "activeWindow",      name: Translation.tr("Active Window"),        icon: "subtitles" },
         { id: "powerButton",       name: Translation.tr("Power Button"),         icon: "power_settings_new" },
         { id: "updatesCount",      name: Translation.tr("Updates"),              icon: "deployed_code_update" },
-        { id: "codexUsage",        name: Translation.tr("Codex Usage"),           icon: "", iconSource: "openai-symbolic" },
+        { id: "codexUsage",        name: Translation.tr("AI Usage"),              icon: "data_usage" },
         { id: "docktoPanel",       name: Translation.tr("Dock to Panel"),        icon: "apps" },
         { id: "visualizer",        name: Translation.tr("Visualizer"),           icon: "graphic_eq" },
         { id: "hyprlandXkbIndicator",   name: Translation.tr("Keyboard Layout"), icon: "keyboard" },
@@ -74,6 +74,17 @@ ContentPage {
     function getWidgetName(id) {
         const w = allWidgets.find(w => w.id === id)
         return w ? w.name : id
+    }
+
+    function setUsageProvider(providerId, enabled) {
+        let providers = (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).slice()
+        if (enabled) {
+            if (!providers.includes(providerId))
+                providers.push(providerId)
+        } else {
+            providers = providers.filter(id => id !== providerId)
+        }
+        Config.options.bar.usageProviders = providers
     }
 
     ColumnLayout {
@@ -196,6 +207,63 @@ ContentPage {
                     availableWidgets: page.availableFor()
                     getWidgetName: page.getWidgetName
                     onUpdate: list => Config.options.bar.layouts.rightLayout = list
+                }
+            }
+        }
+
+        ContentSection {
+            icon: "data_usage"
+            shape: MaterialShape.Shape.SoftBurst
+            title: Translation.tr("AI usage widget")
+
+            ContentSubsection {
+                title: Translation.tr("Show remaining usage for")
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIconSource: "openai-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Codex")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).includes("codex")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("codex", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "claude-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Claude Code")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).includes("claude")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("claude", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "antigravity-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Antigravity")
+                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity"]).includes("antigravity")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("antigravity", checked)
+                        }
+                    }
                 }
             }
         }

@@ -27,6 +27,12 @@ Singleton {
 
     readonly property bool available: weeklyRemainingPercent >= 0
     readonly property bool weeklyWindowKnown: windowDurationMins >= weeklyWindowMinutes
+    // Common provider shape used by the multi-provider usage widget.
+    readonly property int remainingPercent: weeklyRemainingPercent
+    readonly property int resetAt: weeklyResetsAt
+    readonly property var windows: weeklyRemainingPercent >= 0
+        ? [{ id: "weekly", label: "Weekly", remainingPercent: weeklyRemainingPercent, resetAt: weeklyResetsAt }]
+        : []
     readonly property string resetText: formatReset(weeklyResetsAt, clockSeconds)
 
     function formatReset(timestamp, now) {
