@@ -216,9 +216,6 @@ ContentPage {
             shape: MaterialShape.Shape.SoftBurst
             title: Translation.tr("AI usage widget")
 
-            ContentSubsection {
-                title: Translation.tr("Show remaining usage for")
-
                 GroupedList {
                     ConfigSwitch {
                         buttonIconSource: "openai-symbolic"
@@ -295,7 +292,6 @@ ContentPage {
                         }
                     }
                 }
-            }
         }
 
         ContentSection {
