@@ -169,7 +169,7 @@ Singleton {
                 property JsonObject decoration: JsonObject {
                     property int rounding: 22
                     property real activeOpacity: 1.0
-                    property real inactiveOpacity: 0.9
+                    property real inactiveOpacity: 1.0
                     property JsonObject blur: JsonObject {
                         property bool enabled: true
                         property int size: 1

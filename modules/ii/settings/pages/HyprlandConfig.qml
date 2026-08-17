@@ -36,30 +36,32 @@ ContentPage {
         }
     }
 
-    Component.onCompleted: {
-        const h = Config.options.hyprland
-        HyprlandConfig.setMany({
-            "decoration:rounding":                  h.decoration.rounding,
-            "decoration:blur:enabled":              h.decoration.blur.enabled ? 1 : 0,
-            "decoration:blur:size":                 h.decoration.blur.size,
-            "decoration:blur:passes":               h.decoration.blur.passes,
-            "decoration:active_opacity":            h.decoration.activeOpacity,
-            "decoration:inactive_opacity":          h.decoration.inactiveOpacity,
-            "general:border_size":                  h.general.borderSize,
-            "general:gaps_in":                      h.general.gapsIn,
-            "general:gaps_out":                     h.general.gapsOut,
-            "general:layout":                       h.general.layout,
-            "animations:enabled":                   h.animations.enable ? 1 : 0,
-            "input:kb_layout":                      h.input.kbLayout,
-            "input:numlock_by_default":             h.input.numlock ? 1 : 0,
-            "input:repeat_delay":                   h.input.repeatDelay,
-            "input:repeat_rate":                    h.input.repeatRate,
-            "input:follow_mouse":                   h.input.followMouse,
-            "input:touchpad:natural_scroll":        h.input.touchpad.naturalScroll ? 1 : 0,
-            "input:touchpad:disable_while_typing":  h.input.touchpad.disableWhileTyping ? 1 : 0,
-            "input:touchpad:clickfinger_behavior":  h.input.touchpad.clickfingerBehavior ? 1 : 0,
-            "input:touchpad:scroll_factor":         h.input.touchpad.scrollFactor
-        })
+    HyprlandConfigOption {
+        id: activeOpacityOpt
+        key: "decoration:active_opacity"
+        onValueChanged: {
+            if (value !== undefined && value !== null) {
+                const num = parseFloat(value)
+                if (!isNaN(num) && num > 0) {
+                    activeOpacitySlider.value = Math.round(num * 100)
+                    Config.options.hyprland.decoration.activeOpacity = num
+                }
+            }
+        }
+    }
+
+    HyprlandConfigOption {
+        id: inactiveOpacityOpt
+        key: "decoration:inactive_opacity"
+        onValueChanged: {
+            if (value !== undefined && value !== null) {
+                const num = parseFloat(value)
+                if (!isNaN(num) && num > 0) {
+                    inactiveOpacitySlider.value = Math.round(num * 100)
+                    Config.options.hyprland.decoration.inactiveOpacity = num
+                }
+            }
+        }
     }
     MonitorConfigOption { id: monitorConfig }
 
@@ -424,29 +426,51 @@ ContentPage {
                     }
                 }
 
-                ConfigSpinBox {
-                    icon: "opacity"
+                ConfigSlider {
+                    id: activeOpacitySlider
+                    buttonIcon: "opacity"
                     text: Translation.tr("Active Opacity")
                     value: Math.round(Config.options.hyprland.decoration.activeOpacity * 100)
-                    from: 10; to: 100; stepSize: 5
+                    from: 10
+                    to: 100
+                    usePercentTooltip: true
+                    stopIndicatorValues: [100]
                     onValueChanged: {
-                        const newVal = value / 100.0
-                        if (newVal === Config.options.hyprland.decoration.activeOpacity) return
-                        Config.options.hyprland.decoration.activeOpacity = newVal
-                        HyprlandConfig.set("decoration:active_opacity", newVal)
+                        activeOpacityDebounceTimer.restart()
+                    }
+                    Timer {
+                        id: activeOpacityDebounceTimer
+                        interval: 100
+                        onTriggered: {
+                            const newVal = activeOpacitySlider.value / 100.0
+                            if (newVal === Config.options.hyprland.decoration.activeOpacity) return
+                            Config.options.hyprland.decoration.activeOpacity = newVal
+                            HyprlandConfig.set("decoration:active_opacity", newVal)
+                        }
                     }
                 }
 
-                ConfigSpinBox {
-                    icon: "opacity"
+                ConfigSlider {
+                    id: inactiveOpacitySlider
+                    buttonIcon: "opacity"
                     text: Translation.tr("Inactive Opacity")
                     value: Math.round(Config.options.hyprland.decoration.inactiveOpacity * 100)
-                    from: 10; to: 100; stepSize: 5
+                    from: 10
+                    to: 100
+                    usePercentTooltip: true
+                    stopIndicatorValues: [100]
                     onValueChanged: {
-                        const newVal = value / 100.0
-                        if (newVal === Config.options.hyprland.decoration.inactiveOpacity) return
-                        Config.options.hyprland.decoration.inactiveOpacity = newVal
-                        HyprlandConfig.set("decoration:inactive_opacity", newVal)
+                        inactiveOpacityDebounceTimer.restart()
+                    }
+                    Timer {
+                        id: inactiveOpacityDebounceTimer
+                        interval: 100
+                        onTriggered: {
+                            const newVal = inactiveOpacitySlider.value / 100.0
+                            if (newVal === Config.options.hyprland.decoration.inactiveOpacity) return
+                            Config.options.hyprland.decoration.inactiveOpacity = newVal
+                            HyprlandConfig.set("decoration:inactive_opacity", newVal)
+                        }
                     }
                 }
             }
