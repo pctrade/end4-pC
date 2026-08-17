@@ -97,12 +97,6 @@ MouseArea {
         return provider.service.formatReset(Number(window.resetAt), provider.service.clockSeconds)
     }
 
-    onClicked: {
-        const provider = root.providers.find(entry => entry.service.available) ?? root.providers[0]
-        if (provider?.url)
-            Quickshell.execDetached(["xdg-open", provider.url])
-    }
-
     Loader {
         id: contentLoader
         anchors.centerIn: parent
