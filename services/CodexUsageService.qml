@@ -11,7 +11,8 @@ Singleton {
     id: root
 
     readonly property int weeklyWindowMinutes: 7 * 24 * 60
-    readonly property string codexBinary: Quickshell.env("CODEX_CLI_PATH") || "codex"
+    readonly property string usageHelper: Quickshell.shellPath("scripts/codex-usage.py")
+    readonly property string pythonBinary: Quickshell.env("PYTHON3") || "python3"
     readonly property bool enabled: Config.ready
         && (Config.options?.bar?.usageProviders ?? []).includes("codex")
 
@@ -22,21 +23,15 @@ Singleton {
     property string planType: ""
     property string error: ""
     property bool loading: false
-    property bool initialized: false
-    property bool requestInFlight: false
-    property bool pendingRefresh: false
-    property int nextRequestId: 10
-    property int pendingRequestId: -1
+    property var windows: []
     property int clockSeconds: Math.floor(Date.now() / 1000)
 
     readonly property bool available: weeklyRemainingPercent >= 0
     readonly property bool weeklyWindowKnown: windowDurationMins >= weeklyWindowMinutes
     // Common provider shape used by the multi-provider usage widget.
+    readonly property bool processRunning: UsageProcessWatcher.runningProviders.codex === true
     readonly property int remainingPercent: weeklyRemainingPercent
     readonly property int resetAt: weeklyResetsAt
-    readonly property var windows: weeklyRemainingPercent >= 0
-        ? [{ id: "weekly", label: "Weekly", remainingPercent: weeklyRemainingPercent, resetAt: weeklyResetsAt }]
-        : []
     readonly property string resetText: formatReset(weeklyResetsAt, clockSeconds)
 
     function formatReset(timestamp, now) {
@@ -57,166 +52,139 @@ Singleton {
         return "<1m"
     }
 
-    function refresh() {
-        if (!root.enabled) {
-            root.pendingRefresh = false
-            return
-        }
-
-        root.pendingRefresh = true
-
-        if (!appServer.running) {
-            appServer.running = true
-            return
-        }
-
-        if (!root.initialized || root.requestInFlight)
-            return
-
-        requestRateLimits()
+    function unavailable(message) {
+        root.weeklyUsedPercent = -1
+        root.weeklyRemainingPercent = -1
+        root.weeklyResetsAt = 0
+        root.windowDurationMins = 0
+        root.windows = []
+        root.loading = false
+        root.error = message
     }
 
-    function requestRateLimits() {
-        if (!appServer.running || !root.initialized || root.requestInFlight)
-            return
+    function applySnapshot(result, persist = false) {
+        const parsedWindows = Array.isArray(result?.windows)
+            ? result.windows
+                .map(window => ({
+                    id: String(window?.id ?? "usage"),
+                    label: String(window?.label ?? "Usage"),
+                    remainingPercent: Math.max(0, Math.min(100, Math.round(Number(window?.remainingPercent ?? -1)))),
+                    resetAt: Number(window?.resetAt ?? 0),
+                    windowDurationMins: Number(window?.windowDurationMins ?? 0),
+                }))
+                .filter(window => window.remainingPercent >= 0)
+            : []
 
-        const requestId = root.nextRequestId++
-        root.pendingRequestId = requestId
-        root.pendingRefresh = false
-        root.requestInFlight = true
-        root.loading = true
-        root.error = ""
+        const weeklyWindow = parsedWindows.find(window =>
+            window.windowDurationMins >= root.weeklyWindowMinutes
+        )
+        const selectedWindow = weeklyWindow ?? (parsedWindows.length === 1 ? parsedWindows[0] : null)
+        if (!selectedWindow)
+            return false
 
-        appServer.write(JSON.stringify({
-            method: "account/rateLimits/read",
-            id: requestId,
-            params: null,
-        }) + "\n")
-    }
-
-    function handleLine(line) {
-        const trimmed = line.trim()
-        if (trimmed.length === 0)
-            return
-
-        let message
-        try {
-            message = JSON.parse(trimmed)
-        } catch (e) {
-            return
-        }
-
-        if (message.id === 1) {
-            if (message.error) {
-                root.error = message.error.message ?? "Codex app-server initialization failed"
-                root.loading = false
-                return
-            }
-
-            root.initialized = true
-            appServer.write(JSON.stringify({ method: "initialized", params: {} }) + "\n")
-            if (root.pendingRefresh)
-                requestRateLimits()
-            return
-        }
-
-        if (message.id !== root.pendingRequestId)
-            return
-
-        root.requestInFlight = false
+        root.windows = parsedWindows
+        root.weeklyRemainingPercent = selectedWindow.remainingPercent
+        root.weeklyUsedPercent = 100 - selectedWindow.remainingPercent
+        root.weeklyResetsAt = selectedWindow.resetAt
+        root.windowDurationMins = selectedWindow.windowDurationMins
+        root.planType = String(result?.planType ?? "")
+        root.error = String(result?.error ?? "")
         root.loading = false
 
-        if (message.error) {
-            root.error = message.error.message ?? "Unable to read Codex usage"
-            return
+        if (persist) {
+            root.clockSeconds = Math.floor(Date.now() / 1000)
+            UsageCache.save("codex", {
+                windows: result?.windows ?? parsedWindows,
+                remainingPercent: root.weeklyRemainingPercent,
+                resetAt: root.weeklyResetsAt,
+                planType: root.planType,
+            })
         }
-
-        applyRateLimitResponse(message.result)
+        return true
     }
 
-    function applyRateLimitResponse(result) {
-        const snapshot = result?.rateLimitsByLimitId?.codex ?? result?.rateLimits
-        if (!snapshot) {
-            root.error = "Codex did not return a usage limit"
-            return
-        }
-
-        const windows = [snapshot.primary, snapshot.secondary]
-            .filter(window => window !== null && window !== undefined)
-        const weeklyWindow = windows.find(window =>
-            Number(window.windowDurationMins) >= root.weeklyWindowMinutes
-        ) ?? (windows.length === 1 ? windows[0] : snapshot.primary)
-
-        if (!weeklyWindow) {
-            root.error = "Codex weekly usage is unavailable"
-            return
-        }
-
-        const used = Math.max(0, Math.min(100, Number(weeklyWindow.usedPercent) || 0))
-        root.weeklyUsedPercent = used
-        root.weeklyRemainingPercent = 100 - used
-        root.weeklyResetsAt = Number(weeklyWindow.resetsAt) || 0
-        root.windowDurationMins = Number(weeklyWindow.windowDurationMins) || 0
-        root.planType = snapshot.planType ?? ""
-        root.clockSeconds = Math.floor(Date.now() / 1000)
-        root.error = ""
+    function loadCachedUsage() {
+        const cached = UsageCache.snapshot("codex", root.clockSeconds)
+        return cached ? root.applySnapshot(cached) : false
     }
 
-    Process {
-        id: appServer
-        command: [root.codexBinary, "app-server", "--stdio"]
-        stdinEnabled: true
+    function expireCurrentUsage() {
+        root.loadCachedUsage()
+    }
 
-        stdout: SplitParser {
-            onRead: line => root.handleLine(line)
+    function applyUnavailable(message) {
+        if (!root.available && !root.loadCachedUsage())
+            root.unavailable(message)
+        else {
+            root.error = message
+            root.loading = false
+        }
+    }
+
+    function applyResult(rawText) {
+        const trimmed = rawText.trim()
+        if (trimmed.length === 0) {
+            root.applyUnavailable("Codex usage unavailable")
+            return
         }
 
-        stderr: SplitParser {
-            onRead: line => {
-                if (line.trim().length > 0)
-                    root.error = line.trim()
-            }
+        let result
+        try {
+            result = JSON.parse(trimmed)
+        } catch (e) {
+            root.applyUnavailable("Codex usage response was invalid")
+            return
         }
 
-        onRunningChanged: {
-            if (!running) {
-                root.initialized = false
-                root.requestInFlight = false
-                root.loading = false
-                if (root.pendingRefresh && root.enabled)
-                    retryTimer.restart()
-                return
-            }
+        if (!root.applySnapshot(result, true))
+            root.applyUnavailable(String(result.error ?? "Codex weekly usage is unavailable"))
+    }
 
-            root.initialized = false
-            root.requestInFlight = false
-            root.loading = true
-            write(JSON.stringify({
-                method: "initialize",
-                id: 1,
-                params: {
-                    clientInfo: {
-                        name: "quickshell-codex-usage",
-                        version: "1.0",
-                    },
-                    capabilities: { experimentalApi: true },
-                },
-            }) + "\n")
+    function refresh() {
+        if (!root.enabled || !root.processRunning)
+            return
+
+        if (usageProcess.running) {
+            usageProcess.running = false
+            Qt.callLater(() => usageProcess.running = true)
+        } else {
+            usageProcess.running = true
         }
+        root.loading = true
+    }
+
+    function scheduleDetectedRefresh() {
+        if (root.enabled && root.processRunning)
+            detectedRefreshTimer.restart()
+        else
+            detectedRefreshTimer.stop()
     }
 
     Timer {
-        id: refreshTimer
-        interval: 5 * 60 * 1000
-        repeat: true
-        running: root.enabled
+        id: detectedRefreshTimer
+        interval: 5 * 1000
+        repeat: false
         onTriggered: root.refresh()
     }
 
+    Process {
+        id: usageProcess
+        command: [root.pythonBinary, "-B", root.usageHelper]
+
+        stdout: StdioCollector {
+            onStreamFinished: root.applyResult(text)
+        }
+
+        onRunningChanged: {
+            if (running)
+                root.loading = true
+        }
+    }
+
     Timer {
-        id: retryTimer
-        interval: 30 * 1000
-        repeat: false
+        interval: 5 * 60 * 1000
+        repeat: true
+        running: root.enabled && root.processRunning
         onTriggered: root.refresh()
     }
 
@@ -224,27 +192,56 @@ Singleton {
         interval: 60 * 1000
         repeat: true
         running: root.enabled
-        onTriggered: root.clockSeconds = Math.floor(Date.now() / 1000)
+        onTriggered: {
+            root.clockSeconds = Math.floor(Date.now() / 1000)
+            root.expireCurrentUsage()
+        }
     }
 
     onEnabledChanged: {
         if (root.enabled) {
-            Qt.callLater(root.refresh)
+            root.loadCachedUsage()
+            root.scheduleDetectedRefresh()
             return
         }
 
-        root.pendingRefresh = false
-        root.pendingRequestId = -1
-        root.requestInFlight = false
-        root.initialized = false
         root.loading = false
-        retryTimer.stop()
-        if (appServer.running)
-            appServer.running = false
+        if (usageProcess.running)
+            usageProcess.running = false
+    }
+
+    onProcessRunningChanged: {
+        if (root.processRunning) {
+            root.scheduleDetectedRefresh()
+            return
+        }
+
+        detectedRefreshTimer.stop()
+        root.loading = false
+        if (usageProcess.running)
+            usageProcess.running = false
+    }
+
+    Connections {
+        target: Persistent
+
+        function onReadyChanged() {
+            if (Persistent.ready && root.enabled && !root.available)
+                root.loadCachedUsage()
+        }
+    }
+
+    Connections {
+        target: UsageCache
+
+        function onSnapshotUpdated(providerId) {
+            if (providerId === "codex" && root.enabled)
+                root.loadCachedUsage()
+        }
     }
 
     Component.onCompleted: {
         if (root.enabled)
-            Qt.callLater(root.refresh)
+            root.loadCachedUsage()
     }
 }

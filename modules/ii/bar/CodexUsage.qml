@@ -47,10 +47,10 @@ MouseArea {
 
     function providerText(provider) {
         const service = provider.service
-        return service.loading
-            ? "..."
-            : service.available
-                ? `${service.remainingPercent}%`
+        return service.available
+            ? `${service.remainingPercent}%`
+            : service.loading
+                ? "..."
                 : "--"
     }
 
@@ -126,7 +126,7 @@ MouseArea {
                         Layout.preferredWidth: Appearance.font.pixelSize.normal
                         Layout.preferredHeight: Appearance.font.pixelSize.normal
                         source: modelData.icon
-                        colorize: false
+                        colorize: true
                         smooth: true
                         color: root.providerColor(modelData)
                     }
@@ -161,7 +161,7 @@ MouseArea {
                         Layout.preferredWidth: Appearance.font.pixelSize.normal
                         Layout.preferredHeight: Appearance.font.pixelSize.normal
                         source: modelData.icon
-                        colorize: false
+                        colorize: true
                         smooth: true
                         color: root.providerColor(modelData)
                     }
@@ -220,7 +220,7 @@ MouseArea {
                         Layout.preferredWidth: Appearance.font.pixelSize.normal
                         Layout.preferredHeight: Appearance.font.pixelSize.normal
                         source: card.provider.icon
-                        colorize: false
+                        colorize: true
                         smooth: true
                         color: card.valueColor
                     }

@@ -3,8 +3,8 @@
 """Read native Claude Code, Antigravity, z.ai/ZCode, and Kimi Code usage sources.
 
 The QML services call this helper for providers that do not expose a stable
-stdio API. It deliberately emits one small JSON object and never logs the
-credentials or terminal output used to obtain it.
+stdio API. It deliberately emits one small JSON object, never starts a
+provider process, and never logs credentials or terminal output.
 """
 
 from __future__ import annotations
@@ -12,13 +12,9 @@ from __future__ import annotations
 import json
 import os
 import platform
-import pty
 import re
-import select
-import signal
 import socket
 import ssl
-import subprocess
 import sys
 import time
 import urllib.error
@@ -27,6 +23,8 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
+
+from usage_process import antigravity_process_kind, provider_is_running, provider_processes
 
 
 def emit(
@@ -368,6 +366,10 @@ def zai_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def fetch_zai() -> None:
+    if not provider_is_running("zai"):
+        emit("zai", error="z.ai Code is not running")
+        return
+
     candidates = z_ai_candidate_credentials()
     if not candidates:
         emit("zai", error="z.ai API credentials unavailable")
@@ -554,6 +556,10 @@ def kimi_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def fetch_kimi() -> None:
+    if not provider_is_running("kimi"):
+        emit("kimi", error="Kimi Code is not running")
+        return
+
     api_key = clean_string(os.environ.get("KIMI_CODE_API_KEY"))
     token = api_key
     source = "api-key" if api_key else ""
@@ -620,6 +626,10 @@ def native_claude_credentials() -> tuple[Optional[str], str]:
 
 
 def fetch_claude() -> None:
+    if not provider_is_running("claude"):
+        emit("claude", error="Claude Code is not running")
+        return
+
     token, plan = native_claude_credentials()
     if not token:
         emit("claude", error="Native Claude OAuth credentials unavailable")
@@ -681,69 +691,59 @@ def fetch_claude() -> None:
 
 
 def listening_ports(pid: int) -> list[int]:
+    """Return TCP listening ports held by ``pid`` without external tools."""
     try:
-        result = subprocess.run(
-            ["lsof", "-nP", "-a", "-p", str(pid), "-iTCP", "-sTCP:LISTEN"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
+        descriptors = list((Path("/proc") / str(pid) / "fd").iterdir())
+    except OSError:
         return []
-    return sorted({int(port) for port in re.findall(r":(\d+) \(LISTEN\)", result.stdout)})
 
-
-def drain_pty(master: int, seconds: float = 0.15) -> bytes:
-    output = bytearray()
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
+    socket_inodes: set[str] = set()
+    for descriptor in descriptors:
         try:
-            ready, _, _ = select.select([master], [], [], 0.05)
-        except (OSError, ValueError):
-            break
-        if not ready:
-            continue
-        try:
-            chunk = os.read(master, 8192)
+            target = os.readlink(descriptor)
         except OSError:
-            break
-        if not chunk:
-            break
-        output.extend(chunk)
-    return bytes(output)
+            continue
+        match = re.fullmatch(r"socket:\[(\d+)\]", target)
+        if match:
+            socket_inodes.add(match.group(1))
+
+    ports: set[int] = set()
+    for table in (Path("/proc/net/tcp"), Path("/proc/net/tcp6")):
+        try:
+            lines = table.read_text(encoding="utf-8").splitlines()[1:]
+        except OSError:
+            continue
+
+        for line in lines:
+            fields = line.split()
+            if len(fields) < 10 or fields[3] != "0A" or fields[9] not in socket_inodes:
+                continue
+            try:
+                port = int(fields[1].rsplit(":", 1)[1], 16)
+            except (IndexError, ValueError):
+                continue
+            ports.add(port)
+    return sorted(ports)
 
 
-def is_auth_prompt(output: bytes) -> bool:
-    text = output.decode("utf-8", "replace")
-    return bool(re.search(r"select\s+login\s+method|enter\s+login", text, re.IGNORECASE))
-
-
-def antigravity_binary() -> Optional[str]:
-    configured = os.environ.get("ANTIGRAVITY_CLI_PATH", "").strip()
-    if configured:
-        return configured
-    for candidate in ("agy", str(Path.home() / ".local/bin/agy"), "/usr/local/bin/agy"):
-        if os.path.isabs(candidate):
-            if os.access(candidate, os.X_OK):
-                return candidate
-        else:
-            found = next((path for path in os.environ.get("PATH", "").split(os.pathsep)
-                          if os.access(os.path.join(path, candidate), os.X_OK)), None)
-            if found:
-                return os.path.join(found, candidate)
-    return None
-
-
-def local_request(port: int, scheme: str, path: str, body: bytes) -> Optional[dict[str, Any]]:
+def local_request(
+    port: int,
+    scheme: str,
+    path: str,
+    body: bytes,
+    extra_headers: Optional[dict[str, str]] = None,
+) -> Optional[dict[str, Any]]:
+    headers = {
+        "Content-Type": "application/json",
+        "Connect-Protocol-Version": "1",
+    }
+    if extra_headers:
+        headers.update(extra_headers)
     request = urllib.request.Request(
         f"{scheme}://127.0.0.1:{port}{path}",
         data=body,
         method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Connect-Protocol-Version": "1",
-        },
+        headers=headers,
     )
     context = ssl._create_unverified_context() if scheme == "https" else None
     try:
@@ -844,13 +844,26 @@ def quota_summary_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return windows
 
 
-def user_status_value(payload: dict[str, Any]) -> Optional[tuple[float, Optional[float], str]]:
-    user = payload.get("userStatus")
-    if not isinstance(user, dict):
-        return None
-    cascade = user.get("cascadeModelConfigData")
-    configs = cascade.get("clientModelConfigs") if isinstance(cascade, dict) else None
-    if not isinstance(configs, list):
+def antigravity_model_configs(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    roots: list[dict[str, Any]] = [payload]
+    for key in ("response", "userStatus", "cascadeModelConfigData"):
+        value = payload.get(key)
+        if isinstance(value, dict):
+            roots.append(value)
+            nested = value.get("cascadeModelConfigData")
+            if isinstance(nested, dict):
+                roots.append(nested)
+
+    for root in roots:
+        configs = root.get("clientModelConfigs")
+        if isinstance(configs, list):
+            return [config for config in configs if isinstance(config, dict)]
+    return []
+
+
+def model_configs_value(payload: dict[str, Any]) -> Optional[tuple[float, Optional[float], str]]:
+    configs = antigravity_model_configs(payload)
+    if not configs:
         return None
 
     values: list[float] = []
@@ -875,6 +888,9 @@ def user_status_value(payload: dict[str, Any]) -> Optional[tuple[float, Optional
 
     if not values:
         return None
+    user = payload.get("userStatus")
+    if not isinstance(user, dict):
+        user = payload
     tier = user.get("userTier")
     plan = tier.get("name") if isinstance(tier, dict) else None
     if not plan:
@@ -884,86 +900,121 @@ def user_status_value(payload: dict[str, Any]) -> Optional[tuple[float, Optional
     return min(values) * 100, (min(resets) if resets else None), str(plan or "")
 
 
+def option_value(arguments: list[str], *names: str) -> Optional[str]:
+    for index, argument in enumerate(arguments):
+        for name in names:
+            if argument == name and index + 1 < len(arguments):
+                return arguments[index + 1]
+            prefix = f"{name}="
+            if argument.startswith(prefix):
+                return argument[len(prefix) :]
+    return None
+
+
+def option_port(arguments: list[str], *names: str) -> Optional[int]:
+    value = option_value(arguments, *names)
+    parsed = number(value)
+    if parsed is None or not 1 <= parsed <= 65535:
+        return None
+    return int(parsed)
+
+
 def fetch_antigravity() -> None:
-    binary = antigravity_binary()
-    if not binary:
-        emit("antigravity", error="Antigravity CLI unavailable")
+    candidates = provider_processes("antigravity")
+    if not candidates:
+        emit("antigravity", error="Antigravity is not running")
         return
 
-    master = slave = None
-    process = None
-    try:
-        master, slave = pty.openpty()
-        process = subprocess.Popen(
-            [binary],
-            stdin=slave,
-            stdout=slave,
-            stderr=slave,
-            start_new_session=True,
-            close_fds=True,
-        )
-        os.close(slave)
-        slave = None
-        body = json.dumps({
-            "ideName": "antigravity",
-            "extensionName": "antigravity",
-            "locale": "en",
-            "ideVersion": "unknown",
-        }).encode()
-        summary_path = "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary"
-        status_path = "/exa.language_server_pb.LanguageServerService/GetUserStatus"
-        deadline = time.monotonic() + 30
-        last_probe = 0.0
-        recent_output = bytearray()
+    body = json.dumps({
+        "ideName": "antigravity",
+        "extensionName": "antigravity",
+        "locale": "en",
+        "ideVersion": "unknown",
+    }).encode()
+    summary_path = "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary"
+    status_path = "/exa.language_server_pb.LanguageServerService/GetUserStatus"
+    configs_path = "/exa.language_server_pb.LanguageServerService/GetCommandModelConfigs"
+    saw_local_process = False
 
-        while time.monotonic() < deadline and process.poll() is None:
-            recent_output.extend(drain_pty(master, 0.2))
-            if is_auth_prompt(bytes(recent_output[-4096:])):
-                emit("antigravity", error="Antigravity login required")
+    for candidate in candidates:
+        pid = candidate.pid
+        arguments = candidate.arguments
+        kind = antigravity_process_kind(arguments, candidate.executable)
+        if kind is None:
+            continue
+        csrf_token = option_value(arguments, "--csrf_token", "--csrf-token") or ""
+        server_port = option_port(
+            arguments,
+            "--https_server_port",
+            "--https-server-port",
+            "--server_port",
+            "--server-port",
+        )
+        extension_port = option_port(
+            arguments,
+            "--extension_server_port",
+            "--extension-server-port",
+        )
+        extension_csrf = option_value(
+            arguments,
+            "--extension_server_csrf_token",
+            "--extension-server-csrf-token",
+        ) or csrf_token
+        if kind != "cli" and not csrf_token and not extension_csrf:
+            continue
+
+        ports = []
+        if server_port:
+            ports.append((server_port, "https", csrf_token))
+        ports.extend((port, "https", csrf_token) for port in listening_ports(pid))
+        if extension_port:
+            ports.append((extension_port, "http", extension_csrf))
+        if not ports:
+            continue
+        saw_local_process = True
+
+        seen_ports: set[tuple[int, str]] = set()
+        for port, scheme, token in ports:
+            key = (port, scheme)
+            if key in seen_ports:
+                continue
+            seen_ports.add(key)
+            headers = {"X-Codeium-Csrf-Token": token} if token else None
+
+            if kind != "cli":
+                # Desktop language servers require a CSRF-bearing connect
+                # probe before their quota methods accept requests.
+                unleash_path = "/exa.language_server_pb.LanguageServerService/GetUnleashData"
+                if local_request(port, scheme, unleash_path, body, headers) is None:
+                    continue
+
+            summary = local_request(port, scheme, summary_path, body, headers)
+            parsed_windows = quota_summary_windows(summary) if summary else []
+            if parsed_windows:
+                emit("antigravity", windows=parsed_windows)
                 return
 
-            now = time.monotonic()
-            if now - last_probe < 1.5:
-                continue
-            last_probe = now
-            ports = listening_ports(process.pid)
-            for port in ports:
-                for scheme in ("https", "http"):
-                    summary = local_request(port, scheme, summary_path, body)
-                    parsed_windows = quota_summary_windows(summary) if summary else []
-                    if parsed_windows:
-                        emit("antigravity", windows=parsed_windows)
-                        return
+            parsed_summary = quota_summary_value(summary) if summary else None
+            if parsed_summary:
+                emit("antigravity", parsed_summary[0], parsed_summary[1])
+                return
 
-                    parsed_summary = quota_summary_value(summary) if summary else None
-                    if parsed_summary:
-                        emit("antigravity", parsed_summary[0], parsed_summary[1])
-                        return
-                    status = local_request(port, scheme, status_path, body)
-                    parsed_status = user_status_value(status) if status else None
-                    if parsed_status:
-                        emit("antigravity", parsed_status[0], parsed_status[1], parsed_status[2])
-                        return
-    except (OSError, subprocess.SubprocessError):
-        pass
-    finally:
-        if process is not None:
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-                process.wait(timeout=3)
-            except (OSError, subprocess.SubprocessError):
-                try:
-                    process.kill()
-                except OSError:
-                    pass
-        for fd in (master, slave):
-            if fd is not None:
-                try:
-                    os.close(fd)
-                except OSError:
-                    pass
+            status = local_request(port, scheme, status_path, body, headers)
+            parsed_status = model_configs_value(status) if status else None
+            if parsed_status:
+                emit("antigravity", parsed_status[0], parsed_status[1], parsed_status[2])
+                return
 
-    emit("antigravity", error="Antigravity usage unavailable")
+            configs = local_request(port, scheme, configs_path, body, headers)
+            parsed_configs = model_configs_value(configs) if configs else None
+            if parsed_configs:
+                emit("antigravity", parsed_configs[0], parsed_configs[1], parsed_configs[2])
+                return
+
+    if saw_local_process:
+        emit("antigravity", error="Antigravity usage endpoint unavailable")
+    else:
+        emit("antigravity", error="Antigravity local server unavailable")
 
 
 def main() -> None:
