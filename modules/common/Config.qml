@@ -684,6 +684,10 @@ Singleton {
                     property bool enable: true
                     property bool artColors: false
                 }
+                property JsonObject aiUsage: JsonObject {
+                    property bool enable: true
+                    property list<string> providers: ["codex", "claude", "antigravity", "zai", "kimi"]
+                }
                 
                 property JsonObject ai: JsonObject {
                     property bool textFadeIn: false

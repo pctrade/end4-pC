@@ -34,6 +34,18 @@ ContentPage {
         }
     }
 
+    function setSidebarUsageProvider(providerId, enabled) {
+        let providers = (Config.options.sidebar.aiUsage.providers
+            ?? UsageProviderSettings.defaultProviderIds).slice()
+        if (enabled) {
+            if (!providers.includes(providerId))
+                providers.push(providerId)
+        } else {
+            providers = providers.filter(id => id !== providerId)
+        }
+        Config.options.sidebar.aiUsage.providers = providers
+    }
+
     ColumnLayout {
         id: mainLayout 
         Layout.fillWidth: true   
@@ -233,6 +245,49 @@ ContentPage {
                             text: Translation.tr("Enable Translator")
                             checked: Config.options.sidebar.translator.enable
                             onCheckedChanged: { Config.options.sidebar.translator.enable = checked }
+                        }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("AI usage widget")
+                Layout.topMargin: 4
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "data_usage"
+                        text: Translation.tr("Enable")
+                        checked: Config.options.sidebar.aiUsage.enable
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                Config.options.sidebar.aiUsage.enable = checked
+                        }
+                    }
+
+                    Repeater {
+                        model: UsageProviders.definitions
+
+                        delegate: ConfigSwitch {
+                            required property var modelData
+
+                            buttonIconSource: modelData.icon
+                            buttonIconColorize: false
+                            iconSize: Appearance.font.pixelSize.huge
+                            text: modelData.name
+                            enabled: Config.options.sidebar.aiUsage.enable
+                            checked: (Config.options.sidebar.aiUsage.providers
+                                ?? UsageProviderSettings.defaultProviderIds).includes(modelData.id)
+
+                            property bool switchReady: false
+                            Component.onCompleted: Qt.callLater(() => switchReady = true)
+                            onCheckedChanged: {
+                                if (switchReady)
+                                    page.setSidebarUsageProvider(modelData.id, checked)
+                            }
                         }
                     }
                 }

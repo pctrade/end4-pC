@@ -13,8 +13,7 @@ Singleton {
     readonly property int weeklyWindowMinutes: 7 * 24 * 60
     readonly property string usageHelper: Quickshell.shellPath("scripts/codex-usage.py")
     readonly property string pythonBinary: Quickshell.env("PYTHON3") || "python3"
-    readonly property bool enabled: Config.ready
-        && (Config.options?.bar?.usageProviders ?? []).includes("codex")
+    readonly property bool enabled: Config.ready && UsageProviderSettings.providerEnabled("codex")
 
     property int weeklyUsedPercent: -1
     property int weeklyRemainingPercent: -1

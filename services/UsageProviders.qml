@@ -47,7 +47,11 @@ Singleton {
         },
     ]
 
-    readonly property var selectedProviderIds: Config.options?.bar?.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]
+    readonly property var selectedProviderIds: UsageProviderSettings.barProviderIds
+    readonly property var sidebarProviderIds: UsageProviderSettings.sidebarProviderIds
     readonly property var activeProviders: definitions.filter(provider =>
         root.selectedProviderIds.includes(provider.id))
+    readonly property var sidebarProviders: UsageProviderSettings.sidebarUsageEnabled
+        ? definitions.filter(provider => root.sidebarProviderIds.includes(provider.id))
+        : []
 }

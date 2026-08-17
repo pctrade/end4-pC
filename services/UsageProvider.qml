@@ -10,7 +10,7 @@ Item {
     id: root
 
     property string providerId: ""
-    readonly property bool enabled: (Config.options?.bar?.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes(root.providerId)
+    readonly property bool enabled: UsageProviderSettings.providerEnabled(root.providerId)
 
     property int remainingPercent: -1
     property int resetAt: 0
