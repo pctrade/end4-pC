@@ -4,12 +4,16 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs
+import qs.modules.common
 
 Singleton {
     id: root
 
     readonly property int weeklyWindowMinutes: 7 * 24 * 60
     readonly property string codexBinary: Quickshell.env("CODEX_CLI_PATH") || "codex"
+    readonly property bool enabled: Config.ready
+        && (Config.options?.bar?.usageProviders ?? []).includes("codex")
 
     property int weeklyUsedPercent: -1
     property int weeklyRemainingPercent: -1
@@ -54,6 +58,11 @@ Singleton {
     }
 
     function refresh() {
+        if (!root.enabled) {
+            root.pendingRefresh = false
+            return
+        }
+
         root.pendingRefresh = true
 
         if (!appServer.running) {
@@ -174,7 +183,7 @@ Singleton {
                 root.initialized = false
                 root.requestInFlight = false
                 root.loading = false
-                if (root.pendingRefresh)
+                if (root.pendingRefresh && root.enabled)
                     retryTimer.restart()
                 return
             }
@@ -200,7 +209,7 @@ Singleton {
         id: refreshTimer
         interval: 5 * 60 * 1000
         repeat: true
-        running: true
+        running: root.enabled
         onTriggered: root.refresh()
     }
 
@@ -214,9 +223,28 @@ Singleton {
     Timer {
         interval: 60 * 1000
         repeat: true
-        running: true
+        running: root.enabled
         onTriggered: root.clockSeconds = Math.floor(Date.now() / 1000)
     }
 
-    Component.onCompleted: Qt.callLater(root.refresh)
+    onEnabledChanged: {
+        if (root.enabled) {
+            Qt.callLater(root.refresh)
+            return
+        }
+
+        root.pendingRefresh = false
+        root.pendingRequestId = -1
+        root.requestInFlight = false
+        root.initialized = false
+        root.loading = false
+        retryTimer.stop()
+        if (appServer.running)
+            appServer.running = false
+    }
+
+    Component.onCompleted: {
+        if (root.enabled)
+            Qt.callLater(root.refresh)
+    }
 }
