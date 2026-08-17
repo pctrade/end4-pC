@@ -239,7 +239,7 @@ ContentPage {
                         buttonIconSource: "claude-symbolic"
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
-                        text: Translation.tr("Claude Code")
+                        text: Translation.tr("Claude")
                         checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("claude")
 
                         property bool switchReady: false
@@ -269,7 +269,7 @@ ContentPage {
                         buttonIconSource: "zai-symbolic"
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
-                        text: Translation.tr("GLM (z.ai)")
+                        text: Translation.tr("GLM")
                         checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("zai")
 
                         property bool switchReady: false
@@ -284,7 +284,7 @@ ContentPage {
                         buttonIconSource: "kimi-symbolic"
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
-                        text: Translation.tr("Kimi Code")
+                        text: Translation.tr("Kimi")
                         checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("kimi")
 
                         property bool switchReady: false

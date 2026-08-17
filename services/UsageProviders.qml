@@ -19,7 +19,7 @@ Singleton {
         },
         {
             id: "claude",
-            name: Translation.tr("Claude Code"),
+            name: Translation.tr("Claude"),
             icon: "claude-symbolic",
             service: ClaudeUsageService,
             url: "https://claude.ai/settings/usage",
@@ -33,14 +33,14 @@ Singleton {
         },
         {
             id: "zai",
-            name: Translation.tr("GLM (z.ai)"),
+            name: Translation.tr("GLM"),
             icon: "zai-symbolic",
             service: ZaiUsageService,
             url: "https://z.ai/manage-apikey/coding-plan/personal/my-plan",
         },
         {
             id: "kimi",
-            name: Translation.tr("Kimi Code"),
+            name: Translation.tr("Kimi"),
             icon: "kimi-symbolic",
             service: KimiUsageService,
             url: "https://www.kimi.com/code/console",
