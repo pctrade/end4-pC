@@ -248,7 +248,7 @@ MouseArea {
 
                             StyledText {
                                 text: `${modelData.remainingPercent}%`
-                                font.pixelSize: Appearance.font.pixelSize.large
+                                font.pixelSize: Appearance.font.pixelSize.smaller
                                 font.weight: Font.DemiBold
                                 font.features: { "tnum": 1 }
                                 color: root.windowColor(card.provider, modelData)
