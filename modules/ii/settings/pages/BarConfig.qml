@@ -88,8 +88,8 @@ ContentPage {
     }
 
     ColumnLayout {
-        id: mainLayout 
-        Layout.fillWidth: true   
+        id: mainLayout
+        Layout.fillWidth: true
         Layout.fillHeight: true
         spacing: 20
 
@@ -418,11 +418,11 @@ ContentPage {
             icon: "notifications"
             shape: MaterialShape.Shape.Bun
             title: Translation.tr("Notifications")
-            
+
             GroupedList {
                 ConfigComboBox { // too much items for configselectionarray - I know it's not the best place to put this but I can change it later
                     text: Translation.tr("Popup position")
-                    buttonIcon: "my_location" 
+                    buttonIcon: "my_location"
                     currentValue: Config.options.notifications.position
                     fieldWidth: 50
                     onSelected: newValue => {
