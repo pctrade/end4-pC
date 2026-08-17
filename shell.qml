@@ -7,7 +7,6 @@
 import "modules/common"
 import "services"
 import "panelFamilies"
-import QtQuick
 import QtQuick.Window
 import Quickshell
 import Quickshell.Io
@@ -15,12 +14,6 @@ import Quickshell.Hyprland
 
 ShellRoot {
     id: root
-
-    // Keep Material Symbols with the shell so icon rendering does not depend on
-    // a separately installed system font.
-    FontLoader {
-        source: Qt.resolvedUrl("assets/fonts/MaterialSymbolsRounded.ttf")
-    }
 
     ReloadPopup {}
 
