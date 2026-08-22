@@ -37,6 +37,37 @@ Singleton {
         onExited: root.refresh()
     }
 
+    Process {
+        id: renameProc
+        onExited: root.refresh()
+    }
+
+    function rename(oldName, rawInput, newDescription) {
+        const old = (oldName ?? "").trim()
+        if (old.length === 0) return
+
+        let name = (rawInput ?? "").trim()
+        let description = newDescription
+
+        if (description === undefined) {
+            const commaIndex = name.indexOf(",")
+            if (commaIndex !== -1) {
+                description = name.substring(commaIndex + 1).trim()
+                name = name.substring(0, commaIndex).trim()
+            }
+        }
+
+        name = name.replace(/\s/g, "_")
+        if (name.length === 0) return
+
+        const cmd = ["bash", Directories.presetsScriptPath, "--rename", old, name]
+        if (description !== undefined) {
+            cmd.push(description)
+        }
+        renameProc.command = cmd
+        renameProc.running = true
+    }
+
     function save(rawInput) {
         const raw = rawInput.trim()
         if (raw.length === 0) return

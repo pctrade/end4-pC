@@ -310,6 +310,7 @@ ContentPage {
                         description: presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset")
                         onApply: () => Presets.apply(presetDelegate.presetName)
                         onRemove: () => Presets.remove(presetDelegate.presetName)
+                        onRename: (newName) => Presets.rename(presetDelegate.presetName, newName)
                     }
                 }
             }

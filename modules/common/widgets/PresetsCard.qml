@@ -5,7 +5,6 @@ import Qt5Compat.GraphicalEffects
 import qs
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.common
 import qs.modules.common.functions
 
 Rectangle {
@@ -16,6 +15,29 @@ Rectangle {
     property string description: ""
     property var onApply: () => {}
     property var onRemove: () => {}
+    property var onRename: (newName) => {}
+    property bool isEditing: false
+
+    function startEditing() {
+        editInput.text = root.title
+        root.isEditing = true
+        Qt.callLater(() => {
+            editInput.forceActiveFocus()
+            editInput.selectAll()
+        })
+    }
+
+    function confirmEdit() {
+        const trimmed = editInput.text.trim()
+        if (trimmed.length > 0 && trimmed !== root.title) {
+            root.onRename(trimmed)
+        }
+        root.isEditing = false
+    }
+
+    function cancelEdit() {
+        root.isEditing = false
+    }
 
     implicitWidth: 293 
     implicitHeight: contentColumn.implicitHeight + 14
@@ -35,10 +57,11 @@ Rectangle {
         spacing: 6
 
         // Header
-        RowLayout{
+        RowLayout {
             Layout.leftMargin: 10
             Layout.topMargin: 6
             spacing: 10
+
             MaterialShapeWrappedMaterialSymbol {
                 id: avatarShape
                 shape: MaterialShape.Shape.Circle 
@@ -50,8 +73,12 @@ Rectangle {
                 colSymbol: Appearance.colors.colOnPrimaryContainer
                 Layout.alignment: Qt.AlignVCenter
             }
-            ColumnLayout{
+
+            ColumnLayout {
+                visible: !root.isEditing
+                Layout.fillWidth: true
                 spacing: -4
+
                 StyledText {
                     Layout.fillWidth: true
                     text: root.title
@@ -72,11 +99,113 @@ Rectangle {
                     elide: Text.ElideRight
                 }
             }
-            MaterialSymbol {
-                Layout.alignment: Qt.AlignRight // im a placeholder someday I will do something =P
+
+            Rectangle {
+                visible: root.isEditing
+                Layout.fillWidth: true
+                Layout.preferredHeight: 34
+                Layout.alignment: Qt.AlignVCenter
+                radius: Appearance.rounding.verysmall
+                color: Appearance.colors.colLayer2
+                border.width: editInput.activeFocus ? 2 : 1
+                border.color: editInput.activeFocus ? Appearance.colors.colPrimary : Appearance.colors.colOutlineVariant
+
+                Behavior on border.color {
+                    ColorAnimation { 
+                        duration: Appearance.animation.elementMoveFast.duration 
+                    }
+                }
+
+                StyledTextInput {
+                    id: editInput
+                    anchors.fill: parent
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 8
+                    verticalAlignment: TextInput.AlignVCenter
+                    selectByMouse: true
+                    font.pixelSize: Appearance.font.pixelSize.small
+
+                    Keys.onReturnPressed: root.confirmEdit()
+                    Keys.onEnterPressed: root.confirmEdit()
+                    Keys.onEscapePressed: root.cancelEdit()
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.NoButton
+                        hoverEnabled: true
+                        cursorShape: Qt.IBeamCursor
+                    }
+                }
+            }
+
+            RippleButton {
+                id: editBtn
+                visible: !root.isEditing
+                Layout.alignment: Qt.AlignRight
                 Layout.rightMargin: 12
-                font.pixelSize: Appearance.font.pixelSize.huge
-                text: "more_vert"
+                implicitWidth: 32
+                implicitHeight: 32
+                buttonRadius: height / 2
+                colBackground: "transparent"
+                colBackgroundHover: Appearance.colors.colLayer2Hover
+                colRipple: Appearance.colors.colLayer2Active
+                
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    text: "edit"
+                    iconSize: Appearance.font.pixelSize.large
+                    color: Appearance.colors.colSubtext
+                }
+                onClicked: root.startEditing()
+            }
+
+            RowLayout {
+                visible: root.isEditing
+                Layout.alignment: Qt.AlignRight
+                Layout.rightMargin: 12
+                spacing: 4
+
+                RippleButton {
+                    id: confirmBtn
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    buttonRadius: height / 2
+                    colBackground: Appearance.colors.colPrimaryContainer
+                    colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                    colRipple: Appearance.colors.colPrimaryContainerActive
+
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: "check"
+                        iconSize: Appearance.font.pixelSize.normal
+                        color: Appearance.colors.colOnPrimaryContainer
+                    }
+                    onClicked: root.confirmEdit()
+                }
+
+                RippleButton {
+                    id: cancelBtn
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    buttonRadius: height / 2
+                    colBackground: "transparent"
+                    colBackgroundHover: Appearance.colors.colLayer2Hover
+                    colRipple: Appearance.colors.colLayer2Active
+
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: "close"
+                        iconSize: Appearance.font.pixelSize.normal
+                        color: Appearance.colors.colSubtext
+                    }
+                    onClicked: root.cancelEdit()
+                }
             }
         }
 
@@ -125,7 +254,9 @@ Rectangle {
             Layout.bottomMargin: -4
             spacing: 8
 
-            Item { Layout.fillWidth: true }
+            Item { 
+                Layout.fillWidth: true
+            }
 
             GroupButton {
                 id: removeBtn
