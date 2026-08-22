@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import Quickshell.Widgets
 import Qt5Compat.GraphicalEffects
@@ -7,6 +8,7 @@ Item {
     id: root
     
     property bool colorize: false
+    property bool smooth: true
     property color color
     property string source: ""
     property string iconFolder: Qt.resolvedUrl(Quickshell.shellPath("assets/icons"))  // The folder to check first
@@ -24,6 +26,11 @@ Item {
             return root.source
         }
         implicitSize: root.height
+        backer.smooth: root.smooth
+        backer.sourceSize: Qt.size(
+            Math.max(1, Math.ceil(root.width * Screen.devicePixelRatio)),
+            Math.max(1, Math.ceil(root.height * Screen.devicePixelRatio))
+        )
     }
 
     Loader {

@@ -11,6 +11,7 @@ GroupButton {
     id: root
     bounce: false
     property string buttonIcon
+    property string buttonIconSource
     property bool leftmost: false
     property bool rightmost: false
 
@@ -32,18 +33,48 @@ GroupButton {
 
         Loader {
             Layout.alignment: Qt.AlignVCenter
-            active: root.buttonIcon && root.buttonIcon.length > 0
+            active: (root.buttonIconSource && root.buttonIconSource.length > 0)
+                || (root.buttonIcon && root.buttonIcon.length > 0)
             visible: active
-            sourceComponent: Item {
-                implicitWidth: materialSymbol.implicitWidth
-                MaterialSymbol {
-                    id: materialSymbol
-                    anchors.centerIn: parent
-                    text: root.buttonIcon
-                    iconSize: Appearance.font.pixelSize.larger
-                    color: root.colText
+            sourceComponent: root.buttonIconSource && root.buttonIconSource.length > 0
+                ? customIconComponent
+                : materialSymbolComponent
 
-                    Behavior on color { ColorAnimation { duration: 180 } }
+            Component {
+                id: customIconComponent
+
+                Item {
+                    implicitWidth: Appearance.font.pixelSize.larger
+                    implicitHeight: Appearance.font.pixelSize.larger
+
+                    CustomIcon {
+                        anchors.centerIn: parent
+                        width: Appearance.font.pixelSize.larger
+                        height: Appearance.font.pixelSize.larger
+                        source: root.buttonIconSource
+                        colorize: true
+                        color: root.colText
+
+                        Behavior on color { ColorAnimation { duration: 180 } }
+                    }
+                }
+            }
+
+            Component {
+                id: materialSymbolComponent
+
+                Item {
+                    implicitWidth: materialSymbol.implicitWidth
+
+                    MaterialSymbol {
+                        id: materialSymbol
+                        anchors.centerIn: parent
+                        text: root.buttonIcon
+                        iconSize: Appearance.font.pixelSize.larger
+                        color: root.colText
+
+                        Behavior on color { ColorAnimation { duration: 180 } }
+                    }
                 }
             }
         }
