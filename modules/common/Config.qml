@@ -154,7 +154,9 @@ Singleton {
                 property string avatarPicture: ""
                 property string descriptionText: "::distro::"
                 property string displayName: ""
-
+                property bool gameModePresetEnabled: false
+                property bool gameModePresetVisible: true
+                property string gameModePresetName: "GameMode"
             }
 
             property JsonObject hyprland: JsonObject {
