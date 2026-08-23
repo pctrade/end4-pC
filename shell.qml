@@ -6,6 +6,7 @@
 ////@ pragma Env QT_SCALE_FACTOR=1
 import "modules/common"
 import "services"
+import qs.services
 import "panelFamilies"
 import QtQuick
 import QtQuick.Window
@@ -49,6 +50,7 @@ ShellRoot {
         Wallpapers.load()
         Updates.load()
         LyricsService.restartLyrics()
+        WhatsAppService.connectToDaemon()
     }
     
     PanelFamilyLoader {

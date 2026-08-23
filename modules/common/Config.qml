@@ -301,6 +301,27 @@ Singleton {
                         property real y: 100
                     }
 
+                    property JsonObject whatsapp: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property bool daemonConfigured: false
+                        property bool daemonConnected: false
+                        property string daemonRepoUrl: "https://github.com/hanzlaahmadcheema/whatsapp-widget-daemon"
+                        property string chatListMode: "recent"
+                        property string presentationMode: "compact"
+                        property real pinnedX: -1
+                        property real pinnedY: -1
+                        property int maxChatCount: 10
+                        property int maxUnreadChats: 5
+                        property int maxMessageHistory: 25
+                        property bool showTimestamps: true
+                        property bool showUnreadBadge: true
+                        property bool autoMarkAsRead: false
+                        property list<var> savedContacts: []
+                    }
+
                     property JsonObject userCard: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free"
