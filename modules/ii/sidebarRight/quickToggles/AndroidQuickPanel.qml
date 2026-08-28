@@ -13,6 +13,8 @@ AbstractQuickPanel {
     property bool editMode: false
     Layout.fillWidth: true
 
+    visible: root.editMode || root.toggles.length > 0
+
     implicitHeight: (editMode ? contentItem.implicitHeight : usedRows.implicitHeight) + root.padding * 2
     Behavior on implicitHeight {
         animation: Appearance.animation.elementMove.numberAnimation.createObject(this)

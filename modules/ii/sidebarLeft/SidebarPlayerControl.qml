@@ -87,16 +87,6 @@ Item {
             anchors.margins: parent.height * 0.04
             spacing: 0
 
-            // ── Player selector ──
-            StyledComboBox {
-                id: playerSelector
-                visible: Mpris.players.values.length > 1
-                Layout.fillWidth: true
-                Layout.bottomMargin: 8
-                model: Mpris.players.values.map(p => p.identity ?? p.desktopEntry ?? "Unknown")
-                currentIndex: 0
-            }
-
             // ── Album art ──
             Rectangle {
                 id: artBackground
@@ -408,6 +398,16 @@ Item {
                         text: "volume_up"
                     }
                 }
+            }
+
+            // ── Player selector ──
+            StyledComboBox {
+                id: playerSelector
+                visible: Mpris.players.values.length > 1
+                Layout.fillWidth: true
+                Layout.topMargin: 12
+                model: Mpris.players.values.map(p => p.identity ?? p.desktopEntry ?? "Unknown")
+                currentIndex: 0
             }
         }
     }

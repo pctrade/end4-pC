@@ -51,6 +51,12 @@ Item {
 
     Connections {
         target: GlobalStates
+        function onRequestBluetoothDialog() {
+            if (!BluetoothStatus.available) return;
+            root.showBluetoothDialog = true;
+            GlobalStates.sidebarRightOpen = true;
+        }
+
         function onSidebarRightOpenChanged() {
             if (!GlobalStates.sidebarRightOpen) {
                 root.showWifiDialog = false;
@@ -334,6 +340,7 @@ Item {
             }
 
             BottomWidgetGroup {
+                visible: Config.options.sidebar.bottomGroup
                 id: bottomWidgetGroup
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: false
@@ -360,11 +367,13 @@ Item {
         shownPropertyString: "showBluetoothDialog"
         dialog: BluetoothDialog {}
         onShownChanged: {
+            const adapter = Bluetooth.defaultAdapter;
+            if (!adapter) return;
             if (!shown) {
-                Bluetooth.defaultAdapter.discovering = false;
+                adapter.discovering = false;
             } else {
-                Bluetooth.defaultAdapter.enabled = true;
-                Bluetooth.defaultAdapter.discovering = true;
+                adapter.enabled = true;
+                adapter.discovering = true;
             }
         }
     }

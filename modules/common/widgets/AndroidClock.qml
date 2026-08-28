@@ -15,6 +15,7 @@ Item {
         Appearance.colors.colOnPrimary.b,
         0.75)
     property real labelSpacing: 12
+    property real radius: Appearance.rounding.large
 
     property real hourAngle:   0
     property real minuteAngle: 0
@@ -40,7 +41,7 @@ Item {
         id: bg
         anchors.fill: parent
         color:  root.backgroundColor
-        radius: Appearance.rounding.large
+        radius: root.radius
 
         Behavior on color { ColorAnimation { duration: 400 } }
     }

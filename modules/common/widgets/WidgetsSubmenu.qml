@@ -23,6 +23,8 @@ Item {
         { key: "worldClock",  icon: "public",             name: Translation.tr("World Clock") },
         { key: "userCard",    icon: "person",             name: Translation.tr("User Card") },
         { key: "notes",       icon: "note_stack_add",     name: Translation.tr("Notes") },
+        { key: "timers",      icon: "timer",              name: Translation.tr("Timers") },
+        { key: "todo",        icon: "add_task",           name: Translation.tr("To-Do") },
     ]
 
     Rectangle {

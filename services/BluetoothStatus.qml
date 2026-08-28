@@ -11,8 +11,8 @@ Singleton {
 
     readonly property bool available: Bluetooth.adapters.values.length > 0
     readonly property bool enabled: Bluetooth.defaultAdapter?.enabled ?? false
-    readonly property BluetoothDevice firstActiveDevice: Bluetooth.defaultAdapter?.devices.values.find(device => device.connected) ?? null
-    readonly property int activeDeviceCount: Bluetooth.defaultAdapter?.devices.values.filter(device => device.connected).length ?? 0
+    readonly property BluetoothDevice firstActiveDevice: Bluetooth.devices.values.find(device => device.connected) ?? null
+    readonly property int activeDeviceCount: Bluetooth.devices.values.filter(device => device.connected).length
     readonly property bool connected: Bluetooth.devices.values.some(d => d.connected)
 
     function sortFunction(a, b) {
@@ -29,9 +29,24 @@ Singleton {
     property list<var> connectedDevices: Bluetooth.devices.values.filter(d => d.connected).sort(sortFunction)
     property list<var> pairedButNotConnectedDevices: Bluetooth.devices.values.filter(d => d.paired && !d.connected).sort(sortFunction)
     property list<var> unpairedDevices: Bluetooth.devices.values.filter(d => !d.paired && !d.connected).sort(sortFunction)
+    readonly property list<var> connectedBatteryDevices: connectedDevices.filter(device => device.batteryAvailable && Number.isFinite(Number(device.battery)))
+    readonly property var primaryConnectedDevice: firstActiveDevice ?? connectedDevices[0] ?? null
+    readonly property var primaryBatteryDevice: hasBattery(primaryConnectedDevice)
+        ? primaryConnectedDevice
+        : connectedBatteryDevices[0] ?? null
     property list<var> friendlyDeviceList: [
         ...connectedDevices,
         ...pairedButNotConnectedDevices,
         ...unpairedDevices
     ]
+
+    function hasBattery(device): bool {
+        return !!device && device.batteryAvailable && Number.isFinite(Number(device.battery));
+    }
+
+    function togglePower() {
+        const adapter = Bluetooth.defaultAdapter;
+        if (!adapter) return;
+        adapter.enabled = !adapter.enabled;
+    }
 }

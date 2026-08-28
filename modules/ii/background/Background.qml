@@ -25,6 +25,8 @@ import qs.modules.ii.background.widgets.calendar
 import qs.modules.ii.background.widgets.worldclock
 import qs.modules.ii.background.widgets.usercard
 import qs.modules.ii.background.widgets.notes
+import qs.modules.ii.background.widgets.todo
+import qs.modules.ii.background.widgets.timers
 
 Variants {
     id: root
@@ -105,7 +107,11 @@ Variants {
 
         property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
-        visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
+        visible: true
+
+        readonly property bool hiddenForFullscreen: !GlobalStates.screenLocked
+            && (activeWorkspaceWithFullscreen != undefined)
+            && Config?.options.background.hideWhenFullscreen
 
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
@@ -240,6 +246,12 @@ Variants {
 
         Item {
             anchors.fill: parent
+            opacity: bgRoot.hiddenForFullscreen ? 0 : 1
+            enabled: !bgRoot.hiddenForFullscreen
+            
+            Behavior on opacity {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
 
             Image {
                 id: previousWallpaper
@@ -259,8 +271,8 @@ Variants {
                 cache: true
                 smooth: true
                 asynchronous: true
-                layer.enabled: true
-                visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
+                layer.enabled: blurLoader.active || fastBlurLoader.active
+                visible: !blurLoader.active && !fastBlurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                     && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
                 onStatusChanged: {
                     if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
@@ -272,8 +284,9 @@ Variants {
             ShaderEffect {
                 id: transitionEffect
                 anchors.fill: parent
-                visible: !blurLoader.active && bgRoot.wallpaperAnimation !== "" && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
-                    && bgRoot.transitionProgress < 1.0
+                layer.enabled: blurLoader.active || fastBlurLoader.active
+                visible: !blurLoader.active && !fastBlurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
+                    && bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0
 
                 property var fromImage: previousWallpaper
                 property var toImage: wallpaper
@@ -321,6 +334,16 @@ Variants {
                         anchors.fill: parent
                         color: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.7)
                     }
+                }
+            }
+
+            Loader {
+                id: fastBlurLoader
+                active: Config.options.background.showBlur && !bgRoot.wallpaperIsVideo || (Config.options.overview.style === "niri" && GlobalStates.overviewOpen && Config.options.overview.enable)
+                anchors.fill: parent
+                sourceComponent: FastBlur {
+                    source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
+                    radius: 48
                 }
             }
 
@@ -627,6 +650,30 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                    }
+                }
+                FadeLoader {
+                    shown: Config.options.background.widgets.todo.enable
+                        && (Config.options.background.screenList.length === 0
+                            || Config.options.background.screenList.includes(bgRoot.screen.name))
+                    sourceComponent: TodoWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: 1
+                    }
+                }
+                FadeLoader {
+                    shown: Config.options.background.widgets.timers.enable
+                        && (Config.options.background.screenList.length === 0
+                            || Config.options.background.screenList.includes(bgRoot.screen.name))
+                    sourceComponent: TimerWidget {
+                        screenWidth:        bgRoot.screen.width
+                        screenHeight:       bgRoot.screen.height
+                        scaledScreenWidth:  bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale:     1
                     }
                 }
             }

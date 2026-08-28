@@ -407,7 +407,7 @@ MouseArea {
                         }
                     }
 
-                    Row {
+                    RowLayout {
                         id: extraOptions
                         anchors {
                             bottom: parent.bottom

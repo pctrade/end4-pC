@@ -92,10 +92,12 @@ DialogListItem {
 
                 buttonText: p ? Translation.tr("Forget") : Translation.tr("Always connect")
                 onClicked: {
-                    if (root.device?.paired) {
-                        root.device?.forget();
+                    const device = root.device;
+                    if (!device) return;
+                    if (device.paired) {
+                        device.forget();
                     } else {
-                        root.device?.pair();
+                        device.pair();
                     }
                 }
             }
@@ -103,10 +105,12 @@ DialogListItem {
                 buttonText: root.device?.connected ? Translation.tr("Disconnect") : Translation.tr("Connect")
 
                 onClicked: {
-                    if (root.device?.connected) {
-                        root.device.disconnect();
+                    const device = root.device;
+                    if (!device) return;
+                    if (device.connected) {
+                        device.disconnect();
                     } else {
-                        root.device.connect();
+                        device.connect();
                     }
                 }
             }

@@ -372,6 +372,15 @@ ContentPage {
                 }
 
                 ConfigSwitch {
+                    buttonIcon: "bottom_navigation"
+                    text: Translation.tr('Bottom Group')
+                    checked: Config.options.sidebar.bottomGroup
+                    onCheckedChanged: {
+                        Config.options.sidebar.bottomGroup = checked;
+                    }
+                }
+
+                ConfigSwitch {
                     buttonIcon: "music_note"
                     text: Translation.tr('Media Player')
                     checked: Config.options.sidebar.mediaPlayer

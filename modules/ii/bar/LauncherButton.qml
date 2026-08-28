@@ -30,6 +30,6 @@ RippleButton {
         anchors.centerIn: parent
         iconSize: 18
         text: "search"
-        color: Appearance.colors.colPrimary
+        color: Appearance.colors.colOnLayer0
     }
 }
