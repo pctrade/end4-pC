@@ -410,7 +410,9 @@ Variants {
 
                 StyledImage {
                     anchors.fill: parent
-                    source: bgRoot.wallpaperPath
+                    source: (bgRoot.screen.name === "HDMI-A-2" && Config.options.background.verticalWallpaperPath !== "")
+                        ? Config.options.background.verticalWallpaperPath
+                        : bgRoot.wallpaperPath
                     fillMode: Image.PreserveAspectCrop
                     cache: false
                     antialiasing: true
