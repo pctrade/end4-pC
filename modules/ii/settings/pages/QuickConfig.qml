@@ -160,8 +160,9 @@ ContentPage {
                             delegate: Rectangle {
                                 required property var modelData
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: width * 0.6
+                                Layout.preferredHeight: Math.max(54, width * 0.62)
                                 radius: Appearance.rounding.normal
+                                clip: true
 
                                 property bool isSelected: Config.options.appearance.palette.type === modelData.value
                                 property bool hovered: hoverArea.containsMouse
@@ -173,19 +174,24 @@ ContentPage {
                                 MaterialSymbol {
                                     anchors.top: parent.top
                                     anchors.left: parent.left
-                                    anchors.margins: 8
+                                    anchors.margins: 6
                                     text: modelData.icon
                                     iconSize: Appearance.font.pixelSize.larger
                                     color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnPrimaryContainer
                                 }
 
                                 StyledText {
-                                    anchors.bottom: parent.bottom
+                                    anchors.left: parent.left
                                     anchors.right: parent.right
-                                    anchors.margins: 8
+                                    anchors.bottom: parent.bottom
+                                    anchors.leftMargin: 6
+                                    anchors.rightMargin: 6
+                                    anchors.bottomMargin: 6
                                     text: modelData.displayName
                                     font.pixelSize: Appearance.font.pixelSize.smaller
                                     font.weight: Font.Medium
+                                    horizontalAlignment: Text.AlignRight
+                                    elide: Text.ElideRight
                                     color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnPrimaryContainer
                                 }
 
@@ -211,20 +217,20 @@ ContentPage {
                 title: Translation.tr("Transparency")     
                 GroupedList {
                     visible: isMinimal
-                        ConfigSwitch {
-                            buttonIcon: "check"
-                            text: Translation.tr("Enable")
-                            checked: Config.options.appearance.transparency.enable
-                            onCheckedChanged: { Config.options.appearance.transparency.enable = checked; }
-                        }
-                        ConfigSwitch {
-                            buttonIcon: "autofps_select"
-                            enabled: Config.options.appearance.transparency.enable
-                            text: Translation.tr("Automatic")
-                            checked: Config.options.appearance.transparency.automatic
-                            onCheckedChanged: { Config.options.appearance.transparency.automatic = checked; }
-                        }
+                    ConfigSwitch {
+                        buttonIcon: "check"
+                        text: Translation.tr("Enable")
+                        checked: Config.options.appearance.transparency.enable
+                        onCheckedChanged: { Config.options.appearance.transparency.enable = checked; }
                     }
+                    ConfigSwitch {
+                        buttonIcon: "autofps_select"
+                        enabled: Config.options.appearance.transparency.enable
+                        text: Translation.tr("Automatic")
+                        checked: Config.options.appearance.transparency.automatic
+                        onCheckedChanged: { Config.options.appearance.transparency.automatic = checked; }
+                    }
+                }
             }
 
             ConfigRow {
