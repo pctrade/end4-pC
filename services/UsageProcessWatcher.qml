@@ -12,7 +12,7 @@ Singleton {
 
     readonly property string checkHelper: Quickshell.shellPath("scripts/usage-check.py")
     readonly property string pythonBinary: Quickshell.env("PYTHON3") || "python3"
-    readonly property list<string> providerIds: ["codex", "claude", "kimi", "zai", "antigravity"]
+    readonly property list<string> providerIds: ["codex", "claude", "kimi", "zai", "antigravity", "cursor"]
     readonly property var selectedProviderIds: UsageProviderSettings.enabledProviderIds
     readonly property bool enabled: Config.ready && selectedProviderIds.length > 0
 

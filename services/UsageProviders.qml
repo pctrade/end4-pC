@@ -45,6 +45,13 @@ Singleton {
             service: KimiUsageService,
             url: "https://www.kimi.com/code/console",
         },
+        {
+            id: "cursor",
+            name: Translation.tr("Cursor"),
+            icon: "cursor-symbolic",
+            service: CursorUsageService,
+            url: "https://cursor.com/dashboard?tab=usage",
+        },
     ]
 
     readonly property var selectedProviderIds: UsageProviderSettings.barProviderIds

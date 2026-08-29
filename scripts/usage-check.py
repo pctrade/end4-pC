@@ -9,7 +9,7 @@ import sys
 from usage_process import provider_statuses
 
 
-DEFAULT_PROVIDERS = ("codex", "claude", "kimi", "zai", "antigravity")
+DEFAULT_PROVIDERS = ("codex", "claude", "kimi", "zai", "antigravity", "cursor")
 
 
 def main() -> None:

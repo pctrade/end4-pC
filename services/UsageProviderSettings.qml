@@ -6,7 +6,7 @@ import qs.modules.common
 QtObject {
     id: root
 
-    readonly property var defaultProviderIds: ["codex", "claude", "antigravity", "zai", "kimi"]
+    readonly property var defaultProviderIds: ["codex", "claude", "antigravity", "zai", "kimi", "cursor"]
     readonly property var barProviderIds: Config.options?.bar?.usageProviders ?? root.defaultProviderIds
     readonly property bool sidebarUsageEnabled: Config.options?.sidebar?.aiUsage?.enable ?? true
     readonly property var sidebarProviderIds: Config.options?.sidebar?.aiUsage?.providers ?? root.defaultProviderIds

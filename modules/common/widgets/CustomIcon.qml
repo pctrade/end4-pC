@@ -19,11 +19,17 @@ Item {
         id: iconImage
         anchors.fill: parent
         source: {
-            const fullPathWhenSourceIsIconName = iconFolder + "/" + root.source;
-            if (iconFolder && fullPathWhenSourceIsIconName) {
-                return fullPathWhenSourceIsIconName
-            }
-            return root.source
+            if (!root.source)
+                return ""
+
+            // Allow full URLs / absolute paths to pass through unchanged.
+            if (root.source.includes(":/") || root.source.startsWith("/"))
+                return root.source
+
+            const name = root.source.endsWith(".svg") ? root.source : `${root.source}.svg`
+            if (iconFolder)
+                return iconFolder + "/" + name
+            return name
         }
         implicitSize: root.height
         backer.smooth: root.smooth

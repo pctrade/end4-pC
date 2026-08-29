@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-"""Read native Claude Code, Antigravity, z.ai/ZCode, and Kimi Code usage sources.
+"""Read native Claude Code, Antigravity, z.ai/ZCode, Kimi Code, and Cursor usage.
 
 The QML services call this helper for providers that do not expose a stable
 stdio API. It deliberately emits one small JSON object, never starts a
-provider process, and never logs credentials or terminal output.
+provider process or Cursor server, and never logs credentials or terminal output.
 """
 
 from __future__ import annotations
@@ -14,9 +14,11 @@ import os
 import platform
 import re
 import socket
+import sqlite3
 import ssl
 import sys
 import time
+import base64
 import urllib.error
 from urllib.parse import urlparse, urlunparse
 import urllib.request
@@ -108,14 +110,20 @@ def request_json(
     url: str,
     headers: dict[str, str],
     timeout: float = 8,
+    method: str = "GET",
+    body: Optional[bytes] = None,
 ) -> tuple[int, Optional[dict[str, Any]]]:
-    request = urllib.request.Request(url, headers=headers, method="GET")
+    request = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8", "replace"))
         return response.status, payload if isinstance(payload, dict) else None
     except urllib.error.HTTPError as error:
-        return error.code, None
+        try:
+            payload = json.loads(error.read().decode("utf-8", "replace"))
+        except (OSError, ValueError):
+            payload = None
+        return error.code, payload if isinstance(payload, dict) else None
     except (OSError, ValueError):
         return 0, None
 
@@ -1017,6 +1025,298 @@ def fetch_antigravity() -> None:
         emit("antigravity", error="Antigravity local server unavailable")
 
 
+CURSOR_API_BASE = "https://api2.cursor.sh"
+CURSOR_OAUTH_CLIENT_ID = "KbZUR41cY7W6zRSdpSUJ7I7mLYBKOCmB"
+
+
+def cursor_state_db() -> Path:
+    override = clean_string(os.environ.get("CURSOR_STATE_DB"))
+    if override:
+        return Path(override).expanduser()
+    xdg = clean_string(os.environ.get("XDG_CONFIG_HOME"))
+    config_home = Path(xdg).expanduser() if xdg else Path.home() / ".config"
+    return config_home / "Cursor" / "User" / "globalStorage" / "state.vscdb"
+
+
+def cursor_db_values(keys: Iterable[str]) -> dict[str, str]:
+    path = cursor_state_db()
+    if not path.is_file():
+        return {}
+    values: dict[str, str] = {}
+    try:
+        connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1.5)
+    except sqlite3.Error:
+        return {}
+    try:
+        for key in keys:
+            try:
+                row = connection.execute(
+                    "SELECT value FROM ItemTable WHERE key = ?",
+                    (key,),
+                ).fetchone()
+            except sqlite3.Error:
+                continue
+            if not row or row[0] is None:
+                continue
+            raw = row[0]
+            if isinstance(raw, bytes):
+                text = raw.decode("utf-8", "replace")
+            else:
+                text = str(raw)
+            text = text.strip()
+            if text:
+                values[key] = text
+    finally:
+        connection.close()
+    return values
+
+
+def cursor_jwt_expiring(token: str, skew_seconds: int = 60) -> bool:
+    parts = token.split(".")
+    if len(parts) < 2:
+        return True
+    payload = parts[1]
+    padding = "=" * (-len(payload) % 4)
+    try:
+        decoded = base64.urlsafe_b64decode(payload + padding)
+        data = json.loads(decoded.decode("utf-8", "replace"))
+    except (OSError, ValueError):
+        return True
+    if not isinstance(data, dict):
+        return True
+    exp = number(data.get("exp"))
+    if exp is None:
+        return True
+    return exp <= time.time() + skew_seconds
+
+
+def cursor_refresh_access_token(refresh_token: str) -> Optional[str]:
+    status, payload = request_json(
+        f"{CURSOR_API_BASE}/oauth/token",
+        {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "quickshell-usage-widget",
+        },
+        method="POST",
+        body=json.dumps({
+            "grant_type": "refresh_token",
+            "client_id": CURSOR_OAUTH_CLIENT_ID,
+            "refresh_token": refresh_token,
+        }).encode(),
+    )
+    if status in (401, 403) or not payload:
+        return None
+    if payload.get("shouldLogout") is True:
+        return None
+    return clean_string(payload.get("access_token"))
+
+
+def cursor_access_token() -> tuple[Optional[str], str]:
+    auth = cursor_db_values((
+        "cursorAuth/accessToken",
+        "cursorAuth/refreshToken",
+        "cursorAuth/stripeMembershipType",
+    ))
+    access = clean_string(auth.get("cursorAuth/accessToken"))
+    refresh = clean_string(auth.get("cursorAuth/refreshToken"))
+    plan = clean_string(auth.get("cursorAuth/stripeMembershipType")) or ""
+    if access and not cursor_jwt_expiring(access):
+        return access, plan
+    if refresh:
+        refreshed = cursor_refresh_access_token(refresh)
+        if refreshed:
+            return refreshed, plan
+    if access:
+        return access, plan
+    return None, plan
+
+
+def cursor_remaining_from_used(used: Any) -> Optional[float]:
+    value = number(used)
+    if value is None:
+        return None
+    # Cursor reports either 0-100 percentage used or 0-1 fractions.
+    if 0 <= value <= 1:
+        value *= 100
+    return max(0, min(100, 100 - value))
+
+
+def cursor_plan_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    plan_usage = payload.get("planUsage")
+    if not isinstance(plan_usage, dict):
+        plan_usage = {}
+    reset_at = timestamp(
+        first_string(
+            payload.get("billingCycleEnd"),
+            plan_usage.get("billingCycleEnd"),
+            payload.get("billing_cycle_end"),
+        )
+    ) or 0
+
+    windows: list[dict[str, Any]] = []
+    auto = cursor_remaining_from_used(plan_usage.get("autoPercentUsed"))
+    api = cursor_remaining_from_used(plan_usage.get("apiPercentUsed"))
+    total = cursor_remaining_from_used(plan_usage.get("totalPercentUsed"))
+
+    if auto is not None:
+        windows.append({
+            "id": "auto",
+            "label": "Auto",
+            "remainingPercent": auto,
+            "resetAt": reset_at,
+        })
+    if api is not None:
+        windows.append({
+            "id": "api",
+            "label": "API",
+            "remainingPercent": api,
+            "resetAt": reset_at,
+        })
+    if not windows and total is not None:
+        windows.append({
+            "id": "plan",
+            "label": "Usage",
+            "remainingPercent": total,
+            "resetAt": reset_at,
+        })
+
+    if not windows:
+        # Spend-based fallback when percentages are absent.
+        limit = number(plan_usage.get("limit"))
+        used_spend = number(plan_usage.get("totalSpend"))
+        if used_spend is None:
+            included = number(plan_usage.get("includedSpend")) or 0
+            bonus = number(plan_usage.get("bonusSpend")) or 0
+            used_spend = included + bonus
+        if limit is not None and limit > 0 and used_spend is not None:
+            remaining = max(0, min(100, 100 - used_spend / limit * 100))
+            windows.append({
+                "id": "plan",
+                "label": "Usage",
+                "remainingPercent": remaining,
+                "resetAt": reset_at,
+            })
+    return windows
+
+
+def cursor_auth_usage_windows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    # Enterprise-style request buckets from GET /auth/usage.
+    start_of_month = timestamp(payload.get("startOfMonth")) or 0
+    reset_at = 0
+    if start_of_month > 0:
+        # Approximate month-end reset from the cycle start.
+        reset_at = start_of_month + 30 * 24 * 60 * 60
+
+    preferred = ("gpt-4", "gpt-4o", "default", "composer")
+    models = payload.get("gpt-4") if isinstance(payload.get("gpt-4"), dict) else None
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if isinstance(value, dict) and (
+                "numRequests" in value or "maxRequestUsage" in value or "numRequestsTotal" in value
+            ):
+                candidates.append((str(key), value))
+
+    chosen: Optional[dict[str, Any]] = None
+    chosen_id = "usage"
+    for key in preferred:
+        match = next((item for item in candidates if item[0] == key), None)
+        if match:
+            chosen_id, chosen = match
+            break
+    if chosen is None and candidates:
+        chosen_id, chosen = candidates[0]
+    if chosen is None and models:
+        chosen = models
+        chosen_id = "gpt-4"
+    if not isinstance(chosen, dict):
+        return []
+
+    used = number(chosen.get("numRequests"))
+    if used is None:
+        used = number(chosen.get("numRequestsTotal"))
+    limit = number(chosen.get("maxRequestUsage"))
+    if used is None or limit is None or limit <= 0:
+        return []
+    remaining = max(0, min(100, 100 - used / limit * 100))
+    return [{
+        "id": chosen_id,
+        "label": "Usage",
+        "remainingPercent": remaining,
+        "resetAt": reset_at,
+    }]
+
+
+def fetch_cursor() -> None:
+    if not provider_is_running("cursor"):
+        emit("cursor", error="Cursor is not running")
+        return
+
+    token, plan = cursor_access_token()
+    if not token:
+        emit("cursor", error="Cursor credentials unavailable")
+        return
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Connect-Protocol-Version": "1",
+        "User-Agent": "quickshell-usage-widget",
+    }
+    status, payload = request_json(
+        f"{CURSOR_API_BASE}/aiserver.v1.DashboardService/GetCurrentPeriodUsage",
+        headers,
+        method="POST",
+        body=b"{}",
+    )
+    if status in (401, 403):
+        # One retry after forcing a refresh when the on-disk JWT is stale.
+        auth = cursor_db_values(("cursorAuth/refreshToken", "cursorAuth/stripeMembershipType"))
+        refresh = clean_string(auth.get("cursorAuth/refreshToken"))
+        plan = clean_string(auth.get("cursorAuth/stripeMembershipType")) or plan
+        refreshed = cursor_refresh_access_token(refresh) if refresh else None
+        if not refreshed:
+            emit("cursor", plan_type=plan, error="Cursor credentials rejected")
+            return
+        headers["Authorization"] = f"Bearer {refreshed}"
+        status, payload = request_json(
+            f"{CURSOR_API_BASE}/aiserver.v1.DashboardService/GetCurrentPeriodUsage",
+            headers,
+            method="POST",
+            body=b"{}",
+        )
+
+    windows: list[dict[str, Any]] = []
+    if payload:
+        windows = cursor_plan_windows(payload)
+
+    if not windows:
+        auth_status, auth_payload = request_json(
+            f"{CURSOR_API_BASE}/auth/usage",
+            {
+                "Authorization": headers["Authorization"],
+                "Accept": "application/json",
+                "User-Agent": "quickshell-usage-widget",
+            },
+        )
+        if auth_status in (401, 403):
+            emit("cursor", plan_type=plan, error="Cursor credentials rejected")
+            return
+        if auth_payload:
+            windows = cursor_auth_usage_windows(auth_payload)
+
+    if not windows:
+        if status == 0:
+            emit("cursor", plan_type=plan, error="Cursor usage unavailable")
+        else:
+            emit("cursor", plan_type=plan, error="Cursor usage response had no limit")
+        return
+
+    emit("cursor", plan_type=plan, windows=windows)
+
+
 def main() -> None:
     provider = sys.argv[1] if len(sys.argv) > 1 else ""
     if provider == "claude":
@@ -1027,6 +1327,8 @@ def main() -> None:
         fetch_zai()
     elif provider == "kimi":
         fetch_kimi()
+    elif provider == "cursor":
+        fetch_cursor()
     else:
         emit(provider or "unknown", error="Unknown usage provider")
 

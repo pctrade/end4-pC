@@ -49,6 +49,7 @@ _PROVIDER_ALIASES: dict[str, set[str]] = {
     "claude": {"claude", "claude-code", "anthropic"},
     "kimi": {"kimi", "kimi-code", "moonshot"},
     "zai": {"zai", "z.ai", "zcode", "glm", "zhipu"},
+    "cursor": {"cursor", "cursor-agent", "anysphere"},
 }
 
 _EXACT_PROCESS_NAMES: dict[str, set[str]] = {
@@ -80,6 +81,10 @@ _EXACT_PROCESS_NAMES: dict[str, set[str]] = {
         "glm",
         "glm-acp",
     },
+    "cursor": {
+        "cursor",
+        "cursor-agent",
+    },
 }
 
 _PATH_MARKERS: dict[str, tuple[str, ...]] = {
@@ -107,6 +112,14 @@ _PATH_MARKERS: dict[str, tuple[str, ...]] = {
         "zai-acp",
         "@zai",
         "glm-acp",
+    ),
+    # Avoid ~/.config/Cursor path hits (crashpad/helpers). Match the app + agent.
+    "cursor": (
+        "/usr/share/cursor/",
+        "/cursor/resources/app/",
+        "cursor.mjs",
+        "/cursor-agent",
+        "cursor-agent",
     ),
 }
 
@@ -255,6 +268,25 @@ def _matches(provider: str, process: ProcessInfo) -> bool:
 
     names = process.names
     command = " ".join((process.executable, process.command)).lower()
+    # Sandbox/helper binaries mention Cursor paths but are not the IDE/agent.
+    if provider == "cursor":
+        if (
+            "cursorsandbox" in names
+            or "cursorsandbox" in command
+            or "chrome_crashpad_handler" in names
+        ):
+            return False
+        # Do not treat `--user-data-dir=.../Cursor` basenames as the app.
+        primary = {
+            process.command_name.lower().removesuffix(".exe"),
+            Path(process.executable).name.lower().removesuffix(".exe") if process.executable else "",
+        }
+        if primary & _EXACT_PROCESS_NAMES.get("cursor", set()):
+            return True
+        if any(marker in command for marker in _PATH_MARKERS.get("cursor", ())):
+            return True
+        return _has_provider_flag("cursor", process.arguments)
+
     if names & _EXACT_PROCESS_NAMES.get(provider, set()):
         return True
     if any(marker in command for marker in _PATH_MARKERS.get(provider, ())):

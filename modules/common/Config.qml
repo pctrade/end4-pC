@@ -438,7 +438,7 @@ Singleton {
                     property list<string> rightLayout: ["sysTray", "utilButtons", "codexUsage", "systemIcons", "powerButton"]
                 }
                 // Provider order is fixed in the usage widget; this list controls which providers are shown.
-                property list<string> usageProviders: ["codex", "claude", "antigravity", "zai", "kimi"]
+                property list<string> usageProviders: ["codex", "claude", "antigravity", "zai", "kimi", "cursor"]
                 
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
                 property JsonObject utilButtons: JsonObject {
@@ -706,7 +706,7 @@ Singleton {
                 }
                 property JsonObject aiUsage: JsonObject {
                     property bool enable: true
-                    property list<string> providers: ["codex", "claude", "antigravity", "zai", "kimi"]
+                    property list<string> providers: ["codex", "claude", "antigravity", "zai", "kimi", "cursor"]
                 }
                 
                 property JsonObject ai: JsonObject {

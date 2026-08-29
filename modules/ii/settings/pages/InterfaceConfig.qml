@@ -352,6 +352,23 @@ ContentPage {
                                 page.setSidebarUsageProvider("kimi", checked)
                         }
                     }
+
+                    ConfigSwitch {
+                        buttonIconSource: "cursor-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Cursor")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("cursor")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("cursor", checked)
+                        }
+                    }
                 }
             }
         }

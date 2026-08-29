@@ -37,7 +37,7 @@ QtObject {
 
     function resetText(service, resetAt, clockSeconds) {
         if (!resetAt || !service?.formatReset)
-            return Translation.tr("Reset unavailable")
+            return Translation.tr("Unavailable")
         return service.formatReset(Number(resetAt), Number(clockSeconds))
     }
 }

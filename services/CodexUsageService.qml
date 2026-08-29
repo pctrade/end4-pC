@@ -35,7 +35,7 @@ Singleton {
 
     function formatReset(timestamp, now) {
         if (!timestamp || timestamp <= 0)
-            return "Reset unavailable"
+            return Translation.tr("Unavailable")
 
         const seconds = Math.max(0, timestamp - now)
         const days = Math.floor(seconds / 86400)

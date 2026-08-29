@@ -78,7 +78,7 @@ ContentPage {
     }
 
     function setUsageProvider(providerId, enabled) {
-        let providers = (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).slice()
+        let providers = (Config.options.bar.usageProviders ?? UsageProviderSettings.defaultProviderIds).slice()
         if (enabled) {
             if (!providers.includes(providerId))
                 providers.push(providerId)
@@ -223,7 +223,8 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Codex")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("codex")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("codex")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -238,7 +239,8 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Claude")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("claude")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("claude")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -253,7 +255,8 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Antigravity")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("antigravity")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("antigravity")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -268,7 +271,8 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("GLM")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("zai")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("zai")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -283,13 +287,30 @@ ContentPage {
                         buttonIconColorize: false
                         iconSize: Appearance.font.pixelSize.huge
                         text: Translation.tr("Kimi")
-                        checked: (Config.options.bar.usageProviders ?? ["codex", "claude", "antigravity", "zai", "kimi"]).includes("kimi")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("kimi")
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
                         onCheckedChanged: {
                             if (switchReady)
                                 page.setUsageProvider("kimi", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "cursor-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Cursor")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("cursor")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("cursor", checked)
                         }
                     }
                 }
