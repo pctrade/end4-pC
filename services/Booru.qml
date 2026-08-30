@@ -59,8 +59,8 @@ Singleton {
         },
         "konachan": {
             "name": "Konachan",
-            "url": "https://konachan.net",
-            "api": "https://konachan.net/post.json",
+            "url": "https://konachan.com",
+            "api": "https://konachan.com/post.json",
             "description": Translation.tr("For desktop wallpapers | Good quality"),
             "mapFunc": (response) => {
                 return response.map(item => {

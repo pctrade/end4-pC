@@ -83,6 +83,17 @@ Singleton {
                 property bool inhibit: false
             }
 
+            property JsonObject preset: JsonObject {
+                property string currentPreset: ""
+                property string previousPreset: ""
+                property string beforeGameMode: ""
+                property string lastGameMode: ""
+            }
+
+            property JsonObject gameMode: JsonObject {
+                property bool enabled: false
+            }
+
             property JsonObject record: JsonObject {
                 property bool enable: false
             }
