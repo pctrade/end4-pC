@@ -210,8 +210,16 @@ Singleton {
                 property string networkEthernet: "kcmshell6 kcm_networkmanagement"
                 property string taskManager: "plasma-systemmonitor --page-name Processes"
                 property string terminal: "kitty -1" // This is only for shell actions
-                property string update: "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'"
-                property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
+                property string update: "kitty -1 --hold=yes bash -c "
+                    "\n                    if [ \"${SystemInfo.distroId}\" = \"arch\" ] || [ \"${SystemInfo.distroId}\" = \"cachyos\" ] || [ \"${SystemInfo.distroId}\" = \"endeavouros\" ]; then
+                        yay -Syu --combinedupgrade=false
+                    elif command -v apt &>/dev/null && [ -f /etc/debian_version ]; then
+                        sudo apt update && sudo apt upgrade -y
+                    else
+                        echo \"Unsupported distro\" && read -p \"Press Enter...\"
+                    fi
+                    "
+                property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
             }
 
             property JsonObject settings: JsonObject {
