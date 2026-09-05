@@ -323,6 +323,7 @@ Singleton {
             // Keybinds
             const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.keybinds ?? "<");
             const flatBinds = (function flatten(node) {
+                if (!node) return [];
                 let result = [...(node.keybinds ?? [])];
                 for (const child of (node.children ?? [])) {
                     result = result.concat(flatten(child));
@@ -331,15 +332,16 @@ Singleton {
             })(HyprlandKeybinds.keybinds);
 
             return flatBinds.filter(bind => {
-                if (!bind.comment) return false;
+                if (!bind || !bind.comment) return false;
                 if (searchString.length === 0) return true;
-                return bind.comment.toLowerCase().includes(searchString.toLowerCase())
-                    || bind.key.toLowerCase().includes(searchString.toLowerCase());
+                const commentMatch = (bind.comment || "").toLowerCase().includes(searchString.toLowerCase());
+                const keyMatch = (bind.key || "").toLowerCase().includes(searchString.toLowerCase());
+                return commentMatch || keyMatch;
             }).map(bind => {
-                const modsStr = bind.mods.join(" + ");
-                const keyStr  = modsStr.length > 0 ? `${modsStr} + ${bind.key}` : bind.key;
+                const modsStr = Array.isArray(bind.mods) ? bind.mods.join(" + ") : "";
+                const keyStr  = modsStr.length > 0 ? (bind.key ? `${modsStr} + ${bind.key}` : modsStr) : (bind.key || "");
                 return resultComp.createObject(null, {
-                    name: bind.comment,
+                    name: bind.comment || "",
                     iconName: "keyboard",
                     iconType: LauncherSearchResult.IconType.Material,
                     verb: keyStr,

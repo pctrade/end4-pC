@@ -212,15 +212,21 @@ switch() {
             fi
             if [ ${#missing_deps[@]} -gt 0 ]; then
                 echo "Missing deps: ${missing_deps[*]}"
-                echo "Arch: sudo pacman -S ${missing_deps[*]}"
+                if command -v dnf &>/dev/null; then
+                    installer_cmd="ptyxis -- sudo dnf install -y ${missing_deps[*]}"
+                    installer_label="Install (Fedora)"
+                else
+                    installer_cmd="kitty -1 sudo pacman -S ${missing_deps[*]}"
+                    installer_label="Install (Arch)"
+                fi
                 action=$(notify-send \
                     -a "Wallpaper switcher" \
                     -c "im.error" \
-                    -A "install_arch=Install (Arch)" \
+                    -A "install_deps=$installer_label" \
                     "Can't switch to video wallpaper" \
                     "Missing dependencies: ${missing_deps[*]}")
-                if [[ "$action" == "install_arch" ]]; then
-                    kitty -1 sudo pacman -S "${missing_deps[*]}"
+                if [[ "$action" == "install_deps" ]]; then
+                    eval "$installer_cmd"
                     if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
                         notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
                     fi
@@ -328,7 +334,9 @@ switch() {
         done
     fi
 
-    matugen "${matugen_args[@]}"
+    if command -v matugen &>/dev/null; then
+        matugen "${matugen_args[@]}"
+    fi
 
     if [[ -n "$colors_lock_flag" ]]; then
         if [[ -f "$colors_json_path" ]]; then
@@ -394,6 +402,32 @@ main() {
         deactivate
     }
 
+    pick_color() {
+        local raw=""
+        if command -v hyprpicker &>/dev/null; then
+            raw=$(hyprpicker --no-fancy 2>/dev/null)
+        elif command -v zenity &>/dev/null; then
+            raw=$(zenity --color-selection --show-palette 2>/dev/null)
+        elif command -v kdialog &>/dev/null; then
+            raw=$(kdialog --getcolor 2>/dev/null)
+        fi
+
+        if [[ -z "$raw" ]]; then
+            echo ""
+            return
+        fi
+
+        if [[ "$raw" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
+            [[ "$raw" =~ ^# ]] && echo "$raw" || echo "#$raw"
+        elif [[ "$raw" =~ rgb\(([0-9]+),([0-9]+),([0-9]+)\) ]]; then
+            printf "#%02X%02X%02X\n" "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
+        elif [[ "$raw" =~ rgba\(([0-9]+),([0-9]+),([0-9]+) ]]; then
+            printf "#%02X%02X%02X\n" "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
+        else
+            echo "$raw"
+        fi
+    }
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --mode)
@@ -412,7 +446,12 @@ main() {
                     set_accent_color ""
                     shift 2
                 else
-                    set_accent_color $(hyprpicker --no-fancy)
+                    chosen_color=$(pick_color)
+                    if [[ -n "$chosen_color" ]]; then
+                        set_accent_color "$chosen_color"
+                    else
+                        exit 0
+                    fi
                     shift
                 fi
                 ;;

@@ -1054,8 +1054,12 @@ ContentPage {
                             icon: "timer",
                             name: Translation.tr("Timers"),
                             enabled: Config.options.background.widgets.timers.enable
+                        },
+                        {
+                            icon: "router",
+                            name: Translation.tr("Ports & Services"),
+                            enabled: Config.options.background.widgets.ports?.enable ?? false
                         }
-                        
                     ]
                     delegate: Rectangle {
                         Layout.fillWidth: true
@@ -1106,6 +1110,8 @@ ContentPage {
                                             Config.options.background.widgets.todo.enable = checked
                                         else if (modelData.icon === "timer")
                                             Config.options.background.widgets.timers.enable = checked
+                                        else if (modelData.icon === "router")
+                                            Config.options.background.widgets.ports.enable = checked
                                     }
                                 }
                             }

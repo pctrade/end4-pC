@@ -209,8 +209,8 @@ Singleton {
                 property string manageUser: "kcmshell6 kcm_users"
                 property string networkEthernet: "kcmshell6 kcm_networkmanagement"
                 property string taskManager: "plasma-systemmonitor --page-name Processes"
-                property string terminal: "kitty -1" // This is only for shell actions
-                property string update: "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'"
+                property string terminal: "ptyxis" // This is only for shell actions
+                property string update: "ptyxis -- bash -c 'sudo dnf upgrade && flatpak update -y; echo Done; read'"
                 property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
             }
 
@@ -312,6 +312,14 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                    }
+
+                    property JsonObject ports: JsonObject {
+                        property bool enable: true
+                        property string placementStrategy: "free"
+                        property real x: 1280
+                        property real y: 140
+                        property string sizeMode: "2x2"
                     }
 
                     property JsonObject userCard: JsonObject {

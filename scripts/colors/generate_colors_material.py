@@ -2,6 +2,8 @@
 import argparse
 import math
 import json
+import re
+import os
 from PIL import Image
 from materialyoucolor.quantize import QuantizeCelebi
 from materialyoucolor.score.score import Score
@@ -137,7 +139,8 @@ if args.termscheme is not None:
         json_termscheme = f.read()
     term_source_colors = json.loads(json_termscheme)['dark' if darkmode else 'light']
 
-    primary_color_argb = hex_to_argb(material_colors['primary_paletteKeyColor'])
+    primary_color_hex = material_colors.get('primaryPaletteKeyColor') or material_colors.get('primary_paletteKeyColor') or material_colors['primary']
+    primary_color_argb = hex_to_argb(primary_color_hex)
     for color, val in term_source_colors.items():
         if(args.scheme == 'monochrome') :
             term_colors[color] = val
@@ -150,6 +153,21 @@ if args.termscheme is not None:
             harmonized = harmonize(hex_to_argb(val), primary_color_argb, args.harmonize_threshold, args.harmony)
             harmonized = boost_chroma_tone(harmonized, 1, 1 + (args.term_fg_boost * (1 if darkmode else -1)))
         term_colors[color] = argb_to_hex(harmonized)
+
+# Save colors.json for quickshell MaterialThemeLoader
+json_data = {}
+for k, v in material_colors.items():
+    json_data[k] = v
+    snake_k = re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
+    json_data[snake_k] = v
+
+json_colors_path = os.path.expanduser("~/.local/state/quickshell/user/generated/colors.json")
+try:
+    os.makedirs(os.path.dirname(json_colors_path), exist_ok=True)
+    with open(json_colors_path, "w") as f:
+        json.dump(json_data, f, indent=2)
+except Exception as e:
+    pass
 
 if args.debug == False:
     print(f"$darkmode: {darkmode};")

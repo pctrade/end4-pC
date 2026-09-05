@@ -117,6 +117,7 @@ ContentPage {
                         anchors.margins: 8
                         iconText: "colorize"
                         onClicked: {
+                            GlobalStates.settingsOpen = false;
                             Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color"]);
                         }
                         StyledToolTip {
