@@ -55,7 +55,6 @@ Scope {
                     + (Config.options.bar.cornerStyle === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
                 WlrLayershell.namespace: "quickshell:verticalBar"
                 implicitWidth: Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding
-                    + (Config.options.bar.cornerStyle === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
                 mask: Region { item: hoverMaskRegion }
                 color: "transparent"
 
@@ -145,7 +144,7 @@ Scope {
 
                     VerticalBarContent {
                         id: barContent
-                        
+
                         implicitWidth: Appearance.sizes.verticalBarWidth
                         anchors {
                             top: parent.top
@@ -178,7 +177,9 @@ Scope {
                             PropertyChanges {
                                 target: barContent
                                 anchors.topMargin: 0
-                                anchors.rightMargin: (Config?.options.bar.autoHide.enable && !mustShow) ? -Appearance.sizes.barHeight : 0
+                                anchors.rightMargin: (Config?.options.bar.autoHide.enable && !mustShow)
+                                    ? -Appearance.sizes.barHeight
+                                    : (Config.options.bar.cornerStyle === 3 ? (Appearance.sizes.hyprlandGapsOut || 5) : 0)
                             }
                         }
                     }
