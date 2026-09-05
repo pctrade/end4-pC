@@ -33,7 +33,7 @@ Item {
 
     onProviderChanged:   { root.hoveredItem = null; _syncAndFetch() }
     onResolutionChanged: _syncAndFetch()
-    onColorGroupChanged: { if (root.provider === "naive") _syncAndFetch() }
+    onColorGroupChanged: { if (root.provider === "naive" || root.provider === "blapples") _syncAndFetch() }
 
     function _syncAndFetch() {
         if (root.missingKey) return
