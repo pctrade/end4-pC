@@ -35,8 +35,8 @@ Singleton {
     readonly property string pexelsApiKey: KeyringStorage.keyringData?.apiKeys?.pexels ?? ""
 
     // ─── Blapples ───
-    readonly property string blapplesJsonUrl: "https://raw.githubusercontent.com/Blapples/wallpapers/metadata-output/wallpapers.json"
-    readonly property string blapplesPagesBase: "https://raw.githubusercontent.com/Blapples/wallpapers/metadata-output/"
+    readonly property string blapplesJsonUrl: "https://raw.githubusercontent.com/Blapples/wallpapers/main/wallpapers.json"
+    readonly property string blapplesPagesBase: "https://raw.githubusercontent.com/Blapples/wallpapers/main/"
     readonly property string blapplesFullBase: "https://raw.githubusercontent.com/Blapples/wallpapers/main/"
 
     // ─── NA-ive ───
