@@ -18,8 +18,10 @@ AbstractWidget {
     property bool visibleWhenLocked: Config.options.lock.showWidgets
     property var configEntry: Config.options.background.widgets[configEntryName]
     property string placementStrategy: configEntry.placementStrategy
-    property real targetX: Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width))
-    property real targetY : Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height))
+    
+    property real targetX: Math.max(0, Math.min((configEntry.x !== undefined && configEntry.x <= 1.0 ? configEntry.x : 0.5) * scaledScreenWidth - (width / 2), scaledScreenWidth - width))
+    property real targetY: Math.max(0, Math.min((configEntry.y !== undefined && configEntry.y <= 1.0 ? configEntry.y : 0.5) * scaledScreenHeight - (height / 2), scaledScreenHeight - height))
+    
     x: targetX
     y: targetY
     visible: opacity > 0
@@ -39,11 +41,19 @@ AbstractWidget {
     }
 
     onReleased: {
-        configEntry.x = root.x;
-        configEntry.y = root.y;
-        root.targetX = Qt.binding(() => Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width)));
-        root.targetY = Qt.binding(() => Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height)));
+        const centerX = root.x + (root.width / 2);
+        const centerY = root.y + (root.height / 2);
+        
+        configEntry.x = Math.max(0.0, Math.min(1.0, centerX / scaledScreenWidth));
+        configEntry.y = Math.max(0.0, Math.min(1.0, centerY / scaledScreenHeight));
+        
+        root.targetX = Qt.binding(() => Math.max(0, Math.min((configEntry.x !== undefined && configEntry.x <= 1.0 ? configEntry.x : 0.5) * scaledScreenWidth - (width / 2), scaledScreenWidth - width)));
+        root.targetY = Qt.binding(() => Math.max(0, Math.min((configEntry.y !== undefined && configEntry.y <= 1.0 ? configEntry.y : 0.5) * scaledScreenHeight - (height / 2), scaledScreenHeight - height)));
         root.restoreXYBinding();
+        
+        if (root.Window.window) {
+            root.Window.window.requestSave();
+        }
     }
 
     property bool needsColText: false
@@ -103,5 +113,6 @@ AbstractWidget {
                 root.targetY  = parsedContent.center_y * root.wallpaperScale - root.height / 2;
             }
         }
-    }
+  
+}
 }
