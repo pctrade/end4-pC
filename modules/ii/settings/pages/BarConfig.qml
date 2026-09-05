@@ -51,6 +51,7 @@ ContentPage {
         { id: "activeWindow",      name: Translation.tr("Active Window"),        icon: "subtitles" },
         { id: "powerButton",       name: Translation.tr("Power Button"),         icon: "power_settings_new" },
         { id: "updatesCount",      name: Translation.tr("Updates"),              icon: "deployed_code_update" },
+        { id: "codexUsage",        name: Translation.tr("AI Usage"),              icon: "data_usage" },
         { id: "docktoPanel",       name: Translation.tr("Dock to Panel"),        icon: "apps" },
         { id: "visualizer",        name: Translation.tr("Visualizer"),           icon: "graphic_eq" },
         { id: "hyprlandXkbIndicator",   name: Translation.tr("Keyboard Layout"), icon: "keyboard" },
@@ -76,9 +77,20 @@ ContentPage {
         return w ? w.name : id
     }
 
+    function setUsageProvider(providerId, enabled) {
+        let providers = (Config.options.bar.usageProviders ?? UsageProviderSettings.defaultProviderIds).slice()
+        if (enabled) {
+            if (!providers.includes(providerId))
+                providers.push(providerId)
+        } else {
+            providers = providers.filter(id => id !== providerId)
+        }
+        Config.options.bar.usageProviders = providers
+    }
+
     ColumnLayout {
-        id: mainLayout 
-        Layout.fillWidth: true   
+        id: mainLayout
+        Layout.fillWidth: true
         Layout.fillHeight: true
         spacing: 20
 
@@ -198,6 +210,110 @@ ContentPage {
                     onUpdate: list => Config.options.bar.layouts.rightLayout = list
                 }
             }
+        }
+
+        ContentSection {
+            icon: "data_usage"
+            shape: MaterialShape.Shape.SoftBurst
+            title: Translation.tr("AI usage widget")
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIconSource: "openai-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Codex")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("codex")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("codex", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "claude-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Claude")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("claude")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("claude", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "antigravity-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Antigravity")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("antigravity")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("antigravity", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "zai-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("GLM")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("zai")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("zai", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "kimi-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Kimi")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("kimi")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("kimi", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "cursor-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Cursor")
+                        checked: (Config.options.bar.usageProviders
+                            ?? UsageProviderSettings.defaultProviderIds).includes("cursor")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setUsageProvider("cursor", checked)
+                        }
+                    }
+                }
         }
 
         ContentSection {
@@ -324,11 +440,11 @@ ContentPage {
             icon: "notifications"
             shape: MaterialShape.Shape.Bun
             title: Translation.tr("Notifications")
-            
+
             GroupedList {
                 ConfigComboBox { // too much items for configselectionarray - I know it's not the best place to put this but I can change it later
                     text: Translation.tr("Popup position")
-                    buttonIcon: "my_location" 
+                    buttonIcon: "my_location"
                     currentValue: Config.options.notifications.position
                     fieldWidth: 50
                     onSelected: newValue => {

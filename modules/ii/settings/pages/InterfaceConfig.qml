@@ -34,6 +34,18 @@ ContentPage {
         }
     }
 
+    function setSidebarUsageProvider(providerId, enabled) {
+        let providers = (Config.options.sidebar.aiUsage.providers
+            ?? UsageProviderSettings.defaultProviderIds).slice()
+        if (enabled) {
+            if (!providers.includes(providerId))
+                providers.push(providerId)
+        } else {
+            providers = providers.filter(id => id !== providerId)
+        }
+        Config.options.sidebar.aiUsage.providers = providers
+    }
+
     ColumnLayout {
         id: mainLayout 
         Layout.fillWidth: true   
@@ -233,6 +245,128 @@ ContentPage {
                             text: Translation.tr("Enable Translator")
                             checked: Config.options.sidebar.translator.enable
                             onCheckedChanged: { Config.options.sidebar.translator.enable = checked }
+                        }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("AI usage widget")
+                Layout.topMargin: 4
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "data_usage"
+                        text: Translation.tr("Enable")
+                        checked: Config.options.sidebar.aiUsage.enable
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                Config.options.sidebar.aiUsage.enable = checked
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "openai-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Codex")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("codex")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("codex", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "claude-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Claude")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("claude")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("claude", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "antigravity-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Antigravity")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("antigravity")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("antigravity", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "zai-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("GLM")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("zai")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("zai", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "kimi-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Kimi")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("kimi")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("kimi", checked)
+                        }
+                    }
+
+                    ConfigSwitch {
+                        buttonIconSource: "cursor-symbolic"
+                        buttonIconColorize: false
+                        iconSize: Appearance.font.pixelSize.huge
+                        text: Translation.tr("Cursor")
+                        enabled: Config.options.sidebar.aiUsage.enable
+                        checked: (Config.options.sidebar.aiUsage.providers
+                            ?? UsageProviderSettings.defaultProviderIds).includes("cursor")
+
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        onCheckedChanged: {
+                            if (switchReady)
+                                page.setSidebarUsageProvider("cursor", checked)
                         }
                     }
                 }

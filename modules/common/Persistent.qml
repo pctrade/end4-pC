@@ -83,6 +83,13 @@ Singleton {
                 property bool inhibit: false
             }
 
+            property JsonObject usage: JsonObject {
+                // Last successful provider responses.  These are deliberately
+                // percentages and reset timestamps only; credentials never
+                // enter the persistent state file.
+                property list<var> snapshots: []
+            }
+
             property JsonObject record: JsonObject {
                 property bool enable: false
             }
