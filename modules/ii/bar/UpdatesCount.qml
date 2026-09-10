@@ -14,7 +14,7 @@ MouseArea {
     property bool isMaterial: Config.options.bar.cornerStyle === 3
     property bool borderless: Config.options.bar.borderless
 
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (contentLoader.item?.implicitWidth ?? 0) 
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (contentLoader.item?.implicitWidth ?? 0)
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
 
     cursorShape: Qt.PointingHandCursor
@@ -29,7 +29,8 @@ MouseArea {
     onPressed: (mouse) => {
         if (mouse.button === Qt.RightButton) {
             Updates.refresh()
-            Quickshell.execDetached(["notify-send",
+            Quickshell.execDetached([
+                "notify-send",
                 Translation.tr("Updates"),
                 Translation.tr("Checking for updates..."),
                 "-a", "Shell"
@@ -42,8 +43,17 @@ MouseArea {
         id: updateProc
         command: [
             "kitty", "--hold",
-            "fish", "-i", "-l", "-c",
-            "yay -Syu --combinedupgrade=false"
+            "bash", "-c",
+            "\
+                if [ \"${SystemInfo.distroId}\" = \"arch\" ] || [ \"${SystemInfo.distroId}\" = \"cachyos\" ] || [ \"${SystemInfo.distroId}\" = \"endeavouros\" ]; then
+                    yay -Syu --combinedupgrade=false
+                elif command -v apt &>/dev/null && [ -f /etc/debian_version ]; then
+                    sudo apt update && sudo apt upgrade -y
+                else
+                    echo \"Unsupported distro for updates\"
+                    read -p \"Press Enter to exit...\" 
+                fi
+            "
         ]
         onExited: (exitCode, exitStatus) => {
             Updates.refresh()
@@ -57,13 +67,15 @@ MouseArea {
         repeat: false
         onTriggered: {
             if (Updates.count === 0) {
-                Quickshell.execDetached(["notify-send",
+                Quickshell.execDetached([
+                    "notify-send",
                     Translation.tr("Updates"),
                     Translation.tr("System up to date"),
                     "-a", "Shell"
                 ])
             } else {
-                Quickshell.execDetached(["notify-send",
+                Quickshell.execDetached([
+                    "notify-send",
                     Translation.tr("Updates"),
                     Translation.tr("Update cancelled — %1 updates still pending").arg(Updates.count),
                     "-a", "Shell", "-u", "normal"

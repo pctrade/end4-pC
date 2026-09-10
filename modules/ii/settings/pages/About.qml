@@ -17,8 +17,17 @@ ContentPage {
     function runSystemUpdate() {
         Quickshell.execDetached([
             "kitty", "--hold",
-            "fish", "-i", "-l", "-c",
-            "yay -Syu --combinedupgrade=false"
+            "bash", "-c",
+            "\
+                if [ \"${SystemInfo.distroId}\" = \"arch\" ] || [ \"${SystemInfo.distroId}\" = \"cachyos\" ] || [ \"${SystemInfo.distroId}\" = \"endeavouros\" ]; then
+                    yay -Syu --combinedupgrade=false
+                elif command -v apt &>/dev/null && [ -f /etc/debian_version ]; then
+                    sudo apt update && sudo apt upgrade -y
+                else
+                    echo \"Unsupported distro for updates\"
+                    read -p \"Press Enter to exit...\"
+                fi
+            "
         ])
         Qt.callLater(() => GlobalStates.settingsOpen = false)
     }
@@ -53,7 +62,7 @@ ContentPage {
 
     Rectangle {
         Layout.fillWidth: true
-        Layout.preferredHeight: 156 
+        Layout.preferredHeight: 156
         Layout.topMargin: !isMinimal ? 35 : 4
         Layout.leftMargin: !isMinimal ? 16 : 0
         Layout.rightMargin: !isMinimal ? 16 : 0
@@ -161,7 +170,7 @@ ContentPage {
         Layout.topMargin: !isMinimal ? 0 : -8
         spacing: 8
 
-        RowLayout { //This is not in the grid because I was planning to do something else.
+        RowLayout { // This is not in the grid because I was planning to do something else.
             Layout.fillWidth: true
             spacing: 8
 

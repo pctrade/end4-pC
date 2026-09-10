@@ -84,21 +84,30 @@ check_and_prompt_upscale() {
                 if command -v upscayl &>/dev/null; then
                     nohup upscayl > /dev/null 2>&1 &
                 else
+                    if [[ "$distro_id" == "arch" || "$distro_id" == "cachyos" || "$distro_id" == "endeavouros" ]]; then
+                        install_cmd="yay -S upscayl-bin"
+                        install_label="Install Upscayl (Arch)"
+                    elif command -v apt &>/dev/null && [ -f /etc/debian_version ]; then
+                        install_cmd="sudo apt install upscayl"
+                        install_label="Install Upscayl (Debian/Kali)"
+                    else
+                        install_cmd="sudo apt install upscayl"
+                        install_label="Install Upscayl"
+                    fi
                     action2=$(notify-send \
                         -a "Wallpaper switcher" \
                         -c "im.error" \
-                        -A "install_upscayl=Install Upscayl (Arch)" \
+                        -A "install_upscayl=$install_label" \
                         "Install Upscayl?" \
-                        "yay -S upscayl-bin")
+                        "$install_cmd")
                     if [[ "$action2" == "install_upscayl" ]]; then
-                        kitty -1 yay -S upscayl-bin
+                        kitty -1 $install_cmd
                         if command -v upscayl &>/dev/null; then
                             nohup upscayl > /dev/null 2>&1 &
                         fi
                     fi
                 fi
             fi
-        fi
     fi
 }
 
@@ -212,15 +221,25 @@ switch() {
             fi
             if [ ${#missing_deps[@]} -gt 0 ]; then
                 echo "Missing deps: ${missing_deps[*]}"
-                echo "Arch: sudo pacman -S ${missing_deps[*]}"
+                if [[ "$distro_id" == "arch" || "$distro_id" == "cachyos" || "$distro_id" == "endeavouros" ]]; then
+                    install_cmd="sudo pacman -S ${missing_deps[*]}"
+                    install_label="Install (Arch)"
+                elif command -v apt &>/dev/null && [ -f /etc/debian_version ]; then
+                    install_cmd="sudo apt install ${missing_deps[*]}"
+                    install_label="Install (Debian/Kali)"
+                else
+                    install_cmd="sudo apt install ${missing_deps[*]}"
+                    install_label="Install"
+                fi
+                echo "Install: $install_cmd"
                 action=$(notify-send \
                     -a "Wallpaper switcher" \
                     -c "im.error" \
-                    -A "install_arch=Install (Arch)" \
+                    -A "install_deps=$install_label" \
                     "Can't switch to video wallpaper" \
                     "Missing dependencies: ${missing_deps[*]}")
-                if [[ "$action" == "install_arch" ]]; then
-                    kitty -1 sudo pacman -S "${missing_deps[*]}"
+                if [[ "$action" == "install_deps" ]]; then
+                    kitty -1 $install_cmd
                     if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
                         notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
                     fi
