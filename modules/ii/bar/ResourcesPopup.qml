@@ -30,10 +30,14 @@ StyledPopup {
                 iconText: "planner_review"
                 iconShape: MaterialShape.Shape.Gem
                 value: ResourceUsage.cpuUsage
-                sublabel: `${Math.round(ResourceUsage.cpuTemp)}°C`
+                sublabel: ResourceUsage.hasBoostControl
+                    ? `${Math.round(ResourceUsage.cpuTemp)}°C • Boost ${ResourceUsage.cpuBoostEnabled ? "ON" : "OFF"}`
+                    : `${Math.round(ResourceUsage.cpuTemp)}°C`
                 sublabelColor: ResourceUsage.cpuTemp > 80 ? Appearance.colors.colError
                     : ResourceUsage.cpuTemp > 60 ? Appearance.m3colors.m3tertiary
-                    : Appearance.colors.colOnLayer1
+                    : (ResourceUsage.hasBoostControl && ResourceUsage.cpuBoostEnabled ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1)
+                clickable: ResourceUsage.hasBoostControl
+                onClicked: ResourceUsage.toggleCpuBoost()
             }
         }
 

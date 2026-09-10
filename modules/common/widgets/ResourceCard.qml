@@ -14,11 +14,23 @@ Rectangle {
     property color sublabelColor: Appearance.colors.colOnSurfaceVariant
     property int cardWidth: 150 
 
+    signal clicked()
+    property bool clickable: false
+
     width: cardWidth
     height: 96 
     radius: 16 
     
-    color: Appearance.colors.colSurfaceContainerLow
+    color: root.clickable && cardMouseArea.containsMouse ? Appearance.colors.colSurfaceContainerHigh : Appearance.colors.colSurfaceContainerLow
+
+    MouseArea {
+        id: cardMouseArea
+        anchors.fill: parent
+        enabled: root.clickable
+        hoverEnabled: root.clickable
+        cursorShape: root.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
+        onClicked: root.clicked()
+    }
 
     function usageColor(v) {
         if (v > 0.9) return Appearance.colors.colError

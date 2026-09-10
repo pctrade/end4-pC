@@ -33,10 +33,81 @@ Item {
 
         Revealer {
             reveal: true
-            MaterialSymbol {
-                text: Audio.sink?.audio?.muted ? "volume_off" : "volume_up"
-                iconSize: Appearance.font.pixelSize.larger
-                color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+            Item {
+                id: volumeItem
+                implicitWidth: root.vertical ? volumeColLayout.implicitWidth : volumeRowLayout.implicitWidth
+                implicitHeight: root.vertical ? volumeColLayout.implicitHeight : volumeRowLayout.implicitHeight
+
+                RowLayout {
+                    id: volumeRowLayout
+                    visible: !root.vertical
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: {
+                            if (Audio.sink?.audio?.muted) return "volume_off";
+                            const vol = Audio.sink?.audio?.volume ?? 0;
+                            if (vol <= 0) return "volume_mute";
+                            if (vol < 0.5) return "volume_down";
+                            return "volume_up";
+                        }
+                        iconSize: Appearance.font.pixelSize.larger
+                        color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                    }
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignVCenter
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.features: { "tnum": 1 }
+                        color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                        text: `${Math.round((Audio.sink?.audio?.volume ?? 0) * 100)}`
+                    }
+                }
+
+                ColumnLayout {
+                    id: volumeColLayout
+                    visible: root.vertical
+                    anchors.centerIn: parent
+                    spacing: 1
+
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: {
+                            if (Audio.sink?.audio?.muted) return "volume_off";
+                            const vol = Audio.sink?.audio?.volume ?? 0;
+                            if (vol <= 0) return "volume_mute";
+                            if (vol < 0.5) return "volume_down";
+                            return "volume_up";
+                        }
+                        iconSize: Appearance.font.pixelSize.larger
+                        color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                    }
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignHCenter
+                        font.pixelSize: Appearance.font.pixelSize.smallest
+                        font.features: { "tnum": 1 }
+                        color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                        text: `${Math.round((Audio.sink?.audio?.volume ?? 0) * 100)}`
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton
+                    onWheel: wheel => {
+                        if (wheel.angleDelta.y > 0) {
+                            Audio.incrementVolume();
+                        } else if (wheel.angleDelta.y < 0) {
+                            Audio.decrementVolume();
+                        }
+                    }
+                    onPressed: mouse => {
+                        GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
+                    }
+                }
             }
         }
         Revealer {

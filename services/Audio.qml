@@ -50,23 +50,27 @@ Singleton {
 
     // Controls
     function toggleMute() {
-        Audio.sink.audio.muted = !Audio.sink.audio.muted
+        if (!Audio.sink?.audio) return;
+        Audio.sink.audio.muted = !Audio.sink.audio.muted;
     }
 
     function toggleMicMute() {
-        Audio.source.audio.muted = !Audio.source.audio.muted
+        if (!Audio.source?.audio) return;
+        Audio.source.audio.muted = !Audio.source.audio.muted;
     }
 
-    function incrementVolume() {
-        const currentVolume = Audio.value;
-        const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
-        Audio.sink.audio.volume = Math.min(1, Audio.sink.audio.volume + step);
+    function incrementVolume(step = 0.02) {
+        if (!Audio.sink?.audio) return;
+        const currentVolPercent = Math.round((Audio.sink.audio.volume ?? 0) * 100);
+        const stepPercent = Math.round(step * 100);
+        Audio.sink.audio.volume = Math.min(1.0, (currentVolPercent + stepPercent) / 100);
     }
     
-    function decrementVolume() {
-        const currentVolume = Audio.value;
-        const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
-        Audio.sink.audio.volume -= step;
+    function decrementVolume(step = 0.02) {
+        if (!Audio.sink?.audio) return;
+        const currentVolPercent = Math.round((Audio.sink.audio.volume ?? 0) * 100);
+        const stepPercent = Math.round(step * 100);
+        Audio.sink.audio.volume = Math.max(0.0, (currentVolPercent - stepPercent) / 100);
     }
 
     function setDefaultSink(node) {

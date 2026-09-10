@@ -1,3 +1,4 @@
+import qs.services
 import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.widgets
@@ -7,6 +8,7 @@ import QtQuick.Layouts
 Item {
     id: root
     required property string iconName
+    property bool isCpu: iconName === "planner_review"
     required property double percentage
     property bool vertical: false
     property int warningThreshold: 100
@@ -37,6 +39,32 @@ Item {
                     iconSize: Appearance.font.pixelSize.normal
                     color: Appearance.colors.colOnSecondaryContainer
                 }
+
+                Rectangle {
+                    visible: root.isCpu && ResourceUsage.hasBoostControl
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        topMargin: -2
+                        rightMargin: -2
+                    }
+                    width: 8
+                    height: 8
+                    radius: Appearance.rounding.full
+                    color: ResourceUsage.cpuBoostEnabled ? (Appearance.colors.colPrimary || Appearance.m3colors.m3primary) : Appearance.colors.colLayer0Border
+                    border.width: 1.5
+                    border.color: Appearance.colors.colLayer0
+                    z: 5
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "bolt"
+                        font.weight: Font.Black
+                        iconSize: 5
+                        color: ResourceUsage.cpuBoostEnabled ? (Appearance.colors.colOnPrimary || Appearance.m3colors.m3onPrimary) : Appearance.colors.colOnLayer1Inactive
+                        visible: ResourceUsage.cpuBoostEnabled
+                    }
+                }
             }
         }
     }
@@ -61,6 +89,32 @@ Item {
                     text: root.iconName
                     iconSize: Appearance.font.pixelSize.normal
                     color: Appearance.m3colors.m3onSecondaryContainer
+                }
+
+                Rectangle {
+                    visible: root.isCpu && ResourceUsage.hasBoostControl
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        topMargin: -2
+                        rightMargin: -2
+                    }
+                    width: 8
+                    height: 8
+                    radius: Appearance.rounding.full
+                    color: ResourceUsage.cpuBoostEnabled ? (Appearance.colors.colPrimary || Appearance.m3colors.m3primary) : Appearance.colors.colLayer0Border
+                    border.width: 1.5
+                    border.color: Appearance.colors.colLayer0
+                    z: 5
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "bolt"
+                        font.weight: Font.Black
+                        iconSize: 5
+                        color: ResourceUsage.cpuBoostEnabled ? (Appearance.colors.colOnPrimary || Appearance.m3colors.m3onPrimary) : Appearance.colors.colOnLayer1Inactive
+                        visible: ResourceUsage.cpuBoostEnabled
+                    }
                 }
             }
         }
@@ -117,8 +171,19 @@ Item {
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.NoButton
+        acceptedButtons: (root.isCpu && ResourceUsage.hasBoostControl) ? Qt.LeftButton : Qt.NoButton
+        cursorShape: (root.isCpu && ResourceUsage.hasBoostControl) ? Qt.PointingHandCursor : Qt.ArrowCursor
         enabled: vertical ? root.visible : (resourceRowLayout.x >= 0 && root.width > 0 && root.visible)
+        onClicked: {
+            if (root.isCpu && ResourceUsage.hasBoostControl) {
+                ResourceUsage.toggleCpuBoost()
+            }
+        }
+
+        StyledToolTip {
+            visible: (root.isCpu && ResourceUsage.hasBoostControl) && parent.containsMouse
+            text: ResourceUsage.cpuBoostEnabled ? Translation.tr("CPU Turbo Boost: Enabled\nClick to disable") : Translation.tr("CPU Turbo Boost: Disabled\nClick to enable")
+        }
     }
 
     Behavior on implicitWidth {

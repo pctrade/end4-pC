@@ -38,7 +38,61 @@ Singleton {
     property real diskFree: 0
     property real diskUsedPercentage: diskTotal > 0 ? diskUsed / diskTotal : 0
     property list<real> diskUsageHistory: []
-    property string maxAvailableDiskString: kbToGbString(diskTotal)
+    property string activeBoostPath: ""
+    property string activeBoostType: ""
+    property bool hasBoostControl: false
+    property bool cpuBoostEnabled: true
+
+    function syncBoostState() {
+        if (!root.hasBoostControl || !fileBoost.loaded) return;
+        const val = fileBoost.text().trim();
+        if (val.length === 0) return;
+        if (root.activeBoostType === "intel_no_turbo") {
+            root.cpuBoostEnabled = (val === "0");
+        } else {
+            root.cpuBoostEnabled = (val === "1");
+        }
+    }
+
+    function toggleCpuBoost() {
+        if (!root.hasBoostControl || toggleCpuBoostProc.running) return;
+        toggleCpuBoostProc.running = true;
+    }
+
+    Process {
+        id: boostProbeProc
+        running: true
+        command: ["bash", "-c", "if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then echo 'intel_no_turbo /sys/devices/system/cpu/intel_pstate/no_turbo'; elif [ -f /sys/devices/system/cpu/cpufreq/boost ]; then echo 'cpufreq_boost /sys/devices/system/cpu/cpufreq/boost'; elif [ -f /sys/devices/system/cpu/amd_pstate/cpupower/boost ]; then echo 'amd_boost /sys/devices/system/cpu/amd_pstate/cpupower/boost'; fi"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = text.trim().split(" ");
+                if (parts.length >= 2 && parts[1].length > 0) {
+                    root.activeBoostType = parts[0];
+                    root.activeBoostPath = parts[1];
+                    root.hasBoostControl = true;
+                    fileBoost.reload();
+                } else {
+                    root.hasBoostControl = false;
+                }
+            }
+        }
+    }
+
+    Process {
+        id: toggleCpuBoostProc
+        command: {
+            if (!root.hasBoostControl) return ["true"];
+            const targetVal = root.activeBoostType === "intel_no_turbo"
+                ? (root.cpuBoostEnabled ? "1" : "0")
+                : (root.cpuBoostEnabled ? "0" : "1");
+            return ["pkexec", "bash", "-c", `echo ${targetVal} > "${root.activeBoostPath}"`];
+        }
+        onExited: {
+            if (fileBoost.path.length > 0) {
+                fileBoost.reload();
+            }
+        }
+    }
 
     Process {
         id: tempProc
@@ -111,6 +165,9 @@ Singleton {
         onTriggered: {
             fileMeminfo.reload()
             fileStat.reload()
+            if (root.hasBoostControl && root.activeBoostPath.length > 0) {
+                fileBoost.reload()
+            }
 
             const textMeminfo = fileMeminfo.text()
             memoryTotal = Number(textMeminfo.match(/MemTotal: *(\d+)/)?.[1] ?? 1)
@@ -139,6 +196,11 @@ Singleton {
 
     FileView { id: fileMeminfo; path: "/proc/meminfo" }
     FileView { id: fileStat;    path: "/proc/stat" }
+    FileView {
+        id: fileBoost
+        path: root.activeBoostPath
+        onLoaded: root.syncBoostState()
+    }
 
     Process {
         id: findCpuMaxFreqProc
