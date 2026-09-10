@@ -47,16 +47,9 @@ generate_thumbnail() {
     local src="$1"
     local abs_path
     abs_path="$(realpath "$src")"
-    # Skip files with multiple frames (GIFs, videos, etc.)
-    case "${abs_path,,}" in
-        *.gif|*.mp4|*.webm|*.mkv|*.avi|*.mov)
-            return
-            ;;
-    esac
     local encoded_path
     encoded_path="$(urlencode "$abs_path")"
-    local uri
-    uri="file://$encoded_path"
+    local uri="file://$encoded_path"
     local hash
     hash="$(md5 "$uri")"
     local out="$CACHE_DIR/$hash.png"
@@ -64,6 +57,17 @@ generate_thumbnail() {
     if [ -f "$out" ]; then
         return
     fi
+    case "${abs_path,,}" in
+        *.gif)
+            return
+            ;;
+        *.mp4|*.webm|*.mkv|*.avi|*.mov)
+            if command -v ffmpeg &>/dev/null; then
+                ffmpeg -y -i "$abs_path" -vframes 1 -update 1 -vf "scale=${THUMBNAIL_SIZE}:${THUMBNAIL_SIZE}:force_original_aspect_ratio=decrease" "$out" 2>/dev/null
+            fi
+            return
+            ;;
+    esac
     magick "$abs_path" -resize "${THUMBNAIL_SIZE}x${THUMBNAIL_SIZE}" "$out"
 }
 
@@ -91,8 +95,6 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
     esac
-    # Only one mode allowed
-    [[ -n "$MODE" ]] && break
 done
 
 THUMBNAIL_SIZE="$(get_thumbnail_size "$SIZE_NAME")"

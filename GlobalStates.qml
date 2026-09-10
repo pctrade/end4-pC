@@ -50,11 +50,11 @@ Singleton {
 
     // Shared by desktop (Background) and lock screen (LockSurface) scroll-to-cycle
     readonly property var centeredShapeOptions: [
-        "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill",
+        "Circle", "Square", "Slanted", "Arch", "Fan", "Arrow", "SemiCircle", "Oval", "Pill",
         "Triangle", "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny",
         "Cookie4Sided", "Cookie6Sided", "Cookie7Sided", "Cookie9Sided", "Cookie12Sided",
-        "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", "SoftBurst", "Flower",
-        "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart"
+        "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", "SoftBurst", "Boom", "SoftBoom", "Flower",
+        "Puffy", "PuffyDiamond", "PixelCircle", "PixelTriangle", "Bun", "Heart"
     ]
     function cycleCenteredWallpaperShape(direction) {
         const opts = root.centeredShapeOptions
