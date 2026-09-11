@@ -39,6 +39,7 @@ Item {
             { key: "clock", alwaysOnLock: true },
             { key: "notes" },
             { key: "media" },
+            { key: "spun" },
             { key: "images" },
             { key: "resources" },
             { key: "worldClock" },
@@ -68,6 +69,7 @@ Item {
                     case "clock":       return clockComp
                     case "notes":       return notesComp
                     case "media":       return mediaComp
+                    case "spun":        return spunComp
                     case "images":      return imagesComp
                     case "resources":   return resourcesComp
                     case "worldClock":  return worldClockComp
@@ -166,6 +168,17 @@ Item {
     Component {
         id: mediaComp
         MediaWidget {
+            screenWidth: root.screen.width
+            screenHeight: root.screen.height
+            scaledScreenWidth: root.screen.width
+            scaledScreenHeight: root.screen.height
+            wallpaperScale: 1
+            wallpaperItem: root.wallpaperItem
+        }
+    }
+    Component {
+        id: spunComp
+        SpunWidget {
             screenWidth: root.screen.width
             screenHeight: root.screen.height
             scaledScreenWidth: root.screen.width

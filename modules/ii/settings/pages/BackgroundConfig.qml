@@ -1016,6 +1016,11 @@ ContentPage {
                             enabled: Config.options.background.widgets.media.enable
                         },
                         {
+                            icon: "album",
+                            name: Translation.tr("Spun"),
+                            enabled: Config.options.background.widgets.spun.enable
+                        },
+                        {
                             icon: "memory",
                             name: Translation.tr("Resources"),
                             enabled: Config.options.background.widgets.resources.enable
@@ -1090,6 +1095,8 @@ ContentPage {
                                             Config.options.background.widgets.images.enable = checked
                                         else if (modelData.icon === "music_note")
                                             Config.options.background.widgets.media.enable = checked
+                                        else if (modelData.icon === "album")
+                                            Config.options.background.widgets.spun.enable = checked
                                         else if (modelData.icon === "memory")
                                             Config.options.background.widgets.resources.enable = checked
                                         else if (modelData.icon === "graphic_eq")
@@ -1120,6 +1127,33 @@ ContentPage {
                                 color: Appearance.colors.colSubtext
                             }
                         }
+                    }
+                }
+            }
+            ContentSubsection {
+                title: Translation.tr("Spun")
+                Layout.bottomMargin: 10
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "motion_play"
+                        text: Translation.tr("Spin album art during playback")
+                        checked: Config.options.background.widgets.spun.animate
+                        onCheckedChanged: Config.options.background.widgets.spun.animate = checked
+                    }
+                    ConfigSlider {
+                        text: Translation.tr("Disc size")
+                        buttonIcon: "album"
+                        from: 160
+                        to: 360
+                        usePercentTooltip: false
+                        value: Config.options.background.widgets.spun.size
+                        onValueChanged: Config.options.background.widgets.spun.size = value
+                    }
+                    RippleButtonWithIcon {
+                        Layout.fillWidth: true
+                        mainText: Translation.tr("Open Spun")
+                        materialIcon: "open_in_new"
+                        onClicked: Spun.open()
                     }
                 }
             }

@@ -376,6 +376,16 @@ Singleton {
                         property bool vertical: false
                     }
 
+                    property JsonObject spun: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 720
+                        property real y: 100
+                        property real z: 0
+                        property real size: 240
+                        property bool animate: true
+                    }
+
                     property JsonObject media: JsonObject {
                         property bool enable: false
                         property bool showControls: true
