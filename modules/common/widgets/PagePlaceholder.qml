@@ -27,6 +27,7 @@ Item {
 
     ColumnLayout {
         anchors.centerIn: parent
+        width: Math.max(0, Math.min(root.width - 40, 400))
         spacing: 5
 
         MaterialShapeWrappedMaterialSymbol {
@@ -40,6 +41,8 @@ Item {
             id: widgetNameText
             visible: title !== ""
             Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
             font {
                 family: Appearance.font.family.title
                 pixelSize: Appearance.font.pixelSize.larger
@@ -54,7 +57,7 @@ Item {
             Layout.fillWidth: true
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.m3colors.m3outline
-            horizontalAlignment: Text.AlignLeft
+            horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
         }
     }
