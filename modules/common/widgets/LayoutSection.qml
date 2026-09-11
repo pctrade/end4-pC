@@ -195,7 +195,8 @@ ContentSubsection {
                         required property var modelData
                         leftmost: true; rightmost: true
                         buttonText: modelData.name
-                        buttonIcon: modelData.icon ?? ""  
+                        buttonIcon: modelData.icon ?? ""
+                        buttonIconSource: modelData.iconSource ?? ""
                         onClicked: {
                             let list = root.layout.slice()
                             list.push(modelData.id)
