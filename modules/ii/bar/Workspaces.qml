@@ -283,6 +283,7 @@ ButtonMouseArea {
         Behavior on opacity {} // Don't animate, as specialBlur is already animated
 
         sourceComponent: Pill {
+            id: specialWsPill
             anchors.centerIn: parent
             property real undirectionalWidth: root.activeWorkspaceSize
             property real undirectionalLength: {
@@ -296,10 +297,50 @@ ButtonMouseArea {
             implicitWidth: root.vertical ? undirectionalWidth : undirectionalLength
             implicitHeight: root.vertical ? undirectionalLength : undirectionalWidth
 
+            readonly property string specialIcon: {
+                switch (wsModel.specialWorkspaceName) {
+                case "music": return "music_cast";
+                case "communication": return "forum";
+                case "todo": return "checklist";
+                case "sysmon": return "monitor_heart";
+                case "claude": return "file:///usr/lib/claude-desktop/resources/TrayIconLinux.png";
+                default: return "star";
+                }
+            }
+            readonly property bool specialIconIsImage: specialIcon.startsWith("file://") && specialWsImage.status !== Image.Error
+
+            MaterialSymbol {
+                anchors.centerIn: parent
+                visible: root.vertical && !specialWsPill.specialIconIsImage
+                text: specialWsPill.specialIconIsImage ? "" : (specialWsPill.specialIcon.startsWith("file://") ? "star" : specialWsPill.specialIcon)
+                color: Appearance.colors.colOnPrimary
+                iconSize: root.specialTextSize
+            }
+
+            Image {
+                id: specialWsImage
+                anchors.centerIn: parent
+                visible: root.vertical && specialWsPill.specialIconIsImage
+                source: specialWsPill.specialIcon.startsWith("file://") ? specialWsPill.specialIcon : ""
+                width: root.specialTextSize
+                height: root.specialTextSize
+                sourceSize.width: width * 2
+                sourceSize.height: height * 2
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    brightness: 1
+                    colorization: 1
+                    colorizationColor: Appearance.colors.colOnPrimary
+                }
+            }
+
             StyledText {
                 id: specialWsText
                 anchors.centerIn: parent
-                text: (!root.vertical ? wsModel.specialWorkspaceName : "S")
+                visible: !root.vertical
+                text: wsModel.specialWorkspaceName
                 color: Appearance.colors.colOnPrimary
                 font.pixelSize: root.specialTextSize
             }
