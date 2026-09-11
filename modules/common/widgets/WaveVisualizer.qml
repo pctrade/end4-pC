@@ -7,14 +7,35 @@ import QtQuick.Effects
 Canvas { // Visualizer
     id: root
     property list<var> points
-    property list<var> smoothPoints
     property real maxVisualizerValue: 1000
     property int smoothing: 2
     property bool live: true
     property color color: Appearance.m3colors.m3primary
 
-    onPointsChanged: () => {
-        root.requestPaint()
+    property bool paintPending: false
+    onPointsChanged: {
+        // Cava can emit frames much faster than we need to redraw + re-blur this canvas.
+        // Coalesce bursts to the throttle's rate instead of repainting (and re-rendering
+        // the blur layer) on every single frame, which is what was driving unbounded
+        // memory growth while a track played.
+        if (!paintThrottle.running) {
+            paintThrottle.start();
+            root.requestPaint();
+        } else {
+            root.paintPending = true;
+        }
+    }
+
+    Timer {
+        id: paintThrottle
+        interval: 33 // ~30fps cap
+        onTriggered: {
+            if (root.paintPending) {
+                root.paintPending = false;
+                root.requestPaint();
+                paintThrottle.start();
+            }
+        }
     }
 
     anchors.fill: parent
@@ -30,8 +51,10 @@ Canvas { // Visualizer
         if (n < 2) return;
 
         // Smoothing: simple moving average (optional)
+        // Local array (not a QML property) so we're not marshalling through the
+        // property system and firing change notifications on every repaint.
         var smoothWindow = root.smoothing; // adjust for more/less smoothing
-        root.smoothPoints = [];
+        var smoothPoints = [];
         for (var i = 0; i < n; ++i) {
             var sum = 0, count = 0;
             for (var j = -smoothWindow; j <= smoothWindow; ++j) {
@@ -39,15 +62,15 @@ Canvas { // Visualizer
                 sum += points[idx];
                 count++;
             }
-            root.smoothPoints.push(sum / count);
+            smoothPoints.push(sum / count);
         }
-        if (!root.live) root.smoothPoints.fill(0); // If not playing, show no points
+        if (!root.live) smoothPoints.fill(0); // If not playing, show no points
 
         ctx.beginPath();
         ctx.moveTo(0, h);
         for (var i = 0; i < n; ++i) {
             var x = i * w / (n - 1);
-            var y = h - (root.smoothPoints[i] / maxVal) * h;
+            var y = h - (smoothPoints[i] / maxVal) * h;
             ctx.lineTo(x, y);
         }
         ctx.lineTo(w, h);
