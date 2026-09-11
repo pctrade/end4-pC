@@ -171,6 +171,10 @@ Singleton {
                     property int rounding: 22
                     property real activeOpacity: 1.0
                     property real inactiveOpacity: 0.9
+
+                    // Per-application opacity settings.
+                    // Each entry: { id, name, match, active, enabled }
+                    property list<var> applicationOpacityRules: []
                     property JsonObject blur: JsonObject {
                         property bool enabled: true
                         property int size: 1
