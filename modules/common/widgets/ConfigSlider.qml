@@ -19,6 +19,8 @@ RowLayout {
     property real to: slider.to
     property real textWidth: 120
     property bool showLabel: true
+    property alias pressed: slider.pressed
+    signal moved()
 
     RowLayout {
         id: row
@@ -44,5 +46,6 @@ RowLayout {
         value: root.value
         from: root.from
         to: root.to
+        onMoved: root.moved()
     }
 }
