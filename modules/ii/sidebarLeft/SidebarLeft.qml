@@ -15,6 +15,9 @@ Scope { // Scope
     property Component contentComponent: SidebarLeftContent {}
     property Item sidebarContent
     readonly property bool centerOnly: Config.options.bar.layouts.leftLayout.length === 0 && Config.options.bar.layouts.rightLayout.length === 0 && !Config.options.bar.vertical
+    readonly property real barCenterOnlyOffset: (Config.options.bar.centerOnlyReserveFrame && root.centerOnly)
+        ? Config.options.bar.frameThickness
+        : Appearance.sizes.barHeight
 
     function toggleDetach() {
         root.detach = !root.detach;
@@ -143,10 +146,10 @@ Scope { // Scope
                     if (Config?.options.bar.autoHide.enable) return 0;
                     if (!centerOnly) return 0;
                     switch (Config.options.bar.cornerStyle) {
-                    case 0: return -Appearance.sizes.barHeight;
-                    case 1: return -Appearance.sizes.barHeight + Appearance.sizes.hyprlandGapsOut;
-                    case 2: return -Appearance.sizes.barHeight + Appearance.sizes.hyprlandGapsOut;
-                    case 3: return -Appearance.sizes.barHeight - Appearance.sizes.hyprlandGapsOut;
+                    case 0: return -root.barCenterOnlyOffset;
+                    case 1: return -root.barCenterOnlyOffset + Appearance.sizes.hyprlandGapsOut;
+                    case 2: return -root.barCenterOnlyOffset + Appearance.sizes.hyprlandGapsOut;
+                    case 3: return -root.barCenterOnlyOffset - Appearance.sizes.hyprlandGapsOut;
                     default: return 0;
                     }
                 }
@@ -155,10 +158,10 @@ Scope { // Scope
                     if (Config?.options.bar.autoHide.enable) return 0;
                     if (!centerOnly) return 0;
                     switch (Config.options.bar.cornerStyle) {
-                    case 0: return -Appearance.sizes.barHeight;
-                    case 1: return -Appearance.sizes.barHeight + Appearance.sizes.hyprlandGapsOut;
-                    case 2: return -Appearance.sizes.barHeight + Appearance.sizes.hyprlandGapsOut;
-                    case 3: return -Appearance.sizes.barHeight - Appearance.sizes.hyprlandGapsOut;
+                    case 0: return -root.barCenterOnlyOffset;
+                    case 1: return -root.barCenterOnlyOffset + Appearance.sizes.hyprlandGapsOut;
+                    case 2: return -root.barCenterOnlyOffset + Appearance.sizes.hyprlandGapsOut;
+                    case 3: return -root.barCenterOnlyOffset - Appearance.sizes.hyprlandGapsOut;
                     default: return 0;
                     }
                 }

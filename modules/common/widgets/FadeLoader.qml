@@ -10,6 +10,7 @@ Loader {
     opacity: shown ? 1 : 0
     visible: opacity > 0
     active: opacity > 0
+    z: item?.z ?? 0
 
     Behavior on opacity {
         id: opacityBehavior

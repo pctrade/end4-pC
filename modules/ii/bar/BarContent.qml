@@ -83,9 +83,38 @@ Item {
     }
 
     // center-only
-    readonly property bool centerOnly: !root.isMaterial
-        && root.effectiveLeftLayout.length === 0
+    readonly property bool centerOnly: root.effectiveLeftLayout.length === 0
         && root.effectiveRightLayout.length === 0
+
+    RoundCorner {
+        id: leftPillCorner
+        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0 
+        x: barContent.centerPillX - implicitSize
+        implicitSize: Appearance.rounding.screenRounding
+        color: Config.options.bar.followFrameColor
+            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+            : Appearance.colors.colLayer0
+        corner: RoundCorner.CornerEnum.TopRight
+
+        states: State {
+            name: "bottom"
+            when: Config.options.bar.bottom
+            AnchorChanges {
+                target: leftPillCorner
+                anchors.top: undefined
+                anchors.bottom: barContent.bottom
+            }
+            PropertyChanges {
+                target: leftPillCorner
+                corner: RoundCorner.CornerEnum.BottomRight
+            }
+        }
+        AnchorChanges {
+            target: leftPillCorner
+            anchors.top: barContent.top
+            anchors.bottom: undefined
+        }
+    }
 
     Rectangle {
         id: centerPill
@@ -107,6 +136,36 @@ Item {
         topRightRadius:    Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
     }
 
+    RoundCorner {
+        id: rightPillCorner
+        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0
+        x: barContent.centerPillX + barContent.centerPillWidth
+        implicitSize: Appearance.rounding.screenRounding
+        color: Config.options.bar.followFrameColor
+            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+            : Appearance.colors.colLayer0
+        corner: RoundCorner.CornerEnum.TopLeft
+
+        states: State {
+            name: "bottom"
+            when: Config.options.bar.bottom
+            AnchorChanges {
+                target: rightPillCorner
+                anchors.top: undefined
+                anchors.bottom: barContent.bottom
+            }
+            PropertyChanges {
+                target: rightPillCorner
+                corner: RoundCorner.CornerEnum.BottomLeft
+            }
+        }
+        AnchorChanges {
+            target: rightPillCorner
+            anchors.top: barContent.top
+            anchors.bottom: undefined
+        }
+    }
+
     Item {
         id: contentContainer
         anchors.fill: barBackground
@@ -115,7 +174,7 @@ Item {
         // Left
         Item {
             anchors.left: parent.left
-            anchors.leftMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : 10)
+            anchors.leftMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : 8)
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.isMaterial ? leftMaterialPill.implicitWidth : leftRow.implicitWidth
@@ -301,7 +360,7 @@ Item {
         // Right
         Item {
             anchors.right: parent.right
-            anchors.rightMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : 10)
+            anchors.rightMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : 8)
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.isMaterial ? rightMaterialPill.implicitWidth : rightRow.implicitWidth
@@ -338,8 +397,11 @@ Item {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
                                 onLoaded: {
-                                    if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                                    if (item && item.hasOwnProperty("mirrored")) {
+                                        try {
+                                            item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
+                                        } catch (e) {}
+                                    }
                                 }
                             }
                         }
@@ -369,8 +431,11 @@ Item {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
-                                if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                                if (item && item.hasOwnProperty("mirrored")) {
+                                    try {
+                                        item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
+                                    } catch (e) {}
+                                }
                             }
                         }
                     }
@@ -383,8 +448,11 @@ Item {
                         Layout.topMargin: Config.options.bar.bottom ? -5 : 3
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
-                            if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                            if (item && item.hasOwnProperty("mirrored")) {
+                                try {
+                                    item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
+                                } catch (e) {}
+                            }
                         }
                     }
                 }

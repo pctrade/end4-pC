@@ -47,6 +47,7 @@ ContentPage {
         { id: "utilButtons",       name: Translation.tr("Util Buttons"),         icon: "toggle_on" },
         { id: "sysTray",           name: Translation.tr("Tray"),                 icon: "inbox" },
         { id: "batteryIndicator",  name: Translation.tr("Battery"),              icon: "battery_android_frame_full" },
+        { id: "bluetooth",         name: Translation.tr("Bluetooth"),            icon: "bluetooth" },
         { id: "activeWindow",      name: Translation.tr("Active Window"),        icon: "subtitles" },
         { id: "powerButton",       name: Translation.tr("Power Button"),         icon: "power_settings_new" },
         { id: "updatesCount",      name: Translation.tr("Updates"),              icon: "deployed_code_update" },
@@ -272,6 +273,13 @@ ContentPage {
                         ]
                     }
                 }
+                ConfigSwitch {
+                    buttonIcon: "expand"
+                    enabled: Config.options.bar.showFrame
+                    text: Translation.tr("Overlap windows when center-only")
+                    checked: Config.options.bar.centerOnlyReserveFrame
+                    onCheckedChanged: { Config.options.bar.centerOnlyReserveFrame = checked; }
+                }
                 ConfigRow {
                     ConfigSwitch {
                         buttonIcon: "panorama_wide_angle"
@@ -300,7 +308,7 @@ ContentPage {
                     icon: "eraser_size_1"
                     text: Translation.tr("Frame thickness")
                     value: Config.options.bar.frameThickness
-                    from: 1
+                    from: 2
                     to: 10
                     stepSize: 1
                     onValueChanged: {

@@ -14,7 +14,7 @@ Singleton {
             if (!Config.options.background.lockWall || Config.options.background.lockWall.length === 0) return
             genProc.command = [
                 "bash", Directories.wallpaperSwitchScriptPath,
-                "--lock-colors-only", FileUtils.trimFileProtocol(Config.options.background.lockWall)
+                "--colors_lock", "--image", FileUtils.trimFileProtocol(Config.options.background.lockWall)
             ]
             genProc.running = true
         }
@@ -23,7 +23,7 @@ Singleton {
     Process {
         id: genProc
         onExited: (exitCode) => {
-            if (exitCode !== 0) console.warn("[LockWallpaperColorGen] switchwall.sh --lock-colors-only failed")
+            if (exitCode !== 0) console.warn("[LockWallpaperColorGen] switchwall.sh --colors_lock failed")
         }
     }
 }

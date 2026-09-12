@@ -74,6 +74,63 @@ Item {
                 sourceSize.width: size
                 sourceSize.height: size
             }
+
+            HoverHandler {
+                id: artHover
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: "black"
+                opacity: artHover.hovered ? 0.6 : 0.0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Appearance.animationCurves.expressiveFastSpatialDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
+                    }
+                }
+            }
+
+            MaterialSymbol {
+                anchors.centerIn: parent
+                iconSize: Appearance.font.pixelSize.headline
+                color: root.blendedColors.colOnLayer0
+                text: (root.player?.volume ?? 0) === 0 ? "volume_off" : ((root.player?.volume ?? 0) < 0.5 ? "volume_down" : "volume_up")
+                opacity: artHover.hovered ? 1.0 : 0.0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Appearance.animationCurves.expressiveFastSpatialDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
+                    }
+                }
+            }
+
+            MaterialDial {
+                anchors.fill: parent
+                anchors.margins: 14
+                colPrimary: root.blendedColors.colPrimary
+                colSecondary: root.blendedColors.colSecondaryContainer
+                value: root.player?.volume ?? 0
+                waveAmplitude: 3.2 * (root.player?.volume ?? 0)
+                opacity: artHover.hovered ? 1.0 : 0.0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Appearance.animationCurves.expressiveFastSpatialDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
+                    }
+                }
+
+                onMoved: {
+                    if (root.player)
+                        root.player.volume = value;
+                }
+            }
         }
 
         ColumnLayout {
@@ -180,6 +237,11 @@ Item {
                         iconName: "lyrics"
                         visible: !GlobalStates.sidebarRightOpen
                         downAction: () => root.toggleLyrics()
+                    }
+
+                    TrackChangeButton {
+                        iconName: "equalizer"
+                        downAction: () => GlobalStates.equalizerOpen = !GlobalStates.equalizerOpen
                     }
                 }
 

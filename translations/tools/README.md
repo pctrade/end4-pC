@@ -6,6 +6,7 @@ This suite is used to manage project translation files, automatically extract tr
 
 ### 1. `translation-manager.py` - Main Translation Manager
 - Extract translatable texts
+- Check translation drift without modifying files
 - Compare and update translation files
 - Interactive addition/removal of translation keys
 
@@ -32,6 +33,12 @@ cd .config/quickshell/translations/tools
 # Show current translation status
 ./manage-translations.sh status
 
+# Check all languages for missing or stale keys
+./manage-translations.sh check
+
+# Check a specific language
+./manage-translations.sh check -l zh_CN
+
 # Extract translatable texts
 ./manage-translations.sh extract
 
@@ -57,6 +64,25 @@ Or run from the project root:
 
 ## Detailed Usage
 
+### Translation Drift Check
+
+Use `check` for a read-only comparison between strings currently referenced by
+the QML/JavaScript source and the keys in each translation file:
+
+```bash
+# Check every language
+./manage-translations.sh check
+
+# Check one language
+./manage-translations.sh check -l zh_CN
+```
+
+The command reports missing keys, stale extra keys, and extra keys intentionally
+preserved with `/*keep*/`. It exits with status `0` when checked files are in
+sync, `1` when drift is detected, and `2` for invalid input such as an unknown
+language. Translation files are never changed, so the command can be used in
+CI or pre-commit checks.
+
 ### Translation Manager (`translation-manager.py`)
 
 Basic usage:
@@ -69,6 +95,9 @@ Basic usage:
 
 # Extract translatable texts only
 ./translation-manager.py --extract-only
+
+# Check translation drift without changing files
+./translation-manager.py --check
 
 # Show extracted texts
 ./translation-manager.py --extract-only --show-temp

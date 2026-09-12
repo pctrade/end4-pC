@@ -344,7 +344,7 @@ ContentPage {
 
                 ColumnLayout {
                     id: translationCol
-                    anchors { fill: parent; margins: 0 }
+                    Layout.fillWidth: true
                     spacing: 8
 
                     ConfigTextArea {

@@ -11,8 +11,8 @@ Item {
     property string style: Config.options.bar.divider.style // "rect" - "dot" - "space"
     property int dividerSpacing: Config.options.bar.divider.spacing
 
-    width:  vertical ? btnSize : (root.style === "space" ? root.dividerSpacing : (1 + btnSpacing * 3))
-    height: vertical ? (root.style === "space" ? root.dividerSpacing : (1 + btnSpacing * 3)) : btnSize
+    width:  vertical ? btnSize : (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitWidth + 10 : (1 + btnSpacing * 3))
+    height: vertical ? (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitHeight + 16 : (1 + btnSpacing * 3)) : btnSize
 
     Rectangle {
         visible: root.style === "rect"
@@ -23,9 +23,10 @@ Item {
     }
 
     StyledText {
+        id: dotText
         visible: root.style === "dot"
         anchors.centerIn: parent
-        text: "•"
+        text: "• "
         color: isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
         font.pixelSize: Appearance.font.pixelSize.normal
     }

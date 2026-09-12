@@ -31,10 +31,18 @@ Singleton {
     property int stopwatchStart: Persistent.states.timer.stopwatch.start
     property var stopwatchLaps: Persistent.states.timer.stopwatch.laps
 
+    // Countdown
+    property bool countdownRunning: Persistent.states.timer.countdown.running
+    property int countdownDuration: Persistent.states.timer.countdown.duration // seconds, total
+    property int countdownStart: Persistent.states.timer.countdown.start
+    property int countdownSecondsLeft: countdownDuration
+
     // General
     Component.onCompleted: {
         if (!stopwatchRunning)
             stopwatchReset();
+        if (!countdownRunning)
+            countdownSecondsLeft = countdownDuration;
     }
 
     function getCurrentTimeInSeconds() {  // Pomodoro uses Seconds
@@ -43,6 +51,13 @@ Singleton {
 
     function getCurrentTimeIn10ms() {  // Stopwatch uses 10ms
         return Math.floor(Date.now() / 10);
+    }
+
+    function formatSeconds(totalSeconds) {
+        const s = Math.max(0, Math.round(totalSeconds));
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${m}:${sec.toString().padStart(2, "0")}`;
     }
 
     // Pomodoro
@@ -138,5 +153,58 @@ Singleton {
 
     function stopwatchRecordLap() {
         Persistent.states.timer.stopwatch.laps.push(stopwatchTime);
+    }
+
+    // Countdown
+    function refreshCountdown() {
+        if (!Persistent.states.timer.countdown.running) return;
+
+        const elapsed = getCurrentTimeInSeconds() - Persistent.states.timer.countdown.start;
+        let left = Persistent.states.timer.countdown.duration - elapsed;
+
+        if (left <= 0) {
+            left = 0;
+            Persistent.states.timer.countdown.running = false;
+            Persistent.states.timer.countdown.duration = 0;
+            Quickshell.execDetached(["notify-send", "Timers", "⏰ Countdown finished", "-a", "Shell"]);
+            if (Config.options.sounds.pomodoro) {
+                Audio.playSystemSound("alarm-clock-elapsed")
+            }
+        }
+
+        countdownSecondsLeft = left;
+    }
+
+    Timer {
+        id: countdownTimer
+        interval: 200
+        running: root.countdownRunning
+        repeat: true
+        onTriggered: refreshCountdown()
+    }
+
+    // Adds minutes to the countdown. Works whether paused or running.
+    function addCountdownMinutes(minutes) {
+        const addSeconds = minutes * 60;
+        if (root.countdownRunning) {
+            Persistent.states.timer.countdown.duration += addSeconds;
+        } else {
+            Persistent.states.timer.countdown.duration = (Persistent.states.timer.countdown.duration ?? 0) + addSeconds;
+            countdownSecondsLeft = Persistent.states.timer.countdown.duration;
+        }
+    }
+
+    function toggleCountdown() {
+        if (countdownDuration <= 0) return;
+        Persistent.states.timer.countdown.running = !countdownRunning;
+        if (Persistent.states.timer.countdown.running) {
+            Persistent.states.timer.countdown.start = getCurrentTimeInSeconds() - (countdownDuration - countdownSecondsLeft);
+        }
+    }
+
+    function resetCountdown() {
+        Persistent.states.timer.countdown.running = false;
+        Persistent.states.timer.countdown.duration = 0;
+        countdownSecondsLeft = 0;
     }
 }

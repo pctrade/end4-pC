@@ -80,7 +80,9 @@ Scope {
     Process {
         id: cavaProc
         running: (GlobalStates.mediaControlsOpen ||
-            GlobalStates.sidebarRightOpen || 
+            GlobalStates.sidebarRightOpen ||
+            (GlobalStates.sidebarLeftOpen && !GlobalStates.mediaLyricsVisible) ||
+            GlobalStates.equalizerOpen ||
             Config.options.bar.layouts.leftLayout.includes("visualizer") ||
             Config.options.bar.layouts.middleLayout.includes("visualizer") ||
             Config.options.bar.layouts.rightLayout.includes("visualizer") ||

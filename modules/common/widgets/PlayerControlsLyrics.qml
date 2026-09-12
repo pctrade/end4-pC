@@ -207,6 +207,11 @@ Item {
                         iconName: "lyrics"
                         downAction: () => root.toggleLyrics()
                     }
+
+                    TrackChangeButton {
+                        iconName: "equalizer"
+                        downAction: () => GlobalStates.equalizerOpen = !GlobalStates.equalizerOpen
+                    }
                 }
 
                 RippleButton {

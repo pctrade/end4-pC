@@ -13,10 +13,26 @@ Singleton {
     id: root
 
     property alias folderModel: presetsFolderModel
+    property alias onlineFolderModel: onlinePresetsFolderModel
+    property alias importedFolderModel: importedPresetsFolderModel
 
     FolderListModel {
         id: presetsFolderModel
         folder: Qt.resolvedUrl(Directories.userPresetsPath)
+        showDirs: false
+        nameFilters: ["*.json"]
+    }
+
+    FolderListModel {
+        id: onlinePresetsFolderModel
+        folder: Qt.resolvedUrl(`${Quickshell.env("HOME")}/.cache/quickshell/presets`)
+        showDirs: false
+        nameFilters: ["*.json"]
+    }
+
+    FolderListModel {
+        id: importedPresetsFolderModel
+        folder: Qt.resolvedUrl(`${Quickshell.env("HOME")}/.cache/quickshell/presets_imported`)
         showDirs: false
         nameFilters: ["*.json"]
     }
@@ -27,6 +43,18 @@ Singleton {
         presetsFolderModel.folder = current
     }
 
+    function refreshOnline() {
+        const current = onlinePresetsFolderModel.folder
+        onlinePresetsFolderModel.folder = ""
+        onlinePresetsFolderModel.folder = current
+    }
+
+    function refreshImported() {
+        const current = importedPresetsFolderModel.folder
+        importedPresetsFolderModel.folder = ""
+        importedPresetsFolderModel.folder = current
+    }
+
     Process {
         id: saveProc
         onExited: root.refresh()
@@ -35,6 +63,30 @@ Singleton {
     Process {
         id: deleteProc
         onExited: root.refresh()
+    }
+
+    Process {
+        id: deleteOnlineProc
+        onExited: root.refreshOnline()
+    }
+
+    Process {
+        id: deleteImportedProc
+        onExited: root.refreshImported()
+    }
+
+    Process {
+        id: overwriteProc
+        onExited: root.refresh()
+    }
+
+    Process {
+        id: exportZipProc
+    }
+
+    Process {
+        id: importZipProc
+        onExited: root.refreshImported()
     }
 
     function save(rawInput) {
@@ -64,8 +116,49 @@ Singleton {
         Quickshell.execDetached(["bash", Directories.presetsScriptPath, "--apply", name])
     }
 
+    function applyOnline(name) {
+        GlobalStates.settingsOpen = false
+        Wallpapers.confirmedPath = ""
+        Wallpapers.previewPath = ""
+        Quickshell.execDetached(["bash", Directories.presetsScriptPath, "--apply", name, "--online"])
+    }
+
     function remove(name) {
         deleteProc.command = ["bash", Directories.presetsScriptPath, "--remove", name]
         deleteProc.running = true
+    }
+
+    function removeOnline(name) {
+        deleteOnlineProc.command = ["bash", Directories.presetsScriptPath, "--remove", name, "--online"]
+        deleteOnlineProc.running = true
+    }
+
+    function removeImported(name) {
+        deleteImportedProc.command = ["bash", Directories.presetsScriptPath, "--remove", name, "--imported"]
+        deleteImportedProc.running = true
+    }
+
+    function applyImported(name) {
+        GlobalStates.settingsOpen = false
+        Wallpapers.confirmedPath = ""
+        Wallpapers.previewPath = ""
+        Quickshell.execDetached(["bash", Directories.presetsScriptPath, "--apply", name, "--imported"])
+    }
+
+    function overwrite(name) {
+        // Overwrite with same name (presets.sh --save filters General+Services)
+        overwriteProc.command = ["bash", Directories.presetsScriptPath, "--save", name]
+        overwriteProc.running = true
+    }
+
+    function exportZip(name) {
+        exportZipProc.command = ["bash", Directories.presetsScriptPath, "--export-zip", name]
+        exportZipProc.running = true
+    }
+
+    function importZip(path) {
+        const clean = String(path).replace(/^file:\/\//, "")
+        importZipProc.command = ["bash", Directories.presetsScriptPath, "--import-zip", clean]
+        importZipProc.running = true
     }
 }

@@ -42,8 +42,11 @@ AbstractWidget {
         return normY * maxAvailHeight;
     }
 
+    property real targetZ: configEntry.z
+
     x: targetX
     y: targetY
+    z: targetZ
     visible: opacity > 0
     opacity: (GlobalStates.screenLocked && !visibleWhenLocked) ? 0 : 1
     Behavior on opacity {
@@ -58,6 +61,7 @@ AbstractWidget {
     function restoreXYBinding() {
         root.x = Qt.binding(() => root.targetX);
         root.y = Qt.binding(() => root.targetY);
+        root.z = Qt.binding(() => root.targetZ);
     }
 
     function commitPosition() {
@@ -69,9 +73,11 @@ AbstractWidget {
 
         configEntry.x = normX;
         configEntry.y = normY;
+        configEntry.z = root.z;
 
         root.targetX = Qt.binding(() => normX * Math.max(1, scaledScreenWidth - root.width));
         root.targetY = Qt.binding(() => normY * Math.max(1, scaledScreenHeight - root.height));
+        root.targetZ = Qt.binding(() => configEntry.z);
         root.restoreXYBinding();
     }
 

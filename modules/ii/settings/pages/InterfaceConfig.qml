@@ -41,6 +41,51 @@ ContentPage {
         spacing: 20
 
         ContentSection {
+            icon: "motion_mode"
+            shape: MaterialShape.Shape.Cookie6Sided
+            title: Translation.tr("Transparency")
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: Config.options.appearance.transparency.enable
+                    onCheckedChanged: { Config.options.appearance.transparency.enable = checked }
+                }
+                ConfigSwitch {
+                    buttonIcon: "auto_awesome"
+                    text: Translation.tr("Automatic (from wallpaper)")
+                    checked: Config.options.appearance.transparency.automatic
+                    enabled: Config.options.appearance.transparency.enable
+                    onCheckedChanged: { Config.options.appearance.transparency.automatic = checked }
+                }
+                ConfigSlider {
+                    buttonIcon: "layers"
+                    text: Translation.tr("Background")
+                    enabled: Config.options.appearance.transparency.enable
+                            && !Config.options.appearance.transparency.automatic
+                    from: 0; to: 0.6
+                    stopIndicatorValues: [0.11]
+                    value: Config.options.appearance.transparency.backgroundTransparency
+                    onValueChanged: {
+                        Config.options.appearance.transparency.backgroundTransparency = value
+                    }
+                }
+                ConfigSlider {
+                    buttonIcon: "opacity"
+                    text: Translation.tr("Content")
+                    enabled: Config.options.appearance.transparency.enable
+                            && !Config.options.appearance.transparency.automatic
+                    from: 0; to: 1
+                    stopIndicatorValues: [0.57]
+                    value: Config.options.appearance.transparency.contentTransparency 
+                    onValueChanged: {
+                        Config.options.appearance.transparency.contentTransparency = value  
+                    }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "settings"
             shape: MaterialShape.Shape.SoftBurst
             title: Translation.tr("Settings Panel")
@@ -251,6 +296,15 @@ ContentPage {
                     checked: Config.options.sidebar.banner
                     onCheckedChanged: {
                         Config.options.sidebar.banner = checked;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "bottom_navigation"
+                    text: Translation.tr('Bottom Group')
+                    checked: Config.options.sidebar.bottomGroup
+                    onCheckedChanged: {
+                        Config.options.sidebar.bottomGroup = checked;
                     }
                 }
 

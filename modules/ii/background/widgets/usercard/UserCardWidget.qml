@@ -87,8 +87,8 @@ AbstractBackgroundWidget {
     readonly property string greetingText: greetingFor(DateTime.hour24)
     readonly property string todayString: "Today • " + DateTime.clock.date.toLocaleDateString(Qt.locale(), "dddd d MMM")
 
-    implicitWidth: root.widgetWidth
-    implicitHeight: root.widgetHeight
+    implicitWidth:  card.implicitWidth
+    implicitHeight: card.implicitHeight
 
     Behavior on widgetWidth {
         animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
@@ -107,10 +107,17 @@ AbstractBackgroundWidget {
         onStatusChanged: if (status === Image.Error) visible = false
     }
 
-    Item {
-        id: sizedContainer
+    Rectangle {
+        id: card
         implicitWidth: root.widgetWidth
         implicitHeight: root.widgetHeight
+        radius: Appearance.rounding?.verylarge ?? 30
+        color: "transparent"
+
+        StyledRectangularShadow {
+            target: card
+            z: -2
+        }
 
         Loader {
             anchors.fill: parent
@@ -163,6 +170,17 @@ AbstractBackgroundWidget {
                 anchors.fill: parent
                 radius: Appearance.rounding?.verylarge ?? 30
                 color: Appearance.colors.colPrimaryContainer
+
+                FastBlurred {
+                    anchors.fill: parent
+                    blurSource: root.wallpaperItem
+                    cardRadius: card.radius
+                    tint: Appearance.colors.colLayer1
+                    tintOpacity: 0.55
+                    trackX: root.x  
+                    trackY: root.y
+                    visible: Config.options.background.widgets.blurWidgets 
+                }
 
                 RowLayout {
                     anchors { fill: parent; margins: 10 }
@@ -246,10 +264,6 @@ AbstractBackgroundWidget {
                 implicitWidth: root.snapWidth3
                 implicitHeight: root.snapHeight3
 
-                StyledDropShadow {
-                    target: outerRect
-                }
-
                 Item {
                     id: bgImage
                     anchors.fill: parent
@@ -305,6 +319,7 @@ AbstractBackgroundWidget {
                 FastBlur {
                     id: blurredBg
                     anchors.fill: bgImage
+                    visible: !Config.options.background.widgets.blurWidgets 
                     source: bgImage
                     radius: 48
                     layer.enabled: true
@@ -315,6 +330,17 @@ AbstractBackgroundWidget {
                             radius: Appearance.rounding?.verylarge ?? 30
                         }
                     }
+                }
+
+                FastBlurred {
+                    anchors.fill: parent
+                    blurSource: root.wallpaperItem
+                    cardRadius: Appearance.rounding?.verylarge ?? 30
+                    tint: Appearance.colors.colLayer1
+                    tintOpacity: 0.55
+                    trackX: root.x  
+                    trackY: root.y
+                    visible: Config.options.background.widgets.blurWidgets 
                 }
 
                 Rectangle {
@@ -498,25 +524,30 @@ AbstractBackgroundWidget {
                     y: avatarRect.y + (avatarRect.height - implicitHeight) / 2 + 20
                     spacing: 0
                     z: 2
+                    width: outerRect.width - x - root.blurMargin
 
                     StyledText {
+                        Layout.fillWidth: true
                         text: root.userDisplay
                         font.pixelSize: Appearance.font.pixelSize.small
                         font.weight: Font.DemiBold
                         color: Appearance.colors.colOnLayer1
+                        elide: Text.ElideRight
                     }
                     StyledText {
+                        Layout.fillWidth: true
                         text: "Up • " + DateTime.uptime
                         font.pixelSize: Appearance.font.pixelSize.smaller
                         color: Appearance.colors.colOnLayer1
                         opacity: 0.6
+                        elide: Text.ElideRight
                     }
                 }
             }
         }
 
         ResizeHandler {
-            anchorItem: sizedContainer
+            anchorItem: card
             hoverActive: root.containsMouse
             locked: Config.options.background.widgetsLocked
             currentWidth: root.widgetWidth

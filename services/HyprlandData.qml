@@ -47,33 +47,69 @@ Singleton {
 
     // Internals
 
-    function updateWindowList() {
+    property bool _pendingClients: false
+    property bool _pendingMonitors: false
+    property bool _pendingLayers: false
+    property bool _pendingWorkspaces: false
+
+    Timer {
+        id: eventDebounceTimer
+        interval: 60
+        repeat: false
+        onTriggered: {
+            if (WM.compositor !== "hyprland") return;
+            if (root._pendingClients) {
+                getClients.running = false;
+                getClients.running = true;
+                root._pendingClients = false;
+            }
+            if (root._pendingMonitors) {
+                getMonitors.running = false;
+                getMonitors.running = true;
+                root._pendingMonitors = false;
+            }
+            if (root._pendingLayers) {
+                getLayers.running = false;
+                getLayers.running = true;
+                root._pendingLayers = false;
+            }
+            if (root._pendingWorkspaces) {
+                getWorkspaces.running = false;
+                getWorkspaces.running = true;
+                getActiveWorkspace.running = false;
+                getActiveWorkspace.running = true;
+                root._pendingWorkspaces = false;
+            }
+        }
+    }
+
+    function queueUpdate(clients = false, workspaces = false, monitors = false, layers = false) {
         if (WM.compositor !== "hyprland") return;
-        getClients.running = true;
+        if (clients) root._pendingClients = true;
+        if (workspaces) root._pendingWorkspaces = true;
+        if (monitors) root._pendingMonitors = true;
+        if (layers) root._pendingLayers = true;
+        eventDebounceTimer.restart();
+    }
+
+    function updateWindowList() {
+        queueUpdate(true, false, false, false);
     }
 
     function updateLayers() {
-        if (WM.compositor !== "hyprland") return;
-        getLayers.running = true;
+        queueUpdate(false, false, false, true);
     }
 
     function updateMonitors() {
-        if (WM.compositor !== "hyprland") return;
-        getMonitors.running = true;
+        queueUpdate(false, false, true, false);
     }
 
     function updateWorkspaces() {
-        if (WM.compositor !== "hyprland") return;
-        getWorkspaces.running = true;
-        getActiveWorkspace.running = true;
+        queueUpdate(false, true, false, false);
     }
 
     function updateAll() {
-        if (WM.compositor !== "hyprland") return;
-        updateWindowList();
-        updateMonitors();
-        updateLayers();
-        updateWorkspaces();
+        queueUpdate(true, true, true, true);
     }
 
     function biggestWindowForWorkspace(workspaceId) {
@@ -86,7 +122,13 @@ Singleton {
     }
 
     Component.onCompleted: {
-        updateAll();
+        if (WM.compositor === "hyprland") {
+            getClients.running = true;
+            getMonitors.running = true;
+            getLayers.running = true;
+            getWorkspaces.running = true;
+            getActiveWorkspace.running = true;
+        }
     }
 
     Connections {
@@ -94,8 +136,22 @@ Singleton {
         enabled: WM.compositor === "hyprland"
 
         function onRawEvent(event) {
-            if (["openlayer", "closelayer", "screencast"].includes(event.name)) return;
-            updateAll()
+            const name = event.name;
+            if (["openlayer", "closelayer", "screencast", "submap", "activelayout"].includes(name)) return;
+
+            if (name.startsWith("workspace") || name.startsWith("createworkspace") || name.startsWith("destroyworkspace") || name.startsWith("moveworkspace") || name === "renameworkspace") {
+                root.queueUpdate(false, true, false, false);
+            } else if (name.startsWith("activespecial")) {
+                root.queueUpdate(false, true, true, false);
+            } else if (name.startsWith("openwindow") || name.startsWith("closewindow") || name.startsWith("movewindow")) {
+                root.queueUpdate(true, true, false, false);
+            } else if (name.startsWith("window") || name.startsWith("activewindow") || name === "fullscreen" || name === "changefloatingmode" || name === "pin" || name === "urgent" || name === "minimize") {
+                root.queueUpdate(true, false, false, false);
+            } else if (name.startsWith("monitor") || name === "focusedmon") {
+                root.queueUpdate(false, true, true, false);
+            } else {
+                root.queueUpdate(true, true, false, false);
+            }
         }
     }
 
@@ -105,14 +161,18 @@ Singleton {
         stdout: StdioCollector {
             id: clientsCollector
             onStreamFinished: {
-                root.windowList = JSON.parse(clientsCollector.text)
-                let tempWinByAddress = {};
-                for (var i = 0; i < root.windowList.length; ++i) {
-                    var win = root.windowList[i];
-                    tempWinByAddress[win.address] = win;
+                try {
+                    root.windowList = JSON.parse(clientsCollector.text);
+                    let tempWinByAddress = {};
+                    for (var i = 0; i < root.windowList.length; ++i) {
+                        var win = root.windowList[i];
+                        tempWinByAddress[win.address] = win;
+                    }
+                    root.windowByAddress = tempWinByAddress;
+                    root.addresses = root.windowList.map(win => win.address);
+                } catch (e) {
+                    console.error("[HyprlandData] Failed to parse clients:", e);
                 }
-                root.windowByAddress = tempWinByAddress;
-                root.addresses = root.windowList.map(win => win.address);
             }
         }
     }
@@ -123,7 +183,11 @@ Singleton {
         stdout: StdioCollector {
             id: monitorsCollector
             onStreamFinished: {
-                root.monitors = JSON.parse(monitorsCollector.text);
+                try {
+                    root.monitors = JSON.parse(monitorsCollector.text);
+                } catch (e) {
+                    console.error("[HyprlandData] Failed to parse monitors:", e);
+                }
             }
         }
     }
@@ -134,7 +198,11 @@ Singleton {
         stdout: StdioCollector {
             id: layersCollector
             onStreamFinished: {
-                root.layers = JSON.parse(layersCollector.text);
+                try {
+                    root.layers = JSON.parse(layersCollector.text);
+                } catch (e) {
+                    console.error("[HyprlandData] Failed to parse layers:", e);
+                }
             }
         }
     }
@@ -145,15 +213,19 @@ Singleton {
         stdout: StdioCollector {
             id: workspacesCollector
             onStreamFinished: {
-                var rawWorkspaces = JSON.parse(workspacesCollector.text);
-                root.workspaces = rawWorkspaces.filter(ws => ws.id >= 1 && ws.id <= 100);
-                let tempWorkspaceById = {};
-                for (var i = 0; i < root.workspaces.length; ++i) {
-                    var ws = root.workspaces[i];
-                    tempWorkspaceById[ws.id] = ws;
+                try {
+                    var rawWorkspaces = JSON.parse(workspacesCollector.text);
+                    root.workspaces = rawWorkspaces.filter(ws => ws.id >= 1 && ws.id <= 100);
+                    let tempWorkspaceById = {};
+                    for (var i = 0; i < root.workspaces.length; ++i) {
+                        var ws = root.workspaces[i];
+                        tempWorkspaceById[ws.id] = ws;
+                    }
+                    root.workspaceById = tempWorkspaceById;
+                    root.workspaceIds = root.workspaces.map(ws => ws.id);
+                } catch (e) {
+                    console.error("[HyprlandData] Failed to parse workspaces:", e);
                 }
-                root.workspaceById = tempWorkspaceById;
-                root.workspaceIds = root.workspaces.map(ws => ws.id);
             }
         }
     }
@@ -164,7 +236,11 @@ Singleton {
         stdout: StdioCollector {
             id: activeWorkspaceCollector
             onStreamFinished: {
-                root.activeWorkspace = JSON.parse(activeWorkspaceCollector.text);
+                try {
+                    root.activeWorkspace = JSON.parse(activeWorkspaceCollector.text);
+                } catch (e) {
+                    console.error("[HyprlandData] Failed to parse active workspace:", e);
+                }
             }
         }
     }

@@ -10,7 +10,7 @@ RippleButton {
     property bool vertical: Config.options.bar.vertical
     property real buttonPadding: 5
 
-    implicitWidth: 32
+    implicitWidth: isMaterial ? 32 : 22
     implicitHeight: implicitWidth
 
     buttonRadius: Appearance.rounding.full
@@ -26,7 +26,7 @@ RippleButton {
         anchors.centerIn: parent
         visible: !root.isMaterial
         text: "power_settings_new"
-        iconSize: Appearance.font.pixelSize.larger
+        iconSize: 18
         color: Appearance.colors.colOnLayer0
     }
 

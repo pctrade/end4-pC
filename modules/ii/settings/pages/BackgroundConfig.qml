@@ -226,6 +226,42 @@ ContentPage {
                     }
                 }
 
+                ConfigSwitch {
+                    buttonIcon: "blur_on"
+                    text: Translation.tr("Blur wall")
+                    checked: Config.options.background.showBlur
+                    onCheckedChanged: {
+                        Config.options.background.showBlur = checked;
+                    }
+                }
+
+                ConfigSelectionArray {
+                    text: Translation.tr("Split blur amount")
+                    icon: "split_scene"
+                    currentValue: Config.options.background.splitRatio
+                    options: [
+                        { "displayName": "25%",  "icon": "thumbnail_bar",              "value": "25" },
+                        { "displayName": "50%",  "icon": "side_navigation",              "value": "50" },
+                        { "displayName": "100%", "icon": "fullscreen",    "value": "100" },
+                    ]
+                    onSelected: newValue => {
+                        Config.options.background.splitRatio = newValue
+                    }
+                }
+
+                ConfigSelectionArray {
+                    text: Translation.tr("Split blur side")
+                    icon: "align_horizontal_left"
+                    currentValue: Config.options.background.splitSide
+                    options: [
+                        { "displayName": Translation.tr("Left"),  "icon": "align_horizontal_left",  "value": "left" },
+                        { "displayName": Translation.tr("Right"), "icon": "align_horizontal_right", "value": "right" },
+                    ]
+                    onSelected: newValue => {
+                        Config.options.background.splitSide = newValue
+                    }
+                }
+
                 ConfigSpinBox {
                     icon: "timer"
                     text: Translation.tr("Wallpaper change interval (min)")
@@ -1008,7 +1044,18 @@ ContentPage {
                             icon: "note_stack_add",
                             name: Translation.tr("Notes"),
                             enabled: Config.options.background.widgets.notes.enable
+                        },
+                        {
+                            icon: "add_task",
+                            name: Translation.tr("To-Do"),
+                            enabled: Config.options.background.widgets.todo.enable
+                        },
+                        {
+                            icon: "timer",
+                            name: Translation.tr("Timers"),
+                            enabled: Config.options.background.widgets.timers.enable
                         }
+                        
                     ]
                     delegate: Rectangle {
                         Layout.fillWidth: true
@@ -1055,6 +1102,10 @@ ContentPage {
                                             Config.options.background.widgets.userCard.enable = checked
                                         else if (modelData.icon === "note_stack_add")
                                             Config.options.background.widgets.notes.enable = checked
+                                        else if (modelData.icon === "add_task")
+                                            Config.options.background.widgets.todo.enable = checked
+                                        else if (modelData.icon === "timer")
+                                            Config.options.background.widgets.timers.enable = checked
                                     }
                                 }
                             }

@@ -17,10 +17,20 @@ Singleton {
 
     property string thumbgenScriptPath: `${FileUtils.trimFileProtocol(Directories.scriptPath)}/thumbnails/thumbgen-venv.sh`
     property string generateThumbnailsMagickScriptPath: `${FileUtils.trimFileProtocol(Directories.scriptPath)}/thumbnails/generate-thumbnails-magick.sh`
+    function getCleanDirPath(path) {
+        if (!path) return "";
+        return FileUtils.trimFileProtocol(path.toString()).replace(/\/+$/, "");
+    }
+
     property alias directory: folderModel.folder
-    readonly property string effectiveDirectory: FileUtils.trimFileProtocol(folderModel.folder.toString())
+    readonly property string effectiveDirectory: getCleanDirPath(folderModel.folder)
     property url defaultFolder: Qt.resolvedUrl(`${Directories.pictures}/Wallpapers`)
     property alias folderModel: folderModel // Expose for direct binding when needed
+    property alias wallpaperModel: wallpaperModel
+    property string sortMode: Config.options.wallpaperSelector?.sortMode || "custom"
+    onSortModeChanged: debounceRebuildTimer.restart()
+    property var orderMap: ({})
+    property bool orderLoaded: false
     property string searchQuery: ""
     readonly property list<string> extensions: [ // TODO: add videos
         "jpg", "jpeg", "png", "webp", "avif", "bmp", "svg"
@@ -95,19 +105,23 @@ Singleton {
     }
 
     function randomFromCurrentFolder(darkMode = Appearance.m3colors.darkmode) {
-        if (folderModel.count === 0) return;
-        const randomIndex = Math.floor(Math.random() * folderModel.count);
-        const filePath = folderModel.get(randomIndex, "filePath");
+        const count = wallpaperModel.count > 0 ? wallpaperModel.count : folderModel.count;
+        if (count === 0) return;
+        const randomIndex = Math.floor(Math.random() * count);
+        const item = wallpaperModel.count > 0 ? wallpaperModel.get(randomIndex) : null;
+        const filePath = item ? item.filePath : folderModel.get(randomIndex, "filePath");
         print("Randomly selected wallpaper:", filePath);
-        root.select(filePath, darkMode);
+        if (filePath) root.select(filePath, darkMode);
     }
 
     function getRandomWallpaperPath(excludePath = "") {
-        if (folderModel.count === 0) return "";
+        const count = wallpaperModel.count > 0 ? wallpaperModel.count : folderModel.count;
+        if (count === 0) return "";
         const excludeClean = FileUtils.trimFileProtocol(excludePath);
         const candidates = [];
-        for (let i = 0; i < folderModel.count; i++) {
-            const path = folderModel.get(i, "filePath") || FileUtils.trimFileProtocol(folderModel.get(i, "fileURL"));
+        for (let i = 0; i < count; i++) {
+            const item = wallpaperModel.count > 0 ? wallpaperModel.get(i) : null;
+            const path = item ? item.filePath : (folderModel.get(i, "filePath") || FileUtils.trimFileProtocol(folderModel.get(i, "fileURL")));
             if (path && path.length && FileUtils.trimFileProtocol(path) !== excludeClean) {
                 candidates.push(path);
             }
@@ -164,13 +178,232 @@ Singleton {
         showOnlyReadable: true
         sortField: FolderListModel.Time
         sortReversed: false
-        onCountChanged: {
-            root.wallpapers = []
-            for (let i = 0; i < folderModel.count; i++) {
-                const path = folderModel.get(i, "filePath") || FileUtils.trimFileProtocol(folderModel.get(i, "fileURL"))
-                if (path && path.length) root.wallpapers.push(path)
+        onCountChanged: debounceRebuildTimer.restart()
+        onStatusChanged: {
+            if (status === FolderListModel.Ready) debounceRebuildTimer.restart();
+        }
+    }
+
+    onEffectiveDirectoryChanged: debounceRebuildTimer.restart()
+    onSearchQueryChanged: debounceRebuildTimer.restart()
+
+    ListModel {
+        id: wallpaperModel
+    }
+
+    FileView {
+        id: orderFileView
+        path: `${Directories.shellConfig}/wallpaper_order.json`
+        watchChanges: false
+        onLoaded: {
+            try {
+                const txt = orderFileView.text();
+                if (txt && txt.trim().length > 0) {
+                    root.orderMap = JSON.parse(txt);
+                } else {
+                    root.orderMap = {};
+                }
+            } catch (e) {
+                console.log("[Wallpapers] Error parsing wallpaper_order.json:", e);
+                root.orderMap = {};
+            }
+            root.orderLoaded = true;
+            debounceRebuildTimer.restart();
+        }
+        onLoadFailed: (error) => {
+            root.orderMap = {};
+            root.orderLoaded = true;
+            debounceRebuildTimer.restart();
+        }
+    }
+
+    Connections {
+        target: Config.options.wallpaperSelector ?? null
+        function onSortModeChanged() {
+            if (Config.options.wallpaperSelector?.sortMode && root.sortMode !== Config.options.wallpaperSelector.sortMode) {
+                root.sortMode = Config.options.wallpaperSelector.sortMode;
+                debounceRebuildTimer.restart();
             }
         }
+    }
+
+    Connections {
+        target: Config
+        function onReadyChanged() {
+            if (Config.ready) {
+                if (Config.options.wallpaperSelector?.sortMode) {
+                    root.sortMode = Config.options.wallpaperSelector.sortMode;
+                }
+                debounceRebuildTimer.restart();
+            }
+        }
+    }
+
+    function saveCustomOrder() {
+        const jsonStr = JSON.stringify(root.orderMap, null, 2);
+        if (orderFileView) {
+            try {
+                orderFileView.setText(jsonStr);
+            } catch (e) {
+                console.log("[Wallpapers] Failed to save wallpaper_order.json:", e);
+            }
+        }
+        const filePath = `${Directories.shellConfig}/wallpaper_order.json`;
+        Quickshell.execDetached(["bash", "-c", `mkdir -p '${Directories.shellConfig}' && cat << 'EOF' > '${filePath}.tmp' && mv '${filePath}.tmp' '${filePath}'\n${jsonStr}\nEOF`]);
+    }
+
+    function moveWallpaper(fromIndex, toIndex) {
+        if (fromIndex < 0 || toIndex < 0 || fromIndex >= wallpaperModel.count || toIndex >= wallpaperModel.count || fromIndex === toIndex)
+            return;
+
+        wallpaperModel.move(fromIndex, toIndex, 1);
+        root.sortMode = "custom";
+        if (Config.options.wallpaperSelector) {
+            Config.options.wallpaperSelector.sortMode = "custom";
+        }
+        Config.setNestedValue("wallpaperSelector.sortMode", "custom");
+
+        const list = [];
+        const paths = [];
+        for (let i = 0; i < wallpaperModel.count; i++) {
+            const it = wallpaperModel.get(i);
+            list.push(it.fileName);
+            if (it.filePath) paths.push(it.filePath);
+        }
+        const cleanDir = getCleanDirPath(folderModel.folder);
+        root.orderMap[cleanDir] = list;
+        root.wallpapers = paths;
+        root.saveCustomOrder();
+    }
+
+    function moveToTop(index) {
+        moveWallpaper(index, 0);
+    }
+
+    function moveToBottom(index) {
+        moveWallpaper(index, wallpaperModel.count - 1);
+    }
+
+    function setSortMode(mode) {
+        root.sortMode = mode;
+        if (Config.options.wallpaperSelector) {
+            Config.options.wallpaperSelector.sortMode = mode;
+        }
+        Config.setNestedValue("wallpaperSelector.sortMode", mode);
+        rebuildWallpaperModel();
+    }
+
+    Timer {
+        id: debounceRebuildTimer
+        interval: 20
+        repeat: false
+        onTriggered: root.rebuildWallpaperModel()
+    }
+
+    function sortItems(items, mode, customList) {
+        if (mode === "custom") {
+            if (!customList || customList.length === 0) {
+                return items.slice().sort((a, b) => {
+                    if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                    return new Date(b.fileModified) - new Date(a.fileModified);
+                });
+            }
+            const orderLookup = {};
+            for (let i = 0; i < customList.length; i++) {
+                orderLookup[customList[i]] = i;
+            }
+            const dirs = [];
+            const orderedFiles = [];
+            const remainingFiles = [];
+            for (let i = 0; i < items.length; i++) {
+                const it = items[i];
+                if (it.fileIsDir) {
+                    dirs.push(it);
+                } else if (typeof orderLookup[it.fileName] !== "undefined") {
+                    orderedFiles.push(it);
+                } else {
+                    remainingFiles.push(it);
+                }
+            }
+            dirs.sort((a, b) => a.fileName.localeCompare(b.fileName, undefined, { numeric: true, sensitivity: "base" }));
+            orderedFiles.sort((a, b) => orderLookup[a.fileName] - orderLookup[b.fileName]);
+            remainingFiles.sort((a, b) => new Date(b.fileModified) - new Date(a.fileModified));
+            return dirs.concat(orderedFiles, remainingFiles);
+        } else if (mode === "name") {
+            return items.slice().sort((a, b) => {
+                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                return a.fileName.localeCompare(b.fileName, undefined, { numeric: true, sensitivity: "base" });
+            });
+        } else if (mode === "name_rev") {
+            return items.slice().sort((a, b) => {
+                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                return b.fileName.localeCompare(a.fileName, undefined, { numeric: true, sensitivity: "base" });
+            });
+        } else if (mode === "time") {
+            return items.slice().sort((a, b) => {
+                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                return new Date(b.fileModified) - new Date(a.fileModified);
+            });
+        } else if (mode === "time_rev") {
+            return items.slice().sort((a, b) => {
+                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                return new Date(a.fileModified) - new Date(b.fileModified);
+            });
+        } else if (mode === "size") {
+            return items.slice().sort((a, b) => {
+                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                return (b.fileSize || 0) - (a.fileSize || 0);
+            });
+        } else if (mode === "size_rev") {
+            return items.slice().sort((a, b) => {
+                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
+                return (a.fileSize || 0) - (b.fileSize || 0);
+            });
+        }
+        return items;
+    }
+
+    function rebuildWallpaperModel() {
+        const count = folderModel.count;
+        if (count === 0) {
+            wallpaperModel.clear();
+            root.wallpapers = [];
+            return;
+        }
+
+        const items = [];
+        for (let i = 0; i < count; i++) {
+            const fn = folderModel.get(i, "fileName") || "";
+            const fp = folderModel.get(i, "filePath") || "";
+            const fu = (fp && fp.length) ? ("file://" + fp) : (folderModel.get(i, "fileUrl") || "");
+            const isDir = Boolean(folderModel.get(i, "fileIsDir"));
+            const sz = folderModel.get(i, "fileSize") || 0;
+            const mod = folderModel.get(i, "fileModified") ? folderModel.get(i, "fileModified").toString() : "";
+            items.push({
+                fileName: fn,
+                filePath: fp,
+                fileUrl: fu,
+                fileURL: fu,
+                fileIsDir: isDir,
+                fileSize: sz,
+                fileModified: mod
+            });
+        }
+
+        const cleanDir = getCleanDirPath(folderModel.folder);
+        const savedOrder = root.orderMap[cleanDir] || root.orderMap[cleanDir + "/"] || [];
+        const effectiveMode = (root.sortMode === "custom" || (!root.sortMode && savedOrder.length > 0)) ? "custom" : root.sortMode;
+        const sorted = sortItems(items, effectiveMode, savedOrder);
+
+        wallpaperModel.clear();
+        const paths = [];
+        for (let i = 0; i < sorted.length; i++) {
+            wallpaperModel.append(sorted[i]);
+            if (sorted[i].filePath && sorted[i].filePath.length) {
+                paths.push(sorted[i].filePath);
+            }
+        }
+        root.wallpapers = paths;
     }
 
     // Thumbnail generation
@@ -216,6 +449,14 @@ Singleton {
 
         function apply(path: string): void {
             root.apply(path);
+        }
+
+        function setSortMode(mode: string): void {
+            root.setSortMode(mode);
+        }
+
+        function moveWallpaper(fromIndex: int, toIndex: int): void {
+            root.moveWallpaper(fromIndex, toIndex);
         }
     }
 }

@@ -7,15 +7,27 @@ Singleton {
     id: root
 
     function getBluetoothDeviceMaterialSymbol(systemIconName: string): string {
-        if (systemIconName.includes("headset") || systemIconName.includes("headphones"))
+        const iconName = (systemIconName || "").toLowerCase();
+
+        if (iconName.includes("earbud") || iconName.includes("earphone") || iconName.includes("in-ear"))
+            return "earbuds";
+        if (iconName.includes("headset") || iconName.includes("headphones"))
             return "headphones";
-        if (systemIconName.includes("audio"))
+        if (iconName.includes("speaker") || iconName.includes("audio"))
             return "speaker";
-        if (systemIconName.includes("phone"))
-            return "smartphone";
-        if (systemIconName.includes("mouse"))
+        if (iconName.includes("gamepad") || iconName.includes("gaming") || iconName.includes("joystick") || iconName.includes("controller"))
+            return "gamepad";
+        if (iconName.includes("phone"))
+            return "phone";
+        if (iconName.includes("tablet"))
+            return "tablet";
+        if (iconName.includes("computer") || iconName.includes("laptop"))
+            return "computer";
+        if (iconName.includes("printer"))
+            return "printer";
+        if (iconName.includes("mouse"))
             return "mouse";
-        if (systemIconName.includes("keyboard"))
+        if (iconName.includes("keyboard"))
             return "keyboard";
         return "bluetooth";
     }

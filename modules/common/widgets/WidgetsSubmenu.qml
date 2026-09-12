@@ -23,6 +23,8 @@ Item {
         { key: "worldClock",  icon: "public",             name: Translation.tr("World Clock") },
         { key: "userCard",    icon: "person",             name: Translation.tr("User Card") },
         { key: "notes",       icon: "note_stack_add",     name: Translation.tr("Notes") },
+        { key: "timers",      icon: "timer",              name: Translation.tr("Timers") },
+        { key: "todo",        icon: "add_task",           name: Translation.tr("To-Do") },
     ]
 
     Rectangle {
@@ -42,6 +44,27 @@ Item {
             text: Translation.tr("Lock widget positions")
             checked: Config.options.background.widgetsLocked
             onCheckedChanged: Config.options.background.widgetsLocked = checked
+        }
+
+        ConfigSwitch {
+            Layout.fillWidth: true
+            buttonIcon: "blur_on"
+            text: Translation.tr("Blur widgets")
+            checked: Config.options.background.widgets.blurWidgets 
+            onCheckedChanged: Config.options.background.widgets.blurWidgets = checked
+        }
+
+        ConfigSlider {
+            Layout.fillWidth: true
+            showLabel: false
+            visible: Config.options.background.widgets.blurWidgets
+            value: Config.options.background.widgets.blurRadius ?? 32
+            usePercentTooltip: false
+            buttonIcon: "aspect_ratio"
+            from: 1
+            to: 64
+            stopIndicatorValues: [32]
+            onValueChanged: Config.options.background.widgets.blurRadius = value
         }
 
         Rectangle {

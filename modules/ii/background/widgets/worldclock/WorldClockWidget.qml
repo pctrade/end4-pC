@@ -15,11 +15,14 @@ AbstractBackgroundWidget {
 
     property string sizeMode: root.configEntry.sizeMode ?? "2x2"
 
-    property real widgetWidth:  sizeMode === "2x2" ? 276 : 420
+    readonly property int clockCount: Math.min(Math.max(root.configEntry.clockCount ?? 4, 1), 4)
+    readonly property real fourByOneWidth: root.clockCount * 132 + (root.clockCount - 1) * 12
+
+    property real widgetWidth:  sizeMode === "2x2" ? 276 : root.fourByOneWidth
     property real widgetHeight: sizeMode === "2x2" ? 252 : 120
 
     readonly property real widthToggleFraction: 0.3
-    readonly property real widthToggleDelta: (420 - 276) * root.widthToggleFraction
+    readonly property real widthToggleDelta: (root.fourByOneWidth - 276) * root.widthToggleFraction
 
     function modeForDrag(dx) {
         if (root.sizeMode === "2x2" && dx > root.widthToggleDelta) return "4x1"
@@ -79,6 +82,17 @@ AbstractBackgroundWidget {
             anchors.fill: parent
             color: sizeMode === "4x1" ? "transparent" : Appearance.colors.colPrimaryContainer
             radius: Appearance.rounding?.verylarge ?? 30
+
+            FastBlurred {
+                anchors.fill: parent
+                blurSource: root.wallpaperItem
+                cardRadius: contentRect.radius
+                tint: Appearance.colors.colLayer1
+                tintOpacity: 0.55
+                trackX: root.x  
+                trackY: root.y
+                visible: Config.options.background.widgets.blurWidgets && sizeMode === "2x2"
+            }
 
             // 2x2
             ColumnLayout {
@@ -239,30 +253,58 @@ AbstractBackgroundWidget {
                         Item { Layout.fillWidth: true }
                     }
 
-                    StyledComboBoxSearch {
-                        model: WorldClock.comboModel
-                        colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
-                        textRole: "label"
-                        currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[0])
-                        onActivated: (idx) => WorldClock.setTimezone(0, WorldClock.comboModel[idx].tz)
-                    }
-                    StyledComboBoxSearch {
-                        model: WorldClock.comboModel; textRole: "label"
-                        colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
-                        currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[1])
-                        onActivated: (idx) => WorldClock.setTimezone(1, WorldClock.comboModel[idx].tz)
-                    }
-                    StyledComboBoxSearch {
-                        model: WorldClock.comboModel; textRole: "label"
-                        colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
-                        currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[2])
-                        onActivated: (idx) => WorldClock.setTimezone(2, WorldClock.comboModel[idx].tz)
-                    }
-                    StyledComboBoxSearch {
-                        model: WorldClock.comboModel; textRole: "label"
-                        colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
-                        currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[3])
-                        onActivated: (idx) => WorldClock.setTimezone(3, WorldClock.comboModel[idx].tz)
+                    Flickable {
+                        id: settingsFlick
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        contentWidth: width
+                        contentHeight: settingsColumn.implicitHeight
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        ColumnLayout {
+                            id: settingsColumn
+                            width: settingsFlick.width
+                            spacing: 10
+
+                            ConfigSpinBox {
+                                icon: "numbers"
+                                text: Translation.tr("Clocks")
+                                value: Config.options.background.widgets.worldClock.clockCount
+                                from: 1
+                                to: 4
+                                stepSize: 1
+                                onValueChanged: {
+                                    Config.options.background.widgets.worldClock.clockCount = value;
+                                }
+                            }
+
+                            StyledComboBoxSearch {
+                                model: WorldClock.comboModel
+                                colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
+                                textRole: "label"
+                                currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[0])
+                                onActivated: (idx) => WorldClock.setTimezone(0, WorldClock.comboModel[idx].tz)
+                            }
+                            StyledComboBoxSearch {
+                                model: WorldClock.comboModel; textRole: "label"
+                                colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
+                                currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[1])
+                                onActivated: (idx) => WorldClock.setTimezone(1, WorldClock.comboModel[idx].tz)
+                            }
+                            StyledComboBoxSearch {
+                                model: WorldClock.comboModel; textRole: "label"
+                                colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
+                                currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[2])
+                                onActivated: (idx) => WorldClock.setTimezone(2, WorldClock.comboModel[idx].tz)
+                            }
+                            StyledComboBoxSearch {
+                                model: WorldClock.comboModel; textRole: "label"
+                                colBackground: ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
+                                currentIndex: WorldClock.comboModel.findIndex(m => m.tz === WorldClock.timezones[3])
+                                onActivated: (idx) => WorldClock.setTimezone(3, WorldClock.comboModel[idx].tz)
+                            }
+                        }
                     }
                 }
             }
@@ -274,40 +316,67 @@ AbstractBackgroundWidget {
                 visible: sizeMode === "4x1"
 
                 Repeater {
-                    model: Math.min(root.worldCities.length, 4)
-                    delegate: AndroidClock {
+                    model: Math.min(root.worldCities.length, root.clockCount)
+                    delegate: Item {
+                        id: clockWrapper
                         required property int index
                         property var cityData: root.worldCities[index] ?? null
 
-                        Layout.fillHeight: true
-                        Layout.fillWidth:  true
+                        Layout.preferredWidth: 132
+                        Layout.preferredHeight: 120
 
-                        backgroundColor: cityData?.isDay ?? true
-                            ? Appearance.colors.colPrimary
-                            : Appearance.colors.colPrimaryContainer
-                        handColor: cityData?.isDay ?? true
-                            ? Appearance.colors.colOnPrimary
-                            : Appearance.colors.colOnLayer0
-                        centerDotColor: cityData?.isDay ?? true
-                            ? Appearance.colors.colOnPrimary
-                            : Appearance.colors.colOnLayer0
-                        label:       cityData?.name ?? ""
-                        labelColor:  Qt.rgba(
-                            (cityData?.isDay ?? true ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0).r,
-                            (cityData?.isDay ?? true ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0).g,
-                            (cityData?.isDay ?? true ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0).b,
-                            0.75)
-                        labelSpacing: 6
-                        autoTime:    false
-                        hourAngle: {
-                            if (!cityData?.time) return 0
-                            const p = cityData.time.split(":")
-                            return (parseInt(p[0]) % 12) * 30 + parseInt(p[1]) * 0.5
+                        StyledRectangularShadow {
+                            target: androidClock
+                            z: -2
                         }
-                        minuteAngle: {
-                            if (!cityData?.time) return 0
-                            const p = cityData.time.split(":")
-                            return parseInt(p[1]) * 6
+
+                        FastBlurred {
+                            anchors.fill: parent
+                            visible: Config.options.background.widgets.blurWidgets
+                            blurSource: root.wallpaperItem
+                            cardRadius: Appearance.rounding?.verylarge ?? 30
+                            tint: (clockWrapper.cityData?.isDay ?? true)
+                                ? Appearance.colors.colPrimary
+                                : Appearance.colors.colLayer1
+                            tintOpacity: 0.55
+                            trackX: root.x
+                            trackY: root.y
+                        }
+
+                        AndroidClock {
+                            id: androidClock
+                            anchors.fill: parent
+                            radius: Appearance.rounding?.verylarge ?? 30
+
+                            backgroundColor: Config.options.background.widgets.blurWidgets
+                                ? "transparent"
+                                : ((clockWrapper.cityData?.isDay ?? true)
+                                    ? Appearance.colors.colPrimary
+                                    : Appearance.colors.colPrimaryContainer)
+                            handColor: (clockWrapper.cityData?.isDay ?? true)
+                                ? Appearance.colors.colOnPrimary
+                                : Appearance.colors.colOnLayer0
+                            centerDotColor: (clockWrapper.cityData?.isDay ?? true)
+                                ? Appearance.colors.colOnPrimary
+                                : Appearance.colors.colOnLayer0
+                            label:       clockWrapper.cityData?.name ?? ""
+                            labelColor:  Qt.rgba(
+                                ((clockWrapper.cityData?.isDay ?? true) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0).r,
+                                ((clockWrapper.cityData?.isDay ?? true) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0).g,
+                                ((clockWrapper.cityData?.isDay ?? true) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0).b,
+                                0.75)
+                            labelSpacing: 6
+                            autoTime:    false
+                            hourAngle: {
+                                if (!clockWrapper.cityData?.time) return 0
+                                const p = clockWrapper.cityData.time.split(":")
+                                return (parseInt(p[0]) % 12) * 30 + parseInt(p[1]) * 0.5
+                            }
+                            minuteAngle: {
+                                if (!clockWrapper.cityData?.time) return 0
+                                const p = clockWrapper.cityData.time.split(":")
+                                return parseInt(p[1]) * 6
+                            }
                         }
                     }
                 }
