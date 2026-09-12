@@ -10,24 +10,25 @@ Item {
     property bool isMaterial: Config.options.bar.cornerStyle === 3
     property string style: Config.options.bar.divider.style // "rect" - "dot" - "space"
     property int dividerSpacing: Config.options.bar.divider.spacing
+    property int dividerSize: Config.options.bar.divider.size ?? 2
 
-    width:  vertical ? btnSize : (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitWidth + 10 : (1 + btnSpacing * 3))
-    height: vertical ? (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitHeight + 16 : (1 + btnSpacing * 3)) : btnSize
+    implicitWidth:  vertical ? btnSize : root.dividerSpacing
+    implicitHeight: vertical ? root.dividerSpacing : btnSize
 
     Rectangle {
         visible: root.style === "rect"
         anchors.centerIn: parent
-        width:  vertical ? Math.round(btnSize * 0.6) : 1
-        height: vertical ? 1 : Math.round(btnSize * 0.6)
-        color:  isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOutlineVariant
+        width:  vertical ? Math.round(btnSize * 0.6) : root.dividerSize
+        height: vertical ? root.dividerSize : Math.round(btnSize * 0.6)
+        color:  isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
     }
 
     StyledText {
         id: dotText
         visible: root.style === "dot"
         anchors.centerIn: parent
-        text: "• "
+        text: "•"
         color: isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
-        font.pixelSize: Appearance.font.pixelSize.normal
+        font.pixelSize: Math.round(Appearance.font.pixelSize.normal * (root.dividerSize / 2.0))
     }
 }

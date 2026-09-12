@@ -121,7 +121,7 @@ Item {
         visible: centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
-        width: middleRow.implicitWidth + 10
+        width: absoluteCenter.nonMatWidth + 10
         height: parent.height - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
         color: Config.options.bar.followFrameColor
             ? Appearance.getColorFromName(Config.options.bar.frameColor)
@@ -205,6 +205,7 @@ Item {
                             Layout.fillHeight: true
                             currentIndex: index
                             totalCount: root.effectiveLeftLayout.length
+                            isDivisor: modelData === "divisor"
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -238,6 +239,7 @@ Item {
                         Layout.fillHeight: true
                         currentIndex: index
                         totalCount: root.effectiveLeftLayout.length
+                            isDivisor: modelData === "divisor"
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
@@ -268,90 +270,134 @@ Item {
         // Center
         Item {
             id: absoluteCenter
-            anchors.centerIn: parent
-            width: root.isMaterial ? centerMaterialPill.implicitWidth : middleRow.implicitWidth
-            height: parent.height
+            anchors.fill: parent
+
+            property var mappedMiddleLayout: root.effectiveMiddleLayout.map((id, idx) => ({ name: id, globalIndex: idx }))
+            property int anchorIdx: {
+                if (!Config.options.bar.layouts.centerAnchor) return -1;
+                return root.effectiveMiddleLayout.indexOf(Config.options.bar.layouts.centerAnchor);
+            }
+            property var leftList: anchorIdx !== -1 ? mappedMiddleLayout.slice(0, anchorIdx) : []
+            property var centerList: anchorIdx !== -1 ? [mappedMiddleLayout[anchorIdx]] : mappedMiddleLayout
+            property var rightList: anchorIdx !== -1 ? mappedMiddleLayout.slice(anchorIdx + 1) : []
+            property int spacingVal: Config.options.bar.borderless === "transparent" ? -7 : Config.options?.bar.borderless === "segmented" ? -1 : 2
+            property real nonMatWidth: nonMatLeft.implicitWidth + nonMatCenter.implicitWidth + nonMatRight.implicitWidth + (absoluteCenter.leftList.length > 0 ? absoluteCenter.spacingVal : 0) + (absoluteCenter.rightList.length > 0 ? absoluteCenter.spacingVal : 0)
 
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
                 visible: root.isMaterial
-                anchors.centerIn: parent
-                implicitWidth: centerMaterialRow.implicitWidth + 10
-                implicitHeight: centerMaterialRow.implicitHeight 
+                anchors.left: (absoluteCenter.anchorIdx !== -1 && absoluteCenter.leftList.length > 0) ? matLeft.left : matCenter.left
+                anchors.right: (absoluteCenter.anchorIdx !== -1 && absoluteCenter.rightList.length > 0) ? matRight.right : matCenter.right
+                anchors.leftMargin: -5
+                anchors.rightMargin: -5
+                anchors.verticalCenter: parent.verticalCenter
+                height: matCenter.implicitHeight
                 radius: Appearance.rounding.full
                 color: Appearance.colors.colLayer0
+            }
 
-                RowLayout {
-                    id: centerMaterialRow
-                    anchors.centerIn: parent
-                    spacing: 3
+            // Material Layouts
+            RowLayout {
+                id: matLeft
+                visible: root.isMaterial
+                anchors.right: matCenter.left
+                anchors.rightMargin: 3
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 3
+                Repeater { model: absoluteCenter.leftList; delegate: middleMaterialGroupDelegate }
+            }
+            RowLayout {
+                id: matCenter
+                visible: root.isMaterial
+                anchors.centerIn: parent
+                spacing: 3
+                Repeater { model: absoluteCenter.centerList; delegate: middleMaterialGroupDelegate }
+            }
+            RowLayout {
+                id: matRight
+                visible: root.isMaterial
+                anchors.left: matCenter.right
+                anchors.leftMargin: 3
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 3
+                Repeater { model: absoluteCenter.rightList; delegate: middleMaterialGroupDelegate }
+            }
 
-                    Repeater {
-                        model: root.effectiveMiddleLayout
-                        delegate: middleMaterialGroupDelegate
-                    }
-
-                    Component {
-                        id: middleMaterialGroupDelegate
-                        BarGroup {
-                            Layout.fillHeight: true
-                            currentIndex: index
-                            totalCount: root.effectiveMiddleLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
-                            Loader {
-                                Layout.fillHeight: true
-                                source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
-                                }
-                            }
+            Component {
+                id: middleMaterialGroupDelegate
+                BarGroup {
+                    Layout.fillHeight: true
+                    currentIndex: modelData.globalIndex
+                    totalCount: root.effectiveMiddleLayout.length
+                    isDivisor: modelData.name === "divisor"
+                    paintMaterialPill: root.shouldPaintMaterialPill(modelData.name)
+                    bgColor: root.getMaterialPillColor(modelData.name)
+                    Loader {
+                        Layout.fillHeight: true
+                        source: root.getWidgetUrl(modelData.name)
+                        onLoaded: {
+                            if (item && item.hasOwnProperty("mirrored"))
+                                item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, modelData.globalIndex)
                         }
                     }
                 }
             }
 
-            // Non-material layout
+            // Non-material Layouts
             RowLayout {
-                id: middleRow
+                id: nonMatLeft
                 visible: !root.isMaterial
-                anchors.fill: parent
-                spacing: Config.options.bar.borderless === "transparent" ? -7 : Config.options?.bar.borderless === "segmented" ? -1 : 2
+                anchors.right: nonMatCenter.left
+                anchors.rightMargin: absoluteCenter.spacingVal
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: absoluteCenter.spacingVal
+                Repeater { model: absoluteCenter.leftList; delegate: middleBarGroupDelegate }
+            }
+            RowLayout {
+                id: nonMatCenter
+                visible: !root.isMaterial
+                anchors.centerIn: parent
+                spacing: absoluteCenter.spacingVal
+                Repeater { model: absoluteCenter.centerList; delegate: middleBarGroupDelegate }
+            }
+            RowLayout {
+                id: nonMatRight
+                visible: !root.isMaterial
+                anchors.left: nonMatCenter.right
+                anchors.leftMargin: absoluteCenter.spacingVal
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: absoluteCenter.spacingVal
+                Repeater { model: absoluteCenter.rightList; delegate: middleBarGroupDelegate }
+            }
 
-                Repeater {
-                    model: root.effectiveMiddleLayout
-                    delegate: middleBarGroupDelegate
-                }
-
-                Component {
-                    id: middleBarGroupDelegate
-                    BarGroup {
+            Component {
+                id: middleBarGroupDelegate
+                BarGroup {
+                    Layout.fillHeight: true
+                    currentIndex: modelData.globalIndex
+                    totalCount: root.effectiveMiddleLayout.length
+                    isDivisor: modelData.name === "divisor"
+                    Loader {
                         Layout.fillHeight: true
-                        currentIndex: index
-                        totalCount: root.effectiveMiddleLayout.length
-                        Loader {
-                            Layout.fillHeight: true
-                            source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
-                            }
+                        source: root.getWidgetUrl(modelData.name)
+                        onLoaded: {
+                            if (item && item.hasOwnProperty("mirrored"))
+                                item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, modelData.globalIndex)
                         }
                     }
                 }
+            }
 
-                Component {
-                    id: middleNoGroupDelegate
-                    Loader {
-                        Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
-                        source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
-                        }
+            Component {
+                id: middleNoGroupDelegate
+                Loader {
+                    Layout.fillHeight: false
+                    Layout.topMargin: Config.options.bar.bottom ? -5 : 3
+                    source: root.getWidgetUrl(modelData.name)
+                    onLoaded: {
+                        if (item && item.hasOwnProperty("mirrored"))
+                            item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, modelData.globalIndex)
                     }
                 }
             }
@@ -391,6 +437,7 @@ Item {
                             Layout.fillHeight: true
                             currentIndex: index
                             totalCount: root.effectiveRightLayout.length
+                            isDivisor: modelData === "divisor"
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -427,6 +474,7 @@ Item {
                         Layout.fillHeight: true
                         currentIndex: index
                         totalCount: root.effectiveRightLayout.length
+                            isDivisor: modelData === "divisor"
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
