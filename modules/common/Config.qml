@@ -436,9 +436,11 @@ Singleton {
                 property JsonObject divider: JsonObject {
                     property string style: "rect" // rect - dot - space
                     property int spacing: 20
+                    property int size: 2
                 }
 
                 property JsonObject layouts: JsonObject {
+                    property string centerAnchor: "clockWidget"
                     property list<string> leftLayout: ["launcherButton", "workspaces", "activeWindow"]
                     property list<string> middleLayout: ["clockWidget"]
                     property list<string> rightLayout: ["sysTray", "utilButtons", "systemIcons", "powerButton"]

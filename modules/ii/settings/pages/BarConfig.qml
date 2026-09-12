@@ -66,7 +66,6 @@ ContentPage {
         ]
         const multipleAllowed = ["visualizer", "divisor"]
         return allWidgets.filter(w => {
-            if (w.id === "divisor" && Config.options.bar.borderless !== "transparent") return false
             return !used.includes(w.id) || multipleAllowed.includes(w.id)
         })
     }
@@ -188,6 +187,9 @@ ContentPage {
                     availableWidgets: page.availableFor()
                     getWidgetName: page.getWidgetName
                     onUpdate: list => Config.options.bar.layouts.middleLayout = list
+                    allowPinning: true
+                    pinnedWidget: Config.options.bar.layouts.centerAnchor
+                    onPin: id => Config.options.bar.layouts.centerAnchor = id
                 }
 
                 LayoutSection {
@@ -253,6 +255,8 @@ ContentPage {
                         Config.options.bar.groupColor = newValue
                     }
                 }
+
+
                 ConfigRow{
                     uniform: true
                     ConfigSwitch {
@@ -423,16 +427,63 @@ ContentPage {
                         { displayName: Translation.tr("Space"), icon: "space_bar",       value: "space" }
                     ]
                 }
-                ConfigSpinBox {
-                    icon: "width"
-                    enabled: Config.options.bar.divider.style === "space"
-                    text: Translation.tr("Space width (px)")
-                    value: Config.options.bar.divider.spacing
-                    from: 4
-                    to: 400
-                    stepSize: 2
-                    onValueChanged: {
-                        Config.options.bar.divider.spacing = value;
+                RowLayout {
+                    spacing: 10
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+                    RowLayout {
+                        spacing: 10
+                        OptionalMaterialSymbol {
+                            icon: "width"
+                            iconSize: Appearance.font.pixelSize.larger
+                        }
+                        StyledText {
+                            Layout.preferredWidth: 120
+                            text: Translation.tr("Spacing (px)")
+                            color: Appearance.colors.colOnSecondaryContainer
+                        }
+                    }
+                    StyledSlider {
+                        id: dividerSpacingSlider
+                        configuration: StyledSlider.Configuration.XS
+                        usePercentTooltip: false
+                        stepSize: 1
+                        from: 0
+                        to: 100
+                        onMoved: Config.options.bar.divider.spacing = value
+                        Binding on value {
+                            value: Config.options.bar.divider.spacing
+                        }
+                    }
+                }
+                RowLayout {
+                    spacing: 10
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+                    visible: Config.options.bar.divider.style !== "space"
+                    RowLayout {
+                        spacing: 10
+                        OptionalMaterialSymbol {
+                            icon: "line_weight"
+                            iconSize: Appearance.font.pixelSize.larger
+                        }
+                        StyledText {
+                            Layout.preferredWidth: 120
+                            text: Translation.tr("Thickness (px)")
+                            color: Appearance.colors.colOnSecondaryContainer
+                        }
+                    }
+                    StyledSlider {
+                        id: dividerSizeSlider
+                        configuration: StyledSlider.Configuration.XS
+                        usePercentTooltip: false
+                        stepSize: 1
+                        from: 1
+                        to: 20
+                        onMoved: Config.options.bar.divider.size = value
+                        Binding on value {
+                            value: Config.options.bar.divider.size
+                        }
                     }
                 }
             }
