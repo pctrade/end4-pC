@@ -299,6 +299,27 @@ ContentPage {
                     }
                 }
 
+                ConfigSlider {
+                    id: bannerPosSlider
+                    buttonIcon: "unfold_more"
+                    text: Translation.tr("Banner position")
+                    enabled: Config.options.sidebar.banner
+                    from: 0; to: 100
+                    value: Math.round((Config.options.sidebar.bannerOffsetY ?? 0.5) * 100)
+                    onMoved: {
+                        Config.options.sidebar.bannerOffsetY = value / 100;
+                    }
+
+                    Connections {
+                        target: Config.options.sidebar
+                        function onBannerOffsetYChanged() {
+                            if (!bannerPosSlider.pressed) {
+                                bannerPosSlider.value = Math.round((Config.options.sidebar.bannerOffsetY ?? 0.5) * 100);
+                            }
+                        }
+                    }
+                }
+
                 ConfigSwitch {
                     buttonIcon: "bottom_navigation"
                     text: Translation.tr('Bottom Group')

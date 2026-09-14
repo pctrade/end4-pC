@@ -110,6 +110,7 @@ Item {
                 const path = fileChooserOutput.text.trim()
                 if (path !== "") {
                     Config.options.sidebar.bannerImage = path
+                    Config.options.sidebar.bannerOffsetY = 0.5
                 }
             }
         }
@@ -169,16 +170,27 @@ Item {
                                 radius: sysRect.radius
                                 color: "transparent"
 
-                                StyledImage {
+                                property bool isAdjustingBanner: false
+                                property real tempOffsetY: Config.options.sidebar.bannerOffsetY ?? 0.5
+                                readonly property real effectiveOffsetY: isAdjustingBanner ? tempOffsetY : (Config.options.sidebar.bannerOffsetY ?? 0.5)
+
+                                border.width: isAdjustingBanner ? 2 : 0
+                                border.color: Appearance.colors.colPrimary
+                                Behavior on border.width { NumberAnimation { duration: 150 } }
+
+                                Connections {
+                                    target: GlobalStates
+                                    function onSidebarRightOpenChanged() {
+                                        if (!GlobalStates.sidebarRightOpen && wallpaperRect.isAdjustingBanner) {
+                                            Config.options.sidebar.bannerOffsetY = Math.max(0.0, Math.min(1.0, wallpaperRect.tempOffsetY));
+                                            wallpaperRect.isAdjustingBanner = false;
+                                        }
+                                    }
+                                }
+
+                                Item {
+                                    id: bannerImageContainer
                                     anchors.fill: parent
-                                    fillMode: Image.PreserveAspectCrop
-                                    source: Config.options.sidebar.bannerImage !== "" 
-                                        ? Config.options.sidebar.bannerImage 
-                                        : Config.options.background.wallpaperPath
-                                    cache: false
-                                    antialiasing: true
-                                    sourceSize.width: wallpaperRect.width * 2
-                                    sourceSize.height: wallpaperRect.height * 2
                                     layer.enabled: true
                                     layer.effect: OpacityMask {
                                         maskSource: Rectangle {
@@ -187,17 +199,146 @@ Item {
                                             radius: wallpaperRect.radius
                                         }
                                     }
+
+                                    StyledImage {
+                                        id: bannerImg
+                                        source: Config.options.sidebar.bannerImage !== "" 
+                                            ? Config.options.sidebar.bannerImage 
+                                            : Config.options.background.wallpaperPath
+                                        cache: false
+                                        antialiasing: true
+                                        smooth: true
+                                        mipmap: true
+                                        fillMode: Image.Stretch
+
+                                        readonly property real baseScale: {
+                                            if (sourceSize.width <= 0 || sourceSize.height <= 0 || wallpaperRect.width <= 0 || wallpaperRect.height <= 0) return 1.0;
+                                            return Math.max(wallpaperRect.width / sourceSize.width, wallpaperRect.height / sourceSize.height);
+                                        }
+
+                                        width: sourceSize.width > 0 ? Math.ceil(sourceSize.width * baseScale) : wallpaperRect.width
+                                        height: sourceSize.height > 0 ? Math.ceil(sourceSize.height * baseScale) : wallpaperRect.height
+
+                                        x: Math.round((wallpaperRect.width - width) * 0.5)
+                                        y: Math.round((wallpaperRect.height - height) * wallpaperRect.effectiveOffsetY)
+                                    }
                                 }
+
+                                Rectangle {
+                                    id: adjustHintBadge
+                                    anchors {
+                                        top: parent.top
+                                        topMargin: 8
+                                        horizontalCenter: parent.horizontalCenter
+                                    }
+                                    visible: wallpaperRect.isAdjustingBanner
+                                    opacity: bannerMouseArea.isDragging ? 0.2 : 0.95
+                                    Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                                    radius: Appearance.rounding.full
+                                    color: Appearance.colors.colLayer0
+                                    border.width: 1
+                                    border.color: Appearance.colors.colPrimary
+
+                                    implicitHeight: 28
+                                    implicitWidth: hintRow.implicitWidth + 20
+
+                                    RowLayout {
+                                        id: hintRow
+                                        anchors.centerIn: parent
+                                        spacing: 6
+
+                                        MaterialSymbol {
+                                            text: "unfold_more"
+                                            iconSize: 18
+                                            color: Appearance.colors.colPrimary
+                                        }
+
+                                        StyledText {
+                                            text: Translation.tr("Drag to adjust | MMB to save")
+                                            font.pixelSize: Appearance.font.pixelSize.smaller
+                                            font.weight: Font.Medium
+                                            color: Appearance.colors.colOnLayer0
+                                        }
+                                    }
+                                }
+
                                 MouseArea {
+                                    id: bannerMouseArea
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                    onClicked: (event) => {
+                                    hoverEnabled: true
+                                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+
+                                    property real dragStartY: 0
+                                    property real dragStartOffset: 0
+                                    property bool isDragging: false
+
+                                    cursorShape: {
+                                        if (wallpaperRect.isAdjustingBanner) {
+                                            return isDragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor;
+                                        }
+                                        return Qt.PointingHandCursor;
+                                    }
+
+                                    onPressed: (event) => {
+                                        if (wallpaperRect.isAdjustingBanner && event.button === Qt.LeftButton) {
+                                            dragStartY = event.y;
+                                            dragStartOffset = wallpaperRect.tempOffsetY;
+                                            isDragging = true;
+                                        }
+                                    }
+
+                                    onPositionChanged: (event) => {
+                                        if (wallpaperRect.isAdjustingBanner && isDragging) {
+                                            const overflowY = bannerImg.height - wallpaperRect.height;
+                                            if (overflowY > 1) {
+                                                const deltaY = event.y - dragStartY;
+                                                const newOffset = dragStartOffset - (deltaY / overflowY);
+                                                wallpaperRect.tempOffsetY = Math.max(0.0, Math.min(1.0, newOffset));
+                                            }
+                                        }
+                                    }
+
+                                    onReleased: (event) => {
                                         if (event.button === Qt.LeftButton) {
-                                            fileChooser.running = true
-                                            GlobalStates.sidebarRightOpen = false
-                                        } else if (event.button === Qt.RightButton) {
-                                            Config.options.sidebar.bannerImage = ""
+                                            isDragging = false;
+                                        }
+                                    }
+
+                                    onClicked: (event) => {
+                                        if (event.button === Qt.MiddleButton) {
+                                            if (!wallpaperRect.isAdjustingBanner) {
+                                                wallpaperRect.tempOffsetY = Config.options.sidebar.bannerOffsetY ?? 0.5;
+                                                wallpaperRect.isAdjustingBanner = true;
+                                            } else {
+                                                Config.options.sidebar.bannerOffsetY = Math.max(0.0, Math.min(1.0, wallpaperRect.tempOffsetY));
+                                                wallpaperRect.isAdjustingBanner = false;
+                                            }
+                                            return;
+                                        }
+
+                                        if (event.button === Qt.RightButton) {
+                                            wallpaperRect.isAdjustingBanner = false;
+                                            Config.options.sidebar.bannerImage = "";
+                                            Config.options.sidebar.bannerOffsetY = 0.5;
+                                            return;
+                                        }
+
+                                        if (event.button === Qt.LeftButton && !wallpaperRect.isAdjustingBanner) {
+                                            fileChooser.running = true;
+                                            GlobalStates.sidebarRightOpen = false;
+                                        }
+                                    }
+
+                                    onWheel: (wheel) => {
+                                        if (wallpaperRect.isAdjustingBanner) {
+                                            const overflowY = bannerImg.height - wallpaperRect.height;
+                                            if (overflowY > 1) {
+                                                const step = 0.04;
+                                                const delta = wheel.angleDelta.y > 0 ? -step : step;
+                                                wallpaperRect.tempOffsetY = Math.max(0.0, Math.min(1.0, wallpaperRect.tempOffsetY + delta));
+                                                wheel.accepted = true;
+                                            }
                                         }
                                     }
                                 }
