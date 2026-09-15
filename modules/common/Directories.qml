@@ -34,6 +34,8 @@ Singleton {
     property string shellConfigName: "config.json"
     property string shellConfigPath: `${Directories.shellConfig}/${Directories.shellConfigName}`
 	property string todoPath: FileUtils.trimFileProtocol(`${Directories.state}/user/todo.json`)
+	property string pinboardPath: FileUtils.trimFileProtocol(`${Directories.state}/user/pinboard.json`)
+	property string pinboardImages: FileUtils.trimFileProtocol(`${Directories.state}/user/pinboard_images`)
 	property string notesPath: FileUtils.trimFileProtocol(`${Directories.state}/user/notes.txt`)
     property string desktopNotesPath: FileUtils.trimFileProtocol(`${Directories.state}/user/desktopnotes.txt`)
 	property string conflictCachePath: FileUtils.trimFileProtocol(`${Directories.cache}/conflict-killer`)
@@ -67,6 +69,7 @@ Singleton {
         Quickshell.execDetached(["bash", "-c", `rm -rf '${latexOutput}'; mkdir -p '${latexOutput}'`])
         Quickshell.execDetached(["bash", "-c", `rm -rf '${cliphistDecode}'; mkdir -p '${cliphistDecode}'`])
         Quickshell.execDetached(["mkdir", "-p", `${aiChats}`])
+        Quickshell.execDetached(["mkdir", "-p", `${pinboardImages}`])
         Quickshell.execDetached(["mkdir", "-p", `${userActions}`])
         Quickshell.execDetached(["mkdir", "-p", `${eqStateDir}`])
         Quickshell.execDetached(["rm", "-rf", `${tempImages}`])
