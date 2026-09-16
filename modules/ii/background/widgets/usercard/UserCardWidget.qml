@@ -269,7 +269,8 @@ AbstractBackgroundWidget {
                     anchors.fill: parent
                     visible: false
 
-                    property string effectiveSource: "file://" + (GlobalStates.screenLocked && Config.options.background.lockWall !== ""
+                    // Only feeds the FastBlur used when widget blur is off
+                    property string effectiveSource: Config.options.background.widgets.blurWidgets ? "" : "file://" + (GlobalStates.screenLocked && Config.options.background.lockWall !== ""
                         ? Config.options.background.lockWall
                         : Config.options.background.wallpaperPath)
 
@@ -277,6 +278,7 @@ AbstractBackgroundWidget {
                         id: bgImageA
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(root.snapWidth3, root.snapHeight3)
                         asynchronous: true
                         cache: false
                         opacity: 1
@@ -288,6 +290,7 @@ AbstractBackgroundWidget {
                         id: bgImageB
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(root.snapWidth3, root.snapHeight3)
                         asynchronous: true
                         cache: false
                         opacity: 0

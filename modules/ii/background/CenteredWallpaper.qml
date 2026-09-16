@@ -230,11 +230,11 @@ Item {
             anchors.centerIn: parent
             source: root.wallpaperPath
             fillMode: Image.PreserveAspectCrop
-            cache: false
             mipmap: true
             antialiasing: true
-            sourceSize.width: root.width
-            sourceSize.height: root.height
+            // Same request as the background wallpaper, so both share a single decode
+            sourceSize: Qt.size(Math.ceil(root.screen.width * root.screen.devicePixelRatio),
+                Math.ceil(root.screen.height * root.screen.devicePixelRatio))
             property real imageZoom: 1
             scale: root.centeredImageScale() * (1 / centeredWallpaperShapeItem.shapeZoom) * imageZoom
         }

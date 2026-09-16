@@ -152,14 +152,15 @@ Item {
 
     Component {
         id: defaultImageDelegate
-        StyledImage {
+        // Freedesktop thumbnails rather than the full wallpapers. The wallpaper selector keeps
+        // the x-large ones up to date and missing ones are generated on the fly.
+        ThumbnailImage {
             id: img
             property real fixedWidth: parent?.fixedWidth ?? width
             property real fixedHeight: parent?.fixedHeight ?? height
-            source: "file://" + FileUtils.trimFileProtocol(modelData)
+            sourcePath: FileUtils.trimFileProtocol(modelData)
+            thumbnailSizeName: (sourceSize.width > 512 || sourceSize.height > 512) ? "xx-large" : "x-large"
             fillMode: Image.PreserveAspectCrop
-            cache: true
-            asynchronous: true
             sourceSize.width: fixedWidth * 1.5
             sourceSize.height: fixedHeight * 1.5
         }
