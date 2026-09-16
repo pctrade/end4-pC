@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Launcher for end4-update.sh. The update may rewrite that file, so a temporary
+# copy is executed instead of the file inside the checkout.
+src="${END4_REPO:-$HOME/.config/quickshell/end4-pC}/scripts/perso/end4-update.sh"
+[ -f "$src" ] || { echo "Missing $src"; exit 1; }
+tmp="$(mktemp --suffix=-end4-update.sh)" || exit 1
+cp "$src" "$tmp" || exit 1
+END4_UPDATE_TMP="$tmp" exec bash "$tmp" "$@"
