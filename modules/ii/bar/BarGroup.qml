@@ -10,7 +10,8 @@ Item {
     property bool isMaterial: Config.options.bar.cornerStyle === 3
     property bool paintMaterialPill: false
     property bool paintBackground: true
-    property real padding: (root.isMaterial && !root.paintMaterialPill) ? 0 : 5
+    property bool isDivisor: false
+    property real padding: (root.isMaterial && !root.paintMaterialPill) || root.isDivisor ? 0 : 5
     property color bgColor: Appearance.colors.colPrimaryContainer
 
     readonly property color resolvedGroupColor: {
@@ -48,7 +49,7 @@ Item {
             leftMargin: root.vertical ? 4 : 0
             rightMargin: root.vertical ? 4 : 0
         }
-        color: !root.paintBackground
+        color: (!root.paintBackground || root.isDivisor)
             ? "transparent"
             : (root.isMaterial && !root.paintMaterialPill)
                 ? "transparent"
@@ -60,7 +61,7 @@ Item {
                             ? Appearance.colors.colLayer0
                             : root.resolvedGroupColor)
 
-        border.width: root.paintBackground && root.isSegmented && !root.isMaterial ? 1 : 0
+        border.width: (root.paintBackground && root.isSegmented && !root.isMaterial && !root.isDivisor) ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
         topLeftRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.startRadius)
