@@ -979,6 +979,164 @@ ContentPage {
         }
 
         ContentSection {
+            id: settingsCustomText
+            icon: "text_fields"
+            shape: MaterialShape.Shape.Cookie4Sided
+            title: Translation.tr("Text")
+
+            readonly property var entry: Config.options.background.widgets.customText
+
+            GroupedList {
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: settingsCustomText.entry.enable
+                    onCheckedChanged: {
+                        settingsCustomText.entry.enable = checked;
+                    }
+                }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "shadow"
+                    text: Translation.tr("Shadow")
+                    checked: settingsCustomText.entry.shadow
+                    onCheckedChanged: {
+                        settingsCustomText.entry.shadow = checked;
+                    }
+                }
+            }
+
+            NoticeBox {
+                Layout.fillWidth: true
+                materialIcon: "touch_app"
+                text: Translation.tr("Double-click the text on your desktop to edit it, drag its corner to resize it")
+            }
+
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Text to display")
+                text: settingsCustomText.entry.content
+                wrapMode: TextEdit.Wrap
+
+                Timer {
+                    id: customTextContentDebounce
+                    interval: 500
+                    repeat: false
+                    onTriggered: {
+                        settingsCustomText.entry.content = parent.text
+                    }
+                }
+
+                onTextChanged: {
+                    if (activeFocus) customTextContentDebounce.restart()
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Font")
+
+                ConfigSelectionArray {
+                    currentValue: settingsCustomText.entry.fontFamily
+                    onSelected: newValue => {
+                        settingsCustomText.entry.fontFamily = newValue;
+                    }
+                    options: Fonts.handwritingFamilies.map(family => ({
+                        displayName: family,
+                        value: family
+                    }))
+                }
+
+                MaterialTextArea {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 6
+                    placeholderText: Translation.tr("Other font (any installed font family)")
+                    text: Fonts.handwritingFamilies.includes(settingsCustomText.entry.fontFamily) ? "" : settingsCustomText.entry.fontFamily
+                    wrapMode: TextEdit.Wrap
+
+                    Timer {
+                        id: customTextFontDebounce
+                        interval: 500
+                        repeat: false
+                        onTriggered: {
+                            if (parent.text.trim() !== "")
+                                settingsCustomText.entry.fontFamily = parent.text.trim()
+                        }
+                    }
+
+                    onTextChanged: {
+                        if (activeFocus) customTextFontDebounce.restart()
+                    }
+                }
+            }
+
+            GroupedList {
+                ConfigSlider {
+                    text: Translation.tr("Font size")
+                    value: settingsCustomText.entry.fontSize
+                    usePercentTooltip: false
+                    buttonIcon: "format_size"
+                    from: 12
+                    to: 400
+                    stopIndicatorValues: [72]
+                    onValueChanged: {
+                        settingsCustomText.entry.fontSize = Math.round(value);
+                    }
+                }
+            }
+
+            ConfigSelectionArray {
+                text: Translation.tr("Alignment")
+                icon: "format_align_center"
+                currentValue: settingsCustomText.entry.alignment
+                onSelected: newValue => {
+                    settingsCustomText.entry.alignment = newValue;
+                }
+                options: [
+                    {
+                        displayName: Translation.tr("Left"),
+                        icon: "format_align_left",
+                        value: "left"
+                    },
+                    {
+                        displayName: Translation.tr("Center"),
+                        icon: "format_align_center",
+                        value: "center"
+                    },
+                    {
+                        displayName: Translation.tr("Right"),
+                        icon: "format_align_right",
+                        value: "right"
+                    }
+                ]
+            }
+
+            GroupedList {
+                ConfigSwitch {
+                    id: customTextAutoColorSwitch
+                    buttonIcon: "auto_awesome"
+                    text: Translation.tr("Automatic colors")
+                    checked: settingsCustomText.entry.color === ""
+                    onCheckedChanged: {
+                        if (checked) {
+                            settingsCustomText.entry.color = ""
+                        }
+                    }
+                }
+
+                ColorSelectionArray {
+                    icon: "palette"
+                    text: Translation.tr("Color")
+                    currentValue: settingsCustomText.entry.color
+                    onSelected: newValue => {
+                        settingsCustomText.entry.color = newValue
+                        customTextAutoColorSwitch.checked = false
+                    }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "widgets"
             shape: MaterialShape.Shape.Pill
             title: Translation.tr("Widgets")
@@ -1054,6 +1212,11 @@ ContentPage {
                             icon: "timer",
                             name: Translation.tr("Timers"),
                             enabled: Config.options.background.widgets.timers.enable
+                        },
+                        {
+                            icon: "text_fields",
+                            name: Translation.tr("Text"),
+                            enabled: Config.options.background.widgets.customText.enable
                         }
                         
                     ]
@@ -1106,6 +1269,8 @@ ContentPage {
                                             Config.options.background.widgets.todo.enable = checked
                                         else if (modelData.icon === "timer")
                                             Config.options.background.widgets.timers.enable = checked
+                                        else if (modelData.icon === "text_fields")
+                                            Config.options.background.widgets.customText.enable = checked
                                     }
                                 }
                             }

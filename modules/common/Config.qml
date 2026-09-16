@@ -398,6 +398,20 @@ Singleton {
                         property real z: 0
                         property string sizeMode: "1x3" 
                     }
+
+                    property JsonObject customText: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 300
+                        property real z: 0
+                        property string content: "Hello world"
+                        property string fontFamily: "Caveat"
+                        property int fontSize: 72
+                        property string color: "" // "" = automatic, otherwise an Appearance color name
+                        property string alignment: "center" // "left", "center", "right"
+                        property bool shadow: true
+                    }
                 }
                 property list<string> screenList: [] 
                 property string wallpaperPath: ""

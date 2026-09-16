@@ -611,5 +611,18 @@
   "Use varying shapes for password characters": "Utiliser des formes variées pour les caractères du mot de passe",
   "Battery full": "Batterie pleine",
   "Pin": "Épingler",
-  "Unpin": "Désépingler"
+  "Unpin": "Désépingler",
+  "Text": "Texte",
+  "Your text": "Votre texte",
+  "Ctrl+Enter to save · Esc to cancel": "Ctrl+Entrée pour valider · Échap pour annuler",
+  "Shadow": "Ombre",
+  "Double-click the text on your desktop to edit it, drag its corner to resize it": "Double-cliquez sur le texte du bureau pour le modifier, faites glisser son coin pour changer sa taille",
+  "Text to display": "Texte à afficher",
+  "Font": "Police",
+  "Other font (any installed font family)": "Autre police (n'importe quelle police installée)",
+  "Font size": "Taille de police",
+  "Alignment": "Alignement",
+  "Center": "Centre",
+  "Automatic colors": "Couleurs automatiques",
+  "Color": "Couleur"
 }
