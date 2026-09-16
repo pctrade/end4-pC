@@ -32,7 +32,6 @@ Item {
 
     Repeater {
         model: [
-            { key: "visualizer" },
             { key: "customImage" },
             { key: "calendar" },
             { key: "weather" },
@@ -61,7 +60,6 @@ Item {
 
             sourceComponent: {
                 switch (loaderDelegate.modelData.key) {
-                    case "visualizer":  return visualizerComp
                     case "customImage": return customImageComp
                     case "calendar":    return calendarComp
                     case "weather":     return weatherComp
@@ -92,19 +90,6 @@ Item {
                 interval: 500
                 onTriggered: loaderDelegate.enableLoading = true
             }
-        }
-    }
-
-    Component {
-        id: visualizerComp
-        VisualizerWidget {
-            showSelectionBorder: false
-            screenWidth: root.screen.width
-            screenHeight: root.screen.height
-            scaledScreenWidth: root.screen.width
-            scaledScreenHeight: root.screen.height
-            wallpaperScale: 1
-            pinnedBottom: true
         }
     }
     Component {

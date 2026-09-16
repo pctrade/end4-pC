@@ -72,8 +72,13 @@ AbstractBackgroundWidget {
     implicitHeight: maxBarHeight + 20
 
     x: 0
-    y: screenHeight - implicitHeight
+    y: 0
+    width: screenWidth
+    height: screenHeight
+    z: 1
     draggable: false
+    acceptedButtons: Qt.NoButton
+    hoverEnabled: false
 
     Row {
         anchors.bottom: parent.bottom
