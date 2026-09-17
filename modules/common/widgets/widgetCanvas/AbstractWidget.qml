@@ -15,6 +15,11 @@ MouseArea {
     readonly property bool dragging: drag.active
     property bool showSelectionBorder: true
     property bool pinnedBottom: false
+    // The WidgetCanvas this widget belongs to. Background widgets are
+    // registered by whoever hosts them (e.g. WidgetsLoader), so they don't
+    // need to be direct children of the canvas anymore.
+    property Item canvas: null
+    onCanvasChanged: { if (root.canvas) root.canvas.registerWidget(root) }
 
     property bool selected: false
     property bool groupDragActive: false
@@ -23,22 +28,21 @@ MouseArea {
     drag.target: draggable ? dragProxy : undefined
     cursorShape: (draggable && containsPress) ? Qt.ClosedHandCursor : draggable ? Qt.OpenHandCursor : Qt.ArrowCursor
 
-    onPressed: (mouse) => {
-        if (mouse.button !== Qt.LeftButton) return
-        var canvas = findCanvas(root.parent)
-        if (canvas) canvas.bringToFront(root)
-    }
-
     onClicked: (mouse) => {
         if (mouse.button === Qt.RightButton) {
-            Config.options.background.widgetsLocked = !Config.options.background.widgetsLocked
+            root.handleContextMenu(mouse)
         } else if (mouse.modifiers & Qt.ControlModifier) {
             root.selected = !root.selected
         } else {
-            var canvas = findCanvas(root.parent)
-            if (canvas) canvas.clearSelection()
+            if (root.canvas) root.canvas.clearSelection()
             root.selected = true
         }
+    }
+
+    // Default right-click behavior: toggle the global widget lock.
+    // Subclasses (e.g. background widgets) override this to open a context menu.
+    function handleContextMenu(mouse) {
+        Config.options.background.widgetsLocked = !Config.options.background.widgetsLocked
     }
 
     function center() {
@@ -50,18 +54,9 @@ MouseArea {
         return Math.round(value / root.gridSize) * root.gridSize
     }
 
-    function findCanvas(item) {
-        var p = item
-        while (p) {
-            if (p.isWidgetCanvas === true) return p
-            p = p.parent
-        }
-        return null
-    }
-
     function updateCenterHighlight() {
-        var canvas = findCanvas(root.parent)
-        if (!canvas) return
+        if (!root.canvas) return
+        var canvas = root.canvas
         var widgetCenterX = dragProxy.x + root.width / 2
         var widgetCenterY = dragProxy.y + root.height / 2
         var threshold = root.gridSize
@@ -72,16 +67,19 @@ MouseArea {
 
     function commitPosition() {}
 
-    Component.onCompleted: { var canvas = findCanvas(root.parent); if (canvas) canvas.registerWidget(root) }
-
     Component.onDestruction: {
-        var canvas = findCanvas(root.parent)
-        if (canvas) canvas.unregisterWidget(root)
+        if (root.canvas) root.canvas.unregisterWidget(root)
+    }
+
+    // Sync dragProxy to widget position when press starts (before drag begins)
+    onPressed: {
+        dragProxy.x = root.x
+        dragProxy.y = root.y
     }
 
     Item {
         id: dragProxy
-        parent: root.parent
+        parent: root.canvas ?? root.parent
         x: root.x
         y: root.y
 
@@ -89,6 +87,8 @@ MouseArea {
         onYChanged: if (root.dragging) root.updateCenterHighlight()
     }
 
+    // RestoreNone strips the declarative x/y binding during drag;
+    // commitPosition() → restoreXYBinding() re-establishes it after each drag.
     Binding {
         target: root
         property: "x"
@@ -105,18 +105,16 @@ MouseArea {
     }
 
     onXChanged: {
-        if (!root.dragging) return
-        var canvas = findCanvas(root.parent)
-        if (canvas) canvas.updateGroupDrag(root)
+        if (!root.dragging || !root.canvas) return
+        root.canvas.updateGroupDrag(root)
     }
     onYChanged: {
-        if (!root.dragging) return
-        var canvas = findCanvas(root.parent)
-        if (canvas) canvas.updateGroupDrag(root)
+        if (!root.dragging || !root.canvas) return
+        root.canvas.updateGroupDrag(root)
     }
 
     onDraggingChanged: {
-        var canvas = findCanvas(root.parent)
+        var canvas = root.canvas
         if (canvas) canvas.setDragging(dragging)
 
         if (dragging) {
@@ -142,6 +140,7 @@ MouseArea {
                 canvas.flashLines(verticalLines, horizontalLines)
         }
 
+        // Sync dragProxy after drag ends so it's ready for next drag
         dragProxy.x = root.x
         dragProxy.y = root.y
     }

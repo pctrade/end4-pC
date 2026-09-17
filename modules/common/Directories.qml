@@ -37,6 +37,8 @@ Singleton {
 	property string notesPath: FileUtils.trimFileProtocol(`${Directories.state}/user/notes.txt`)
     property string desktopNotesPath: FileUtils.trimFileProtocol(`${Directories.state}/user/desktopnotes.txt`)
 	property string conflictCachePath: FileUtils.trimFileProtocol(`${Directories.cache}/conflict-killer`)
+    property string depthWallpapers: FileUtils.trimFileProtocol(`${Directories.cache}/depth-wallpaper`)
+    property string customWidgetFonts: FileUtils.trimFileProtocol(`${Directories.cache}/customwidget-fonts`)
     property string notificationsPath: FileUtils.trimFileProtocol(`${Directories.cache}/notifications/notifications.json`)
     property string generatedMaterialThemePath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/colors.json`)
     property string generatedWallpaperCategoryPath: FileUtils.trimFileProtocol(`${Directories.state}/user/generated/wallpaper/category.txt`)
@@ -69,6 +71,7 @@ Singleton {
         Quickshell.execDetached(["mkdir", "-p", `${aiChats}`])
         Quickshell.execDetached(["mkdir", "-p", `${userActions}`])
         Quickshell.execDetached(["mkdir", "-p", `${eqStateDir}`])
+        Quickshell.execDetached(["mkdir", "-p", `${depthWallpapers}`])
         Quickshell.execDetached(["rm", "-rf", `${tempImages}`])
     }
 }

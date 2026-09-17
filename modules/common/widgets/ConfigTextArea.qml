@@ -13,6 +13,31 @@ RowLayout {
     property alias placeholderText: textArea.placeholderText
     property alias value: textArea.text
     property alias textArea: textArea
+    // Opt-in guarded model sync. Callers that would otherwise bind `value:`
+    // straight to config should instead bind `modelValue` and set
+    // `modelSync: true`. A direct `value:` binding gets clobbered every time
+    // the config re-emits (e.g. CustomWidgets.save() reassigns the whole
+    // widget list), which resets the caret and resurrects cleared text. With
+    // this mode the field's own text stays authoritative while it is focused,
+    // and external changes are only pushed in when the user is not editing.
+    property bool modelSync: false
+    property string modelValue: ""
+    property bool applyingModel: false
+
+    function syncFromModel() {
+        if (!root.modelSync || !textArea)
+            return
+        if (textArea.activeFocus)
+            return
+        if (textArea.text === root.modelValue)
+            return
+        root.applyingModel = true
+        textArea.text = root.modelValue
+        root.applyingModel = false
+    }
+
+    onModelValueChanged: root.syncFromModel()
+    Component.onCompleted: root.syncFromModel()
     property bool filled: true
     property bool showBorder: !filled
     property bool rounded: false
@@ -49,6 +74,7 @@ RowLayout {
         spacing: 0
         StyledText {
             Layout.fillWidth: true
+            Layout.minimumWidth: 0
             text: root.text
             color: root.colLabel
             opacity: root.enabled ? 1 : 0.4

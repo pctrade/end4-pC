@@ -38,22 +38,22 @@ AbstractBackgroundWidget {
         implicitWidth: root.cardWidth
         implicitHeight: root.cardHeight
         radius: Appearance.rounding?.verylarge ?? 30
-        color: timerCard.bgColor
+        // Real translucency over the live scene behind (plain or depth
+        // wallpaper) — no wallpaper sampling, so nothing stale can show through.
+        color: ColorUtils.applyAlpha(timerCard.bgColor, 0.75)
 
         StyledRectangularShadow {
             target: timerCard
             z: -2
         }
 
-        FastBlurred {
+        // True scene backdrop blur (wallpaper + depth layers below this
+        // card) over the translucent fill above. The fill stays untouched,
+        // so real transparency survives wherever blur shows nothing.
+        WidgetBackdropBlur {
             anchors.fill: parent
-            blurSource: root.wallpaperItem
             cardRadius: timerCard.radius
-            tint: Appearance.colors.colLayer1
-            tintOpacity: 0.55
-            trackX: timerCard.x + root.x
-            trackY: timerCard.y + root.y
-            visible: Config.options.background.widgets.blurWidgets 
+            backdropSources: root.backdropSources
         }
 
         MouseArea {

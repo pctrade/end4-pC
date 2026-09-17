@@ -141,22 +141,22 @@ AbstractBackgroundWidget {
             ? root.doubleCardHeight
             : (root.cardHeight + (root.sizeMode === "1x3" && root.showLyrics ? 264 : 0))
         radius: Appearance.rounding?.verylarge ?? 30
-        color: Appearance.colors.colPrimaryContainer
+        // Real translucency over the live scene behind (plain or depth
+        // wallpaper) — no wallpaper sampling, so nothing stale can show through.
+        color: ColorUtils.applyAlpha(Appearance.colors.colPrimaryContainer, 0.75)
         clip: true
 
         Behavior on implicitHeight {
             NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
         }
 
-        FastBlurred {
+        // True scene backdrop blur (wallpaper + depth layers below this
+        // card) over the translucent fill above. The fill stays untouched,
+        // so real transparency survives wherever blur shows nothing.
+        WidgetBackdropBlur {
             anchors.fill: parent
-            blurSource: root.wallpaperItem
             cardRadius: card.radius
-            tint: Appearance.colors.colLayer1
-            tintOpacity: 0.55
-            trackX: root.x  
-            trackY: root.y
-            visible: Config.options.background.widgets.blurWidgets 
+            backdropSources: root.backdropSources
         }
 
         Loader {

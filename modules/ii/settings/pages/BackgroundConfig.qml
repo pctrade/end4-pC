@@ -5,6 +5,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.ii.settings.pages
 import Quickshell.Hyprland
 
 
@@ -299,6 +300,19 @@ ContentPage {
                     currentValue: Config.options.background.wallpaperAnimation
                     onSelected: newValue => {
                         Config.options.background.wallpaperAnimation = newValue;
+                    }
+                }
+
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "depth"
+                    text: Translation.tr("Enable depth effect")
+                    checked: Config.options.background.depthEffect.enable
+                    onCheckedChanged: {
+                        Config.options.background.depthEffect.enable = checked;
+                    }
+                    StyledToolTip {
+                        text: Translation.tr("Multi-layer wallpaper with parallax effect. Configure in the Depth Effect settings page.")
                     }
                 }
             }
@@ -945,6 +959,8 @@ ContentPage {
                 }
             }
         }
+
+        CustomWidgetsSettings {}
 
         ContentSection {
             icon: "panorama"

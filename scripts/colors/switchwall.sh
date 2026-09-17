@@ -351,8 +351,18 @@ switch() {
         output_scss="$STATE_DIR/user/generated/material_colors.scss"
     fi
 
-    python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
-        > "$output_scss"
+    # Generate to a temp file first: if the generator crashes (or yields
+    # nothing) we keep the previous good scss instead of installing an empty
+    # file that would brick Kitty with "invalid colour name" on reload.
+    local tmp_scss
+    tmp_scss="$(mktemp)"
+    if python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
+        > "$tmp_scss" && [[ -s "$tmp_scss" ]]; then
+        cat "$tmp_scss" > "$output_scss"
+    else
+        echo "Color generation produced no output — keeping previous ${output_scss##*/}"
+    fi
+    rm -f "$tmp_scss"
     deactivate
 
     if [[ -z "$colors_lock_flag" ]]; then

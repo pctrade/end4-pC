@@ -11,6 +11,11 @@ MouseArea {
     property bool centerXActive: false
     property bool centerYActive: false
 
+    // The item that paints the drag feedback (grid/center/selection/flash
+    // lines). WidgetCanvas owns the interaction state; the visual host is
+    // elevated above the depth wallpaper container by Background.qml.
+    property Item visualHost: null
+
     property var registeredWidgets: []
     property bool selecting: false
     property point selectionStartPoint: Qt.point(0, 0)
@@ -41,13 +46,146 @@ MouseArea {
         root.registeredWidgets = root.registeredWidgets.filter(w => w !== widget)
     }
 
-    function bringToFront(widget) {
-        if (widget.pinnedBottom) return
-        let maxZ = 0
-        for (const w of root.registeredWidgets) {
-            if (w !== widget && !w.pinnedBottom && w.z > maxZ) maxZ = w.z
+    // Widgets are positioned RELATIVE to the depth wallpaper layers. Layer
+    // movement stays a pure layer-relative operation (forward = one layer
+    // toward the front). On top of that, widgets sharing a layer carry a small
+    // sub-order so overlapping widgets can be raised/lowered among themselves
+    // without ever crossing a wallpaper layer.
+    readonly property real depthLayerCount: Math.max(1, (Config.options.background.depthEffect.layers ?? []).length)
+
+    function widgetByConfigName(key) {
+        return root.registeredWidgets.find(w => w.configEntryName === key)
+    }
+
+    // Resolve the config object for any widget key: custom widgets live in
+    // the customWidgets array (keyed by their id), everything else in the
+    // keyed widgets object.
+    function widgetEntryFromConfig(key) {
+        const ids = Config.options.background.widgets.customWidgetIds ?? []
+        if (ids.includes(key)) {
+            const list = Config.options.background.widgets.customWidgets ?? []
+            return list.find(w => w?.id === key) ?? null
         }
-        widget.z = maxZ + 1
+        return Config.options.background.widgets[key]
+    }
+
+    // list<var> entries are persisted/reactive only after a whole-list
+    // reassignment (same pattern the depth-effect settings use for layers).
+    function persistCustomWidget(entry) {
+        if (!entry?.id) return
+        const list = (Config.options.background.widgets.customWidgets ?? [])
+            .map(w => (w.id === entry.id ? entry : w))
+        Config.options.background.widgets.customWidgets = list
+    }
+
+    function isCustomWidgetKey(key) {
+        return (Config.options.background.widgets.customWidgetIds ?? []).includes(key)
+    }
+
+    // Effective "above layer k-1" position for a widget. Out-of-range or
+    // unset (-1) values mean the default = above the highest layer.
+    function effectiveDepthPosition(key) {
+        const entry = root.widgetEntryFromConfig(key)
+        const raw = entry?.depthLayerPosition ?? -1
+        return (raw > 0 && raw <= root.depthLayerCount) ? raw : root.depthLayerCount
+    }
+
+    // ── Widget-to-widget stacking (persisted, back -> front) ──────────────
+    // The order list lives in config so overlapping widgets keep their
+    // arrangement across restarts. Keys missing from the list (never
+    // reordered) keep their registration order after the listed ones, i.e.
+    // they default to the front.
+    function stackOrderKeys() {
+        const keys = root.registeredWidgets.map(w => w.configEntryName)
+        const listed = (Config.options.background.widgets.widgetStackOrder ?? []).filter(k => keys.includes(k))
+        return listed.concat(keys.filter(k => !listed.includes(k)))
+    }
+
+    // Offset added to a widget's layer-slot z. Mapped to (-0.4, 0.4) so it
+    // always stays inside the slot (layer z is an integer; the widget slot
+    // for depthPosition k is the open interval (k-1, k)).
+    function stackOffset(key) {
+        const keys = root.stackOrderKeys()
+        const n = keys.length
+        if (n <= 1) return 0
+        const rank = keys.indexOf(key)
+        if (rank < 0) return 0
+        return ((rank + 1) / (n + 1)) * 0.8 - 0.4
+    }
+
+    function _persistStackOrder(order) {
+        // Keep keys belonging to other contexts (e.g. other screens) so this
+        // screen's reorder never drops them.
+        const known = root.registeredWidgets.map(w => w.configEntryName)
+        const others = (Config.options.background.widgets.widgetStackOrder ?? []).filter(k => !known.includes(k))
+        Config.options.background.widgets.widgetStackOrder = order.concat(others)
+    }
+
+    function _reorderStack(key, toFront) {
+        const keys = root.stackOrderKeys().filter(k => k !== key)
+        if (toFront) keys.push(key)
+        else keys.unshift(key)
+        root._persistStackOrder(keys)
+    }
+
+    // The widgets sharing this key's layer, back -> front. Widget order only
+    // matters within one layer, since a one-step z difference between layers
+    // always dominates the sub-order offset.
+    function _sameDepthGroup(key) {
+        const pos = root.effectiveDepthPosition(key)
+        return root.stackOrderKeys().filter(k => {
+            const w = root.widgetByConfigName(k)
+            return w && !w.pinnedBottom && root.effectiveDepthPosition(k) === pos
+        })
+    }
+
+    // Layers first: a widget can always step toward the front while it is not
+    // on the front-most layer; once there, it can be raised above the other
+    // widgets sharing that layer.
+    function canMoveFront(key) {
+        if (root.widgetByConfigName(key)?.pinnedBottom) return false
+        if (root.effectiveDepthPosition(key) < root.depthLayerCount) return true
+        const group = root._sameDepthGroup(key)
+        return group.length > 1 && group.indexOf(key) < group.length - 1
+    }
+
+    function canMoveBack(key) {
+        if (root.widgetByConfigName(key)?.pinnedBottom) return false
+        if (root.effectiveDepthPosition(key) > 1) return true
+        const group = root._sameDepthGroup(key)
+        return group.length > 1 && group.indexOf(key) > 0
+    }
+
+    // Layers first, then widget order: step one layer toward the front while
+    // not on the front-most layer; once there, raise the widget above the
+    // others sharing that layer.
+    function moveLayerFront(widget) {
+        if (widget?.pinnedBottom) return
+        const key = widget.configEntryName
+        if (root.effectiveDepthPosition(key) < root.depthLayerCount) {
+            const entry = root.widgetEntryFromConfig(key)
+            if (!entry) return
+            entry.depthLayerPosition = root.effectiveDepthPosition(key) + 1
+            if (root.isCustomWidgetKey(key)) root.persistCustomWidget(entry)
+        } else {
+            root._reorderStack(key, true)
+        }
+    }
+
+    // Mirror of moveLayerFront toward the back: the first click from the
+    // default (above-highest) position drops it right behind the highest
+    // layer; on the back-most layer it lowers the widget below its peers.
+    function moveLayerBack(widget) {
+        if (widget?.pinnedBottom) return
+        const key = widget.configEntryName
+        if (root.effectiveDepthPosition(key) > 1) {
+            const entry = root.widgetEntryFromConfig(key)
+            if (!entry) return
+            entry.depthLayerPosition = root.effectiveDepthPosition(key) - 1
+            if (root.isCustomWidgetKey(key)) root.persistCustomWidget(entry)
+        } else {
+            root._reorderStack(key, false)
+        }
     }
 
     function clearSelection() {
@@ -121,118 +259,8 @@ MouseArea {
         root.selecting = false
     }
 
-    Repeater {
-        id: crossRepeater
-        readonly property int cols: Math.ceil(root.width / root.gridSize) + 1
-        readonly property int rows: Math.ceil(root.height / root.gridSize) + 1
-        model: root.gridVisible ? cols * rows : 0
-        delegate: Item {
-            id: crossPoint
-            required property int index
-            readonly property int col: index % crossRepeater.cols
-            readonly property int row: Math.floor(index / crossRepeater.cols)
-            readonly property int crossSize: 5
-
-            x: col * root.gridSize - crossSize / 2
-            y: row * root.gridSize - crossSize / 2
-            width: crossSize
-            height: crossSize
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: crossPoint.crossSize
-                height: 1
-                color: Appearance.colors.colLayer0Border
-            }
-            Rectangle {
-                anchors.centerIn: parent
-                width: 1
-                height: crossPoint.crossSize
-                color: Appearance.colors.colLayer0Border
-            }
-        }
-    }
-
-    Rectangle {
-        id: centerLineV
-        visible: root.gridVisible
-        x: root.width / 2 - width / 2
-        width: root.centerXActive ? 2 : 1
-        height: root.height
-        color: root.centerXActive ? Appearance.colors.colPrimary : Appearance.colors.colLayer0Border
-        opacity: root.centerXActive ? 1 : 0.6
-
-        Behavior on color {
-            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-        }
-        Behavior on width {
-            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-        }
-        Behavior on opacity {
-            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-        }
-    }
-
-    Rectangle {
-        id: centerLineH
-        visible: root.gridVisible
-        y: root.height / 2 - height / 2
-        width: root.width
-        height: root.centerYActive ? 2 : 1
-        color: root.centerYActive ? Appearance.colors.colPrimary : Appearance.colors.colLayer0Border
-        opacity: root.centerYActive ? 1 : 0.6
-
-        Behavior on color {
-            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-        }
-        Behavior on height {
-            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-        }
-        Behavior on opacity {
-            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-        }
-    }
-
-    Rectangle {
-        id: selectionRectVisual
-        visible: root.selecting
-        x: root.selectionRect.x
-        y: root.selectionRect.y
-        width: root.selectionRect.width
-        height: root.selectionRect.height
-        color: Qt.rgba(Appearance.colors.colPrimary.r, Appearance.colors.colPrimary.g, Appearance.colors.colPrimary.b, 0.15)
-        border.width: 1
-        border.color: Appearance.colors.colPrimary
-        z: 9999
-    }
-
-    Component {
-        id: flashLineComponent
-        Rectangle {
-            id: flashLine
-            property bool vertical: true
-            property real linePos: 0
-            color: Appearance.colors.colPrimary
-            x: vertical ? linePos : 0
-            y: vertical ? 0 : linePos
-            width: vertical ? 2 : root.width
-            height: vertical ? root.height : 2
-
-            NumberAnimation on opacity {
-                from: 0.9
-                to: 0
-                duration: 2000
-                easing.type: Easing.OutCubic
-                running: true
-                onFinished: flashLine.destroy()
-            }
-        }
-    }
-
     function flashLines(verticalPositions, horizontalPositions) {
-        for (let i = 0; i < verticalPositions.length; i++)
-            flashLineComponent.createObject(root, { vertical: true, linePos: verticalPositions[i] })
-        for (let i = 0; i < horizontalPositions.length; i++)
-            flashLineComponent.createObject(root, { vertical: false, linePos: horizontalPositions[i] })
+        if (root.visualHost)
+            root.visualHost.flashLines(verticalPositions, horizontalPositions)
     }
 }

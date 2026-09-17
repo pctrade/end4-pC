@@ -60,6 +60,18 @@ MouseArea {
 
     function selectWallpaperPath(filePath) {
         if (filePath && filePath.length > 0) {
+            if (GlobalStates.wallpaperSelectorTarget.startsWith("layer_")) {
+                // Set image for a depth effect layer
+                const layerIndex = parseInt(GlobalStates.wallpaperSelectorTarget.replace("layer_", ""));
+                const layers = Config.options.background.depthEffect.layers.slice();
+                if (layers[layerIndex]) {
+                    layers[layerIndex].image = filePath;
+                    Config.options.background.depthEffect.layers = layers;
+                }
+                GlobalStates.wallpaperSelectorTarget = "wallpaper";
+                GlobalStates.wallpaperSelectorOpen = false;
+                return;
+            }
             if (GlobalStates.wallpaperSelectorTarget === "lockWall") {
                 Wallpapers.select(filePath, root.useDarkMode, finalPath => {
                     Config.options.background.lockWall = finalPath;
@@ -70,6 +82,8 @@ MouseArea {
                 // Stop preview FIRST so wallpaperPath reverts to the old wallpaper,
                 // then select() sets confirmedPath to the new one — this causes
                 // onWallpaperPathChanged to fire with the real transition animation.
+                // (Depth auto-OFF on a real wallpaper change lives in
+                // Wallpapers.apply, so every entry point behaves the same.)
                 if (Config.options.background.enableWallpaperPreview)
                     Wallpapers.stopPreview();
                 Wallpapers.select(filePath, root.useDarkMode);
@@ -89,6 +103,9 @@ MouseArea {
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
             Wallpapers.stopPreview();
+            if (GlobalStates.wallpaperSelectorTarget.startsWith("layer_")) {
+                GlobalStates.wallpaperSelectorTarget = "wallpaper";
+            }
             GlobalStates.wallpaperSelectorOpen = false;
             event.accepted = true;
         } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {

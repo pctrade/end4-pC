@@ -38,7 +38,7 @@ ContentPage {
             mv "$DIR/end4-pC-tmp" "$DIR/end4-pC"
 
             # Reload
-            killall qs 2>/dev/null || true
+            killall qs quickshell 2>/dev/null || true
             sleep 0.5
             setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
             disown

@@ -38,7 +38,11 @@ apply_kitty() {
   cp "$SCRIPT_DIR/terminal/kitty-theme.conf" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
   # Apply colors
   for i in "${!colorlist[@]}"; do
-    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
+    val="${colorvalues[$i]#\#}"
+    # Skip malformed entries (empty / not #RRGGBB). Substituting garbage is
+    # exactly what produces Kitty "invalid colour name" errors on reload.
+    [[ "$val" =~ ^[0-9A-Fa-f]{6}$ ]] || continue
+    sed -i "s/${colorlist[$i]} #/${val}/g" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
   done
 
   # Reload
@@ -56,23 +60,38 @@ apply_anyterm() {
   cp "$SCRIPT_DIR/terminal/sequences.txt" "$STATE_DIR"/user/generated/terminal/sequences.txt
   # Apply colors
   for i in "${!colorlist[@]}"; do
-    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/sequences.txt
+    val="${colorvalues[$i]#\#}"
+    # Same validation as apply_kitty: never emit malformed sequences.
+    [[ "$val" =~ ^[0-9A-Fa-f]{6}$ ]] || continue
+    sed -i "s/${colorlist[$i]} #/${val}/g" "$STATE_DIR"/user/generated/terminal/sequences.txt
   done
 
   sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR/user/generated/terminal/sequences.txt"
 
-  for file in /dev/pts/*; do
-    if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then
-      {
-      cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$file"
-      } & disown || true
-    fi
-  done
+  # Target only the current controlling terminal instead of blasting
+  # every /dev/pts/*; the caller's tty already knows which terminal
+  # wants the palette, and writing to unrelated PTYs is what makes the
+  # OSC sequences appear as stray output (e.g. when opening a video).
+  local tty_dev
+  tty_dev=$(tty 2>/dev/null)
+  if [[ -n "$tty_dev" && "$tty_dev" =~ ^/dev/pts/[0-9]+$ ]]; then
+    cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$tty_dev" & disown || true
+  else
+    # Fallback when there is no controlling terminal: apply to all PTYs.
+    for file in /dev/pts/*; do
+      if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then
+        cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$file" & disown || true
+      fi
+    done
+  fi
 }
 
 apply_term() {
   apply_kitty
-  apply_anyterm
+  # Kitty is already themed via kitty-theme.conf + SIGUSR1. Skip the
+  # raw-OSC write so it does not blast every /dev/pts/* with palette
+  # sequences (which is what makes them appear when opening a video).
+  pidof kitty >/dev/null 2>&1 || apply_anyterm
 }
 
 apply_qt() {
@@ -85,7 +104,13 @@ CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 if [ -f "$CONFIG_FILE" ]; then
   enable_terminal=$(jq -r '.appearance.wallpaperTheming.enableTerminal' "$CONFIG_FILE")
   if [ "$enable_terminal" = "true" ]; then
-    apply_term &
+    # Never theme from a missing/empty scss: that stamps unsubstituted
+    # template tokens into kitty-theme.conf (Kitty "invalid colour name").
+    if [ -s "$STATE_DIR/user/generated/material_colors.scss" ]; then
+      apply_term &
+    else
+      echo "material_colors.scss missing or empty — keeping previous terminal theme."
+    fi
   fi
 else
   echo "Config file not found at $CONFIG_FILE. Applying terminal theming by default."

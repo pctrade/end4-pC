@@ -29,8 +29,8 @@ Slider {
 
     property var configuration: StyledSlider.Configuration.S
 
-    property real handleDefaultWidth: 3
-    property real handlePressedWidth: 1.5
+    property real handleDefaultWidth: 20
+    property real handlePressedWidth: 24
     property color highlightColor: Appearance.colors.colPrimary
     property color trackColor: Appearance.colors.colSecondaryContainer
     property color handleColor: Appearance.colors.colPrimary
@@ -43,15 +43,19 @@ Slider {
         : trackWidth >= StyledSlider.Configuration.M ? 9
         : trackWidth >= StyledSlider.Configuration.S ? 6
         : height / 2
-    property real handleHeight: (configuration === StyledSlider.Configuration.Wavy) ? 24 : Math.max(33, trackWidth + 9)
+    property real handleHeight: (configuration === StyledSlider.Configuration.Wavy) ? 24 : Math.max(20, trackWidth + 9)
     property real handleWidth: root.pressed ? handlePressedWidth : handleDefaultWidth
     property real handleMargins: 4
     property real dividerMargins: 2
     property real trackDotSize: 3
     property bool usePercentTooltip: true
     property string tooltipContent: usePercentTooltip ? `${Math.round(((value - from) / (to - from)) * 100)}%` : `${Math.round(value)}`
+    property real stepSizeOverride: 0
+    stepSize: stepSizeOverride
+    snapMode: stepSizeOverride > 0 ? Slider.SnapOnRelease : Slider.NoSnap
     property bool wavy: configuration === StyledSlider.Configuration.Wavy // If true, the progress bar will have a wavy fill effect
     property bool animateWave: true
+    property bool animateValue: true
     property real waveAmplitudeMultiplier: wavy ? 0.5 : 0
     property real waveFrequency: 6
     property real waveFps: 60
@@ -65,6 +69,7 @@ Slider {
     to: 1
 
     Behavior on value { // This makes the adjusted value (like volume) shift smoothly
+        enabled: root.animateValue
         SmoothedAnimation {
             velocity: Appearance.animation.elementMoveFast.velocity
         }
@@ -87,12 +92,6 @@ Slider {
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        onPressed: (mouse) => mouse.accepted = false
-        cursorShape: root.pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor 
     }
 
     background: Item {

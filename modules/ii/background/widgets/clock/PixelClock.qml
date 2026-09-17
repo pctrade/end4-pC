@@ -14,8 +14,6 @@ Item {
 
     readonly property bool isVertical: Config.options.background.widgets.clock.pixel.orientation === "vertical"
     required property Item wallpaperItem
-    property real originX: 0
-    property real originY: 0
 
     implicitWidth: isVertical ? 276 : 420
     implicitHeight: isVertical ? 252 + 12 : 150
@@ -55,8 +53,6 @@ Item {
         return pts
     }
     readonly property var fringeSamples: ringSamples(16, fringeSize)
-
-    property bool blurWidgets: Config.options.background.widgets.blurWidgets
 
     StyledDropShadow {
         target: glyphStage
@@ -119,28 +115,6 @@ Item {
             maskSource: tileAPunch
             invert: true
             z: 0
-            visible: !root.blurWidgets
-        }
-        FastBlurred {
-            id: blurA
-            x: root.pos0X
-            y: root.pos0Y
-            width: root.tileW
-            height: root.tileH
-            cardRadius: 0
-            blurSource: root.wallpaperItem
-            tint: root.tintSoft
-            tintOpacity: 0.55
-            trackX: root.originX + root.pos0X
-            trackY: root.originY + root.pos0Y
-            visible: false
-        }
-        OpacityMask {
-            anchors.fill: parent
-            source: blurA
-            maskSource: shapeA
-            z: 0
-            visible: root.blurWidgets
         }
 
         Item {
@@ -176,28 +150,6 @@ Item {
             maskSource: tileBPunch
             invert: true
             z: 1
-            visible: !root.blurWidgets
-        }
-        FastBlurred {
-            id: blurB
-            x: root.pos1X
-            y: root.pos1Y
-            width: root.tileW
-            height: root.tileH
-            cardRadius: 0
-            blurSource: root.wallpaperItem
-            tint: root.tintBold
-            tintOpacity: 0.55
-            trackX: root.originX + root.pos1X
-            trackY: root.originY + root.pos1Y
-            visible: false
-        }
-        OpacityMask {
-            anchors.fill: parent
-            source: blurB
-            maskSource: shapeB
-            z: 1
-            visible: root.blurWidgets
         }
 
         Item {
@@ -232,28 +184,6 @@ Item {
             maskSource: tileCPunch
             invert: true
             z: 2
-            visible: !root.blurWidgets
-        }
-        FastBlurred {
-            id: blurC
-            x: root.pos2X
-            y: root.pos2Y
-            width: root.tileW
-            height: root.tileH
-            cardRadius: 0
-            blurSource: root.wallpaperItem
-            tint: root.tintBold
-            tintOpacity: 0.55
-            trackX: root.originX + root.pos2X
-            trackY: root.originY + root.pos2Y
-            visible: false
-        }
-        OpacityMask {
-            anchors.fill: parent
-            source: blurC
-            maskSource: shapeC
-            z: 2
-            visible: root.blurWidgets
         }
 
         Item {
@@ -274,28 +204,6 @@ Item {
             text: root.glyphBottomRight
             color: root.tintSoft
             z: 3
-            visible: !root.blurWidgets
-        }
-        FastBlurred {
-            id: blurD
-            x: root.pos3X
-            y: root.pos3Y
-            width: root.tileW
-            height: root.tileH
-            cardRadius: 0
-            blurSource: root.wallpaperItem
-            tint: root.tintSoft
-            tintOpacity: 0.55
-            trackX: root.originX + root.pos3X
-            trackY: root.originY + root.pos3Y
-            visible: false
-        }
-        OpacityMask {
-            anchors.fill: parent
-            source: blurD
-            maskSource: tileDFace
-            z: 3
-            visible: root.blurWidgets
         }
 
         Column {
@@ -311,16 +219,6 @@ Item {
                 radius: width / 2
                 color: root.tintBold
                 anchors.horizontalCenter: parent.horizontalCenter
-                FastBlurred {
-                    anchors.fill: parent
-                    cardRadius: width / 2
-                    blurSource: root.wallpaperItem
-                    tint: root.tintBold
-                    tintOpacity: 0.55
-                    trackX: root.originX + root.colonX
-                    trackY: root.originY + root.pos0Y + root.tileH / 2 - height / 2
-                    visible: root.blurWidgets
-                }
             }
             Rectangle {
                 width: root.colonDotSize
@@ -328,16 +226,6 @@ Item {
                 radius: width / 2
                 color: root.tintBold
                 anchors.horizontalCenter: parent.horizontalCenter
-                FastBlurred {
-                    anchors.fill: parent
-                    cardRadius: width / 2
-                    blurSource: root.wallpaperItem
-                    tint: root.tintBold
-                    tintOpacity: 0.55
-                    trackX: root.originX + root.colonX
-                    trackY: root.originY + root.pos0Y + root.tileH / 2 - height / 2 + root.colonGap + root.colonDotSize
-                    visible: root.blurWidgets
-                }
             }
         }
     }

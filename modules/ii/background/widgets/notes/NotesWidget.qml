@@ -78,18 +78,18 @@ AbstractBackgroundWidget {
         Rectangle {
             id: contentRect
             anchors.fill: parent
-            color: Appearance.colors.colPrimaryContainer
+            // Real translucency over the live scene behind (plain or depth
+            // wallpaper) — no wallpaper sampling, so nothing stale can show through.
+            color: ColorUtils.applyAlpha(Appearance.colors.colPrimaryContainer, 0.75)
             radius: Appearance.rounding?.verylarge ?? 30
 
-            FastBlurred {
+            // True scene backdrop blur (wallpaper + depth layers below this
+            // card) over the translucent fill above. The fill stays untouched,
+            // so real transparency survives wherever blur shows nothing.
+            WidgetBackdropBlur {
                 anchors.fill: parent
-                blurSource: root.wallpaperItem
                 cardRadius: contentRect.radius
-                tint: Appearance.colors.colLayer1
-                tintOpacity: 0.55
-                trackX: root.x  
-                trackY: root.y
-                visible: Config.options.background.widgets.blurWidgets 
+                backdropSources: root.backdropSources
             }
 
             // List

@@ -41,7 +41,24 @@ Singleton {
     property var desktopMenuScreen: null
     property real desktopMenuX: 0
     property real desktopMenuY: 0
+    property bool widgetContextMenuOpen: false
+    property real widgetContextMenuX: 0
+    property real widgetContextMenuY: 0
+    property string widgetContextMenuKey: ""
+    property var widgetContextMenuWindow: null
     property string wallpaperSelectorTarget: "wallpaper"
+    property bool applyDepthWallpaperRequested: false
+    // Signal to restore the normal (non-depth) wallpaper + theme.
+    // Set by the depth toggle in DepthEffectConfig.qml when turning OFF.
+    property bool restoreDepthWallpaperRequested: false
+    property string depthWallpaperApplyState: "idle" // idle | applying | done | error
+    property string depthWallpaperApplyErrorText: ""
+    property string depthWallpaperCompositePath: ""
+    // Raw (no file://) normal-wallpaper path from before depth took over.
+    // Set when depth is enabled, cleared/consumed when depth turns off or a
+    // real wallpaper change happens. Lets depth-OFF restore the exact
+    // previous wallpaper so Matugen reads the right image again.
+    property string preDepthWallpaperPath: ""
     property bool dropShelfOpen: false
     property real dropShelfX: 0
     property real dropShelfY: 0
@@ -52,6 +69,10 @@ Singleton {
     readonly property bool dynamicIslandEnabled: Config.options.bar.layouts.leftLayout.includes("dynamicIsland")
         || Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
         || Config.options.bar.layouts.rightLayout.includes("dynamicIsland")
+
+    // Mouse position tracking for parallax effects
+    property point mousePos: Qt.point(0, 0)
+    property var mousePosScreen: null
 
     signal centeredWallpaperThumpRequested()
 

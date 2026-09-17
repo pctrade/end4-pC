@@ -20,9 +20,6 @@ Item {
     property real implicitSize: 230
 
     required property Item wallpaperItem
-    property real originX: 0
-    property real originY: 0
-    property bool blurWidgets: Config.options.background.widgets.blurWidgets
 
     property color colShadow: Appearance.colors.colShadow
     property color colBackground: Appearance.colors.colPrimaryContainer
@@ -98,7 +95,6 @@ Item {
 
         StyledDropShadow {
             target: cookieShapes
-            visible: !root.blurWidgets
         }
 
         Item {
@@ -109,7 +105,6 @@ Item {
                 id: sineCookieLoader
                 anchors.fill: parent
                 z: 0
-                visible: !root.blurWidgets
                 active: root.useSineCookie
                 sourceComponent: SineCookie {
                     implicitSize: root.implicitSize
@@ -121,7 +116,6 @@ Item {
                 id: roundedPolygonCookieLoader
                 anchors.fill: parent
                 z: 0
-                visible: !root.blurWidgets
                 active: !root.useSineCookie
                 sourceComponent: MaterialCookie {
                     implicitSize: root.implicitSize
@@ -131,25 +125,9 @@ Item {
             }
         }
 
-        // Blurred wallpaper, masked by the cookie shape
-        FastBlurred {
-            id: cookieBlur
-            anchors.fill: parent
-            blurSource: root.wallpaperItem
-            cardRadius: 0
-            tint: Appearance.colors.colLayer1
-            tintOpacity: 0.55
-            trackX: root.originX + root.x
-            trackY: root.originY + root.y
-            visible: false
-        }
-        OpacityMask {
-            anchors.fill: parent
-            source: cookieBlur
-            maskSource: root.useSineCookie ? sineCookieLoader.item : roundedPolygonCookieLoader.item
-            z: 0
-            visible: root.blurWidgets
-        }
+        // Solid cookie face: the only fill. (The previous frosted variant
+        // sampled the base wallpaper and went stale under depth layers;
+        // solid theme color can never go stale.)
     }
 
     // Hour/minutes numbers/dots/lines

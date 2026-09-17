@@ -59,8 +59,6 @@ AbstractBackgroundWidget {
             sourceComponent: CookieClock {
                 anchors.horizontalCenter: parent.horizontalCenter
                 wallpaperItem: root.wallpaperItem
-                originX: root.x
-                originY: root.y
             }
         }
 
@@ -82,8 +80,6 @@ AbstractBackgroundWidget {
             fade: false
             sourceComponent: PixelClock {
                 wallpaperItem: root.wallpaperItem
-                originX: root.x
-                originY: root.y
             }
         }
 

@@ -1,3 +1,4 @@
+import qs
 import qs.modules.common
 import qs.modules.common.models
 import qs.modules.common.functions
@@ -69,8 +70,17 @@ Singleton {
         Quickshell.execDetached(args);
     }
 
-    function apply(path, darkMode = Appearance.m3colors.darkmode) {
+     // fromDepth = true ONLY for the depth effect's own composite apply, which
+    // must NOT disable depth. Every other real wallpaper change (selector,
+    // drop area, desktop menu, random, timer, IPC) turns depth OFF first so
+    // the new wallpaper applies normally and Matugen reads the right image.
+    function apply(path, darkMode = Appearance.m3colors.darkmode, fromDepth = false) {
         if (!path || path.length === 0) return;
+        if (!fromDepth) {
+            GlobalStates.preDepthWallpaperPath = "";
+            if (Config.options.background.depthEffect.enable)
+                Config.options.background.depthEffect.enable = false;
+        }
         root.confirmedPath = path;
         Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", darkMode ? "dark" : "light", "--image", path]);
         root.changed()

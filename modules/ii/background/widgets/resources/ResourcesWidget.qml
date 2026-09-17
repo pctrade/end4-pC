@@ -35,22 +35,22 @@ AbstractBackgroundWidget {
         implicitWidth: root.cardWidth
         implicitHeight: root.cardHeight
         radius: Appearance.rounding?.verylarge ?? 30
-        color: statCard.bgColor
+        // Real translucency over the live scene behind (plain or depth
+        // wallpaper) — no wallpaper sampling, so nothing stale can show through.
+        color: ColorUtils.applyAlpha(statCard.bgColor, 0.75)
 
         StyledRectangularShadow {
             target: statCard
             z: -2
         }
 
-        FastBlurred {
+        // True scene backdrop blur (wallpaper + depth layers below this
+        // card) over the translucent fill above. The fill stays untouched,
+        // so real transparency survives wherever blur shows nothing.
+        WidgetBackdropBlur {
             anchors.fill: parent
-            blurSource: root.wallpaperItem
             cardRadius: statCard.radius
-            tint: Appearance.colors.colLayer1
-            tintOpacity: 0.55
-            trackX: statCard.x + root.x
-            trackY: statCard.y + root.y
-            visible: Config.options.background.widgets.blurWidgets 
+            backdropSources: root.backdropSources
         }
 
         ColumnLayout {

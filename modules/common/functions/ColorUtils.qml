@@ -126,6 +126,29 @@ Singleton {
     }
 
     /**
+     * Normalises a hex colour string so its alpha channel is honoured.
+     *
+     * Qt parses 8-digit hex as #AARRGGBB (alpha first), but the colour inputs
+     * in the UI document #RRGGBBAA (alpha last). An 8-digit value is therefore
+     * reordered to Qt's #AARRGGBB form. #RGB, #RRGGBB, theme role names and
+     * every other colour string are returned unchanged.
+     *
+     * @param {string} value - The user-entered colour string.
+     * @returns {string} A Qt.color-compatible string.
+     */
+    function normalizeHexColor(value) {
+        if (value === undefined || value === null)
+            return value;
+        const s = String(value).trim();
+        if (!s.startsWith("#"))
+            return s;
+        const h = s.slice(1);
+        if (h.length === 8 && /^[0-9a-fA-F]{8}$/.test(h))
+            return "#" + h.slice(6, 8) + h.slice(0, 6);
+        return s;
+    }
+
+    /**
      * Returns true if the color is considered "dark" (hslLightness < 0.5).
      *
      * @param {string} color - The color to check (any Qt.color-compatible string).

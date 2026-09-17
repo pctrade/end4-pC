@@ -69,6 +69,13 @@ if args.path is not None:
 
     if image.mode in ["L", "P"]:
         image = image.convert('RGB')
+    if image.mode != "RGB":
+        # QuantizeCelebi needs a list of RGB triplets. Anything else
+        # (bilevel "1", palette, LA/PA, RGBA, CMYK, ...) either crashes it or
+        # scores garbage — e.g. a blank bilevel depth composite used to abort
+        # the whole run, leaving an empty material_colors.scss behind which
+        # then bricked Kitty with "invalid colour name" on every reload.
+        image = image.convert('RGB')
     wsize, hsize = image.size
     wsize_new, hsize_new = calculate_optimal_size(wsize, hsize, args.size)
     if wsize_new < wsize or hsize_new < hsize:

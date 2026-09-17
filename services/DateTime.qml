@@ -19,6 +19,12 @@ Singleton {
         }
     }
 
+    // ✅ Second-precision clock for custom text widgets. Always ticks every
+    // second regardless of the main clock precision setting, so widgets that
+    // render seconds or time tokens update smoothly without forcing the
+    // lightweight minute-precision clock to second-precision globally.
+    property var clockSeconds: SystemClock { precision: SystemClock.Seconds }
+
     property string time: Qt.locale().toString(clock.date, Config.options?.time.format ?? "hh:mm")
     property string shortDate: Qt.locale().toString(clock.date, Config.options?.time.shortDateFormat ?? "dd/MM")
     property string date: Qt.locale().toString(clock.date, Config.options?.time.dateWithYearFormat ?? "dd/MM/yyyy")

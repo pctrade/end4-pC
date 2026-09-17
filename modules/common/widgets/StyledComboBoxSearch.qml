@@ -70,7 +70,7 @@ ComboBox {
 
             Loader {
                 Layout.alignment: Qt.AlignVCenter
-                active: root.buttonIcon.length > 0 || (root.currentIndex >= 0 && typeof root.model[root.currentIndex] === 'object' && root.model[root.currentIndex]?.icon)
+                active: !!(root.buttonIcon.length > 0 || (root.model != null && root.currentIndex >= 0 && root.currentIndex < root.model.length && typeof root.model[root.currentIndex] === 'object' && root.model[root.currentIndex]?.icon))
                 visible: active
                 sourceComponent: MaterialSymbol {
                     text: {
@@ -119,7 +119,7 @@ ComboBox {
                 return ColorUtils.transparentize(Appearance.colors.colLayer3);
             }
         }
-        property color colText: (root.currentIndex === itemDelegate.index) ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer3
+        property color colText: (root.currentIndex === itemDelegate.index) ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSecondaryContainer
 
         background: Rectangle {
             anchors.fill: parent
@@ -137,6 +137,7 @@ ComboBox {
 
         contentItem: RowLayout {
             spacing: 8
+            anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
 
@@ -158,13 +159,26 @@ ComboBox {
                 }
             }
 
-            StyledText {
+            // Plain Text with the stable shell UI font: font-family model
+            // entries (strings or {text:, label:} objects) must always render,
+            // regardless of the loaded applied font or variable-font axes.
+            Text {
+                id: delegateText
                 Layout.fillWidth: true
-                Layout.preferredHeight: Appearance.font.pixelSize.larger
+                Layout.alignment: Qt.AlignVCenter
                 color: itemDelegate.colText
-                text: itemDelegate.model[root.textRole]
+                font.family: Appearance.font.family.main
+                font.pixelSize: Appearance.font.pixelSize.small
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
+                text: {
+                    const m = itemDelegate.model
+                    if (m && typeof m === "object") {
+                        const v = m[root.textRole] ?? m.text ?? m.label ?? m.name
+                        return v !== undefined && v !== null ? String(v) : ""
+                    }
+                    return String(m ?? "")
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.common.functions
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.ii.background.widgets
 
@@ -169,17 +170,18 @@ AbstractBackgroundWidget {
             Rectangle {
                 anchors.fill: parent
                 radius: Appearance.rounding?.verylarge ?? 30
-                color: Appearance.colors.colPrimaryContainer
+                // Real translucency over the live scene behind (plain or depth
+                // wallpaper) — no wallpaper sampling, so nothing stale can show through.
+                color: ColorUtils.applyAlpha(Appearance.colors.colPrimaryContainer, 0.75)
 
-                FastBlurred {
+                // True scene backdrop blur (wallpaper + depth layers below
+                // this card) over the translucent fill above. The fill stays
+                // untouched, so real transparency survives wherever blur
+                // shows nothing.
+                WidgetBackdropBlur {
                     anchors.fill: parent
-                    blurSource: root.wallpaperItem
                     cardRadius: card.radius
-                    tint: Appearance.colors.colLayer1
-                    tintOpacity: 0.55
-                    trackX: root.x  
-                    trackY: root.y
-                    visible: Config.options.background.widgets.blurWidgets 
+                    backdropSources: root.backdropSources
                 }
 
                 RowLayout {
@@ -264,90 +266,24 @@ AbstractBackgroundWidget {
                 implicitWidth: root.snapWidth3
                 implicitHeight: root.snapHeight3
 
-                Item {
-                    id: bgImage
-                    anchors.fill: parent
-                    visible: false
-
-                    property string effectiveSource: "file://" + (GlobalStates.screenLocked && Config.options.background.lockWall !== ""
-                        ? Config.options.background.lockWall
-                        : Config.options.background.wallpaperPath)
-
-                    Image {
-                        id: bgImageA
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        cache: false
-                        opacity: 1
-                        Behavior on opacity {
-                            NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
-                        }
-                    }
-                    Image {
-                        id: bgImageB
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        cache: false
-                        opacity: 0
-                        Behavior on opacity {
-                            NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
-                        }
-                    }
-
-                    property bool usingA: true
-
-                    onEffectiveSourceChanged: {
-                        if (usingA) {
-                            bgImageB.source = effectiveSource
-                            bgImageB.opacity = 1
-                            bgImageA.opacity = 0
-                        } else {
-                            bgImageA.source = effectiveSource
-                            bgImageA.opacity = 1
-                            bgImageB.opacity = 0
-                        }
-                        usingA = !usingA
-                    }
-
-                    Component.onCompleted: {
-                        bgImageA.source = effectiveSource
-                    }
-                }
-
-                FastBlur {
-                    id: blurredBg
-                    anchors.fill: bgImage
-                    visible: !Config.options.background.widgets.blurWidgets 
-                    source: bgImage
-                    radius: 48
-                    layer.enabled: true
-                    layer.effect: OpacityMask {
-                        maskSource: Rectangle {
-                            width: outerRect.width
-                            height: outerRect.height
-                            radius: Appearance.rounding?.verylarge ?? 30
-                        }
-                    }
-                }
-
-                FastBlurred {
-                    anchors.fill: parent
-                    blurSource: root.wallpaperItem
-                    cardRadius: Appearance.rounding?.verylarge ?? 30
-                    tint: Appearance.colors.colLayer1
-                    tintOpacity: 0.55
-                    trackX: root.x  
-                    trackY: root.y
-                    visible: Config.options.background.widgets.blurWidgets 
-                }
-
+                // Real translucency over the live scene behind (plain or depth
+                // wallpaper). Previously this was a blurred copy of the base
+                // wallpaper file, which went stale (showed the old wallpaper)
+                // as soon as depth layers covered it — real alpha can never
+                // go stale because it samples nothing.
                 Rectangle {
-                    anchors.fill: blurredBg
+                    anchors.fill: parent
                     radius: Appearance.rounding?.verylarge ?? 30
-                    color: Appearance.colors.colScrim
-                    opacity: 0.1
+                    color: ColorUtils.applyAlpha(Appearance.colors.colPrimaryContainer, 0.75)
+                }
+
+                // True scene backdrop blur with the old airy light tint.
+                WidgetBackdropBlur {
+                    anchors.fill: parent
+                    cardRadius: Appearance.rounding?.verylarge ?? 30
+                    tint: Appearance.colors.colScrim
+                    tintOpacity: 0.1
+                    backdropSources: root.backdropSources
                 }
 
                 Rectangle {

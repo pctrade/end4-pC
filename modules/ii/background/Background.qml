@@ -6,6 +6,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.common.functions as CF
+import qs.modules.ii.background
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
@@ -171,7 +172,12 @@ Variants {
         Timer {
             id: wallpaperChangeTimer
             interval: Config.options.wallpaperSelector.changeInterval
+            // Pause auto-cycle while depth is on: cycling wallpapers underneath
+            // the depth layers would only waste switches and fight the
+            // composition. Manual changes still turn depth off (see
+            // Wallpapers.apply) and then cycle normally.
             running: Config.options.wallpaperSelector.changeInterval > 0
+                && !Config.options.background.depthEffect.enable
             repeat: true
             onTriggered: {
                 if (Wallpapers.folderModel.count > 0) {
@@ -196,15 +202,45 @@ Variants {
                     bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
                 }
             }
+
+            function onApplyDepthWallpaperRequestedChanged() {
+                if (GlobalStates.applyDepthWallpaperRequested) {
+                    backgroundLayers.applyAsWallpaper();
+                    GlobalStates.applyDepthWallpaperRequested = false;
+                }
+            }
+
+            function onRestoreDepthWallpaperRequestedChanged() {
+                if (GlobalStates.restoreDepthWallpaperRequested) {
+                    backgroundLayers.restoreNormalWallpaper();
+                    GlobalStates.restoreDepthWallpaperRequested = false;
+                }
+            }
         }
 
         Item {
             anchors.fill: parent
             opacity: bgRoot.hiddenForFullscreen ? 0 : 1
             enabled: !bgRoot.hiddenForFullscreen
-            
+
             Behavior on opacity {
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+
+            BackgroundLayers {
+                id: backgroundLayers
+                anchors.fill: parent
+                monitor: bgRoot.monitor
+                screen: bgRoot.screen
+                // The layers + widget loaders are hosted in the SAME item (the
+                // BackgroundLayers root is itself a WidgetsLoader), so the depth
+                // layer delegates and the widget FadeLoaders are true siblings.
+                // Their flat z set — layers 0..N, widgets depthPosition - 0.5 —
+                // interleaves exactly: a widget can render between two layers.
+                wallpaperItem: wallpaper
+                wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
+                canvas: widgetCanvas
+                z: 1
             }
 
             Image {
@@ -292,7 +328,7 @@ Variants {
                 sourceComponent: GaussianBlur {
                     source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
                     radius: GlobalStates.screenLocked ? Config.options.lock.blur.radius : 0
-                    samples: Config.options.lock.blur.size 
+                    samples: Config.options.lock.blur.size
                     Rectangle {
                         opacity: GlobalStates.screenLocked ? 1 : 0
                         anchors.fill: parent
@@ -306,7 +342,7 @@ Variants {
                 active: (bgRoot.userBlurActive || bgRoot.overviewBlurActive)
                     && (!GlobalStates.screenLocked || !centeredWallpaper.centeredWallpaperEnabled || bgRoot.blurFullScreen)
                 anchors.fill: parent
-                
+
                 sourceComponent: Item {
                     id: blurRoot
                     anchors.fill: parent
@@ -360,6 +396,10 @@ Variants {
             WidgetCanvas {
                 id: widgetCanvas
                 anchors.fill: parent
+                // Input/selection host only — the widgets themselves live above
+                // it inside the depth wallpaper container (backgroundLayers),
+                // so 0 keeps it below every widget layer.
+                z: 0
 
                 transitions: Transition {
                     PropertyAnimation {
@@ -386,27 +426,80 @@ Variants {
                     acceptedButtons: Qt.LeftButton
                     onClicked: GlobalStates.centeredWallpaperThumpRequested()
                 }
-
-                WidgetsLoader {
-                    screen: bgRoot.screen
-                    wallpaperItem: wallpaper
-                    wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
-                }
             }
 
-            /* Desktop menu */
-            MouseArea {
-                id: desktopRightClickArea
+            /* Drag feedback (grid / selection / snap lines) — pure visuals,
+               elevated above the depth wallpaper while it is enabled. */
+            DragGridOverlay {
+                id: gridVisuals
                 anchors.fill: parent
-                z: -2
-                acceptedButtons: Qt.RightButton
-                onClicked: (mouse) => {
-                    GlobalStates.desktopMenuScreen = bgRoot.screen
-                    GlobalStates.desktopMenuX = mouse.x
-                    GlobalStates.desktopMenuY = mouse.y
-                    GlobalStates.desktopMenuOpen = true
-                }
+                canvas: widgetCanvas
+                z: Config.options.background.depthEffect.enable ? 3 : 0
             }
+
+            Binding {
+                target: widgetCanvas
+                property: "visualHost"
+                value: gridVisuals
+            }
+/* Global Mouse Tracker for Parallax (Must be at highest Z) */
+    MouseArea {
+        anchors.fill: parent
+        z: 10000
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton // Clicks ne block nahi karshe
+        enabled: Config.options.background.depthEffect.enable && Config.options.background.depthEffect.mouseParallax
+        onPositionChanged: (event) => {
+            backgroundLayers.mouseX = event.x
+            backgroundLayers.mouseY = event.y
+        }
+    }
+
+    /* Desktop menu */
+    MouseArea {
+        id: desktopRightClickArea
+        anchors.fill: parent
+        z: -2
+        acceptedButtons: Qt.RightButton
+        onClicked: (mouse) => {
+            GlobalStates.desktopMenuScreen = bgRoot.screen
+            GlobalStates.desktopMenuX = mouse.x
+            GlobalStates.desktopMenuY = mouse.y
+            GlobalStates.desktopMenuOpen = true
+        }
+    }
+
+    /* Widget context menu */
+    MouseArea {
+        id: widgetContextMenuDismiss
+        anchors.fill: parent
+        visible: GlobalStates.widgetContextMenuOpen && bgRoot === GlobalStates.widgetContextMenuWindow
+        z: 9998
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: GlobalStates.widgetContextMenuOpen = false
+    }
+
+    WidgetContextMenu {
+        id: widgetContextMenu
+        x: Math.min(Math.max(GlobalStates.widgetContextMenuX - width / 2, 8), bgRoot.width - width - 8)
+        y: Math.min(Math.max(GlobalStates.widgetContextMenuY - height / 2, 8), bgRoot.height - height - 8)
+        visible: GlobalStates.widgetContextMenuOpen && bgRoot === GlobalStates.widgetContextMenuWindow
+        z: 9999
+        targetWidgetKey: GlobalStates.widgetContextMenuKey
+        frontEnabled: widgetCanvas.canMoveFront(GlobalStates.widgetContextMenuKey)
+        backEnabled: widgetCanvas.canMoveBack(GlobalStates.widgetContextMenuKey)
+        onToFront: {
+            const w = widgetCanvas.widgetByConfigName(GlobalStates.widgetContextMenuKey)
+            if (w) widgetCanvas.moveLayerFront(w)
+            GlobalStates.widgetContextMenuOpen = false
+        }
+        onToBack: {
+            const w = widgetCanvas.widgetByConfigName(GlobalStates.widgetContextMenuKey)
+            if (w) widgetCanvas.moveLayerBack(w)
+            GlobalStates.widgetContextMenuOpen = false
+        }
+    }
+
         }
     }
 }
