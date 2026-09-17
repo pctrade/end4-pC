@@ -101,8 +101,21 @@ Singleton {
         if (root.isNiri) {
             root.startNiriSunset(root.colorTemperature);
         } else {
-            root.startHyprsunset();
-            Quickshell.execDetached(["bash", "-c", `hyprctl hyprsunset temperature ${root.colorTemperature}`]);
+            // Start hyprsunset and set the temperature in a single shell command so
+            // the two can't race. They used to be separate detached processes: when
+            // hyprsunset wasn't already running, the hyprctl call fired before its
+            // IPC socket existed, failed silently, and left the screen unchanged
+            // while temperatureActive was still set to true below.
+            // "Couldn't" is the same failure sentinel fetchProc keys off of.
+            Quickshell.execDetached(["bash", "-c",
+                `pidof hyprsunset >/dev/null 2>&1 || (hyprsunset >/dev/null 2>&1 &)
+                 for i in $(seq 30); do
+                     case "$(hyprctl hyprsunset temperature 2>&1)" in
+                         Couldn*) sleep 0.1 ;;
+                         *) break ;;
+                     esac
+                 done
+                 hyprctl hyprsunset temperature ${root.colorTemperature}`]);
         }
         root.temperatureActive = true;
     }
