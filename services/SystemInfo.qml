@@ -194,7 +194,24 @@ Singleton {
     Process {
         id: getPackages
         running: false
-        command: ["bash", "-c", "pacman_count=$(pacman -Q | wc -l); flatpak_count=$(flatpak list 2>/dev/null | wc -l || echo 0); if [ \"$flatpak_count\" -gt 0 ]; then echo \"$pacman_count pacman, $flatpak_count fp\"; else echo \"$pacman_count pacman\"; fi"]
+        command: ["bash", "-c", "\
+            if [ \"${SystemInfo.distroId}\" = \"arch\" ] || [ \"${SystemInfo.distroId}\" = \"cachyos\" ] || [ \"${SystemInfo.distroId}\" = \"endeavouros\" ]; then
+                pkg_count=$(pacman -Q 2>/dev/null | wc -l)
+                pkg_tool=\"pacman\"
+            elif command -v dpkg &>/dev/null; then
+                pkg_count=$(dpkg -l 2>/dev/null | grep -c '^ii' || echo 0)
+                pkg_tool=\"dpkg\"
+            else
+                pkg_count=0
+                pkg_tool=\"unknown\"
+            fi
+            flatpak_count=$(flatpak list 2>/dev/null | wc -l || echo 0)
+            if [ \"$flatpak_count\" -gt 0 ]; then
+                echo \"${pkg_count} ${pkg_tool}, ${flatpak_count} fp\"
+            else
+                echo \"${pkg_count} ${pkg_tool}\"
+            fi
+        "]
         stdout: SplitParser { onRead: data => root.packages = data.trim() }
     }
 
