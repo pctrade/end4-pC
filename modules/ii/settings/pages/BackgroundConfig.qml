@@ -1054,6 +1054,11 @@ ContentPage {
                             icon: "timer",
                             name: Translation.tr("Timers"),
                             enabled: Config.options.background.widgets.timers.enable
+                        },
+                        {
+                            icon: "castle",
+                            name: Translation.tr("Tower Defense"),
+                            enabled: Config.options.background.widgets.towerDefense.enable
                         }
                         
                     ]
@@ -1106,6 +1111,8 @@ ContentPage {
                                             Config.options.background.widgets.todo.enable = checked
                                         else if (modelData.icon === "timer")
                                             Config.options.background.widgets.timers.enable = checked
+                                        else if (modelData.icon === "castle")
+                                            Config.options.background.widgets.towerDefense.enable = checked
                                     }
                                 }
                             }

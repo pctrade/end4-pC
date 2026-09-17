@@ -15,6 +15,8 @@ Singleton {
 
     property var lyricsLines: []
     property int activeIndex: -1
+    property int activeWordIndex: -1
+    property real playbackPosition: 0
     property string status: "loading"
     property var slots: ["", "", "", "", "", "", ""]
 
@@ -36,11 +38,12 @@ Singleton {
 
     Timer {
         id: syncTimer
-        interval: 300
+        interval: 50
         repeat: true
         running: root.status === "ok" && root.lyricsLines.length > 0
         onTriggered: {
             const pos = root.activePlayer?.position ?? 0
+            root.playbackPosition = pos
             let idx = -1
             for (let i = 0; i < root.lyricsLines.length; i++) {
                 if (root.lyricsLines[i].time <= pos) idx = i
@@ -50,6 +53,13 @@ Singleton {
                 root.activeIndex = idx
                 root.slots = root.buildSlots(idx)
             }
+            let wordIdx = -1
+            const words = idx >= 0 ? (root.lyricsLines[idx].words || []) : []
+            for (let w = 0; w < words.length; w++) {
+                if (words[w].time <= pos) wordIdx = w
+                else break
+            }
+            root.activeWordIndex = wordIdx
         }
     }
 
@@ -63,8 +73,23 @@ Singleton {
                 if (trimmed === "no_info")   { root.status = "no_info";   return }
 
                 const parts = trimmed.split("§")
-                if (parts.length < 3) return
-                if (parts[parts.length - 1].trim() !== "ok") return
+                if (parts.length < 2 || parts[parts.length - 1].trim() !== "ok") return
+
+                if (parts[0].trim().startsWith("[")) {
+                    try {
+                        const parsed = JSON.parse(parts[0])
+                        if (parsed.length > 0) {
+                            root.lyricsLines = parsed
+                            root.activeIndex = -1
+                            root.activeWordIndex = -1
+                            root.slots = root.buildSlots(-1)
+                            root.status = "ok"
+                        }
+                    } catch (error) {
+                        root.status = "not_found"
+                    }
+                    return
+                }
 
                 let lines = []
                 for (let i = 0; i < parts.length - 1; i += 2) {
@@ -77,6 +102,7 @@ Singleton {
 
                 root.lyricsLines = lines
                 root.activeIndex = -1
+                root.activeWordIndex = -1
                 root.slots = root.buildSlots(-1)
                 root.status = "ok"
             }
@@ -87,6 +113,7 @@ Singleton {
         lyricsProc.running = false
         root.lyricsLines = []
         root.activeIndex = -1
+        root.activeWordIndex = -1
         root.slots = ["", "", "", "", "", "", ""]
         root.status = "loading"
 

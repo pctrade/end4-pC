@@ -77,6 +77,11 @@ Item {
         color: artDominantColor
     }
 
+    property QtObject palette: QtObject {
+        property color primaryContainer: blendedColors.colPrimaryContainer
+        property color tertiaryContainer: blendedColors.colTertiaryContainer
+    }
+
     Rectangle {
         id: background
         anchors.fill: parent
@@ -84,9 +89,32 @@ Item {
         anchors.rightMargin: 4
         anchors.topMargin: -1
         anchors.bottomMargin: 4
-        color: ColorUtils.transparentize(artDominantColor, 0.9)
-        radius: Appearance.rounding.normal
+        color: Qt.rgba(0, 0, 0, 0.2)
+        radius: 24
+        border.width: 1
+        border.color: Qt.rgba(255, 255, 255, 0.09)
         clip: true
+
+        Rectangle {
+            id: paletteField
+            anchors.fill: parent
+            radius: 24
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: palette.primaryContainer }
+                GradientStop { position: 0.55; color: palette.tertiaryContainer }
+                GradientStop { position: 1.0; color: palette.primaryContainer }
+            }
+            opacity: 0.72
+        }
+
+        FastBlur {
+            id: liquidBlur
+            anchors.fill: paletteField
+            source: paletteField
+            radius: 64
+            transparentBorder: true
+            opacity: 0.9
+        }
 
         Image {
             id: blurArtSource
@@ -147,12 +175,14 @@ Item {
                         }
                     }
 
-                    StyledImage {
+                    AnimatedImage {
                         anchors.fill: parent
                         source: root.displayedArtFilePath
                         fillMode: Image.PreserveAspectCrop
                         cache: false
                         antialiasing: true
+                        asynchronous: true
+                        playing: true
                         sourceSize.width: artBackground.width * 2
                         sourceSize.height: artBackground.height * 2
                     }
@@ -174,12 +204,14 @@ Item {
                         }
                     }
 
-                    StyledImage {
+                    AnimatedImage {
                         anchors.fill: parent
                         source: root.displayedArtFilePath
                         fillMode: Image.PreserveAspectCrop
                         cache: false
                         antialiasing: true
+                        asynchronous: true
+                        playing: true
                         sourceSize.width: artBackground.width * 2
                         sourceSize.height: artBackground.height * 2
                     }

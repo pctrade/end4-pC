@@ -1,0 +1,218 @@
+END4-PC FEATURE BRANCH REBUILD HANDOFF
+======================================
+
+Date of this handoff: 2026-09-16
+Repository: https://github.com/ichigo-cm/end4-pC
+Fork: https://github.com/ichigo-cm/end4-pC
+Working branch: feature/tower-defense-widget
+Local checkout used during implementation: /home/ubuntu/work/end4-pC
+
+USER DIRECTION
+--------------
+The user requested a major rebuild rather than small visual tweaks. The central goal is for end4-pC to feel like one cohesive, polished desktop environment, with an embedded indie-quality tower-defense game rather than an AI-generated dashboard or Python prototype.
+
+The user explicitly authorized broad changes to the feature branch and asked for inspiration from GitHub or elsewhere. They specifically referenced the NMWplays/Liquify repository for lyrics behavior and requested a word-level highlight exactly on the word currently being sung. They also authorized adding audio and anything else that improves the result. They requested this handoff file so work can continue from another account if needed.
+
+IMPORTANT EXTERNAL REFERENCE
+----------------------------
+Reference: https://github.com/NMWplays/Liquify
+Liquify is an AGPL-3.0 Spicetify theme. Its public README describes rounded luminous surfaces, dynamic colors, smooth animations, and support for Beautiful Lyrics, Spicy Lyrics, and Lucid Lyrics. The implementation here recreates the interaction principles natively in QML; it does not copy Liquify source code or assets.
+
+CURRENT BRANCH HISTORY
+----------------------
+94e168f fix: declare tower defense timer as a QtObject property
+5cfecf8 feat: add fluid game effects gifs and lyrics motion
+59a293e feat: unify animated imagery and shell widget styling
+b5d33e9 feat: rework animated media and game presentation
+4936812 feat: rebuild lyrics flow and tower defense presentation
+87a187d feat: give tower defense authored vector game art
+6abfe1f feat: add native tower defense audio feedback
+a985983 fix: use integer tower panel font size
+
+The most recent work in the current pass is not necessarily committed yet when this handoff is generated. Always run git status, git diff --check, and commit/push the current changes before handing off.
+
+IMPLEMENTED AREAS
+-----------------
+1. Tower-defense widget
+
+The game is a native Quickshell/QML background widget. It has:
+- Infinite waves.
+- Boss waves every fifth wave.
+- Increasing wave compositions.
+- Grunts, runners, swarms, armored enemies, and bosses.
+- Four tower roles: Bolt, Frost, Cannon, and Arc.
+- Tower placement validation against the route.
+- Target modes: First, Closest, Strongest, and Last.
+- Tower levels through level 5.
+- Current stats and next-level damage preview.
+- Upgrade cost, selling, and targeting controls.
+- Pause, 1x/2x/4x speed, restart, and next-wave controls.
+- Persistent high score.
+- Persistent sound-enabled setting.
+- Floating damage numbers and hit effects.
+- Directional projectile trails.
+- Wave and boss banners.
+- Entry and Core landmarks.
+- Native vector SVG art for tower and enemy silhouettes.
+
+Tower-defense SVG assets are in:
+modules/ii/background/widgets/towerDefense/assets/
+
+Assets currently include:
+- battlefield.svg
+- tower-bolt.svg
+- tower-frost.svg
+- tower-cannon.svg
+- tower-arc.svg
+- enemy-grunt.svg
+- enemy-runner.svg
+- enemy-swarm.svg
+- enemy-armored.svg
+- enemy-boss.svg
+
+The current pass adds battlefield.svg as a layered illustrated backdrop beneath the route and actors. It also keeps the route and simulation source of truth in TowerDefenseGame.qml.
+
+2. Native game audio feedback
+
+TowerDefenseGame.qml imports qs.services and uses the existing Audio service. Event sounds are played for:
+- Normal wave start.
+- Boss wave start.
+- Tower upgrades.
+- Game Over.
+
+The bottom status strip has an SND/MUTE toggle. The setting is persisted in:
+modules/common/Config.qml
+under background.widgets.towerDefense.soundEnabled.
+
+This is deliberately event-feedback audio using the shell’s existing audio service. It does not spawn unmanaged processes. If adding longer background music later, integrate through a lifecycle-safe native media component rather than starting a detached process.
+
+3. Lyrics rebuild
+
+Existing lyrics architecture:
+- services/LyricsService.qml gets synchronized lyrics using scripts/lyrics/lyrics.py.
+- modules/common/widgets/Lyrics.qml renders the lyrics.
+
+The lyrics renderer was rebuilt from a static seven-slot text arrangement into a smooth ListView centered on the active line. The current pass adds:
+- 50ms timing synchronization.
+- LyricsService.playbackPosition.
+- LyricsService.activeWordIndex.
+- Enhanced-LRC word timing parsing.
+- Native word-by-word highlighting.
+- A soft background highlight behind the currently sung word.
+- Active word color emphasis.
+- Active-line scale and opacity hierarchy.
+- Smooth vertical tracking and transitions.
+- Graceful line-only fallback where word timing is not available.
+
+The backend now outputs JSON lines followed by §ok. It still supports the old delimiter format in LyricsService.qml for compatibility.
+
+Enhanced LRC support is implemented in:
+scripts/lyrics/lyrics.py
+
+The QML lyric renderer is in:
+modules/common/widgets/Lyrics.qml
+
+The service is in:
+services/LyricsService.qml
+
+4. Animated image and PFP system
+
+Earlier commits introduced shared animated profile-image support through:
+modules/common/widgets/AnimatedPfp.qml
+
+It is used across profile/name-card/sidebar surfaces. GIF-capable file pickers and image utilities were added for profile and banner surfaces. GIF, PNG, JPEG, local paths, file URLs, and supported WebP paths should be tested on the target system.
+
+Relevant areas include:
+- modules/ii/sidebarRight/SidebarRightContent.qml
+- modules/ii/sidebarLeft/SidebarPlayerControl.qml
+- modules/ii/background/widgets/usercard/UserCardWidget.qml
+- modules/ii/settings/pages/Profile.qml
+- modules/common/Images.qml
+- modules/common/widgets/AnimatedPfp.qml
+
+WHAT STILL NEEDS RUNTIME VERIFICATION
+-------------------------------------
+The sandbox does not have Quickshell/qmllint installed. The following must be tested in the user’s local Quickshell environment:
+
+1. Load the full shell with qs -c end4-pC.
+2. Confirm all SVG assets resolve when TowerDefenseWidget is loaded.
+3. Confirm no QML type errors from the ListView/Flow/Repeater lyrics renderer.
+4. Play a song with ordinary line-timed LRC and confirm active-line fallback.
+5. Play a song with enhanced word-timed LRC and confirm the exact word changes highlight every ~50ms.
+6. Confirm track changes clear the old word focus and restart lyric state cleanly.
+7. Confirm SND/MUTE persists after Quickshell restart.
+8. Confirm boss-wave and Game Over system sounds work with the local Audio service.
+9. Watch a long game session for simulation timer leaks, stale delegates, or excessive CPU usage.
+10. Verify GIF replacement stops old AnimatedImage instances and does not leave animations running.
+
+LOCAL UPDATE COMMANDS
+---------------------
+cd ~/.config/quickshell/end4-pC
+
+git fetch https://github.com/ichigo-cm/end4-pC.git feature/tower-defense-widget
+git checkout feature/tower-defense-widget
+git reset --hard FETCH_HEAD
+
+killall qs 2>/dev/null
+qs -c end4-pC
+
+If the user is on the main checkout accidentally, verify with:
+git branch --show-current
+
+EXPECTED BRANCH:
+feature/tower-defense-widget
+
+KNOWN DESIGN INTENT
+-------------------
+The visual direction is a restrained indie vector-game treatment integrated with end4-pC’s dark layered surfaces. It intentionally avoids copying Liquify or another game. The important reference principles are:
+- Strong hierarchy.
+- Rounded but not generic glass everywhere.
+- Limited accent palette.
+- Distinct silhouettes.
+- Readable small-scale roles.
+- Smooth motion.
+- Active lyric word focus.
+- Native lifecycle-safe integration.
+
+CONTINUATION PLAN
+-----------------
+If continuing from another account, first inspect the current branch and the latest commits. Then:
+1. Run git status and git diff --check.
+2. Validate scripts/lyrics/lyrics.py with python3 -m py_compile.
+3. Inspect LyricsService.qml and Lyrics.qml for runtime QML errors.
+4. Test with Quickshell locally.
+5. Add any additional game menus or effects only after confirming the new vector and lyrics layers load.
+6. Keep all broad work on feature/tower-defense-widget.
+7. Push changes to the fork branch and update the PR.
+
+The user wants continued creative improvement, but runtime validation is now the priority because the latest changes affect both the lyrics data contract and the QML renderer.
+
+LATEST PASS — LIVE SIDEBAR LIQUID-GLASS REWORK
+----------------------------------------------
+The newly attached specification required locating the actual rendered lyrics/media component instead of guessing. The sandbox has no ~/.config/quickshell checkout, so the available repository checkout was traced directly.
+
+The live sidebar composition is:
+modules/ii/sidebarLeft/SidebarLeftContent.qml -> SidebarPlayerControl.qml -> Lyrics.qml
+
+The actual visible lyrics/media surface edited in this pass is:
+modules/ii/sidebarLeft/SidebarPlayerControl.qml
+
+The component already owns MPRIS player bindings, downloaded/animated album artwork, playback controls, lyrics, visualizer fallback, player switching, and lyrics restart behavior. Those behaviors were preserved.
+
+The sidebar player now contains a native QML liquid-glass visual stack:
+- Dynamic palette field using palette.primaryContainer -> palette.tertiaryContainer -> palette.primaryContainer.
+- Native Qt5Compat.GraphicalEffects FastBlur.
+- Exact blur radius: 64.
+- Heavy rounded geometry with radius: 24.
+- Translucent glass fill: Qt.rgba(0, 0, 0, 0.2).
+- Fine luminous border: Qt.rgba(255, 255, 255, 0.09).
+- Existing artwork blur remains available as an additional user-configurable media treatment.
+- Existing lyrics, MPRIS, controls, and AnimatedImage children remain above the glass layer.
+
+The sandbox does not contain quickshell or qs, and it also does not contain ~/.config/quickshell, so `quickshell -r` could not be run here. The user’s local environment must perform the final live reload and check for import/runtime compatibility.
+
+For this pass, inspect:
+- `git diff --check`
+- `rg -n "FastBlur|radius: 64|radius: 24|palette.primaryContainer|palette.tertiaryContainer|Qt.rgba" modules/ii/sidebarLeft/SidebarPlayerControl.qml`
+
+If the target Quickshell reports a graphical-effects import issue, keep the native Qt/QML approach and use the installed equivalent while preserving radius 64, palette bindings, rgba glass fill, and rgba border.

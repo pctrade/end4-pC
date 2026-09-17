@@ -97,13 +97,10 @@ AbstractBackgroundWidget {
         animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
     }
 
-    component AvatarImage: Image {
-        source: Config.options.profile.avatarPath !== ""
-            ? "file://" + Config.options.profile.avatarPicture
-            : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
-        sourceSize.width: width * 2
-        sourceSize.height: height * 2
-        fillMode: Image.PreserveAspectCrop
+    component AvatarImage: AnimatedPfp {
+        path: Config.options.profile.avatarPath !== ""
+            ? Config.options.profile.avatarPicture
+            : "/home/" + (Quickshell.env("USER") ?? "user") + "/.face"
         onStatusChanged: if (status === Image.Error) visible = false
     }
 
@@ -486,16 +483,13 @@ AbstractBackgroundWidget {
                     border.color: Appearance.colors.colLayer1
                     z: 2
 
-                    Image {
+                    AnimatedPfp {
                         id: avatarImage
                         anchors.fill: parent
                         anchors.margins: 3
-                        source: Config.options.profile.avatarPath !== ""
-                            ? "file://" + Config.options.profile.avatarPicture
-                            : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
-                        sourceSize.width: avatarImage.width * 2
-                        sourceSize.height: avatarImage.height * 2
-                        fillMode: Image.PreserveAspectCrop
+                        path: Config.options.profile.avatarPath !== ""
+                            ? Config.options.profile.avatarPicture
+                            : "/home/" + (Quickshell.env("USER") ?? "user") + "/.face"
                         layer.enabled: true
                         layer.effect: OpacityMask {
                             maskSource: Rectangle {

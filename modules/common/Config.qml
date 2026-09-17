@@ -376,6 +376,17 @@ Singleton {
                         property bool vertical: false
                     }
 
+                    property JsonObject towerDefense: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        // The game itself is ephemeral; only its best cleared wave persists.
+                        property int highScore: 0
+                        property bool soundEnabled: true
+                    }
+
                     property JsonObject media: JsonObject {
                         property bool enable: false
                         property bool showControls: true

@@ -3,6 +3,7 @@ import sys
 import urllib.request
 import urllib.parse
 import json
+import re
 
 def _parse_lrc(lrc_text: str) -> list:
     lines = []
@@ -16,7 +17,18 @@ def _parse_lrc(lrc_text: str) -> list:
             text = raw[tag_end + 1:].strip()
             mins, secs = time_str.split(":")
             timestamp = int(mins) * 60 + float(secs)
-            lines.append({"time": timestamp, "text": text})
+            word_matches = list(re.finditer(r"<([0-9]+):([0-9]+(?:\.[0-9]+)?)>([^<]*)", text))
+            if word_matches:
+                words = []
+                for match in word_matches:
+                    word_time = int(match.group(1)) * 60 + float(match.group(2))
+                    word = match.group(3)
+                    if word:
+                        words.append({"time": word_time, "text": word})
+                clean_text = "".join(word["text"] for word in words).strip()
+                lines.append({"time": timestamp, "text": clean_text or text, "words": words})
+            else:
+                lines.append({"time": timestamp, "text": text, "words": []})
         except Exception:
             continue
     return sorted(lines, key=lambda x: x["time"])
@@ -68,12 +80,7 @@ def main():
     if not lines:
         print("not_found", flush=True)
         sys.exit(0)
-    parts = []
-    for line in lines:
-        parts.append(str(line["time"]))
-        parts.append(line["text"].replace("§", ""))
-    parts.append("ok")
-    print("§".join(parts), flush=True)
+    print(json.dumps(lines, ensure_ascii=False, separators=(",", ":")) + "§ok", flush=True)
 
 if __name__ == "__main__":
     main()

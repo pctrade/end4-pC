@@ -99,7 +99,7 @@ Item {
 
     Process {
         id: fileChooser
-        command: ["kdialog", "--getopenfilename", Quickshell.env("HOME") + "/Pictures", "image/png image/jpg image/jpeg image/webp"]
+        command: ["kdialog", "--getopenfilename", Quickshell.env("HOME") + "/Pictures", "image/*"]
         
         stdout: StdioCollector {
             id: fileChooserOutput
@@ -169,14 +169,21 @@ Item {
                                 radius: sysRect.radius
                                 color: "transparent"
 
-                                StyledImage {
+                                AnimatedImage {
                                     anchors.fill: parent
                                     fillMode: Image.PreserveAspectCrop
-                                    source: Config.options.sidebar.bannerImage !== "" 
-                                        ? Config.options.sidebar.bannerImage 
-                                        : Config.options.background.wallpaperPath
-                                    cache: false
+                                    source: {
+                                        const raw = Config.options.sidebar.bannerImage !== ""
+                                            ? Config.options.sidebar.bannerImage
+                                            : Config.options.background.wallpaperPath
+                                        if (raw === "" || raw === undefined) return ""
+                                        if (raw.startsWith("file://")) return raw
+                                        return raw.startsWith("/") ? "file://" + raw : raw
+                                    }
+                                    cache: true
                                     antialiasing: true
+                                    asynchronous: true
+                                    playing: true
                                     sourceSize.width: wallpaperRect.width * 2
                                     sourceSize.height: wallpaperRect.height * 2
                                     layer.enabled: true
@@ -217,15 +224,12 @@ Item {
                                     width: 48; height: 48; radius: width / 2
                                     color: Appearance.colors.colPrimaryContainer
 
-                                    Image {
+                                    AnimatedPfp {
                                         id: avatarImage
                                         anchors.fill: parent
-                                        source: Config.options.profile.avatarPath !== "" 
-                                            ? "file://" + Config.options.profile.avatarPicture 
-                                            : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
-                                        sourceSize.width: avatarImage.width * 2
-                                        sourceSize.height: avatarImage.height * 2
-                                        fillMode: Image.PreserveAspectCrop
+                                        path: Config.options.profile.avatarPath !== ""
+                                            ? Config.options.profile.avatarPicture
+                                            : "/home/" + (Quickshell.env("USER") ?? "user") + "/.face"
                                         layer.enabled: true
                                         layer.effect: OpacityMask {
                                             maskSource: Rectangle {
