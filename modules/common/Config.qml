@@ -220,7 +220,7 @@ Singleton {
                 property string borderColor: "layer0Border"
             }
 
-             property JsonObject background: JsonObject {
+            property JsonObject background: JsonObject {
                 property string lockWall: ""
                 property bool widgetsLocked: false
                 property bool showGrid: true
@@ -228,15 +228,6 @@ Singleton {
                 property string splitRatio: "100" // 25 50 100
                 property string splitSide: "left"
                 property bool showSnapLines: true
-                property JsonObject depthEffect: JsonObject {
-                    property bool enable: false
-                    property bool mouseParallax: true
-                    property bool workspaceParallax: true
-                    property int workspaceParallaxSupportNumber: 5
-                    property list<var> layers: [
-                        { name: "background", image: "", scale: 150, autoScale: false, bound: true, parallaxEnabled: true, parallaxSensitivity: 1, reverseParallax: false, workspaceParallax: true, workspaceParallaxSensitivity: 1, mouseParallax: true, manualPositioning: false, positionX: 0, positionY: 0 }
-                    ]
-                }
                 property JsonObject widgets: JsonObject {
                     property bool blurWidgets: false
                     property real blurRadius: 32
@@ -360,6 +351,11 @@ Singleton {
                         property real x: 0
                         property real y: 0
                         property real depthLayerPosition: -1
+                        property string style: "bars" // "bars", "mirror", "aurora", "ring", "dots"
+                        property string colorSource: "theme" // "theme", "cover"
+                        property real sensitivity: 1
+                        property int height: 260 // mirror, aurora and dots
+                        property int ringSize: 380
                     }
 
                     property JsonObject customImage: JsonObject {

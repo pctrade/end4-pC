@@ -20,6 +20,7 @@ import qs.modules.ii.background.widgets.usercard
 import qs.modules.ii.background.widgets.notes
 import qs.modules.ii.background.widgets.todo
 import qs.modules.ii.background.widgets.timers
+import qs.modules.ii.background.widgets.customtext
 
 Item {
     id: root
@@ -47,6 +48,7 @@ Item {
             { key: "userCard" },
             { key: "todo" },
             { key: "timers" },
+            { key: "customText" },
         ]
 
         delegate: FadeLoader {
@@ -95,6 +97,7 @@ Item {
                     case "userCard":    return userCardComp
                     case "todo":        return todoComp
                     case "timers":      return timersComp
+                    case "customText":  return customTextComp
                 }
                 return null
             }
@@ -303,6 +306,17 @@ Item {
             wallpaperScale: 1
             wallpaperItem: root.wallpaperItem
             backdropHost: root
+        }
+    }
+    Component {
+        id: customTextComp
+        CustomTextWidget {
+            screenWidth: root.screen.width
+            screenHeight: root.screen.height
+            scaledScreenWidth: root.screen.width
+            scaledScreenHeight: root.screen.height
+            wallpaperScale: 1
+            wallpaperItem: root.wallpaperItem
         }
     }
 }

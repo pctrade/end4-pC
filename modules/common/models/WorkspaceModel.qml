@@ -34,8 +34,13 @@ NestableObject {
     readonly property int group: Math.floor((activeNumber - 1) / shownCount)
 
     readonly property var specialWorkspace: WM.compositor === "hyprland" ? liveMonitorData?.specialWorkspace : null
-    readonly property string specialWorkspaceName: specialWorkspace?.name.replace("special:", "") ?? "special"
-    readonly property bool specialWorkspaceActive: WM.compositor === "hyprland" && specialWorkspaceName !== ""
+    // Derive "is one open?" from the reported name, never from the display
+    // label: the label has a "special" fallback, so deriving the other way
+    // round made a missing liveMonitorData (empty hyprctl output, monitor not
+    // matched yet) read as a permanently open special workspace.
+    // Same idiom as Bar.qml and ScreenCorners.qml.
+    readonly property bool specialWorkspaceActive: WM.compositor === "hyprland" && (specialWorkspace?.name ?? "") !== ""
+    readonly property string specialWorkspaceName: specialWorkspaceActive ? (specialWorkspace.name.replace("special:", "") || "special") : ""
 
     property list<bool> occupied: []
     readonly property bool shouldShowAppIcons: Boolean(C.Config.options.bar?.workspaces?.showAppIcons || C.Config.options.bar?.workspaces?.indicatorStyle === "icon")
