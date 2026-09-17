@@ -419,6 +419,16 @@ Singleton {
                     property bool enableSidebar: true
                     property real widgetsFactor: 1.2
                 }
+                }
+            }
+            property JsonObject depthEffect: JsonObject {
+                property bool enable: false
+                property bool mouseParallax: true
+                property bool workspaceParallax: true
+                property int workspaceParallaxSupportNumber: 5
+                property list<var> layers: [
+                    { name: "background", image: "", scale: 150, autoScale: false, bound: true, parallaxEnabled: true, parallaxSensitivity: 1, reverseParallax: false, workspaceParallax: true, workspaceParallaxSensitivity: 1, mouseParallax: true, manualPositioning: false, positionX: 0, positionY: 0 }
+                ]
             }
 
             property JsonObject bar: JsonObject {
@@ -870,4 +880,3 @@ Singleton {
             }
         }
     }
-}
