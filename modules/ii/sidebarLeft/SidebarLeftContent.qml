@@ -49,6 +49,13 @@ Item {
         }
         spacing: verticalTabBar.expanded ? -2 : 0
 
+        AiUsageOverview {
+            id: aiUsageOverview
+            Layout.fillWidth: true
+            Layout.preferredHeight: visible ? implicitHeight : 0
+            Layout.bottomMargin: visible ? 6 : 0
+        }
+
         VerticalTabBar {
             id: verticalTabBar
             visible: tabButtonList.length > 0

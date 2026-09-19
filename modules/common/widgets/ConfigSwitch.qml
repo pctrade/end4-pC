@@ -7,7 +7,9 @@ import QtQuick.Controls
 RippleButton {
     id: root
     property string buttonIcon
-    property alias iconSize: iconWidget.iconSize
+    property string buttonIconSource
+    property bool buttonIconColorize: true
+    property real iconSize: Appearance.font.pixelSize.larger
     colBackgroundHover: "transparent"
 
     Layout.fillWidth: true
@@ -19,11 +21,46 @@ RippleButton {
 
     contentItem: RowLayout {
         spacing: 10
-        OptionalMaterialSymbol {
+        Loader {
             id: iconWidget
-            icon: root.buttonIcon
-            opacity: root.enabled ? 1 : 0.4
-            iconSize: Appearance.font.pixelSize.larger
+            Layout.alignment: Qt.AlignVCenter
+            active: (root.buttonIconSource && root.buttonIconSource.length > 0)
+                || (root.buttonIcon && root.buttonIcon.length > 0)
+            visible: active
+            sourceComponent: root.buttonIconSource && root.buttonIconSource.length > 0
+                ? customIconComponent
+                : materialSymbolComponent
+
+            Component {
+                id: customIconComponent
+
+                Item {
+                    implicitWidth: root.iconSize
+                    implicitHeight: root.iconSize
+
+                    CustomIcon {
+                        anchors.centerIn: parent
+                        width: root.iconSize
+                        height: root.iconSize
+                        source: root.buttonIconSource
+                        colorize: root.buttonIconColorize
+                        smooth: true
+                        color: Appearance.colors.colOnSecondaryContainer
+                        opacity: root.enabled ? 1 : 0.4
+                    }
+                }
+            }
+
+            Component {
+                id: materialSymbolComponent
+
+                OptionalMaterialSymbol {
+                    id: materialSymbol
+                    icon: root.buttonIcon
+                    opacity: root.enabled ? 1 : 0.4
+                    iconSize: root.iconSize
+                }
+            }
         }
         StyledText {
             id: labelWidget
@@ -42,4 +79,3 @@ RippleButton {
         }
     }
 }
-
