@@ -92,6 +92,12 @@ hl.bind("SUPER + escape", hl.dsp.global("quickshell:settingsToggle"), {descripti
 
 ## ❓ FAQ
 
+### How do I mirror my phone from the bar?
+
+Add **scrcpy** in Settings → Bar → Layout, connect your Android phone with USB debugging enabled, and click the phone button. The interactive dropdown follows the phone's aspect ratio and rotation, up to 720 × 720 pixels and 80% of the monitor. Click the button again, click outside, press Escape, or use the close button to dismiss it.
+
+The widget requires `scrcpy` (tested with 4.1), `adb`, the Qt Wayland Compositor QML modules, and GNU coreutils (`stdbuf`). On Arch Linux the Qt modules are provided by `qt6-wayland`. A connection error offers a Retry button; closing the dropdown stops its scrcpy session.
+
 ### How do I see my keybinds?
 
 Open the launcher (`SUPER`) and type `<` — it'll show you the full list of configured keybinds.
