@@ -13,6 +13,19 @@ Singleton {
     readonly property string configuratorScriptPath: Quickshell.shellPath("scripts/hyprland/hyprconfigurator.py")
     readonly property string shellOverridesPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hyprland/shellOverrides/main.lua`)
     readonly property string animOverridesPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hyprland/shellOverrides/animations.lua`)
+    readonly property string idleConfiguratorScriptPath: Quickshell.shellPath("scripts/hyprland/hypridleconfigurator.py")
+    readonly property string hypridlePath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hypridle.conf`)
+
+    function setIdle(lock: int, screenOff: int, suspend: int) {
+        Quickshell.execDetached([
+            "python3", root.idleConfiguratorScriptPath,
+            "--file", root.hypridlePath,
+            "--lock", String(lock),
+            "--screen-off", String(screenOff),
+            "--suspend", String(suspend)
+        ])
+        Quickshell.execDetached(["bash", "-c", "pkill -x hypridle; sleep 0.3; setsid -f hypridle >/dev/null 2>&1"])
+    }
 
     function set(key: string, value: var) {
         Quickshell.execDetached([

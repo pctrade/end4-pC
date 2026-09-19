@@ -187,6 +187,11 @@ Singleton {
                     property int gapsOut: 5
                     property string layout: "dwindle"
                 }
+                property JsonObject idle: JsonObject {
+                    property int lock: 300
+                    property int screenOff: 600
+                    property int suspend: 10800
+                }
                 property JsonObject input: JsonObject {
                     property string kbLayout: "us"
                     property bool numlock: true

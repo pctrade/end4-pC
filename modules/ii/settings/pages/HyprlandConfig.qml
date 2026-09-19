@@ -506,6 +506,130 @@ ContentPage {
             }
         }
 
+        // Idle
+        ContentSection {
+            id: idleSection
+            icon: "timer"
+            shape: MaterialShape.Shape.Cookie12Sided
+            title: Translation.tr("Idle")
+
+            readonly property list<var> unitOptions: [
+                { displayName: Translation.tr("Seconds"), icon: "timer",    value: 1    },
+                { displayName: Translation.tr("Minutes"), icon: "av_timer", value: 60   },
+                { displayName: Translation.tr("Hours"),   icon: "schedule", value: 3600 },
+            ]
+
+            component IdleTimerRow: ConfigRow {
+                id: timerRow
+
+                property string icon
+                property string label
+                property int seconds: 0
+                property int displayValue: 60
+                property int displayUnit: 60
+                property bool loaded: false
+
+                signal edited(int newSeconds)
+
+                onSecondsChanged: {
+                    const display = idleSection.toDisplay(timerRow.seconds)
+                    timerRow.displayValue = display[0]
+                    timerRow.displayUnit = display[1]
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+                    Layout.leftMargin: 8
+                    OptionalMaterialSymbol {
+                        icon: timerRow.icon
+                        iconSize: Appearance.font.pixelSize.larger
+                    }
+                    StyledText {
+                        Layout.preferredWidth: 160
+                        text: timerRow.label
+                        color: Appearance.colors.colOnSecondaryContainer
+                        elide: Text.ElideRight
+                    }
+                    Item { Layout.fillWidth: true }
+                    StyledSpinBox {
+                        Layout.preferredWidth: 130
+                        value: timerRow.displayValue
+                        from: 0
+                        to: 9999
+                        stepSize: 1
+                        onValueChanged: {
+                            if (!timerRow.loaded) return
+                            timerRow.displayValue = value
+                            timerRow.edited(value * timerRow.displayUnit)
+                        }
+                    }
+                }
+                StyledComboBox {
+                    Layout.preferredWidth: 140
+                    Layout.alignment: Qt.AlignVCenter
+                    textRole: "displayName"
+                    model: idleSection.unitOptions
+                    currentIndex: idleSection.unitOptions.findIndex(o => o.value === timerRow.displayUnit)
+                    onActivated: index => {
+                        timerRow.displayUnit = idleSection.unitOptions[index].value
+                        timerRow.edited(timerRow.displayValue * timerRow.displayUnit)
+                    }
+                }
+            }
+
+            function toDisplay(seconds) {
+                if (seconds <= 0)
+                    return [0, 60]
+                if (seconds % 3600 === 0)
+                    return [seconds / 3600, 3600]
+                if (seconds % 60 === 0)
+                    return [seconds / 60, 60]
+                return [seconds, 1]
+            }
+
+            function applyIdle() {
+                HyprlandConfig.setIdle(
+                    Config.options.hyprland.idle.lock,
+                    Config.options.hyprland.idle.screenOff,
+                    Config.options.hyprland.idle.suspend
+                )
+            }
+
+            GroupedList {
+                IdleTimerRow {
+                    icon: "lock_clock"
+                    label: Translation.tr("Lock screen")
+                    seconds: Config.options.hyprland.idle.lock
+                    onEdited: newSeconds => {
+                        Config.options.hyprland.idle.lock = newSeconds
+                        idleSection.applyIdle()
+                    }
+                    Component.onCompleted: loaded = true
+                }
+                IdleTimerRow {
+                    icon: "monitor"
+                    label: Translation.tr("Screen off")
+                    seconds: Config.options.hyprland.idle.screenOff
+                    onEdited: newSeconds => {
+                        Config.options.hyprland.idle.screenOff = newSeconds
+                        idleSection.applyIdle()
+                    }
+                    Component.onCompleted: loaded = true
+                }
+                IdleTimerRow {
+                    icon: "bedtime"
+                    label: Translation.tr("Standby")
+                    seconds: Config.options.hyprland.idle.suspend
+                    onEdited: newSeconds => {
+                        Config.options.hyprland.idle.suspend = newSeconds
+                        idleSection.applyIdle()
+                    }
+                    Component.onCompleted: loaded = true
+                }
+            }
+        }
+
         // Visual & Aesthetics
         ContentSection {
             icon: "deblur"
