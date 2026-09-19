@@ -21,9 +21,29 @@ AbstractWidget {
     property bool visibleWhenLocked: Config.options.lock.showWidgets
     property var configEntry: Config.options.background.widgets[configEntryName]
     property string placementStrategy: configEntry.placementStrategy
-    property real targetX: Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width))
-    property real targetY : Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height))
+
+    // Calculate normalized fraction of available margin for 100% 1-to-1 multi-monitor precision
+    property real maxAvailWidth: Math.max(1, scaledScreenWidth - width)
+    property real maxAvailHeight: Math.max(1, scaledScreenHeight - height)
+
+    property real targetX: {
+        if (configEntry === undefined || configEntry.x === undefined) return 0.5 * maxAvailWidth;
+        const val = configEntry.x;
+        // Support legacy pixel values (> 1.0) and relative fractions (0.0 .. 1.0)
+        const normX = (val > 1.0) ? Math.min(1.0, Math.max(0.0, val / maxAvailWidth)) : Math.min(1.0, Math.max(0.0, val));
+        return normX * maxAvailWidth;
+    }
+
+    property real targetY: {
+        if (configEntry === undefined || configEntry.y === undefined) return 0.5 * maxAvailHeight;
+        const val = configEntry.y;
+        // Support legacy pixel values (> 1.0) and relative fractions (0.0 .. 1.0)
+        const normY = (val > 1.0) ? Math.min(1.0, Math.max(0.0, val / maxAvailHeight)) : Math.min(1.0, Math.max(0.0, val));
+        return normY * maxAvailHeight;
+    }
+
     property real targetZ: configEntry.z
+
     x: targetX
     y: targetY
     z: targetZ
@@ -45,11 +65,18 @@ AbstractWidget {
     }
 
     function commitPosition() {
-        configEntry.x = root.x;
-        configEntry.y = root.y;
+        const availW = Math.max(1, scaledScreenWidth - root.width);
+        const availH = Math.max(1, scaledScreenHeight - root.height);
+
+        const normX = Math.max(0.0, Math.min(1.0, root.x / availW));
+        const normY = Math.max(0.0, Math.min(1.0, root.y / availH));
+
+        configEntry.x = normX;
+        configEntry.y = normY;
         configEntry.z = root.z;
-        root.targetX = Qt.binding(() => Math.max(0, Math.min(configEntry.x, scaledScreenWidth - width)));
-        root.targetY = Qt.binding(() => Math.max(0, Math.min(configEntry.y, scaledScreenHeight - height)));
+
+        root.targetX = Qt.binding(() => normX * Math.max(1, scaledScreenWidth - root.width));
+        root.targetY = Qt.binding(() => normY * Math.max(1, scaledScreenHeight - root.height));
         root.targetZ = Qt.binding(() => configEntry.z);
         root.restoreXYBinding();
     }
@@ -67,7 +94,7 @@ AbstractWidget {
 
     property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(".mp4") || Config.options.background.wallpaperPath.endsWith(".webm") || Config.options.background.wallpaperPath.endsWith(".mkv") || Config.options.background.wallpaperPath.endsWith(".avi") || Config.options.background.wallpaperPath.endsWith(".mov")
     property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath
-    
+
     onWallpaperPathChanged: refreshPlacementIfNeeded()
     onPlacementStrategyChanged: refreshPlacementIfNeeded()
     Connections {
