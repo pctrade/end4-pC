@@ -3,6 +3,7 @@ import QtQml
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import qs.services
 import qs.modules.common
 import qs.modules.common.functions
@@ -19,6 +20,22 @@ NestableObject {
     readonly property string monitorsLuaPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/monitors.lua`)
 
     Component.onCompleted: fetchProc.running = true
+
+    Connections {
+        target: Hyprland
+        enabled: WM.compositor === "hyprland"
+        function onRawEvent(event) {
+            if (["monitoradded", "monitoraddedv2", "monitorremoved", "monitorlayout", "configreloaded"].includes(event.name))
+                refreshTimer.restart()
+        }
+    }
+
+    Timer {
+        id: refreshTimer
+        interval: 300
+        repeat: false
+        onTriggered: fetchProc.running = true
+    }
 
     function updateMonitor(index, changes) {
         let m = root.monitors.slice()
