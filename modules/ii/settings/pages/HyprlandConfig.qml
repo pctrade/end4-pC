@@ -38,7 +38,9 @@ ContentPage {
 
     Component.onCompleted: {
         const h = Config.options.hyprland
-        HyprlandConfig.setMany({
+        // One setMany for everything: separate calls would be separate
+        // processes racing to rewrite the same overrides file.
+        HyprlandConfig.setMany(Object.assign({
             "decoration:rounding":                  h.decoration.rounding,
             "decoration:blur:enabled":              h.decoration.blur.enabled ? 1 : 0,
             "decoration:blur:size":                 h.decoration.blur.size,
@@ -59,9 +61,12 @@ ContentPage {
             "input:touchpad:disable_while_typing":  h.input.touchpad.disableWhileTyping ? 1 : 0,
             "input:touchpad:clickfinger_behavior":  h.input.touchpad.clickfingerBehavior ? 1 : 0,
             "input:touchpad:scroll_factor":         h.input.touchpad.scrollFactor
-        })
+        }, HyprlandConfig.borderColorEntries()))
     }
     MonitorConfigOption { id: monitorConfig }
+
+    // Same roles as the settings panel border color on the Interface page.
+    readonly property var borderColorRoles: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0Border"]
 
     ColumnLayout {
         id: mainLayout
@@ -572,6 +577,74 @@ ContentPage {
                     }
                 }
 
+                ConfigSwitch {
+                    buttonIcon: "format_paint"
+                    text: Translation.tr("Custom border colors")
+                    checked: Config.options.hyprland.general.borderColor.enable
+                    onCheckedChanged: {
+                        if (checked === Config.options.hyprland.general.borderColor.enable) return
+                        Config.options.hyprland.general.borderColor.enable = checked
+                        if (checked) HyprlandConfig.applyBorderColors()
+                        else HyprlandConfig.resetBorderColors()
+                    }
+                }
+            }
+
+            // These rows live in their own group: GroupedList wraps each child in
+            // a sized container, so hiding a child would still leave its gap.
+            GroupedList {
+                visible: Config.options.hyprland.general.borderColor.enable
+
+                ColorSelectionArray {
+                    icon: "border_color"
+                    text: Translation.tr("Active border")
+                    options: page.borderColorRoles
+                    currentValue: Config.options.hyprland.general.borderColor.activeRole
+                    onSelected: newValue => {
+                        Config.options.hyprland.general.borderColor.activeRole = newValue
+                        HyprlandConfig.applyBorderColors()
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "opacity"
+                    text: Translation.tr("Active border opacity")
+                    value: Math.round(Config.options.hyprland.general.borderColor.activeOpacity * 100)
+                    from: 0; to: 100; stepSize: 5
+                    onValueChanged: {
+                        // Compared as integers: the spin box only holds whole percents.
+                        if (value === Math.round(Config.options.hyprland.general.borderColor.activeOpacity * 100)) return
+                        Config.options.hyprland.general.borderColor.activeOpacity = value / 100.0
+                        HyprlandConfig.applyBorderColors()
+                    }
+                }
+
+                ColorSelectionArray {
+                    icon: "border_color"
+                    text: Translation.tr("Inactive border")
+                    options: page.borderColorRoles
+                    currentValue: Config.options.hyprland.general.borderColor.inactiveRole
+                    onSelected: newValue => {
+                        Config.options.hyprland.general.borderColor.inactiveRole = newValue
+                        HyprlandConfig.applyBorderColors()
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "opacity"
+                    text: Translation.tr("Inactive border opacity")
+                    value: Math.round(Config.options.hyprland.general.borderColor.inactiveOpacity * 100)
+                    from: 0; to: 100; stepSize: 5
+                    onValueChanged: {
+                        // Compared as integers: the spin box only holds whole percents.
+                        if (value === Math.round(Config.options.hyprland.general.borderColor.inactiveOpacity * 100)) return
+                        Config.options.hyprland.general.borderColor.inactiveOpacity = value / 100.0
+                        HyprlandConfig.applyBorderColors()
+                    }
+                }
+            }
+
+            GroupedList {
                 ConfigSpinBox {
                     icon: "margin"
                     text: Translation.tr("Gaps In")
