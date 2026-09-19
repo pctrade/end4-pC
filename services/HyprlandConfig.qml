@@ -13,6 +13,8 @@ Singleton {
     readonly property string configuratorScriptPath: Quickshell.shellPath("scripts/hyprland/hyprconfigurator.py")
     readonly property string shellOverridesPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hyprland/shellOverrides/main.lua`)
     readonly property string animOverridesPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hyprland/shellOverrides/animations.lua`)
+    readonly property string applicationOpacityScriptPath: Quickshell.shellPath("scripts/appOpacitySync.py")
+    readonly property string applicationOpacityOutputPath: FileUtils.trimFileProtocol(`${Directories.config}/hypr/hyprland/shellOverrides/appOpacity.lua`)
 
     function set(key: string, value: var) {
         Quickshell.execDetached([
@@ -53,6 +55,42 @@ Singleton {
             "--anim-file", root.animOverridesPath
         ])
     }
+
+    function syncApplicationOpacity() {
+        if (!Config.ready)
+            return
+
+        applicationOpacitySyncTimer.restart()
+    }
+
+    function runApplicationOpacitySync() {
+        Quickshell.execDetached([
+            "python3",
+            root.applicationOpacityScriptPath,
+            "--config", Config.filePath,
+            "--output", root.applicationOpacityOutputPath,
+            "--main", root.shellOverridesPath
+        ])
+    }
+
+    Timer {
+        id: applicationOpacitySyncTimer
+        interval: 300
+        repeat: false
+
+        onTriggered: root.runApplicationOpacitySync()
+    }
+
+    Connections {
+        target: Config
+
+        function onReadyChanged() {
+            if (Config.ready)
+                root.syncApplicationOpacity()
+        }
+    }
+
+    Component.onCompleted: root.syncApplicationOpacity()
 
     Connections {
         target: Hyprland

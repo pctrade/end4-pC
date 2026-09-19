@@ -61,6 +61,92 @@ ContentPage {
             "input:touchpad:scroll_factor":         h.input.touchpad.scrollFactor
         })
     }
+    // -------------------------------------------------------------------------
+    // Per-application active opacity
+    // -------------------------------------------------------------------------
+
+    property int applicationOpacityRevision: 0
+    property string applicationOpacitySearchText: ""
+
+    function applicationOpacityRule(appId) {
+        const revision = applicationOpacityRevision
+        const rules = Config.options.hyprland.decoration.applicationOpacityRules || []
+
+        for (const rule of rules) {
+            if (rule && rule.id === appId)
+                return rule
+        }
+
+        return null
+    }
+
+    function saveApplicationOpacity(appEntry, enabled, activePercent) {
+        const rules = [...(Config.options.hyprland.decoration.applicationOpacityRules || [])]
+        const id = String(appEntry.id || "")
+        if (!id)
+            return
+
+        const index = rules.findIndex(rule => rule && rule.id === id)
+        const existing = index >= 0 ? rules[index] : null
+        const match = String((existing && existing.match) || appEntry.startupClass || appEntry.id || "").trim()
+        if (!match)
+            return
+
+        const numericActive = Number(activePercent)
+        const safeActive = Number.isFinite(numericActive) ? numericActive : 100
+
+        const rule = {
+            id: id,
+            name: String(appEntry.name || id),
+            match: match,
+            active: Math.max(10, Math.min(100, safeActive)) / 100.0,
+            enabled: Boolean(enabled)
+        }
+
+        if (index >= 0)
+            rules[index] = rule
+        else
+            rules.push(rule)
+
+        Config.options.hyprland.decoration.applicationOpacityRules = rules
+        applicationOpacityRevision++
+        HyprlandConfig.syncApplicationOpacity()
+    }
+
+    ScriptModel {
+        id: applicationOpacityApplications
+
+        values: {
+            const revision = page.applicationOpacityRevision
+            const query = page.applicationOpacitySearchText.trim().toLowerCase()
+
+            return [...DesktopEntries.applications.values]
+                .filter(entry => {
+                    if (!entry || entry.noDisplay)
+                        return false
+                    if (!query)
+                        return true
+
+                    const name = String(entry.name || "").toLowerCase()
+                    const id = String(entry.id || "").toLowerCase()
+                    const cls = String(entry.startupClass || "").toLowerCase()
+
+                    return name.includes(query) || id.includes(query) || cls.includes(query)
+                })
+                .sort((a, b) =>
+                    String(a.name || a.id).localeCompare(String(b.name || b.id))
+                )
+        }
+    }
+
+    Connections {
+        target: DesktopEntries
+
+        function onApplicationsChanged() {
+            page.applicationOpacityRevision++
+        }
+    }
+
     MonitorConfigOption { id: monitorConfig }
 
     ColumnLayout {
@@ -619,6 +705,243 @@ ContentPage {
                         if (newVal === Config.options.hyprland.decoration.inactiveOpacity) return
                         Config.options.hyprland.decoration.inactiveOpacity = newVal
                         HyprlandConfig.set("decoration:inactive_opacity", newVal)
+                        HyprlandConfig.syncApplicationOpacity()
+                    }
+                }
+            }
+        }
+
+        // Application Opacity
+        ContentSection {
+            icon: "opacity"
+            shape: MaterialShape.Shape.ClamShell
+            title: Translation.tr("Application Opacity")
+            Layout.fillWidth: true
+
+            ContentSubsection {
+                title: Translation.tr("Installed Applications")
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 7
+
+                    // ------------------------------------------------
+                    // Compact search bar
+                    // ------------------------------------------------
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 38
+
+                        radius: Appearance.rounding.small
+
+                        color: ColorUtils.transparentize(
+                            Appearance.colors.colPrimaryContainer,
+                            0.74
+                        )
+
+                        TextInput {
+                            id: applicationOpacitySearch
+
+                            anchors.fill: parent
+                            anchors.leftMargin: 11
+                            anchors.rightMargin: 11
+
+                            color: Appearance.colors.colOnSurface
+                            verticalAlignment: TextInput.AlignVCenter
+                            clip: true
+                            selectByMouse: true
+
+                            onTextChanged:
+                                page.applicationOpacitySearchText = text
+
+                            Text {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+
+                                text:
+                                    Translation.tr("Search applications...")
+
+                                color:
+                                    Appearance.colors.colOnSurface
+
+                                opacity: 0.48
+
+                                visible:
+                                    applicationOpacitySearch.text.length === 0
+                            }
+                        }
+                    }
+
+                    // ------------------------------------------------
+                    // Installed applications
+                    // ------------------------------------------------
+                    Repeater {
+                        model: applicationOpacityApplications
+
+                        delegate: Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 58
+
+                            radius: Appearance.rounding.small
+
+                            color:
+                                Appearance.colors.colLayer1
+
+                            border.width: 1
+                            border.color:
+                                Appearance.colors.colLayer0Border
+
+                            property int revision:
+                                page.applicationOpacityRevision
+
+                            property var savedRule: {
+                                const r = revision
+                                return page.applicationOpacityRule(
+                                    modelData.id
+                                )
+                            }
+
+                            property bool overrideEnabled:
+                                savedRule !== null &&
+                                savedRule.enabled === true
+
+                            property int activeOpacityValue: {
+                                const rawValue = savedRule !== null
+                                    ? Number(savedRule.active) * 100
+                                    : Number(
+                                        Config.options.hyprland.decoration.activeOpacity
+                                    ) * 100
+
+                                if (!Number.isFinite(rawValue))
+                                    return 100
+
+                                return Math.max(10, Math.min(100, Math.round(rawValue)))
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 8
+
+                                spacing: 6
+
+                                // ------------------------------------------------
+                                // App name + class
+                                // ------------------------------------------------
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: 0
+
+                                    spacing: 0
+
+                                    Text {
+                                        Layout.fillWidth: true
+
+                                        text:
+                                            modelData.name ||
+                                            modelData.id
+
+                                        color:
+                                            Appearance.colors.colOnSurface
+
+                                        font.pixelSize: 13
+
+                                        elide:
+                                            Text.ElideRight
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+
+                                        text:
+                                            modelData.startupClass ||
+                                            modelData.id
+
+                                        color:
+                                            Appearance.colors.colOnSurface
+
+                                        opacity: 0.48
+
+                                        font.pixelSize: 10
+
+                                        elide:
+                                            Text.ElideRight
+                                    }
+                                }
+
+                                // ------------------------------------------------
+                                // Per-app Override
+                                // ------------------------------------------------
+                                ConfigSwitch {
+                                    Layout.preferredWidth: 78
+
+                                    text:
+                                        Translation.tr("Override")
+
+                                    buttonIcon: ""
+
+                                    checked:
+                                        overrideEnabled
+
+                                    onCheckedChanged: {
+                                        if (checked === overrideEnabled)
+                                            return
+
+                                        const active =
+                                            savedRule !== null
+                                            ? Math.round(
+                                                Number(savedRule.active) *
+                                                100
+                                            )
+                                            : Math.round(
+                                                Config.options.hyprland
+                                                    .decoration
+                                                    .activeOpacity * 100
+                                            )
+
+                                        page.saveApplicationOpacity(
+                                            modelData,
+                                            checked,
+                                            active
+                                        )
+                                    }
+                                }
+
+                                // ------------------------------------------------
+                                // Per-app active opacity
+                                // ------------------------------------------------
+                                ConfigSpinBox {
+                                    Layout.preferredWidth: 92
+
+                                    icon: ""
+                                    text: ""
+
+                                    enabled: overrideEnabled
+
+                                    value:
+                                        activeOpacityValue
+
+                                    from: 10
+                                    to: 100
+                                    stepSize: 5
+
+                                    onValueChanged: {
+                                        if (!overrideEnabled)
+                                            return
+
+                                        if (value === activeOpacityValue)
+                                            return
+
+                                        page.saveApplicationOpacity(
+                                            modelData,
+                                            true,
+                                            value
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
