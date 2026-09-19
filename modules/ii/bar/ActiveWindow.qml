@@ -41,7 +41,7 @@ Item {
         console.log("iconPath:", root.mainAppIconSource)
     }
 
-    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 6, 280)
+    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 12, 280)
     implicitHeight: vertical ? iconItem.implicitHeight : Appearance.sizes.barHeight
 
     // Vertical
@@ -67,7 +67,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: 3
+        anchors.leftMargin: 6
         spacing: -4
 
         StyledText {

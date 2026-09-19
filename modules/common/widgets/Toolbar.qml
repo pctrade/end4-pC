@@ -36,6 +36,18 @@ Item {
         implicitWidth: toolbarLayout.implicitWidth + root.padding * 2
         radius: height / 2
 
+        // Plain Items don't consume mouse events in QML, so clicks on the
+        // toolbar's empty areas would fall through to content underneath
+        // (e.g. wallpaper grid cells). Block them; interactive children
+        // (buttons, text fields) sit above and still get their own events.
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            hoverEnabled: true
+            onClicked: (mouse) => mouse.accepted = true
+            onWheel: (wheel) => wheel.accepted = true
+        }
+
         RowLayout {
             id: toolbarLayout
             spacing: 4

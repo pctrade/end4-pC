@@ -235,6 +235,45 @@ ContentPage {
                     }
                 }
 
+                ConfigSlider {
+                    Layout.fillWidth: true
+                    text: Translation.tr("Blur Size")
+                    value: Config.options.background.blurRadius ?? 32
+                    usePercentTooltip: false
+                    buttonIcon: "aspect_ratio"
+                    from: 1
+                    to: 64
+                    stopIndicatorValues: [32]
+                    onValueChanged: Config.options.background.blurRadius = value
+                }
+
+                ConfigSelectionArray {
+                    text: Translation.tr("Split blur amount")
+                    icon: "split_scene"
+                    currentValue: Config.options.background.splitRatio
+                    options: [
+                        { "displayName": "25%",  "icon": "thumbnail_bar",              "value": "25" },
+                        { "displayName": "50%",  "icon": "side_navigation",              "value": "50" },
+                        { "displayName": "100%", "icon": "fullscreen",    "value": "100" },
+                    ]
+                    onSelected: newValue => {
+                        Config.options.background.splitRatio = newValue
+                    }
+                }
+
+                ConfigSelectionArray {
+                    text: Translation.tr("Split blur side")
+                    icon: "align_horizontal_left"
+                    currentValue: Config.options.background.splitSide
+                    options: [
+                        { "displayName": Translation.tr("Left"),  "icon": "align_horizontal_left",  "value": "left" },
+                        { "displayName": Translation.tr("Right"), "icon": "align_horizontal_right", "value": "right" },
+                    ]
+                    onSelected: newValue => {
+                        Config.options.background.splitSide = newValue
+                    }
+                }
+
                 ConfigSpinBox {
                     icon: "timer"
                     text: Translation.tr("Wallpaper change interval (min)")
@@ -951,6 +990,293 @@ ContentPage {
             }
         }
 
+                ContentSection {
+            id: settingsVisualizer
+            icon: "graphic_eq"
+            shape: MaterialShape.Shape.Burst
+            title: Translation.tr("Visualizer")
+
+            readonly property var entry: Config.options.background.widgets.visualizer
+            readonly property bool bandStyle: ["mirror", "aurora", "dots"].includes(entry.style)
+
+            GroupedList {
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: settingsVisualizer.entry.enable
+                    onCheckedChanged: {
+                        settingsVisualizer.entry.enable = checked;
+                    }
+                }
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "style"
+                    currentValue: settingsVisualizer.entry.style
+                    onSelected: newValue => {
+                        settingsVisualizer.entry.style = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Classic"),
+                            icon: "bar_chart",
+                            value: "bars"
+                        },
+                        {
+                            displayName: Translation.tr("Mirror"),
+                            icon: "equalizer",
+                            value: "mirror"
+                        },
+                        {
+                            displayName: Translation.tr("Aurora"),
+                            icon: "waves",
+                            value: "aurora"
+                        },
+                        {
+                            displayName: Translation.tr("Ring"),
+                            icon: "album",
+                            value: "ring"
+                        },
+                        {
+                            displayName: Translation.tr("Dots"),
+                            icon: "grid_on",
+                            value: "dots"
+                        }
+                    ]
+                }
+
+                ConfigSelectionArray {
+                    text: Translation.tr("Colors")
+                    icon: "palette"
+                    enabled: settingsVisualizer.entry.style !== "bars"
+                    currentValue: settingsVisualizer.entry.colorSource
+                    onSelected: newValue => {
+                        settingsVisualizer.entry.colorSource = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Theme"),
+                            icon: "palette",
+                            value: "theme"
+                        },
+                        {
+                            displayName: Translation.tr("Album cover"),
+                            icon: "album",
+                            value: "cover"
+                        }
+                    ]
+                }
+        
+                ConfigSlider {
+                    text: Translation.tr("Sensitivity (%)")
+                    buttonIcon: "tune"
+                    usePercentTooltip: false
+                    enabled: settingsVisualizer.entry.style !== "bars"
+                    value: settingsVisualizer.entry.sensitivity * 100
+                    from: 50
+                    to: 300
+                    stopIndicatorValues: [100]
+                    onValueChanged: {
+                        settingsVisualizer.entry.sensitivity = Math.round(value) / 100;
+                    }
+                }
+                ConfigSlider {
+                    text: Translation.tr("Height")
+                    buttonIcon: "height"
+                    usePercentTooltip: false
+                    enabled: settingsVisualizer.entry.style !== "bars" && settingsVisualizer.bandStyle
+                    value: settingsVisualizer.entry.height
+                    from: 120
+                    to: 600
+                    stopIndicatorValues: [260]
+                    onValueChanged: {
+                        settingsVisualizer.entry.height = Math.round(value);
+                    }
+                }
+                ConfigSlider {
+                    text: Translation.tr("Size")
+                    buttonIcon: "aspect_ratio"
+                    usePercentTooltip: false
+                    enabled: settingsVisualizer.entry.style === "ring"
+                    value: settingsVisualizer.entry.ringSize
+                    from: 200
+                    to: 900
+                    stopIndicatorValues: [380]
+                    onValueChanged: {
+                        settingsVisualizer.entry.ringSize = Math.round(value);
+                    }
+                }
+            }
+        }
+
+        ContentSection {
+            id: settingsCustomText
+            icon: "text_fields"
+            shape: MaterialShape.Shape.Cookie4Sided
+            title: Translation.tr("Text")
+
+            readonly property var entry: Config.options.background.widgets.customText
+
+            GroupedList {
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: settingsCustomText.entry.enable
+                    onCheckedChanged: {
+                        settingsCustomText.entry.enable = checked;
+                    }
+                }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "shadow"
+                    text: Translation.tr("Shadow")
+                    checked: settingsCustomText.entry.shadow
+                    onCheckedChanged: {
+                        settingsCustomText.entry.shadow = checked;
+                    }
+                }
+            }
+
+            NoticeBox {
+                Layout.fillWidth: true
+                materialIcon: "touch_app"
+                text: Translation.tr("Double-click the text on your desktop to edit it, drag its corner to resize it")
+            }
+
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Text to display")
+                text: settingsCustomText.entry.content
+                wrapMode: TextEdit.Wrap
+
+                Timer {
+                    id: customTextContentDebounce
+                    interval: 500
+                    repeat: false
+                    onTriggered: {
+                        settingsCustomText.entry.content = parent.text
+                    }
+                }
+
+                onTextChanged: {
+                    if (activeFocus) customTextContentDebounce.restart()
+                }
+            }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                title: Translation.tr("Font")
+
+                GroupedList {
+                    ConfigComboBox {
+                        Layout.fillWidth: true
+                        buttonIcon: "font_download"
+                        fieldWidth: 50
+                        text: Translation.tr("Font family")
+                        textRole: "displayName"
+                        model: Fonts.handwritingFamilies.map(family => ({
+                            displayName: family,
+                            value: family
+                        }))
+                        currentValue: settingsCustomText.entry.fontFamily
+                        onSelected: newValue => { settingsCustomText.entry.fontFamily = newValue; }
+                    }
+                    ConfigTextArea {
+                        id: settingsCustomFontField
+                        buttonIcon: "custom_typography"
+                        text: Translation.tr("Custom Font")
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        placeholderText: Translation.tr("Any installed font family")
+                        value: Fonts.handwritingFamilies.includes(settingsCustomText.entry.fontFamily) ? "" : settingsCustomText.entry.fontFamily
+
+                        onValueChanged: {
+                            customTextFontDebounce.restart();
+                        }
+
+                        Timer {
+                            id: customTextFontDebounce
+                            interval: 500
+                            repeat: false
+                            onTriggered: {
+                                if (settingsCustomFontField.value.trim() !== "")
+                                    settingsCustomText.entry.fontFamily = settingsCustomFontField.value.trim()
+                            }
+                        }
+                    }
+
+                    ConfigSlider {
+                        text: Translation.tr("Font size")
+                        value: settingsCustomText.entry.fontSize
+                        usePercentTooltip: false
+                        buttonIcon: "format_size"
+                        from: 12
+                        to: 400
+                        stopIndicatorValues: [72]
+                        onValueChanged: {
+                            settingsCustomText.entry.fontSize = Math.round(value);
+                        }
+                    }
+
+                    ConfigSelectionArray {
+                        text: Translation.tr("Alignment")
+                        icon: "format_align_center"
+                        currentValue: settingsCustomText.entry.alignment
+                        onSelected: newValue => {
+                            settingsCustomText.entry.alignment = newValue;
+                        }
+                        options: [
+                            {
+                                displayName: Translation.tr("Left"),
+                                icon: "format_align_left",
+                                value: "left"
+                            },
+                            {
+                                displayName: Translation.tr("Center"),
+                                icon: "format_align_center",
+                                value: "center"
+                            },
+                            {
+                                displayName: Translation.tr("Right"),
+                                icon: "format_align_right",
+                                value: "right"
+                            }
+                        ]
+                    }
+                }
+            }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                title: Translation.tr("Colors")
+                
+                GroupedList {
+                    ConfigSwitch {
+                        id: customTextAutoColorSwitch
+                        buttonIcon: "auto_awesome"
+                        text: Translation.tr("Automatic colors")
+                        checked: settingsCustomText.entry.color === ""
+                        onCheckedChanged: {
+                            if (checked) {
+                                settingsCustomText.entry.color = ""
+                            }
+                        }
+                    }
+
+                    ColorSelectionArray {
+                        icon: "palette"
+                        text: Translation.tr("Color")
+                        currentValue: settingsCustomText.entry.color
+                        onSelected: newValue => {
+                            settingsCustomText.entry.color = newValue
+                            customTextAutoColorSwitch.checked = false
+                        }
+                    }
+                }
+            }
+        }
+
         ContentSection {
             icon: "widgets"
             shape: MaterialShape.Shape.Pill
@@ -992,11 +1318,6 @@ ContentPage {
                             icon: "memory",
                             name: Translation.tr("Resources"),
                             enabled: Config.options.background.widgets.resources.enable
-                        },
-                        {
-                            icon: "graphic_eq",
-                            name: Translation.tr("Visualizer"),
-                            enabled: Config.options.background.widgets.visualizer.enable
                         },
                         {
                             icon: "calendar_month",
@@ -1065,8 +1386,6 @@ ContentPage {
                                             Config.options.background.widgets.media.enable = checked
                                         else if (modelData.icon === "memory")
                                             Config.options.background.widgets.resources.enable = checked
-                                        else if (modelData.icon === "graphic_eq")
-                                            Config.options.background.widgets.visualizer.enable = checked
                                         else if (modelData.icon === "calendar_month")
                                             Config.options.background.widgets.calendar.enable = checked
                                         else if (modelData.icon === "public")

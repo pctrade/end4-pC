@@ -80,12 +80,17 @@ Scope {
     Process {
         id: cavaProc
         running: (GlobalStates.mediaControlsOpen ||
-            GlobalStates.sidebarRightOpen || 
+            GlobalStates.sidebarRightOpen ||
+            (GlobalStates.sidebarLeftOpen && !GlobalStates.mediaLyricsVisible) ||
+            GlobalStates.equalizerOpen ||
             Config.options.bar.layouts.leftLayout.includes("visualizer") ||
             Config.options.bar.layouts.middleLayout.includes("visualizer") ||
+            (Config.options.bar.layouts.middleLayout.includes("dynamicIsland") &&
+                (Config.options.bar.dynamicIsland.visualizerStyle === "wave" ||
+                (Config.options.bar.dynamicIsland.visualizerStyle === "dots" && !Config.options.bar.dynamicIsland.showMediaControls))) ||
             Config.options.bar.layouts.rightLayout.includes("visualizer") ||
             Config.options.background.widgets.visualizer.enable)
-            && MprisController.activePlayer !== null
+            && (MprisController.activePlayer?.isPlaying ?? false)
         onRunningChanged: {
             if (!cavaProc.running) {
                 GlobalStates.visualizerPoints = [];

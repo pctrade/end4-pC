@@ -140,7 +140,7 @@ ContentSubsection {
                 }
 
                 Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.horizontalCenter: parent.horizontalCentera
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: -4
                     width: 8; height: 8; radius: 4
@@ -158,19 +158,19 @@ ContentSubsection {
         }
     }
 
-    Item {
+        Item {
         id: dropdown
         Layout.fillWidth: true
         Layout.topMargin: 5
-        visible: implicitHeight > 0
-        implicitHeight: dropdownOpen ? dropdownRect.implicitHeight + 8 : 0
-        opacity: dropdownOpen ? 1 : 0
         clip: true
+        implicitHeight: dropdownOpen ? dropdownRect.implicitHeight + 8 : 0
+        visible: implicitHeight > 0
+        opacity: dropdownOpen ? 1 : 0
 
         property bool dropdownOpen: false
 
         Behavior on implicitHeight {
-            animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
         Behavior on opacity {
             NumberAnimation { duration: 200; easing.type: Easing.OutCubic }

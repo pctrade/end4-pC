@@ -146,6 +146,17 @@ AbstractBackgroundWidget {
         radius: Appearance.rounding?.verylarge ?? 30
         color: Appearance.colors.colPrimaryContainer
 
+        FastBlurred {
+            anchors.fill: parent
+            blurSource: root.wallpaperItem
+            cardRadius: card.radius
+            tint: Appearance.colors.colLayer1
+            tintOpacity: 0.55
+            trackX: root.x  
+            trackY: root.y
+            visible: Config.options.background.widgets.blurWidgets 
+        }
+
         StyledRectangularShadow {
             target: card
             z: -2
@@ -166,7 +177,7 @@ AbstractBackgroundWidget {
             id: oneByOneContent
             Rectangle {
                 anchors.fill: parent
-                radius: parent.radius
+                radius: Appearance.rounding?.verylarge ?? 30
                 color: "transparent"
 
                 ColumnLayout {
@@ -459,6 +470,7 @@ AbstractBackgroundWidget {
 
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
+                            Layout.topMargin: 10
                             spacing: 4
                             Repeater {
                                 model: ["Mo","Tu","We","Th","Fr","Sa","Su"]

@@ -28,7 +28,7 @@ Item {
     property real maxVisualizerValue: 1000
     property int visualizerSmoothing: 2
     property real radius
-    property bool showLyrics: false
+    property bool showLyrics: Config.options.bar.media.showLyrics
 
     property string displayedArtFilePath: {
         if (!root.downloaded) return ""
@@ -148,7 +148,10 @@ Item {
                     blendedColors: root.blendedColors
                     displayedArtFilePath: root.displayedArtFilePath
                     radius: root.radius
-                    onToggleLyrics: root.showLyrics = !root.showLyrics
+                    onToggleLyrics: {
+                        root.showLyrics = !root.showLyrics
+                        Config.options.bar.media.showLyrics = root.showLyrics
+                    }
                 }
             }
 
@@ -160,7 +163,10 @@ Item {
                     displayedArtFilePath: root.displayedArtFilePath
                     radius: root.radius
                     artDominantColor: root.artDominantColor
-                    onToggleLyrics: root.showLyrics = !root.showLyrics
+                    onToggleLyrics: {
+                        root.showLyrics = !root.showLyrics
+                        Config.options.bar.media.showLyrics = root.showLyrics
+                    }
                 }
             }
         }

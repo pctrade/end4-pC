@@ -137,7 +137,16 @@ if args.termscheme is not None:
         json_termscheme = f.read()
     term_source_colors = json.loads(json_termscheme)['dark' if darkmode else 'light']
 
-    primary_color_argb = hex_to_argb(material_colors['primary_paletteKeyColor'])
+    # materialyoucolor >= 3 renamed 'primary_paletteKeyColor' to 'primaryPaletteKeyColor'.
+    # Accept both so the script works on either version.
+    primary_key_color = material_colors.get('primaryPaletteKeyColor') \
+        or material_colors.get('primary_paletteKeyColor')
+    if primary_key_color is None:
+        raise KeyError(
+            "Primary palette key color not found in MaterialDynamicColors; "
+            "unsupported materialyoucolor version"
+        )
+    primary_color_argb = hex_to_argb(primary_key_color)
     for color, val in term_source_colors.items():
         if(args.scheme == 'monochrome') :
             term_colors[color] = val

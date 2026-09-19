@@ -34,14 +34,20 @@ NestableObject {
     readonly property int group: Math.floor((activeNumber - 1) / shownCount)
 
     readonly property var specialWorkspace: WM.compositor === "hyprland" ? liveMonitorData?.specialWorkspace : null
-    readonly property string specialWorkspaceName: specialWorkspace?.name.replace("special:", "") ?? "special"
-    readonly property bool specialWorkspaceActive: WM.compositor === "hyprland" && specialWorkspaceName !== ""
+    // Derive "is one open?" from the reported name, never from the display
+    // label: the label has a "special" fallback, so deriving the other way
+    // round made a missing liveMonitorData (empty hyprctl output, monitor not
+    // matched yet) read as a permanently open special workspace.
+    // Same idiom as Bar.qml and ScreenCorners.qml.
+    readonly property bool specialWorkspaceActive: WM.compositor === "hyprland" && (specialWorkspace?.name ?? "") !== ""
+    readonly property string specialWorkspaceName: specialWorkspaceActive ? (specialWorkspace.name.replace("special:", "") || "special") : ""
 
     property list<bool> occupied: []
-    property list<var> biggestWindow: occupied.map((_, index) => {
+    readonly property bool shouldShowAppIcons: Boolean(C.Config.options.bar?.workspaces?.showAppIcons || C.Config.options.bar?.workspaces?.indicatorStyle === "icon")
+    property list<var> biggestWindow: shouldShowAppIcons ? occupied.map((_, index) => {
         const number = getWorkspaceIdAt(index)
         return root.biggestWindowForNumber(number)
-    })
+    }) : []
 
     function getWorkspaceId(group, index) {
         return group * root.shownCount + index + 1
@@ -68,19 +74,39 @@ NestableObject {
     }
 
     function updateWorkspaceOccupied() {
+        const count = root.shownCount;
+        let newOccupied = new Array(count);
+
         if (WM.compositor === "hyprland") {
-            root.occupied = Array.from({ length: root.shownCount }, (_, i) => {
-                const thisWorkspaceId = getWorkspaceId(root.group, i)
-                return Hyprland.workspaces.values.some(ws => ws.id === thisWorkspaceId)
-            })
+            const occupiedWsIds = new Set();
+            const wsVals = Hyprland.workspaces?.values || [];
+            for (let i = 0; i < wsVals.length; i++) {
+                const ws = wsVals[i];
+                if (ws && (ws.windows > 0 || ws.id !== root.activeNumber)) {
+                    occupiedWsIds.add(ws.id);
+                }
+            }
+            const winList = HyprlandData.windowList || [];
+            for (let i = 0; i < winList.length; i++) {
+                const w = winList[i];
+                if (w?.workspace?.id !== undefined) {
+                    occupiedWsIds.add(w.workspace.id);
+                }
+            }
+
+            for (let i = 0; i < count; i++) {
+                const thisWorkspaceId = getWorkspaceId(root.group, i);
+                newOccupied[i] = occupiedWsIds.has(thisWorkspaceId);
+            }
         } else {
-            root.occupied = Array.from({ length: root.shownCount }, (_, i) => {
-                const number = getWorkspaceId(root.group, i)
-                const realId = root._niriRealId(number)
-                if (realId === null) return false
-                return WM.windowList.some(w => w.workspaceId === realId)
-            })
+            const winList = WM.windowList || [];
+            for (let i = 0; i < count; i++) {
+                const number = getWorkspaceId(root.group, i);
+                const realId = root._niriRealId(number);
+                newOccupied[i] = (realId !== null) && winList.some(w => w.workspaceId === realId);
+            }
         }
+        root.occupied = newOccupied;
     }
 
     Component.onCompleted: updateWorkspaceOccupied()
@@ -97,6 +123,13 @@ NestableObject {
         target: Hyprland
         enabled: WM.compositor === "hyprland"
         function onFocusedWorkspaceChanged() {
+            root.updateWorkspaceOccupied()
+        }
+    }
+    Connections {
+        target: HyprlandData
+        enabled: WM.compositor === "hyprland"
+        function onWindowListChanged() {
             root.updateWorkspaceOccupied()
         }
     }

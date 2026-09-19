@@ -72,9 +72,16 @@ Item {
 
             property string appId:     root._workOrder[index] ?? ""
             property var    appEntry:  TaskbarApps.apps.find(a => a.appId === appId) ?? null
-            property var    deskEntry: appEntry ? DesktopEntries.heuristicLookup(appId) : null
+            property var    deskEntry: DesktopEntries.heuristicLookup(appId)
             property bool   appActive: appEntry?.toplevels?.find(t => t.activated) !== undefined
             property int    _lastFocused: -1
+
+            Connections {
+                target: DesktopEntries
+                function onApplicationsChanged() {
+                    slotItem.deskEntry = DesktopEntries.heuristicLookup(slotItem.appId)
+                }
+            }
 
             width:  root.btnSize
             height: root.implicitHeight

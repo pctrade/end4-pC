@@ -40,40 +40,63 @@ Singleton {
     property list<real> diskUsageHistory: []
     property string maxAvailableDiskString: kbToGbString(diskTotal)
 
+    property string thermalPath: ""
+
     Process {
-        id: tempProc
+        id: findThermalPathProc
+        running: true
+        command: ["sh", "-c", "for h in /sys/class/hwmon/hwmon*; do [ -d \"$h\" ] || continue; for l in \"$h\"/temp*_label; do [ -f \"$l\" ] || continue; if grep -qE 'Package id 0|Tctl|Tdie' \"$l\" 2>/dev/null; then inp=\"${l%_label}_input\"; [ -f \"$inp\" ] && echo \"$inp\" && exit 0; fi; done; done; for z in /sys/class/thermal/thermal_zone*; do [ -d \"$z\" ] || continue; type=$(cat \"$z/type\" 2>/dev/null); case \"$type\" in x86_pkg_temp|cpu*|TCPU) [ -f \"$z/temp\" ] && echo \"$z/temp\" && exit 0;; esac; done; for t in /sys/class/hwmon/hwmon*/temp1_input /sys/class/thermal/thermal_zone0/temp; do [ -f \"$t\" ] && echo \"$t\" && exit 0; done"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const foundPath = text.trim();
+                if (foundPath.length > 0) {
+                    root.thermalPath = foundPath;
+                    fileTemp.reload();
+                }
+            }
+        }
+    }
+
+    FileView {
+        id: fileTemp
+        path: root.thermalPath
+        printErrors: false
+        onLoaded: {
+            const raw = parseFloat(fileTemp.text().trim());
+            if (!isNaN(raw) && raw > 0) {
+                root.cpuTemp = raw > 200 ? Math.round(raw / 100) / 10 : raw;
+            }
+        }
+    }
+
+    Process {
+        id: tempProcFallback
         command: ["bash", "-c", "sensors 2>/dev/null | grep -E 'Package id 0|Tctl|Tdie' | grep -oP '\\+\\K[0-9.]+(?=°C)' | head -1"]
         stdout: StdioCollector {
             onStreamFinished: {
-                root.cpuTemp = parseFloat(text.trim())
+                const parsed = parseFloat(text.trim());
+                if (!isNaN(parsed) && parsed > 0) {
+                    root.cpuTemp = parsed;
+                }
             }
         }
     }
 
     Process {
         id: diskProc
-        command: ["bash", "-c", "df -k / | awk 'NR==2{print $2,$3,$4}'"]
+        command: ["df", "-k", "/"]
         stdout: StdioCollector {
             onStreamFinished: {
-                const parts = text.trim().split(" ").map(Number)
-                if (parts.length >= 3) {
-                    root.diskTotal = parts[0]
-                    root.diskUsed  = parts[1]
-                    root.diskFree  = parts[2]
+                const lines = text.trim().split("\n");
+                if (lines.length >= 2) {
+                    const parts = lines[1].trim().split(/\s+/).map(Number);
+                    if (parts.length >= 4) {
+                        root.diskTotal = parts[1];
+                        root.diskUsed  = parts[2];
+                        root.diskFree  = parts[3];
+                    }
                 }
             }
-        }
-    }
-
-    Timer {
-        interval: Config?.options.resources.updateInterval ?? 3000
-        running: true
-        repeat: true
-        onTriggered: {
-            tempProc.running = false
-            tempProc.running = true
-            diskProc.running = false
-            diskProc.running = true
         }
     }
 
@@ -111,6 +134,20 @@ Singleton {
         onTriggered: {
             fileMeminfo.reload()
             fileStat.reload()
+
+            if (root.thermalPath.length > 0) {
+                fileTemp.reload()
+                const raw = parseFloat(fileTemp.text().trim())
+                if (!isNaN(raw) && raw > 0) {
+                    root.cpuTemp = raw > 200 ? Math.round(raw / 100) / 10 : raw
+                }
+            } else if (!findThermalPathProc.running) {
+                tempProcFallback.running = false
+                tempProcFallback.running = true
+            }
+
+            diskProc.running = false
+            diskProc.running = true
 
             const textMeminfo = fileMeminfo.text()
             memoryTotal = Number(textMeminfo.match(/MemTotal: *(\d+)/)?.[1] ?? 1)

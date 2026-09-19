@@ -19,6 +19,14 @@ Scope {
         id: panelWindow
         property string searchingText: ""
         readonly property HyprlandMonitor monitor: Hyprland.monitorFor(panelWindow.screen)
+        readonly property bool barCenterOnly: Config.options.bar.layouts.leftLayout.length === 0
+            && Config.options.bar.layouts.rightLayout.length === 0
+            && !Config.options.bar.vertical
+
+        readonly property bool barOverlapActive: panelWindow.barCenterOnly
+            && Config.options.bar.centerOnlyReserveFrame
+            && !Config.options.bar.bottom
+            && !Config.options.bar.autoHide.enable
         property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)
         visible: GlobalStates.overviewOpen
 
@@ -71,11 +79,24 @@ Scope {
         Column {
             id: columnLayout
             visible: GlobalStates.overviewOpen
+            opacity: GlobalStates.overviewOpen ? 1 : 0
+            scale: GlobalStates.overviewOpen ? 1 : 0.85
+            transformOrigin: Item.Top
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: parent.top
+                topMargin: panelWindow.barOverlapActive
+                    ? Appearance.sizes.barHeight - Config.options.bar.frameThickness
+                    : 0
             }
             spacing: -8
+
+            Behavior on opacity {
+                NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial }
+            }
 
             Keys.onPressed: event => {
                 if (event.key === Qt.Key_Escape) {

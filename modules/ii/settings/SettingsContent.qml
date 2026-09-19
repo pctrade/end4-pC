@@ -104,7 +104,7 @@ Item {
                 Layout.fillHeight: true
                 Layout.margins: 0
                 implicitWidth: navRail.expanded ? 195 : fab.baseSize
-                color: isMinimal ? "transparent" : Appearance.m3colors.m3surfaceContainerLow
+                color: isMinimal ? "transparent" : Appearance.colors.colLayer1
                 radius: Appearance.rounding.normal
 
                 Behavior on implicitWidth {
@@ -117,78 +117,86 @@ Item {
                     spacing: 10
                     expanded: root.width > 900
 
-                    RowLayout {
+                    Item {
+                        id: profileRowContainer
                         visible: true
-                        spacing: 10
-                        Layout.fillWidth: true
+                        Layout.fillWidth: false
                         Layout.margins: isMinimal ? 0 : 5
                         Layout.topMargin: 15
                         Layout.bottomMargin: isMinimal ? -30 : 0
+                        implicitHeight: profileRow.implicitHeight
+                        implicitWidth: profileRow.implicitWidth
 
-                        Rectangle {
-                            id: avatarRect
-                            width: 48
-                            height: 48
-                            radius: width / 2
-                            color: Appearance.colors.colPrimaryContainer
+                        RowLayout {
+                            id: profileRow
+                            anchors.fill: parent
+                            spacing: 10
 
-                            Image {
-                                id: avatarImage
-                                anchors.fill: parent
-                                source: Config.options.profile.avatarPath !== "" 
-                                    ? "file://" + Config.options.profile.avatarPicture 
-                                    : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
-                                sourceSize.width: avatarImage.width * 2
-                                sourceSize.height: avatarImage.height * 2
-                                fillMode: Image.PreserveAspectCrop
-                                layer.enabled: true
-                                layer.effect: OpacityMask {
-                                    maskSource: Rectangle {
-                                        width: avatarRect.width
-                                        height: avatarRect.height
-                                        radius: avatarRect.radius
+                            Rectangle {
+                                id: avatarRect
+                                width: 48
+                                height: 48
+                                radius: width / 2
+                                color: Appearance.colors.colPrimaryContainer
+
+                                Image {
+                                    id: avatarImage
+                                    anchors.fill: parent
+                                    source: Config.options.profile.avatarPath !== "" 
+                                        ? "file://" + Config.options.profile.avatarPicture 
+                                        : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
+                                    sourceSize.width: avatarImage.width * 2
+                                    sourceSize.height: avatarImage.height * 2
+                                    fillMode: Image.PreserveAspectCrop
+                                    layer.enabled: true
+                                    layer.effect: OpacityMask {
+                                        maskSource: Rectangle {
+                                            width: avatarRect.width
+                                            height: avatarRect.height
+                                            radius: avatarRect.radius
+                                        }
+                                    }
+                                    onStatusChanged: {
+                                        if (status === Image.Error)
+                                            visible = false
                                     }
                                 }
-                                onStatusChanged: {
-                                    if (status === Image.Error)
-                                        visible = false
+
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "account_circle"
+                                    iconSize: 32
+                                    color: Appearance.colors.colOnPrimaryContainer
+                                    visible: avatarImage.status === Image.Error
                                 }
                             }
 
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "account_circle"
-                                iconSize: 32
-                                color: Appearance.colors.colOnPrimaryContainer
-                                visible: avatarImage.status === Image.Error
-                            }
-                        }
+                            ColumnLayout {
+                                spacing: 2
+                                Layout.fillWidth: true
+                                visible: !isMinimal
 
-                        ColumnLayout {
-                            spacing: 2
-                            Layout.fillWidth: true
-                            visible: !isMinimal
+                                StyledText {
+                                    text: Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName
+                                    font.pixelSize: Appearance.font.pixelSize.normal
+                                    color: Appearance.colors.colOnLayer1
+                                    font.weight: Font.Medium
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 100
+                                }
 
-                            StyledText {
-                                text: Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName
-                                font.pixelSize: Appearance.font.pixelSize.normal
-                                color: Appearance.colors.colOnLayer1
-                                font.weight: Font.Medium
-                                elide: Text.ElideRight
-                                Layout.maximumWidth: 100
-                            }
+                                StyledText {
+                                    id: distroText
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: Appearance.colors.colSubtext
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 100
 
-                            StyledText {
-                                id: distroText
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                color: Appearance.colors.colSubtext
-                                elide: Text.ElideRight
-                                Layout.maximumWidth: 100
-
-                                text: {
-                                    const d = Config.options.profile.descriptionText
-                                    if (d === "::uptime::") return Translation.tr("Up • %1").arg(DateTime.uptime)
-                                    return SystemInfo.distroName
+                                    text: {
+                                        const d = Config.options.profile.descriptionText
+                                        if (d === "::uptime::") return Translation.tr("Up • %1").arg(DateTime.uptime)
+                                        return SystemInfo.distroName
+                                    }
                                 }
                             }
                         }

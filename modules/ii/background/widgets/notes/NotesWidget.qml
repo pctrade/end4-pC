@@ -81,6 +81,17 @@ AbstractBackgroundWidget {
             color: Appearance.colors.colPrimaryContainer
             radius: Appearance.rounding?.verylarge ?? 30
 
+            FastBlurred {
+                anchors.fill: parent
+                blurSource: root.wallpaperItem
+                cardRadius: contentRect.radius
+                tint: Appearance.colors.colLayer1
+                tintOpacity: 0.55
+                trackX: root.x  
+                trackY: root.y
+                visible: Config.options.background.widgets.blurWidgets 
+            }
+
             // List
             ColumnLayout {
                 id: listPage

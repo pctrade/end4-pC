@@ -46,6 +46,27 @@ Item {
             onCheckedChanged: Config.options.background.widgetsLocked = checked
         }
 
+        ConfigSwitch {
+            Layout.fillWidth: true
+            buttonIcon: "blur_on"
+            text: Translation.tr("Blur widgets")
+            checked: Config.options.background.widgets.blurWidgets 
+            onCheckedChanged: Config.options.background.widgets.blurWidgets = checked
+        }
+
+        ConfigSlider {
+            Layout.fillWidth: true
+            showLabel: false
+            visible: Config.options.background.widgets.blurWidgets
+            value: Config.options.background.widgets.blurRadius ?? 32
+            usePercentTooltip: false
+            buttonIcon: "aspect_ratio"
+            from: 1
+            to: 64
+            stopIndicatorValues: [32]
+            onValueChanged: Config.options.background.widgets.blurRadius = value
+        }
+
         Rectangle {
             Layout.fillWidth: true
             Layout.topMargin: 4

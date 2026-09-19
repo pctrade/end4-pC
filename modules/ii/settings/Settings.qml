@@ -82,7 +82,7 @@ Scope {
             height: Math.min(parent.height - 80, 665 * sizeScale)
             color: Appearance.colors.colLayer0
             border.width: Config.options.settings.borderSize
-            border.color: Appearance.getColorFromName(Config.options.settings.borderColor)
+            border.color: CF.ColorUtils.transparentize(Appearance.getColorFromName(Config.options.settings.borderColor), 0.8)
             radius: !isMinimal ? Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5 : Appearance.rounding.screenRounding + 5
             z: 1
 

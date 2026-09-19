@@ -17,7 +17,7 @@ Singleton {
     property PwNode source: Pipewire.defaultAudioSource
     readonly property real hardMaxValue: 2.00 // People keep joking about setting volume to 5172% so...
     property string audioTheme: Config.options.sounds.theme
-    property real value: sink?.audio.volume ?? 0
+    property real value: sink?.audio?.volume ?? 0
     
     function friendlyDeviceName(node) {
         return (node.nickname || node.description || Translation.tr("Unknown"));
@@ -50,23 +50,27 @@ Singleton {
 
     // Controls
     function toggleMute() {
-        Audio.sink.audio.muted = !Audio.sink.audio.muted
+        if (!Audio.sink?.audio) return;
+        Audio.sink.audio.muted = !Audio.sink.audio.muted;
     }
 
     function toggleMicMute() {
-        Audio.source.audio.muted = !Audio.source.audio.muted
+        if (!Audio.source?.audio) return;
+        Audio.source.audio.muted = !Audio.source.audio.muted;
     }
 
     function incrementVolume() {
+        if (!Audio.sink?.audio) return;
         const currentVolume = Audio.value;
-        const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
-        Audio.sink.audio.volume = Math.min(1, Audio.sink.audio.volume + step);
+        const step = currentVolume < 0.1 ? 0.01 : 0.02;
+        Audio.sink.audio.volume = Math.min(1, Math.round((currentVolume + step) * 100) / 100);
     }
     
     function decrementVolume() {
+        if (!Audio.sink?.audio) return;
         const currentVolume = Audio.value;
-        const step = currentVolume < 0.1 ? 0.01 : 0.02 || 0.2;
-        Audio.sink.audio.volume -= step;
+        const step = currentVolume < 0.1 ? 0.01 : 0.02;
+        Audio.sink.audio.volume = Math.max(0, Math.round((currentVolume - step) * 100) / 100);
     }
 
     function setDefaultSink(node) {

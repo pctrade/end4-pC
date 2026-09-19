@@ -11,7 +11,7 @@ LazyLoader {
     property Item hoverTarget
     default property Item contentItem
     property real popupBackgroundMargin: 0
-    active: hoverTarget && hoverTarget.containsMouse
+    active: root.hoverTarget && root.hoverTarget.containsMouse && Config.options.bar.tooltips.enable
 
     readonly property bool barVertical: Config.options.bar.vertical
     readonly property string barEdge: {

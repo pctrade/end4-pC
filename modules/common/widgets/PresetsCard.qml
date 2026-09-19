@@ -3,9 +3,9 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import qs
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.common
 import qs.modules.common.functions
 
 Rectangle {
@@ -16,6 +16,8 @@ Rectangle {
     property string description: ""
     property var onApply: () => {}
     property var onRemove: () => {}
+    property var onOverwrite: () => {}
+    property var onExportZip: () => {}
 
     implicitWidth: 293 
     implicitHeight: contentColumn.implicitHeight + 14
@@ -72,11 +74,35 @@ Rectangle {
                     elide: Text.ElideRight
                 }
             }
-            MaterialSymbol {
-                Layout.alignment: Qt.AlignRight // im a placeholder someday I will do something =P
-                Layout.rightMargin: 12
-                font.pixelSize: Appearance.font.pixelSize.huge
-                text: "more_vert"
+            Item {
+                Layout.alignment: Qt.AlignRight
+                Layout.rightMargin: 8
+                implicitWidth: 32
+                implicitHeight: 32
+                RippleButton {
+                    id: menuBtn
+                    anchors.centerIn: parent
+                    implicitWidth: 32
+                    implicitHeight: 32
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: "transparent"
+                    colBackgroundHover: Appearance.colors.colLayer2Hover
+                    colRipple: Appearance.colors.colLayer2Active
+                    onClicked: menuPopup.visible = !menuPopup.visible
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "more_vert"
+                        iconSize: Appearance.font.pixelSize.large
+                        color: Appearance.colors.colOnLayer1
+                    }
+                }
+                PresetPopup {
+                    id: menuPopup
+                    y: menuBtn.height + 4
+                    x: menuBtn.width - width + 8
+                    onOverwrite: root.onOverwrite
+                    onExportZip: root.onExportZip
+                }
             }
         }
 

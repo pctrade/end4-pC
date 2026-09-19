@@ -22,7 +22,7 @@ Scope {
     function frameVisibleFor(side) {
         if (!Config.options.bar.showFrame) return false
         if (Config.options.bar.cornerStyle === 0 && side === root.barPosition) {
-            return root.centerOnly
+            return root.centerOnly || !Config.options.bar.showBackground
         }
         return true
     }

@@ -91,6 +91,7 @@ Item {
 
     StyledRectangularShadow {
         target: card
+        visible: root.hasTrack
     }
 
     Rectangle {

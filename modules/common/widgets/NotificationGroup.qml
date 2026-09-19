@@ -64,11 +64,10 @@ MouseArea { // Notification group area
             easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
         }
         onFinished: () => {
-            root.notifications.forEach((notif) => {
-                Qt.callLater(() => {
-                    Notifications.discardNotification(notif.notificationId);
-                });
-            });
+            // One call for the whole group, so the list is rewritten and the file
+            // saved once instead of once per notification.
+            const ids = root.notifications.map((notif) => notif.notificationId);
+            Qt.callLater(() => Notifications.discardNotifications(ids));
         }
     }
 

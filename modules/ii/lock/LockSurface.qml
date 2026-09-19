@@ -135,6 +135,36 @@ MouseArea {
         }
     }
 
+    // Clicking the centered wallpaper (a square around the screen center
+    // matching its locked size) plays the heartbeat thump on the background.
+    // Keeps the password field focused like any other lock-screen press.
+    MouseArea {
+        id: centeredWallpaperThumpArea
+        z: 1
+        width: Math.max(1, Config.options.background.centeredWallpaperSize)
+        height: width
+        anchors.centerIn: parent
+        visible: Config.options.background.centeredWallpaper
+        onClicked: {
+            root.forceFieldFocus()
+            GlobalStates.centeredWallpaperThumpRequested()
+        }
+        // Scroll cycles the centered wallpaper shape (up = next, down = previous),
+        // same cooldown as the desktop so fast scrolling can't skip shapes.
+        onWheel: (wheel) => {
+            if (!Config.options.background.centeredWallpaperShapeCycle) return
+            if (shapeCycleCooldown.running) return
+            root.forceFieldFocus()
+            GlobalStates.cycleCenteredWallpaperShape(wheel.angleDelta.y > 0 ? 1 : -1)
+            shapeCycleCooldown.restart()
+            wheel.accepted = true
+        }
+        Timer {
+            id: shapeCycleCooldown
+            interval: 400
+        }
+    }
+
     // Main toolbar: password box
     Toolbar {
         id: mainIsland

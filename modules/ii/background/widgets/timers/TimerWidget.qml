@@ -45,6 +45,17 @@ AbstractBackgroundWidget {
             z: -2
         }
 
+        FastBlurred {
+            anchors.fill: parent
+            blurSource: root.wallpaperItem
+            cardRadius: timerCard.radius
+            tint: Appearance.colors.colLayer1
+            tintOpacity: 0.55
+            trackX: timerCard.x + root.x
+            trackY: timerCard.y + root.y
+            visible: Config.options.background.widgets.blurWidgets 
+        }
+
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.RightButton

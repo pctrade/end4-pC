@@ -5,7 +5,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TRANSLATIONS_DIR="$(dirname "$SCRIPT_DIR")"
-SOURCE_DIR="$(dirname "$(dirname "$TRANSLATIONS_DIR")")"
+SOURCE_DIR="$(dirname "$TRANSLATIONS_DIR")"
 
 show_help() {
     echo "Translation Management Tool - Convenient Wrapper"
@@ -14,6 +14,7 @@ show_help() {
     echo ""
     echo "Commands:"
     echo "  extract      Extract translatable texts to temporary file"
+    echo "  check        Check for missing or stale keys without changing files"
     echo "  update       Update translation files (add missing/remove extra keys)"
     echo "  clean        Clean unused translation keys"
     echo "  sync         Sync keys across all language files"
@@ -28,6 +29,8 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  $0 extract                    # Extract translatable texts"
+    echo "  $0 check                      # Check all languages for translation drift"
+    echo "  $0 check -l zh_CN             # Check one language for translation drift"
     echo "  $0 update -l zh_CN           # Update Chinese translations"
     echo "  $0 update                    # Update all translations"
     echo "  $0 clean                     # Clean unused keys"
@@ -88,7 +91,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        extract|update|clean|sync|status)
+        extract|check|update|clean|sync|status)
             if [ -n "$COMMAND" ]; then
                 echo "Error: Only one command can be specified"
                 exit 1
@@ -127,6 +130,14 @@ case $COMMAND in
     extract)
         echo "Extracting translatable texts..."
         python3 "$SCRIPT_DIR/translation-manager.py" $BASE_ARGS $YES_FLAG --extract-only --show-temp
+        ;;
+    check)
+        echo "Checking translation drift..."
+        if [ -n "$LANG_CODE" ]; then
+            python3 "$SCRIPT_DIR/translation-manager.py" $BASE_ARGS --language "$LANG_CODE" --check
+        else
+            python3 "$SCRIPT_DIR/translation-manager.py" $BASE_ARGS --check
+        fi
         ;;
     update)
         echo "Updating translation files..."
