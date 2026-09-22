@@ -1343,6 +1343,12 @@ ContentPage {
                     checked: Config.options.appearance.wallpaperTheming.enableTerminal
                     onCheckedChanged: { Config.options.appearance.wallpaperTheming.enableTerminal = checked }
                 }
+                ConfigSwitch {
+                    buttonIcon: "lock"
+                    text: Translation.tr("Keep Konsole color scheme")
+                    checked: Config.options.appearance.wallpaperTheming.lockKonsoleColors
+                    onCheckedChanged: { Config.options.appearance.wallpaperTheming.lockKonsoleColors = checked }
+                }
                 ConfigRow {
                     uniform: true
                     ConfigSwitch {
