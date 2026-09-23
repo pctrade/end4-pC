@@ -73,6 +73,12 @@ Scope {
                 property var thisMonitorData: HyprlandData.monitors.find(m => m.name === barRoot.screen?.name)
                 property bool monitorHasFullscreen: HyprlandData.workspaceById[thisMonitorData?.activeWorkspace?.id]?.hasfullscreen ?? false
                 property bool monitorHasSpecialOpen: (thisMonitorData?.specialWorkspace?.name ?? "") !== ""
+                // CRITICAL still has to work in fullscreen (game/video): hibernating imminently, or the
+                // battery truly critical, is not something to leave behind a barely-visible hairline
+                // (DiFullscreenPeek.qml) for. Everything else non-essential stays buried, as normal.
+                property bool monitorHasCritical: (Battery.hibernateCountdown ?? -1) >= 0
+                    || Battery.isCriticalAndNotCharging
+                    || (IslandHardware.active && IslandHardware.payload.kind === "thermal")
                 exclusionMode: ExclusionMode.Ignore
                 property int normalExclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
                     ? 0
@@ -84,9 +90,11 @@ Scope {
                     ? Config.options.bar.frameThickness
                     : Config.options.bar.cornerStyle === 4 ? normalExclusiveZone + 4 : normalExclusiveZone
                 WlrLayershell.namespace: "quickshell:bar"
-                // Overlay layer only while special workspace sits on top of a fullscreen window on this monitor,
-                // else Top layer so fullscreen apps cover the bar as normal (Hyprland buries Top layer under fullscreen+special).
-                WlrLayershell.layer: (monitorHasFullscreen && monitorHasSpecialOpen) ? WlrLayer.Overlay : WlrLayer.Top
+                // Overlay layer while a special workspace sits on top of a fullscreen window, or while
+                // something CRITICAL is happening — else Top layer so fullscreen apps cover the bar as normal
+                // (Hyprland buries Top layer under fullscreen+special). Quiet Mode (seção 29): everything
+                // non-critical stays buried behind the fullscreen window, same as always.
+                WlrLayershell.layer: (monitorHasFullscreen && (monitorHasSpecialOpen || monitorHasCritical)) ? WlrLayer.Overlay : WlrLayer.Top
                 implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                 // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
