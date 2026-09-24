@@ -583,25 +583,47 @@ Item {
         target: DropShelf
         function onItemsAdded(paths) {
             if (!root.visible) return
+            root.dropFeedback = null
             root.lastShelfAdded = paths
             root.shelfAddedFlash = true
             shelfAddedTimer.restart()
         }
     }
 
+    // Smart Drop (seção 21): while something is dragged over the island, the pill splits into one zone per
+    // action that makes sense for it (services/SmartDrop.qml); where you let go picks the action.
+    property var dropActions: []
+    property int dropZone: 0
+    property var dropFeedback: null
+
     DropArea {
         anchors.fill: parent
         enabled: !root.vertical
         onEntered: drag => {
             drag.accept(Qt.CopyAction)
+            root.dropActions = SmartDrop.actionsFor(drag.hasUrls ? drag.urls : [], drag.hasText ? drag.text : "")
+            root.dropZone = 0
             root.dropHovering = true
+        }
+        onPositionChanged: drag => {
+            const count = Math.max(1, root.dropActions.length)
+            root.dropZone = Math.max(0, Math.min(count - 1, Math.floor(drag.x / Math.max(1, pill.width / count))))
         }
         onExited: root.dropHovering = false
         onDropped: drop => {
             root.dropHovering = false
-            if (drop.hasUrls && drop.urls.length > 0) DropShelf.addItems(drop.urls)
-            else if (drop.hasText) DropShelf.addText(drop.text)
+            const action = root.dropActions[root.dropZone] ?? "shelf"
+            const urls = drop.hasUrls ? drop.urls : []
+            const text = drop.hasText ? drop.text : ""
             drop.accept(Qt.CopyAction)
+            if (action === "shelf") {
+                if (urls.length > 0) DropShelf.addItems(urls)
+                else if (text !== "") DropShelf.addText(text)
+                return
+            }
+            root.dropFeedback = SmartDrop.run(action, urls, text)
+            root.shelfAddedFlash = true
+            shelfAddedTimer.restart()
         }
     }
 
@@ -965,7 +987,7 @@ Item {
             case "system":        return 214
             case "songRec":       return 150
             case "shelf":         return 132
-            case "shelfDrop":     return 236
+            case "shelfDrop":     return root.dropHovering ? Math.max(236, root.dropActions.length * 82 + 10) : 236
             case "f1Event":       return 262
             case "hibernate":     return 280
             case "networkAlert":  return 300

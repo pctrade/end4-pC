@@ -1182,5 +1182,14 @@
   "Split with…": "Dividir com…",
   "Install scripts/island/watch-rating.user.js in Tampermonkey to see each episode's rating": "Instale scripts/island/watch-rating.user.js no Tampermonkey para ver a nota de cada episódio",
   "Best of the season": "Melhor da temporada",
-  "#%1 of %2 this season": "#%1 de %2 na temporada"
+  "#%1 of %2 this season": "#%1 de %2 na temporada",
+  "Path": "Caminho",
+  "Editor": "Editor",
+  "Extract": "Extrair",
+  "Opened": "Aberto",
+  "Opening the editor": "Abrindo o editor",
+  "Opening in the editor": "Abrindo no editor",
+  "Extracting…": "Extraindo…",
+  "Saved as PNG": "Salvo como PNG",
+  "QR code ready": "QR code pronto"
 }
