@@ -1627,7 +1627,11 @@ Item {
     readonly property int collapseDelay: 4000
     onExpandedChanged: {
         if (root.expanded && !root.cardHovered) collapseTimer.restart()
-        if (!root.expanded) collapseTimer.stop()
+        if (!root.expanded) {
+            collapseTimer.stop()
+            // Closed means closed: whatever asked for the keyboard gives it back
+            root.wantsKeyboard = false
+        }
     }
 
     Timer {

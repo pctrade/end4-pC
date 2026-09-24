@@ -82,6 +82,21 @@ Item {
         contentHeight: content.naturalHeight
         boundsBehavior: Flickable.StopAtBounds
 
+        // A view taller than the overlay scrolls on its own and keeps every wheel event, even at the ends, so
+        // scrolling to the bottom doesn't carry on into the next view
+        MouseArea {
+            parent: flick
+            anchors.fill: parent
+            z: 10
+            enabled: content.scrollable
+            acceptedButtons: Qt.NoButton
+            onWheel: wheel => {
+                const step = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y : wheel.angleDelta.y / 120 * 48
+                flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, flick.contentY - step))
+                wheel.accepted = true
+            }
+        }
+
         Loader {
             id: loader
             x: content.padding

@@ -51,7 +51,9 @@ ColumnLayout {
     // typing) — otherwise brushing past the island while typing somewhere else would steal your keystrokes.
     readonly property bool autoFocusReply: xn.messaging && replyRow.visible
     function grabReply() {
-        if (!replyRow.visible) return
+        // This view is also created while the island is closed (the content behind the pill keeps up with each new
+        // notification): asking for the keyboard then would hand it to an invisible window
+        if (!replyRow.visible || !xn.di.expanded) return
         xn.di.wantsKeyboard = true
         Qt.callLater(() => replyField.forceActiveFocus())
     }
@@ -451,6 +453,20 @@ ColumnLayout {
                     policy: thread.interactive ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                     width: 4
                 }
+                // Every wheel event over the thread stays here — including a touchpad's momentum once it hits the
+                // end — instead of spilling over into the island's "next view" scrolling
+                MouseArea {
+                    parent: thread
+                    anchors.fill: parent
+                    z: 10
+                    acceptedButtons: Qt.NoButton
+                    onWheel: wheel => {
+                        const step = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y : wheel.angleDelta.y / 120 * 48
+                        thread.contentY = Math.max(0, Math.min(thread.contentHeight - thread.height, thread.contentY - step))
+                        wheel.accepted = true
+                    }
+                }
+
             }
 
         }
