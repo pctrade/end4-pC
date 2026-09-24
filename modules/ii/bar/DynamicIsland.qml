@@ -930,6 +930,23 @@ Item {
     function updateShownNotification() {
         const next = root.latestNotification
         if (next === root.shownNotification) return
+        const current = root.shownNotification
+        const currentParts = IslandEvents.notificationParts(current)
+        // A personal chat message holds its place for its whole display time against anything from elsewhere
+        // (a usage-limit notice, an app's popup); a newer message from the same conversation still takes over
+        // at once, and while you're reading it (hover / open) it doesn't move at all
+        const personal = current && IslandEvents.isMessagingApp(currentParts.app) && currentParts.author === ""
+        const sameConversation = next && current && IslandEvents.conversationKey(next) === IslandEvents.conversationKey(current)
+        if (current && next && !sameConversation && Notifications.popupList.includes(current)
+                && (root.heldId === "notification" || personal)) {
+            const hold = root.heldId === "notification" ? 1500
+                : IslandEvents.displayTime(current) - (Date.now() - root.notificationSince)
+            if (hold > 0) {
+                notificationDwell.interval = Math.max(500, hold)
+                notificationDwell.restart()
+                return
+            }
+        }
         const wait = IslandEvents.readingTime(root.shownNotification) * 0.6 - (Date.now() - root.notificationSince)
         if (root.shownNotification && next && wait > 0 && Notifications.popupList.includes(root.shownNotification)) {
             notificationDwell.interval = wait
@@ -1096,8 +1113,11 @@ Item {
             // Release has to restart the timer of the notification that was held, not of whatever is newest by then:
             // otherwise a notification arriving mid-hover leaves the old one frozen on the island forever.
             if (value) {
-                if (!root.latestNotification) return
-                root.heldNotificationId = root.latestNotification.notificationId
+                // The one on screen, not merely the newest: a notice arriving meanwhile must not let the message
+                // you're reading run out
+                const held = root.shownNotification ?? root.latestNotification
+                if (!held) return
+                root.heldNotificationId = held.notificationId
                 Notifications.cancelTimeout(root.heldNotificationId)
             } else {
                 const held = Notifications.list.find(n => n.notificationId === root.heldNotificationId)

@@ -50,14 +50,27 @@ ColumnLayout {
     // DynamicIsland.toggleExpanded → requestReply), so the window never switches keyboard mode while open —
     // switching it mid-way breaks the focus grab and the overlay closes itself. Opened by hovering, it leaves the
     // keyboard alone; one click in the field and you're typing.
-    Component.onCompleted: xn.focusReplyIfRequested()
     Connections {
         target: xn.di
         function onReplyRequestedChanged() { xn.focusReplyIfRequested() }
     }
-    property int back: 0
-    readonly property int index: Math.max(0, xn.popups.length - 1 - Math.min(xn.back, xn.popups.length - 1))
-    readonly property var notif: xn.popups[xn.index] ?? xn.di.latestNotification
+    // Locked on the notification you opened: one arriving meanwhile (another app, a usage-limit notice) waits in
+    // the pager instead of swapping out the conversation you're reading or answering. The arrows move the lock.
+    property int lockedId: -1
+    readonly property int lockedIndex: xn.popups.findIndex(n => n.notificationId === xn.lockedId)
+    readonly property int index: xn.lockedIndex >= 0 ? xn.lockedIndex : Math.max(0, xn.popups.length - 1)
+    readonly property var notif: xn.popups[xn.index]
+        ?? Notifications.list.find(n => n.notificationId === xn.lockedId)
+        ?? xn.di.shownNotification ?? xn.di.latestNotification
+    function lockOn(index) {
+        const target = xn.popups[Math.max(0, Math.min(xn.popups.length - 1, index))]
+        if (target) xn.lockedId = target.notificationId
+    }
+    Component.onCompleted: {
+        const opened = xn.di.shownNotification ?? xn.di.latestNotification
+        xn.lockedId = opened?.notificationId ?? -1
+        xn.focusReplyIfRequested()
+    }
     readonly property var parts: IslandEvents.notificationParts(xn.notif)
     readonly property bool critical: (xn.notif?.urgency ?? "").toLowerCase() === "critical"
     readonly property color accent: xn.critical ? Appearance.colors.colError : IslandEvents.appColor(xn.parts.app, Appearance.colors.colPrimary)
@@ -168,11 +181,11 @@ ColumnLayout {
                 text: "chevron_left"
                 iconSize: 18
                 color: Appearance.colors.colOnLayer0
-                opacity: xn.back < xn.popups.length - 1 ? 0.9 : 0.3
+                opacity: xn.index > 0 ? 0.9 : 0.3
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: xn.back = Math.min(xn.back + 1, xn.popups.length - 1)
+                    onClicked: xn.lockOn(xn.index - 1)
                 }
             }
             StyledText {
@@ -186,11 +199,11 @@ ColumnLayout {
                 text: "chevron_right"
                 iconSize: 18
                 color: Appearance.colors.colOnLayer0
-                opacity: xn.back > 0 ? 0.9 : 0.3
+                opacity: xn.index < xn.popups.length - 1 ? 0.9 : 0.3
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: xn.back = Math.max(xn.back - 1, 0)
+                    onClicked: xn.lockOn(xn.index + 1)
                 }
             }
         }
