@@ -109,7 +109,8 @@ Item {
                 color: "#F5C518"
             }
             StyledText {
-                text: watch.shown.toFixed(1)
+                // An episode IMDb hasn't rated yet says so, instead of passing the series' rating off as its own
+                text: watch.hasEpisode && WatchRating.episodeRating < 0 ? "–" : watch.shown.toFixed(1)
                 font.pixelSize: Appearance.font.pixelSize.normal
                 font.weight: Font.Bold
                 font.features: { "tnum": 1 }
