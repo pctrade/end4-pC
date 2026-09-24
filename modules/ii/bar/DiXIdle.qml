@@ -20,6 +20,17 @@ ColumnLayout {
 
     property bool moreOpen: false
 
+    // "2d 4h", "13h 52min", "38min" — a countdown you read at a glance, not raw minutes
+    function humanCountdown(seconds) {
+        if (seconds <= 0) return ""
+        const d = Math.floor(seconds / 86400)
+        const h = Math.floor(seconds % 86400 / 3600)
+        const m = Math.floor(seconds % 3600 / 60)
+        if (d > 0) return `${d}d ${h}h`
+        if (h > 0) return `${h}h ${String(m).padStart(2, "0")}min`
+        return `${m}min`
+    }
+
     readonly property var pinLabels: ({
         weather: [Translation.tr("Weather"), "partly_cloudy_day"],
         shelf: [Translation.tr("Drawer"), "inventory_2"],
@@ -96,6 +107,10 @@ ColumnLayout {
         property string label
         property var onTap: null
         Layout.fillWidth: true
+        Layout.preferredWidth: 1
+        Layout.minimumWidth: 0
+        // A ColumnLayout inherits its max width from its children (the 44px button), so it would never grow
+        Layout.maximumWidth: 10000
         spacing: 4
 
         Rectangle {
@@ -132,6 +147,8 @@ ColumnLayout {
 
         StyledText {
             Layout.alignment: Qt.AlignHCenter
+            Layout.maximumWidth: 72
+            elide: Text.ElideRight
             text: dock.label
             font.pixelSize: Appearance.font.pixelSize.smallest
             color: Appearance.colors.colOnLayer1
@@ -143,18 +160,18 @@ ColumnLayout {
     // before you have asked for anything.
     ColumnLayout {
         Layout.fillWidth: true
+        // A ColumnLayout computes its own implicitWidth from its children, so the width lives here
+        Layout.preferredWidth: 340
         Layout.topMargin: 4
         spacing: 0
 
         StyledText {
-            Layout.alignment: Qt.AlignHCenter
             text: `${Qt.locale().toString(new Date(), "dddd")}, ${DateTime.time}`
             font.family: xi.displayFont
             font.pixelSize: 22
             font.weight: Font.Medium
             font.features: { "tnum": 1 }
             color: Appearance.colors.colOnLayer0
-            horizontalAlignment: Text.AlignHCenter
 
             MouseArea {
                 anchors.fill: parent
@@ -165,7 +182,6 @@ ColumnLayout {
         }
 
         RowLayout {
-            Layout.alignment: Qt.AlignHCenter
             Layout.topMargin: 2
             spacing: 5
 
@@ -206,6 +222,143 @@ ColumnLayout {
                     anchors.margins: -4
                     cursorShape: Qt.PointingHandCursor
                     onClicked: xi.di.expand("weather")
+                }
+            }
+        }
+    }
+
+    // Agora: one tappable row per thing that's actually happening (plus the next F1 session when it's close),
+    // each opening its own view. Before this the expanded Home had no road back to the live islands at all.
+    readonly property var nowIds: {
+        const ids = xi.di.persistentIds.filter(id => !["idle", "media"].includes(id))
+        if (F1.enabled && !ids.includes("f1") && F1.nextSession !== null && F1.secondsToNext > 0 && F1.secondsToNext < 3 * 86400)
+            ids.push("f1")
+        return ids
+    }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        visible: xi.nowIds.length > 0
+        spacing: 4
+
+        StyledText {
+            Layout.leftMargin: 2
+            text: Translation.tr("Now").toUpperCase()
+            font.pixelSize: Appearance.font.pixelSize.smallest
+            font.weight: Font.DemiBold
+            font.letterSpacing: 1.2
+            color: Appearance.colors.colOnLayer0
+            opacity: 0.45
+        }
+
+        Repeater {
+            model: xi.nowIds
+            delegate: Rectangle {
+                id: nowRow
+                required property string modelData
+                required property int index
+                readonly property bool agentMark: ["claude", "codex", "gemini"].includes(xi.di.iconForId(nowRow.modelData))
+                Layout.fillWidth: true
+                implicitHeight: 42
+                radius: 13
+                color: nowMouse.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
+                opacity: 0
+                transform: Translate { id: nowShift; x: -14 }
+
+                Behavior on color {
+                    ColorAnimation { duration: 140 }
+                }
+
+                // Dealt in one after another as the Home opens
+                SequentialAnimation {
+                    running: true
+                    PauseAnimation { duration: 60 + nowRow.index * 45 }
+                    ParallelAnimation {
+                        NumberAnimation { target: nowRow; property: "opacity"; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: nowShift; property: "x"; to: 0; duration: 380; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
+                    }
+                }
+
+                // Only for its value text (a lap, a percentage, a countdown): same wording as the side capsules
+                DiCapsule {
+                    id: nowValue
+                    visible: false
+                    di: xi.di
+                    providerId: nowRow.modelData
+                }
+
+                RowLayout {
+                    anchors {
+                        fill: parent
+                        leftMargin: 12
+                        rightMargin: 10
+                    }
+                    spacing: 10
+
+                    Item {
+                        implicitWidth: 20
+                        implicitHeight: 20
+
+                        DiClaudeIcon {
+                            anchors.centerIn: parent
+                            visible: nowRow.agentMark
+                            agent: xi.di.iconForId(nowRow.modelData)
+                            size: 16
+                        }
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            visible: !nowRow.agentMark
+                            text: xi.di.iconForId(nowRow.modelData)
+                            iconSize: 18
+                            fill: 1
+                            color: nowValue.accent
+                        }
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        text: xi.di.longNameForId(nowRow.modelData)
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        font.weight: Font.DemiBold
+                        color: Appearance.colors.colOnLayer1
+                        elide: Text.ElideRight
+                    }
+
+                    StyledText {
+                        Layout.maximumWidth: 130
+                        visible: text !== "" && text !== xi.di.longNameForId(nowRow.modelData)
+                        text: nowRow.modelData === "f1" && !F1.sessionLive
+                            ? xi.humanCountdown(F1.secondsToNext) : nowValue.label
+                        font.pixelSize: Appearance.font.pixelSize.smallest
+                        font.features: { "tnum": 1 }
+                        color: Appearance.colors.colOnLayer1
+                        opacity: 0.65
+                        elide: Text.ElideRight
+                    }
+
+                    MaterialSymbol {
+                        text: "chevron_right"
+                        iconSize: 16
+                        color: Appearance.colors.colOnLayer1
+                        opacity: nowMouse.containsMouse ? 0.8 : 0.35
+                        Behavior on opacity { NumberAnimation { duration: 140 } }
+                    }
+                }
+
+                MouseArea {
+                    id: nowMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (xi.di.hasDetails(nowRow.modelData)) {
+                            xi.di.expand(nowRow.modelData)
+                            return
+                        }
+                        xi.di.focusIsland(nowRow.modelData)
+                        xi.di.collapse()
+                    }
                 }
             }
         }
@@ -327,7 +480,7 @@ ColumnLayout {
         }
         DockButton {
             icon: "content_paste"
-            label: Translation.tr("Clipboard")
+            label: Translation.tr("Clips")
             onTap: () => xi.di.expand("clipboard")
         }
         DockButton {
