@@ -1790,11 +1790,48 @@ Item {
         + (homeTab.visible ? homeTab.width + 8 : 0) + (f1Chip.visible ? f1Chip.width + 8 : 0) + (deck.visible ? deck.width + 8 : 0)
         + (root.splitShown ? Math.max(0, splitPill.x + splitPill.width - pill.width) : 0)
 
+    // Grows away from the pointer. The bar centres the island, so hovering used to widen it on both sides and
+    // whatever sat at the edge (skip-track, the clock, a capsule) slid out from under the cursor mid-click.
+    // Now the side the pointer came in on stays put and all the growth goes the other way: the island is
+    // shifted by half of whatever it grew, and eased back in step with the width when the pointer leaves.
+    property real growRestWidth: 0
+    property int growSide: 1
+    readonly property real growExtra: pillHover.hovered ? root.implicitWidth - root.growRestWidth : 0
+    property real growShift: pillHover.hovered && !root.vertical ? -root.growSide * root.growExtra / 2 : 0
+
+    Behavior on growShift {
+        enabled: !pillHover.hovered
+        NumberAnimation {
+            duration: 440
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
+        }
+    }
+
+    transform: Translate { x: root.growShift }
+
+    Binding {
+        target: GlobalStates
+        property: "islandGrowShift"
+        value: root.growShift
+        when: root.visible && root.isMaterial && root.onFocusedScreen
+        restoreMode: Binding.RestoreNone
+    }
+    Binding {
+        target: GlobalStates
+        property: "islandGrowScreen"
+        value: root.QsWindow.window?.screen?.name ?? ""
+        when: root.visible && root.isMaterial && root.onFocusedScreen
+        restoreMode: Binding.RestoreNone
+    }
+
     // Covers the pill and its bubbles, so hovering a bubble keeps the island revealed
     HoverHandler {
         id: pillHover
         onHoveredChanged: {
             if (pillHover.hovered) {
+                root.growRestWidth = root.implicitWidth
+                root.growSide = pillHover.point.position.x > root.implicitWidth / 2 ? 1 : -1
                 hoverRevealTimer.restart()
             } else {
                 hoverRevealTimer.stop()

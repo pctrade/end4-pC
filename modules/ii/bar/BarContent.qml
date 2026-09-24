@@ -183,13 +183,26 @@ Item {
         anchors.fill: barBackground
         anchors.margins: root.barPadding
 
+        // How much room the island is taking from each side right now. A long notification or a download used to
+        // slide under the widgets; instead the sides slip outwards and fade, and come back when it shrinks.
+        readonly property real sideRoom: Math.max(0, contentContainer.width / 2 - absoluteCenter.width / 2 - 14)
+        readonly property real leftPush: Math.max(0, leftSection.width - contentContainer.sideRoom)
+        readonly property real rightPush: Math.max(0, rightSection.width - contentContainer.sideRoom)
+
         // Left
         Item {
+            id: leftSection
             anchors.left: parent.left
             anchors.leftMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 4 ? 4 : 8
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.isMaterial ? leftMaterialPill.implicitWidth : leftRow.implicitWidth
+            opacity: contentContainer.leftPush > 0 ? Math.max(0.25, 1 - contentContainer.leftPush / 120) : 1
+            transform: Translate { x: -contentContainer.leftPush }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            }
 
             // Material pill wrapper
             Rectangle {
@@ -310,8 +323,13 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
+                objectName: "dynamicIslandSurface"
                 visible: root.isMaterial
                 anchors.centerIn: parent
+                // Follows the island when it grows away from the pointer (see DynamicIsland.growShift)
+                transform: Translate {
+                    x: GlobalStates.islandGrowScreen === (QsWindow.window?.screen?.name ?? "") ? GlobalStates.islandGrowShift : 0
+                }
                 implicitWidth: centerMaterialRow.implicitWidth + 10
                 implicitHeight: centerMaterialRow.implicitHeight 
                 radius: Appearance.rounding.full
@@ -399,11 +417,18 @@ Item {
 
         // Right
         Item {
+            id: rightSection
             anchors.right: parent.right
             anchors.rightMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 4 ? 4 : 8
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.isMaterial ? rightMaterialPill.implicitWidth : rightRow.implicitWidth
+            opacity: contentContainer.rightPush > 0 ? Math.max(0.25, 1 - contentContainer.rightPush / 120) : 1
+            transform: Translate { x: contentContainer.rightPush }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            }
 
             // Material pill wrapper
             Rectangle {

@@ -43,6 +43,10 @@ Singleton {
     property real desktopMenuY: 0
     property string wallpaperSelectorTarget: "wallpaper"
     property bool dropShelfOpen: false
+    // Dynamic island hover growth: how far (and on which screen) the island is shifted so it grows away from
+    // the pointer. The material bar surface behind the island reads it to move in step.
+    property real islandGrowShift: 0
+    property string islandGrowScreen: ""
     property real dropShelfX: 0
     property real dropShelfY: 0
     property string osdIndicatorType: "volume"
