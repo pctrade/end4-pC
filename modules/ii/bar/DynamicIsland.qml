@@ -1252,6 +1252,7 @@ Item {
             if (root.splitShownId === "" || root.splitProgress < 0.98) {
                 root.splitShownId = root.splitId
                 splitIn.restart()
+                gulpPulse.restart()
             } else if (root.splitShownId !== root.splitId) {
                 splitSwap.restart()
             }
@@ -1259,6 +1260,14 @@ Item {
             splitIn.stop()
             splitOut.restart()
         }
+    }
+
+    // The main pill squashes a touch when it pushes the second one out, and again when it swallows it back
+    property real gulp: 0
+    SequentialAnimation {
+        id: gulpPulse
+        NumberAnimation { target: root; property: "gulp"; to: 1; duration: 110; easing.type: Easing.OutQuad }
+        NumberAnimation { target: root; property: "gulp"; to: 0; duration: 420; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
     }
 
     // Mitosis: the second pill buds off the main one's right edge; the neck between them thins and lets go
@@ -1283,6 +1292,7 @@ Item {
         onFinished: {
             root.splitShownId = ""
             root.splitDragX = 0
+            gulpPulse.restart()
         }
     }
 
@@ -2333,9 +2343,9 @@ Item {
             Translate { x: root.shakeX },
             Scale {
                 origin.x: pill.width / 2
-                origin.y: 0
-                xScale: 1 + 0.04 * root.insist
-                yScale: 1 + 0.16 * root.insist
+                origin.y: pill.height / 2
+                xScale: 1 + 0.04 * root.insist + 0.03 * root.gulp
+                yScale: 1 + 0.16 * root.insist - 0.07 * root.gulp
             }
         ]
 
