@@ -615,6 +615,8 @@ Item {
     readonly property var criticalIds: ["hibernate", "session"]
     readonly property var liveIds: ["recording", "f1", "timer", "activity", "systemLoad", "download", "agents", "songRec", "media"]
     readonly property var toolIds: ["weather", "shelf", "clipboard", "system", "zerotier", "history"]
+    // Everything else in `interruptIds` that isn't dynamically critical (see `isCriticalNow`) is a Peek.
+    readonly property var peekIds: root.interruptIds.filter(id => !root.criticalIds.includes(id))
 
     function isCriticalNow(id) {
         if (root.criticalIds.includes(id)) return true
@@ -649,7 +651,11 @@ Item {
         if (IslandEvents.activities.length > 0) ids.push("activity")
         if (IslandEvents.systemLoadActive) ids.push("systemLoad")
         if (IslandEvents.downloadActive || root.heldId === "download") ids.push("download")
-        if (ClaudeCode.openCount > 0 && (root.cfg.claudeCode ?? true)) ids.push("agents")
+        // One island per agent session, not two: while a specific task is already showing as an "activity"
+        // (richer: title, subtitle, progress), the general "agents" summary would just repeat the same
+        // agent's mark a second time — same fact, two Live ids competing for the pill/deck at once.
+        const agentActivityShown = IslandEvents.activities.some(a => ["claude", "codex", "gemini"].includes(a.icon))
+        if (ClaudeCode.openCount > 0 && (root.cfg.claudeCode ?? true) && !agentActivityShown) ids.push("agents")
         if (DropShelf.items.length > 0) ids.push("shelf")
         if (SongRec.running) ids.push("songRec")
         if (root.hasMedia) ids.push("media")
@@ -1118,6 +1124,8 @@ Item {
         if (root.expandedOverride !== "" && !root.switcherIds.includes(root.expandedOverride)
                 && !root.standaloneViews.includes(root.expandedOverride))
             root.expandedOverride = ""
+        if (root.splitId !== "" && !root.switcherIds.includes(root.splitId) && !root.standaloneViews.includes(root.splitId))
+            root.splitId = ""
     }
 
     function hasDetails(id) {
@@ -1157,6 +1165,8 @@ Item {
         root.wantsKeyboard = false
         root.replyRequested = false
         root.expandedOverride = ""
+        root.splitId = ""
+        root.splitArmed = false
     }
 
     function toggleExpanded() {
@@ -1166,6 +1176,28 @@ Item {
 
     function selectIsland(id) {
         root.expandedOverride = id === root.primaryId ? "" : id
+    }
+
+    // Split View (seção 13): two Tools/Activities side by side in the expanded surface. Never automatic —
+    // only ever entered by an explicit tap (arm, then pick the second one), never by the island itself.
+    property string splitId: ""
+    property bool splitArmed: false
+
+    function toggleSplitArm() {
+        if (root.splitId !== "") { root.splitId = ""; return }
+        root.splitArmed = !root.splitArmed
+    }
+
+    // What a pip tap does while armed: pick the split partner instead of replacing the main view
+    function selectForSplit(id) {
+        if (!root.splitArmed) { root.selectIsland(id); return }
+        root.splitArmed = false
+        if (id === root.expandedId) return
+        root.splitId = id
+    }
+
+    function exitSplit() {
+        root.splitId = ""
     }
 
     function focusIsland(id) {
