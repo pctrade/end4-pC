@@ -326,10 +326,6 @@ Item {
                 objectName: "dynamicIslandSurface"
                 visible: root.isMaterial
                 anchors.centerIn: parent
-                // Follows the island when it grows away from the pointer (see DynamicIsland.growShift)
-                transform: Translate {
-                    x: GlobalStates.islandGrowScreen === (QsWindow.window?.screen?.name ?? "") ? GlobalStates.islandGrowShift : 0
-                }
                 implicitWidth: centerMaterialRow.implicitWidth + 10
                 implicitHeight: centerMaterialRow.implicitHeight 
                 radius: Appearance.rounding.full

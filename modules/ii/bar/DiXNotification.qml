@@ -46,32 +46,14 @@ ColumnLayout {
         xn.di.wantsKeyboard = true
         Qt.callLater(() => replyField.forceActiveFocus())
     }
-    // Chats open ready to type. Opened with a click, the field takes the keyboard right away; opened by hovering,
-    // it waits until the pointer is actually inside the card (and gives the keyboard back if you leave without
-    // typing) — otherwise brushing past the island while typing somewhere else would steal your keystrokes.
-    readonly property bool autoFocusReply: xn.messaging && replyRow.visible
-    function grabReply() {
-        // This view is also created while the island is closed (the content behind the pill keeps up with each new
-        // notification): asking for the keyboard then would hand it to an invisible window
-        if (!replyRow.visible || !xn.di.expanded) return
-        xn.di.wantsKeyboard = true
-        Qt.callLater(() => replyField.forceActiveFocus())
-    }
-    Component.onCompleted: {
-        xn.focusReplyIfRequested()
-        if (xn.autoFocusReply && !xn.di.openedByHover) xn.grabReply()
-    }
+    // Chats opened with a click arrive ready to type: the island asks for the keyboard *before* opening (see
+    // DynamicIsland.toggleExpanded → requestReply), so the window never switches keyboard mode while open —
+    // switching it mid-way breaks the focus grab and the overlay closes itself. Opened by hovering, it leaves the
+    // keyboard alone; one click in the field and you're typing.
+    Component.onCompleted: xn.focusReplyIfRequested()
     Connections {
         target: xn.di
         function onReplyRequestedChanged() { xn.focusReplyIfRequested() }
-        function onCardHoveredChanged() {
-            if (!xn.autoFocusReply || !xn.di.openedByHover) return
-            if (xn.di.cardHovered) xn.grabReply()
-            else if (replyField.text === "") {
-                xn.di.wantsKeyboard = false
-                replyField.focus = false
-            }
-        }
     }
     property int back: 0
     readonly property int index: Math.max(0, xn.popups.length - 1 - Math.min(xn.back, xn.popups.length - 1))

@@ -66,11 +66,11 @@ Scope {
             WlrLayershell.namespace: "quickshell:dynamicIsland"
             WlrLayershell.layer: WlrLayer.Overlay
             // Typing a reply grabs the keyboard right away; a visible reply field still accepts focus on click
-            // Never while closed, whoever asked: an exclusive grab on a hidden overlay leaves the whole desktop
-            // without a keyboard
-            WlrLayershell.keyboardFocus: !scope.di.expanded ? WlrKeyboardFocus.None
-                : scope.di.wantsKeyboard ? WlrKeyboardFocus.Exclusive
-                : (scope.di.replyReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
+            // The keyboard is asked for *before* the overlay opens (requestReply), never switched while it's open:
+            // changing mode mid-way breaks the focus grab and the overlay closes itself. A watchdog in
+            // DynamicIsland gives it back if it's ever left asked for while closed.
+            WlrLayershell.keyboardFocus: scope.di.wantsKeyboard ? WlrKeyboardFocus.Exclusive
+                : (scope.di.expanded && scope.di.replyReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
             anchors {
                 top: !win.bottomBar
