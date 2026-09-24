@@ -1199,6 +1199,16 @@ Singleton {
         return Math.max(3000, Math.min(8000, 1500 + length * 60))
     }
 
+    // How long a notification stays up. A personal chat message (one person, not a group) stays much longer:
+    // it's the kind you actually want to read, and it used to be gone before you'd finished it.
+    function displayTime(notif) {
+        const reading = root.readingTime(notif)
+        const parts = root.notificationParts(notif)
+        if (root.isMessagingApp(parts.app) && parts.author === "")
+            return Math.max(15000, Math.min(25000, reading * 2.5))
+        return reading
+    }
+
     // Brings up the app a notification came from: its default action, its desktop entry, or the web app's site
     function openNotificationSource(notif) {
         if (!notif) return
@@ -1217,6 +1227,35 @@ Singleton {
     // Chat apps running as web apps (WhatsApp in Chrome, for one) don't offer the inline reply the notification
     // protocol has, so there is nothing to send the text to. The next best thing: copy it, bring the chat to the
     // front and paste it there, leaving the Enter to you — never send something you haven't seen in the chat.
+    // WhatsApp Web: a real reply. The notification's own "default" action (what clicking it does) makes the web
+    // app open *that* conversation; reply-send.sh then waits for the focused window to really be WhatsApp,
+    // types the text without touching the clipboard and presses Enter. If the chat never comes up nothing is
+    // typed anywhere — the text is left on the clipboard and the island says so.
+    function replyToChat(notif, text) {
+        if (!notif || text.trim() === "") return false
+        const parts = root.notificationParts(notif)
+        const canOpen = (notif.actions ?? []).some(a => a.identifier === "default")
+        if (/whats/i.test(parts.app) && canOpen) {
+            replySendProc.contact = parts.title || parts.app
+            Notifications.attemptInvokeAction(notif.notificationId, "default")
+            replySendProc.command = ["bash", Quickshell.shellPath("scripts/island/reply-send.sh"), text, "WhatsApp"]
+            replySendProc.running = true
+            return true
+        }
+        return root.pasteReplyInto(notif, text)
+    }
+
+    Process {
+        id: replySendProc
+        property string contact: ""
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0)
+                root.upsertActivity("reply", Translation.tr("Reply sent"), replySendProc.contact, "send", 1, "done")
+            else
+                root.upsertActivity("reply", Translation.tr("Couldn't find the chat"), Translation.tr("The reply is on the clipboard"), "content_paste", -1, "error")
+        }
+    }
+
     function pasteReplyInto(notif, text) {
         if (text.trim() === "") return false
         const app = `${notif?.notification?.desktopEntry ?? ""} ${notif?.appName ?? ""}`.trim()

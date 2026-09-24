@@ -976,7 +976,7 @@ Item {
         switch (id) {
             case "media":         return root.mediaWidth
             case "osd":           return 196
-            case "notification":  return Math.max(200, Math.min(340, root.notifContentWidth))
+            case "notification":  return Math.max(200, Math.min(380, root.notifContentWidth))
             case "battery":       return 236
             case "bluetooth":     return IslandEvents.bluetooth.payload?.phase === "lowBattery" ? 270 : 240
             case "audioOutput":   return 216
@@ -2982,7 +2982,17 @@ Item {
         id: splitTabGrace
         interval: 800
     }
-    onHoverArmedChanged: if (!root.hoverArmed) splitTabGrace.restart()
+    onHoverArmedChanged: {
+        if (!root.hoverArmed) {
+            splitTabGrace.restart()
+            return
+        }
+        // A chat message isn't worth a half-step: under the pointer it opens straight into the full view,
+        // with the whole message and the reply field
+        if (root.primaryId === "notification" && (root.cfg.hoverExpandsMessages ?? true)
+                && IslandEvents.isMessagingApp(IslandEvents.notificationParts(root.latestNotification).app))
+            root.expandTo(2)
+    }
 
     Rectangle {
         id: splitTab
