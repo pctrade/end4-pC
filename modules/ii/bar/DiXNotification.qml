@@ -46,10 +46,30 @@ ColumnLayout {
         xn.di.wantsKeyboard = true
         Qt.callLater(() => replyField.forceActiveFocus())
     }
-    Component.onCompleted: xn.focusReplyIfRequested()
+    // Chats open ready to type. Opened with a click, the field takes the keyboard right away; opened by hovering,
+    // it waits until the pointer is actually inside the card (and gives the keyboard back if you leave without
+    // typing) — otherwise brushing past the island while typing somewhere else would steal your keystrokes.
+    readonly property bool autoFocusReply: xn.messaging && replyRow.visible
+    function grabReply() {
+        if (!replyRow.visible) return
+        xn.di.wantsKeyboard = true
+        Qt.callLater(() => replyField.forceActiveFocus())
+    }
+    Component.onCompleted: {
+        xn.focusReplyIfRequested()
+        if (xn.autoFocusReply && !xn.di.openedByHover) xn.grabReply()
+    }
     Connections {
         target: xn.di
         function onReplyRequestedChanged() { xn.focusReplyIfRequested() }
+        function onCardHoveredChanged() {
+            if (!xn.autoFocusReply || !xn.di.openedByHover) return
+            if (xn.di.cardHovered) xn.grabReply()
+            else if (replyField.text === "") {
+                xn.di.wantsKeyboard = false
+                replyField.focus = false
+            }
+        }
     }
     property int back: 0
     readonly property int index: Math.max(0, xn.popups.length - 1 - Math.min(xn.back, xn.popups.length - 1))
@@ -71,11 +91,17 @@ ColumnLayout {
     readonly property bool messaging: /whats|zap|telegram|discord|vesktop|signal|slack|teams|instagram|messenger/i.test(xn.parts.app)
     property string replyHint: ""
 
-    // Earlier messages from the same conversation, oldest first, for context (at most two)
+    // The rest of the conversation — every message from the same person in the last hour, oldest first — so the
+    // thread can be scrolled back instead of showing only the newest one
     readonly property var earlier: {
         if (!xn.notif || !xn.messaging) return []
         const key = IslandEvents.conversationKey(xn.notif)
-        return xn.popups.slice(0, xn.index).filter(n => IslandEvents.conversationKey(n) === key).slice(-2)
+        const since = (xn.notif.time ?? Date.now()) - 60 * 60000
+        return Notifications.list
+            .filter(n => n.notificationId !== xn.notif.notificationId && IslandEvents.conversationKey(n) === key
+                && (n.time ?? 0) >= since && (n.time ?? 0) <= (xn.notif.time ?? Date.now()))
+            .sort((a, b) => (a.time ?? 0) - (b.time ?? 0))
+            .slice(-30)
     }
 
     function escaped(text) {
@@ -296,110 +322,137 @@ ColumnLayout {
                 opacity: xn.rise(0)
             }
 
-            // Earlier in the same conversation: smaller, quieter bubbles
-            Repeater {
-                model: xn.earlier
-                delegate: Rectangle {
-                    id: earlierBubble
-                    required property var modelData
-                    required property int index
-                    readonly property var p: IslandEvents.notificationParts(earlierBubble.modelData)
-                    Layout.maximumWidth: parent.width
-                    Layout.preferredWidth: earlierText.implicitWidth + 22
-                    implicitHeight: earlierText.implicitHeight + 12
-                    radius: 12
-                    topLeftRadius: 4
-                    color: Appearance.colors.colLayer1
-                    opacity: 0.75 * xn.rise(earlierBubble.index + 1)
-                    transform: Translate { y: (1 - xn.rise(earlierBubble.index + 1)) * 10 }
-
-                    StyledText {
-                        id: earlierText
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            verticalCenter: parent.verticalCenter
-                            leftMargin: 11
-                            rightMargin: 11
-                        }
-                        text: earlierBubble.p.body || (earlierBubble.p.media?.label ?? "")
-                        font.pixelSize: Appearance.font.pixelSize.smaller
-                        color: Appearance.colors.colOnLayer1
-                        wrapMode: Text.Wrap
-                        maximumLineCount: 2
-                        elide: Text.ElideRight
-                    }
-                }
-            }
-
-            // The message itself, in a bubble with its time tucked into the corner
-            Rectangle {
-                id: bubble
-                visible: xn.parts.body !== "" || xn.parts.media !== null
+            // The thread: scrolls back through the conversation, opens at the newest message
+            Flickable {
+                id: thread
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
-                implicitHeight: bubbleColumn.implicitHeight + 18
-                radius: 16
-                topLeftRadius: 5
-                color: ColorUtils.mix(Appearance.colors.colLayer2, xn.accent, 0.9)
-                border.width: 1
-                border.color: ColorUtils.transparentize(xn.accent, 0.8)
-                readonly property real r: xn.rise(xn.earlier.length + 1)
-                opacity: bubble.r
-                transform: Translate { y: (1 - bubble.r) * 12 }
+                Layout.preferredHeight: Math.min(threadColumn.implicitHeight, 250)
+                contentWidth: width
+                contentHeight: threadColumn.implicitHeight
+                clip: true
+                interactive: contentHeight > height
+                boundsBehavior: Flickable.StopAtBounds
+                onContentHeightChanged: thread.contentY = Math.max(0, thread.contentHeight - thread.height)
+                onHeightChanged: thread.contentY = Math.max(0, thread.contentHeight - thread.height)
 
                 ColumnLayout {
-                    id: bubbleColumn
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: parent.top
-                        margins: 9
-                        leftMargin: 12
-                        rightMargin: 12
-                    }
-                    spacing: 2
+                    id: threadColumn
+                    width: thread.width
+                    spacing: 5
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
+                    // Earlier in the same conversation: smaller, quieter bubbles
+                    Repeater {
+                        model: xn.earlier
+                        delegate: Rectangle {
+                            id: earlierBubble
+                            required property var modelData
+                            required property int index
+                            readonly property var p: IslandEvents.notificationParts(earlierBubble.modelData)
+                            Layout.maximumWidth: thread.width
+                            Layout.preferredWidth: earlierText.implicitWidth + 22
+                            implicitHeight: earlierText.implicitHeight + 12
+                            radius: 12
+                            topLeftRadius: 4
+                            color: Appearance.colors.colLayer1
+                            opacity: 0.75 * xn.rise(Math.min(3, xn.earlier.length - earlierBubble.index))
+                            transform: Translate { y: (1 - xn.rise(Math.min(3, xn.earlier.length - earlierBubble.index))) * 10 }
 
-                        MaterialSymbol {
-                            Layout.alignment: Qt.AlignTop
-                            visible: xn.parts.media !== null
-                            text: xn.parts.media?.icon ?? ""
-                            iconSize: 17
-                            fill: 1
-                            color: xn.accent
-                        }
-                        StyledText {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            text: {
-                                const body = xn.parts.body || (xn.parts.media?.label ?? "")
-                                return xn.parts.author !== ""
-                                    ? `<b><font color="${xn.accent}">${xn.escaped(xn.parts.author)}</font></b><br>${xn.escaped(body)}`
-                                    : xn.escaped(body)
+                            StyledText {
+                                id: earlierText
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    verticalCenter: parent.verticalCenter
+                                    leftMargin: 11
+                                    rightMargin: 11
+                                }
+                                text: earlierBubble.p.body || (earlierBubble.p.media?.label ?? "")
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: Appearance.colors.colOnLayer1
+                                wrapMode: Text.Wrap
+                                maximumLineCount: 2
+                                elide: Text.ElideRight
                             }
-                            textFormat: Text.StyledText
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            color: Appearance.colors.colOnLayer0
-                            wrapMode: Text.Wrap
-                            maximumLineCount: 8
-                            elide: Text.ElideRight
-                            lineHeight: 1.1
                         }
                     }
-                    StyledText {
-                        Layout.alignment: Qt.AlignRight
-                        text: xn.notif ? Qt.formatTime(new Date(xn.notif.time), "hh:mm") : ""
-                        font.pixelSize: Appearance.font.pixelSize.smallest
-                        font.features: { "tnum": 1 }
-                        color: Appearance.colors.colOnLayer0
-                        opacity: 0.5
+
+                    // The message itself, in a bubble with its time tucked into the corner
+                    Rectangle {
+                        id: bubble
+                        visible: xn.parts.body !== "" || xn.parts.media !== null
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        implicitHeight: bubbleColumn.implicitHeight + 18
+                        radius: 16
+                        topLeftRadius: 5
+                        color: ColorUtils.mix(Appearance.colors.colLayer2, xn.accent, 0.9)
+                        border.width: 1
+                        border.color: ColorUtils.transparentize(xn.accent, 0.8)
+                        readonly property real r: xn.rise(Math.min(3, xn.earlier.length) + 1)
+                        opacity: bubble.r
+                        transform: Translate { y: (1 - bubble.r) * 12 }
+
+                        ColumnLayout {
+                            id: bubbleColumn
+                            anchors {
+                                left: parent.left
+                                right: parent.right
+                                top: parent.top
+                                margins: 9
+                                leftMargin: 12
+                                rightMargin: 12
+                            }
+                            spacing: 2
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
+
+                                MaterialSymbol {
+                                    Layout.alignment: Qt.AlignTop
+                                    visible: xn.parts.media !== null
+                                    text: xn.parts.media?.icon ?? ""
+                                    iconSize: 17
+                                    fill: 1
+                                    color: xn.accent
+                                }
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    Layout.preferredWidth: 1
+                                    text: {
+                                        const body = xn.parts.body || (xn.parts.media?.label ?? "")
+                                        return xn.parts.author !== ""
+                                            ? `<b><font color="${xn.accent}">${xn.escaped(xn.parts.author)}</font></b><br>${xn.escaped(body)}`
+                                            : xn.escaped(body)
+                                    }
+                                    textFormat: Text.StyledText
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    color: Appearance.colors.colOnLayer0
+                                    wrapMode: Text.Wrap
+                                    maximumLineCount: 8
+                                    elide: Text.ElideRight
+                                    lineHeight: 1.1
+                                }
+                            }
+                            StyledText {
+                                Layout.alignment: Qt.AlignRight
+                                text: xn.notif ? Qt.formatTime(new Date(xn.notif.time), "hh:mm") : ""
+                                font.pixelSize: Appearance.font.pixelSize.smallest
+                                font.features: { "tnum": 1 }
+                                color: Appearance.colors.colOnLayer0
+                                opacity: 0.5
+                            }
+                        }
                     }
                 }
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: thread.interactive ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                    width: 4
+                }
             }
+
         }
     }
 

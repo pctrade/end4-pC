@@ -1207,11 +1207,17 @@ Item {
         root.wantsKeyboard = false
         root.replyRequested = false
         root.expandedOverride = ""
+        root.openedByHover = false
         // splitId survives on purpose: it's what the compact pill shows beside the main one
         root.splitArmed = false
     }
 
+    // Opened by the pointer passing over it rather than by a click: the chat view then waits for the pointer to
+    // be inside before taking the keyboard
+    property bool openedByHover: false
+
     function toggleExpanded() {
+        root.openedByHover = false
         if (root.expanded) root.collapse()
         else root.expandTo(2)
     }
@@ -2990,8 +2996,10 @@ Item {
         // A chat message isn't worth a half-step: under the pointer it opens straight into the full view,
         // with the whole message and the reply field
         if (root.primaryId === "notification" && (root.cfg.hoverExpandsMessages ?? true)
-                && IslandEvents.isMessagingApp(IslandEvents.notificationParts(root.latestNotification).app))
+                && IslandEvents.isMessagingApp(IslandEvents.notificationParts(root.latestNotification).app)) {
+            root.openedByHover = true
             root.expandTo(2)
+        }
     }
 
     Rectangle {

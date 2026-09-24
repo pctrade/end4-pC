@@ -18,9 +18,14 @@ Item {
     readonly property var group: Notifications.popupGroupsByAppName[notifs.notif?.appName ?? ""]
     readonly property int stackCount: notifs.group?.notifications.length ?? 1
     // Messages from the same conversation collapse into one line with a count
+    // Messages from the same person in a row: counted from the history (last 15 min), not only from what's still
+    // on screen, so the number keeps climbing while they keep writing
     readonly property int conversationCount: {
         const key = IslandEvents.conversationKey(notifs.notif)
-        return notifs.di.visibleNotifications.filter(n => IslandEvents.conversationKey(n) === key).length
+        const since = Date.now() - 15 * 60000
+        const recent = Notifications.list.filter(n => (n.time ?? 0) >= since && IslandEvents.conversationKey(n) === key).length
+        const shown = notifs.di.visibleNotifications.filter(n => IslandEvents.conversationKey(n) === key).length
+        return Math.max(1, recent, shown)
     }
     readonly property bool hasImage: (notifs.notif?.image ?? "") !== ""
     // Shared with the full view: the contact picture travels into it
@@ -72,7 +77,7 @@ Item {
     readonly property real naturalWidth: notifs.messaging ? notifs.chatWidth : notifs.lineWidth
     readonly property real chatWidth: {
         const stack = Math.min(2, notifs.stackCount - 1)
-        const line1 = Math.min(300, titleMeasure.implicitWidth) + (notifs.conversationCount >= 2 ? countMeasure.implicitWidth + 8 : 0)
+        const line1 = Math.min(300, titleMeasure.implicitWidth)
         const line2 = Math.min(300, bodyMeasure.implicitWidth + (notifs.parts.author !== "" ? authorMeasure.implicitWidth + 4 : 0)
             + (notifs.parts.media !== null ? 19 : 0))
         return (notifs.di.isMaterial ? 3 : 5) + 30 + 10 + stack * 3 + Math.max(line1, line2) + 18
@@ -138,6 +143,46 @@ Item {
                 radius: 13
                 color: ColorUtils.transparentize(notifs.accent, 0.55 + index * 0.2)
             }
+        }
+
+        // Chats: how many messages in a row, on the photo; it bumps every time another one arrives
+        Rectangle {
+            id: countBadge
+            visible: notifs.messaging && notifs.conversationCount >= 2
+            z: 3
+            anchors {
+                right: avatarCircle.right
+                top: avatarCircle.top
+                rightMargin: -5
+                topMargin: -4
+            }
+            width: Math.max(15, countBadgeText.implicitWidth + 7)
+            height: 15
+            radius: 7.5
+            color: notifs.accent
+            border.width: 1.5
+            border.color: notifs.di.capsuleColor
+
+            StyledText {
+                id: countBadgeText
+                anchors.centerIn: parent
+                text: notifs.conversationCount > 99 ? "99+" : notifs.conversationCount
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.features: { "tnum": 1 }
+                color: ColorUtils.isDark(notifs.accent) ? "white" : "black"
+            }
+
+            SequentialAnimation on scale {
+                id: badgeBump
+                running: false
+                NumberAnimation { to: 1.35; duration: 110; easing.type: Easing.OutQuad }
+                NumberAnimation { to: 1; duration: 320; easing.type: Easing.OutBack; easing.overshoot: 2.4 }
+            }
+        }
+        Connections {
+            target: notifs
+            function onConversationCountChanged() { if (notifs.conversationCount >= 2) badgeBump.restart() }
         }
 
         // Chats: a thin ring in the app's colour instead of an outline around the whole pill
@@ -407,13 +452,6 @@ Item {
                     color: notifs.critical ? Appearance.colors.colError : Appearance.colors.colOnLayer0
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                }
-                StyledText {
-                    visible: notifs.conversationCount >= 2
-                    text: Translation.tr("%1 messages").arg(notifs.conversationCount)
-                    font.pixelSize: Appearance.font.pixelSize.smallest
-                    font.weight: Font.DemiBold
-                    color: notifs.accent
                 }
             }
 
