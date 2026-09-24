@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Ilha — episódio atual (Netflix / Disney+)
 // @namespace    end4-pC
-// @version      1.0
-// @description  Publica série, temporada e episódio nos metadados de mídia do navegador, que o Chrome repassa ao MPRIS — é daí que a Dynamic Island tira a nota do IMDb.
+// @version      3.0
+// @description  Publica série, temporada e episódio nos metadados de mídia do navegador, que o Chrome repassa ao MPRIS — é daí que a Dynamic Island tira a nota do IMDb de cada episódio.
 // @match        https://www.netflix.com/*
 // @match        https://www.disneyplus.com/*
 // @match        https://*.disneyplus.com/*
@@ -11,26 +11,23 @@
 // ==/UserScript==
 
 // Contrato com a Ilha (services/WatchRating.qml):
-//   title  = título do episódio (ou do filme)
-//   artist = nome da série (ou do filme)
-//   album  = "S03E05" quando é episódio, vazio quando é filme
-// As páginas escondem os controles (e às vezes o texto do episódio) depois de alguns segundos, então o que
-// foi achado fica guardado por URL até ela mudar.
+//   artist = série (ou filme)
+//   album  = "S06E19|disneyplus" quando é episódio; "|netflix" quando é filme (o serviço vai depois do |)
+//   title  = título do episódio (ou o próprio código, quando o título ainda não é conhecido — a Ilha usa o do IMDb)
+//
+// O que a página real do Disney+ mostrou (set/2026):
+// - o player é feito de Web Components com Shadow DOM: sem atravessar shadowRoot não se acha nada;
+// - o episódio atual fica em main-app-controls-overlay › title-bug ("T6:E19 Churrasqueira Furada"), e só existe
+//   enquanto os controles estão na tela;
+// - o "a seguir" (pivot-tray-tile.episodeTitle, "T6:E20 …") fica no DOM o tempo todo — e é justamente o que
+//   vai tocar quando o autoplay trocar de episódio.
+// Daí as três fontes, da mais para a menos confiável: o episódio atual visível; o "a seguir" que a página
+// anterior mostrava (autoplay); e o "a seguir" desta página menos um.
 
 (function () {
     "use strict"
 
-    // "S3:E5", "T3:E5", "T3 E5", "Temporada 3 Episódio 5", "Ep. 5"…
     const EPISODE = /(?:^|[\s(])(?:S|T|Temporada\s*|Season\s*)(\d{1,2})\s*[:·.,]?\s*(?:E|Ep\.?\s*|Episódio\s*|Episode\s*)(\d{1,3})\b/i
-    const SELECTORS = [
-        '[data-uia="video-title"]',                   // Netflix
-        '[data-testid="playback-details-subtitle"]',  // Disney+
-        '[data-testid="subtitle"]',
-        '.subtitle-field',
-        '.title-field',
-    ]
-    const found = {}
-    let published = ""
 
     function parse(text) {
         const clean = (text ?? "").replace(/\s+/g, " ").trim()
@@ -41,19 +38,36 @@
         return { season: Number(match[1]), episode: Number(match[2]), title }
     }
 
-    function episodeFromPage() {
-        for (const selector of SELECTORS) {
-            for (const element of document.querySelectorAll(selector)) {
-                const info = parse(element.textContent)
-                if (info) return info
-            }
+    // querySelectorAll that also looks inside every shadow root
+    function deepAll(selector, root = document) {
+        const out = [...root.querySelectorAll(selector)]
+        for (const element of root.querySelectorAll("*"))
+            if (element.shadowRoot) out.push(...deepAll(selector, element.shadowRoot))
+        return out
+    }
+
+    function deepText(element) {
+        if (!element) return ""
+        return element.shadowRoot ? element.shadowRoot.textContent : element.textContent
+    }
+
+    function currentEpisode() {
+        // Disney+: the title bug over the player, only while the controls are up
+        for (const bug of deepAll("title-bug")) {
+            const info = parse(deepText(bug))
+            if (info) return info
         }
-        // Last resort: any short text on the player that looks like an episode label
-        const player = document.querySelector("video")?.closest("div") ?? document.body
-        const walker = document.createTreeWalker(player.parentElement ?? player, NodeFilter.SHOW_TEXT)
-        for (let node = walker.nextNode(), seen = 0; node && seen < 4000; node = walker.nextNode(), seen++) {
-            if (node.textContent.length > 120) continue
-            const info = parse(node.parentElement?.textContent)
+        // Netflix: the title block of the player controls
+        for (const block of deepAll('[data-uia="video-title"]')) {
+            const info = parse(block.textContent)
+            if (info) return info
+        }
+        return null
+    }
+
+    function upNext() {
+        for (const tile of deepAll('[data-qa="pivot-tray-tile.episodeTitle"]')) {
+            const info = parse(tile.textContent)
             if (info) return info
         }
         return null
@@ -66,24 +80,41 @@
         return title && !/^(Netflix|Disney\+)$/i.test(title) ? title : ""
     }
 
-    function publish() {
-        if (!("mediaSession" in navigator)) return
-        const video = document.querySelector("video")
-        if (!video) return
+    const known = {}        // path → episode seen on screen (authoritative)
+    const nextOf = {}       // path → its "up next"
+    let lastPath = ""
+    let published = ""
 
-        const key = location.pathname
-        const fresh = episodeFromPage()
-        if (fresh) found[key] = fresh
-        const episode = found[key] ?? null
+    function resolve(path) {
+        const seen = currentEpisode()
+        if (seen) known[path] = seen
+        const next = upNext()
+        if (next) nextOf[path] = next
+
+        // Autoplay: the page just changed to what the previous page announced as next
+        if (!known[path] && path !== lastPath && lastPath && nextOf[lastPath])
+            known[path] = { ...nextOf[lastPath] }
+
+        if (known[path]) return known[path]
+        // Controls hidden since the start: the episode before "up next" (same season only)
+        if (next && next.episode > 1) return { season: next.season, episode: next.episode - 1, title: "" }
+        return null
+    }
+
+    function publish() {
+        if (!("mediaSession" in navigator) || !document.querySelector("video")) return
+        const path = location.pathname
+        const episode = resolve(path)
+        if (path !== lastPath) lastPath = path
         const series = seriesName()
         if (!series) return
 
         const pad = n => String(n).padStart(2, "0")
-        const code = episode ? `S${pad(episode.season)}E${pad(episode.episode)}` : ""
-        const title = episode ? (episode.title || code) : series
+        const service = /netflix\./.test(location.hostname) ? "netflix" : /disneyplus\./.test(location.hostname) ? "disneyplus" : ""
+        const code = (episode ? `S${pad(episode.season)}E${pad(episode.episode)}` : "") + `|${service}`
+        const title = episode ? (episode.title || code.split("|")[0]) : series
         const signature = `${series}|${code}|${title}`
 
-        // The site may put its own metadata back; only rewrite when what's there isn't ours
         const current = navigator.mediaSession.metadata
         if (signature === published && current && current.artist === series && current.album === code) return
         published = signature
@@ -95,5 +126,33 @@
         })
     }
 
-    setInterval(publish, 2500)
+    // Passive: no timer loop. It only looks when something happens — the video starts or loads, the URL changes
+    // (autoplay moving on), or the controls come up under the pointer while the episode isn't confirmed yet —
+    // and then just a few times, a moment apart, while the player finishes drawing.
+    let burst = []
+    function lookSoon() {
+        burst.forEach(clearTimeout)
+        burst = [300, 1500, 4000].map(ms => setTimeout(publish, ms))
+    }
+
+    for (const type of ["loadedmetadata", "playing"])
+        document.addEventListener(type, lookSoon, true)   // media events don't bubble, but capture sees them
+
+    if (window.navigation) navigation.addEventListener("currententrychange", lookSoon)
+    else for (const name of ["pushState", "replaceState"]) {
+        const original = history[name]
+        history[name] = function (...args) { const out = original.apply(this, args); lookSoon(); return out }
+    }
+    window.addEventListener("popstate", lookSoon)
+
+    let lastPointer = 0
+    document.addEventListener("pointermove", () => {
+        if (known[location.pathname]) return          // already confirmed on screen: nothing left to learn
+        const now = Date.now()
+        if (now - lastPointer < 1500) return
+        lastPointer = now
+        setTimeout(publish, 250)                      // give the controls a beat to draw the title
+    }, { passive: true, capture: true })
+
+    lookSoon()
 })()

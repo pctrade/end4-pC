@@ -87,7 +87,7 @@ RowLayout {
             case "history":       return IslandEvents.eventLog[0]?.title ?? ""
             case "idle":          return DateTime.time
             case "watchRating": {
-                const r = WatchRating.episodeRating >= 0 ? WatchRating.episodeRating : WatchRating.seriesRating
+                const r = (WatchRating.now?.season ?? 0) > 0 ? WatchRating.episodeRating : WatchRating.seriesRating
                 return r >= 0 ? `★ ${r.toFixed(1)}` : ""
             }
             default:              return ""

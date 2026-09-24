@@ -28,6 +28,11 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
 
+        DiServiceMark {
+            service: WatchRating.service
+            size: 22
+        }
+
         Rectangle {
             implicitWidth: 44
             implicitHeight: 22

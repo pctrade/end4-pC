@@ -4,58 +4,64 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
-// Compact face of the IMDb rating: the yellow IMDb mark, the show and episode, and the rating counting up to
-// its value. The best episode of the season gets a crown and one sweep of light across the pill.
+// The episode that just started, and its IMDb rating — the episode's, never the show's (you already know
+// that one; it lives small in the expanded view). The rating arrives as a small motion piece: a ring draws
+// itself from zero to the score while the number counts up with it, coloured by how good the episode is;
+// once it lands, the season/episode line rises in under the show's name, and the best episode of the
+// season gets a crown and one sweep of gold light.
 Item {
     id: watch
     required property Item di
     anchors.fill: parent
 
     readonly property var now: WatchRating.now
-    readonly property bool hasEpisode: (watch.now?.season ?? 0) > 0
-    readonly property real target: watch.hasEpisode && WatchRating.episodeRating >= 0 ? WatchRating.episodeRating : WatchRating.seriesRating
-    property real shown: 0
+    readonly property bool isFilm: (watch.now?.season ?? 0) <= 0
+    readonly property real rating: watch.isFilm ? WatchRating.seriesRating : WatchRating.episodeRating
+    readonly property color tone: watch.rating >= 8.5 ? "#F5C518"
+        : watch.rating >= 7.5 ? "#30D158"
+        : watch.rating >= 6 ? "#FF9F0A" : "#FF453A"
 
-    NumberAnimation on shown {
-        id: countUp
-        from: 0
-        to: watch.target
-        duration: 900
-        easing.type: Easing.OutCubic
+    // 0 → 1 drives the whole entrance
+    property real t: 0
+    SequentialAnimation {
+        id: entrance
+        running: true
+        PauseAnimation { duration: 180 }
+        NumberAnimation { target: watch; property: "t"; from: 0; to: 1; duration: 1100; easing.type: Easing.OutCubic }
     }
-    onTargetChanged: countUp.restart()
+    onRatingChanged: entrance.restart()
+
+    // The line under the name only rises once the score has landed
+    readonly property real landed: Math.max(0, Math.min(1, (watch.t - 0.7) / 0.3))
 
     RowLayout {
         anchors {
             fill: parent
-            leftMargin: 8
-            rightMargin: 12
+            leftMargin: 9
+            rightMargin: 6
         }
         spacing: 9
 
-        Rectangle {
-            implicitWidth: imdbText.implicitWidth + 10
-            implicitHeight: 18
-            radius: 4
-            color: "#F5C518"
-
-            StyledText {
-                id: imdbText
-                anchors.centerIn: parent
-                text: "IMDb"
-                font.pixelSize: 10
-                font.weight: Font.Black
-                color: "#000000"
-            }
+        DiServiceMark {
+            service: WatchRating.service
+            size: 18
+            scale: Math.min(1, watch.t * 3)
         }
 
-        ColumnLayout {
+        Item {
             Layout.fillWidth: true
+            Layout.fillHeight: true
             Layout.minimumWidth: 0
-            spacing: -3
+            clip: true
 
             StyledText {
-                Layout.fillWidth: true
+                id: showName
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    verticalCenterOffset: -6 * watch.landed
+                }
                 text: watch.now?.series ?? ""
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 font.weight: Font.DemiBold
@@ -63,55 +69,67 @@ Item {
                 elide: Text.ElideRight
             }
             StyledText {
-                Layout.fillWidth: true
-                text: watch.hasEpisode
-                    ? `T${watch.now.season} · E${watch.now.episode}${watch.now.episodeTitle ? " · " + watch.now.episodeTitle : ""}`
-                    : (WatchRating.info?.Year ?? "")
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: showName.bottom
+                    topMargin: -2 + (1 - watch.landed) * 10
+                }
+                text: watch.isFilm ? (WatchRating.info?.Year ?? "")
+                    : `T${watch.now?.season} · E${watch.now?.episode}${WatchRating.episodeTitle ? " · " + WatchRating.episodeTitle : ""}`
                 font.pixelSize: Appearance.font.pixelSize.smallest
                 color: Appearance.colors.colOnLayer0
-                opacity: 0.7
+                opacity: 0.7 * watch.landed
                 elide: Text.ElideRight
             }
         }
 
-        Rectangle {
+        // Best of the season: the crown drops in once the score has landed
+        MaterialSymbol {
             visible: WatchRating.isBest
-            implicitWidth: 20
-            implicitHeight: 20
-            radius: 10
-            color: Qt.rgba(0.96, 0.77, 0.09, 0.18)
-            scale: 0
+            text: "crown"
+            iconSize: 15
+            fill: 1
+            color: "#F5C518"
+            scale: watch.landed
+            transform: Translate { y: (1 - watch.landed) * -10 }
+        }
 
-            NumberAnimation on scale {
-                running: WatchRating.isBest
-                from: 0
-                to: 1
-                duration: 520
-                easing.type: Easing.OutBack
-                easing.overshoot: 2.4
-            }
+        Rectangle {
+            implicitWidth: imdbText.implicitWidth + 7
+            implicitHeight: 14
+            radius: 3
+            color: "#F5C518"
+            opacity: Math.min(1, watch.t * 2)
 
-            MaterialSymbol {
+            StyledText {
+                id: imdbText
                 anchors.centerIn: parent
-                text: "crown"
-                iconSize: 13
-                fill: 1
-                color: "#F5C518"
+                text: "IMDb"
+                font.pixelSize: 8
+                font.weight: Font.Black
+                color: "#000000"
             }
         }
 
-        RowLayout {
-            spacing: 2
-            MaterialSymbol {
-                text: "star"
-                iconSize: 15
-                fill: 1
-                color: "#F5C518"
+        // The score: a ring drawing itself to rating/10 with the number counting up inside it
+        Item {
+            implicitWidth: 28
+            implicitHeight: 28
+
+            CircularProgress {
+                anchors.fill: parent
+                implicitSize: 28
+                lineWidth: 3
+                value: Math.max(0, watch.rating) / 10 * watch.t
+                colPrimary: watch.tone
+                colSecondary: Qt.rgba(1, 1, 1, 0.08)
             }
+
             StyledText {
-                // An episode IMDb hasn't rated yet says so, instead of passing the series' rating off as its own
-                text: watch.hasEpisode && WatchRating.episodeRating < 0 ? "–" : watch.shown.toFixed(1)
-                font.pixelSize: Appearance.font.pixelSize.normal
+                anchors.centerIn: parent
+                text: watch.rating < 0 ? "–" : (Math.max(0, watch.rating) * watch.t).toFixed(1)
+                font.pixelSize: 10
                 font.weight: Font.Bold
                 font.features: { "tnum": 1 }
                 color: Appearance.colors.colOnLayer0
@@ -119,14 +137,13 @@ Item {
         }
     }
 
-    // One sweep of light for the best episode of the season
+    // One sweep of gold light for the best episode of the season
     Item {
         anchors.fill: parent
         clip: true
         visible: WatchRating.isBest
 
         Rectangle {
-            id: sweep
             width: 70
             height: parent.height * 2
             y: -parent.height / 2
@@ -141,7 +158,7 @@ Item {
 
             SequentialAnimation on x {
                 running: WatchRating.isBest
-                PauseAnimation { duration: 450 }
+                PauseAnimation { duration: 1300 }
                 NumberAnimation { from: -100; to: watch.width + 40; duration: 1100; easing.type: Easing.InOutCubic }
             }
         }
