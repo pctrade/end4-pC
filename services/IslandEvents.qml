@@ -425,23 +425,29 @@ Singleton {
     }
 
     // Sustained CPU load
-    property int loadSeconds: 0
+    property real loadSeconds: 0
     property bool systemLoadActive: false
     property string topProcess: ""
     property real topProcessCpu: 0
 
-    Timer {
-        interval: 1000
-        repeat: true
-        running: root.cfg.systemLoad ?? true
-        onTriggered: {
+    // No timer of its own: ResourceUsage already samples the CPU for the bar, so this just listens to it and
+    // counts real seconds between samples (the bar's interval, 3 s by default)
+    property double lastLoadSample: 0
+
+    Connections {
+        target: ResourceUsage
+        enabled: root.cfg.systemLoad ?? true
+        function onCpuUsageChanged() {
             if (root.fakeLoad) return
+            const now = Date.now()
+            const seconds = root.lastLoadSample > 0 ? Math.min(10, (now - root.lastLoadSample) / 1000) : 1
+            root.lastLoadSample = now
             const threshold = (root.cfg.systemLoadThreshold ?? 90) / 100
             const cpu = ResourceUsage.cpuUsage
-            if (cpu >= threshold) root.loadSeconds = Math.min(root.loadSeconds + 1, 30)
-            else if (cpu < threshold - 0.1) root.loadSeconds = Math.max(root.loadSeconds - 2, 0)
+            if (cpu >= threshold) root.loadSeconds = Math.min(root.loadSeconds + seconds, 30)
+            else if (cpu < threshold - 0.1) root.loadSeconds = Math.max(root.loadSeconds - 2 * seconds, 0)
             if (!root.systemLoadActive && root.loadSeconds >= 10) root.systemLoadActive = true
-            else if (root.systemLoadActive && root.loadSeconds === 0) root.systemLoadActive = false
+            else if (root.systemLoadActive && root.loadSeconds <= 0) root.systemLoadActive = false
         }
     }
 
@@ -1367,7 +1373,7 @@ Singleton {
     property bool downloadActive: false
     property bool trafficBurst: false
     property bool fakeNet: false
-    property int fastSeconds: 0
+    property real fastSeconds: 0
     property real prevRx: -1
     property real prevTx: -1
     property double prevNetTime: 0
@@ -1650,8 +1656,9 @@ Singleton {
             const seconds = (now - root.prevNetTime) / 1000
             root.downloadRate = (rx - root.prevRx) / seconds
             root.uploadRate = (tx - root.prevTx) / seconds
-            if (root.downloadRate > 350 * 1024) root.fastSeconds = Math.min(root.fastSeconds + 1, 10)
-            else if (root.downloadRate < 80 * 1024) root.fastSeconds = Math.max(root.fastSeconds - 2, 0)
+            // Counted in real seconds, since the sampling slows down to 5 s when the network is quiet
+            if (root.downloadRate > 350 * 1024) root.fastSeconds = Math.min(root.fastSeconds + seconds, 10)
+            else if (root.downloadRate < 80 * 1024) root.fastSeconds = Math.max(root.fastSeconds - 2 * seconds, 0)
             if (!root.trafficBurst && root.fastSeconds >= 4 && (root.cfg.network ?? true)) {
                 root.trafficBurst = true
                 if (root.downloadMode === "traffic") root.downloadActive = true
@@ -1661,7 +1668,7 @@ Singleton {
                 root.downloadPeak = Math.max(root.downloadPeak, root.downloadRate)
                 root.downloadHistory = [...root.downloadHistory, root.downloadRate].slice(-40)
             }
-            if (root.trafficBurst && root.fastSeconds === 0) {
+            if (root.trafficBurst && root.fastSeconds <= 0) {
                 root.trafficBurst = false
                 if (root.downloadMode === "traffic") root.downloadActive = false
             }
@@ -1678,8 +1685,10 @@ Singleton {
         onLoaded: root.updateNet(netStats.text())
     }
 
+    // Network traffic has no event to listen to, so it's sampled — but slowly while nothing is happening, and
+    // every second only while something is actually moving (a burst, a download, the network view open)
     Timer {
-        interval: 1000
+        interval: root.trafficBurst || root.downloadActive || root.downloadWatch || root.voiceCallActive ? 1000 : 5000
         repeat: true
         running: root.cfg.network ?? true
         onTriggered: netStats.reload()
