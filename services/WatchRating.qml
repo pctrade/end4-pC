@@ -40,8 +40,35 @@ Singleton {
         }
         return null
     }
-    readonly property var now: root.browserPlayer ? root.parse(root.browserPlayer) : null
-    readonly property bool playing: root.browserPlayer?.isPlaying ?? false
+    readonly property var now: root.fake ?? (root.browserPlayer ? root.parse(root.browserPlayer) : null)
+    readonly property bool playing: root.fake !== null || (root.browserPlayer?.isPlaying ?? false)
+
+    // ilha-teste: "island simulate watchTop3|watchTop10|watchBest|watchHigh" plays a real episode of the show
+    // already loaded (whatever is on right now) as if it had just started, for 9 seconds
+    property var fake: null
+    Timer {
+        id: fakeEnd
+        interval: 9000
+        onTriggered: root.fake = null
+    }
+    function simulate(kind) {
+        const rated = root.allEpisodes.filter(e => root.ratingOf(e) >= 0)
+        if (!root.info || !root.now || rated.length === 0) return
+        const sorted = [...rated].sort((a, b) => root.ratingOf(b) - root.ratingOf(a))
+        const bestOf = season => rated.filter(e => e.Season === season).reduce((a, b) => root.ratingOf(b) > root.ratingOf(a) ? b : a)
+        const seasons = [...new Set(rated.map(e => e.Season))]
+        let pick = null
+        if (kind === "top3") pick = sorted[0]
+        else if (kind === "top10") pick = sorted[6]
+        else if (kind === "best") pick = seasons.map(bestOf).find(e => sorted.indexOf(e) >= 12)
+        else if (kind === "high") pick = sorted.find((e, i) => i >= 12 && root.ratingOf(e) >= 8.5 && bestOf(e.Season) !== e)
+        else pick = sorted[Math.floor(sorted.length / 2)]
+        if (!pick) return
+        root.announced = ({})
+        root.fake = { series: root.now.series, season: pick.Season, episode: Number(pick.Episode), episodeTitle: "",
+            service: root.now.service || "netflix", source: "script" }
+        fakeEnd.restart()
+    }
 
     readonly property var siteServices: ({ "disney+": "disneyplus", "netflix": "netflix", "prime video": "primevideo",
         "max": "max", "apple tv+": "appletv", "crunchyroll": "crunchyroll", "paramount+": "paramountplus" })
@@ -67,33 +94,41 @@ Singleton {
 
     // ── OMDb ──────────────────────────────────────────────────────────────────────────────────────────────
     property var titleCache: ({})       // OMDb, per show: its IMDb id, rating, year, genre
-    property var seasonCache: ({})      // IMDb, per "show|season": every episode's rating
+    property var seriesCache: ({})      // IMDb, per show: every episode of every season, with its rating
     property int revision: 0
 
-    // One season in one request, straight from the GraphQL endpoint IMDb's own site uses — OMDb leaves most
-    // episodes unrated (15 of 24 in a Modern Family season). Unofficial, so a failure only costs the episode
-    // ratings: the show's own rating from OMDb still shows.
-    function fetchSeason(id, season, done) {
-        const query = `query { title(id: "${id}") { episodes { episodes(first: 100, filter: { includeSeasons: ["${season}"] }) {
+    // The whole show in one request (paged only past 250 episodes), once per show, straight from the GraphQL
+    // endpoint IMDb's own site uses — OMDb leaves most episodes unrated (15 of 24 in a Modern Family season).
+    // Having every season at once is what makes "top 10 of the show" possible. Unofficial: a failure only costs
+    // the episode ratings.
+    function fetchSeries(id, done, after, collected) {
+        const all = collected ?? []
+        const page = after ? `, after: "${after}"` : ""
+        const query = `query { title(id: "${id}") { episodes { episodes(first: 250${page}) { pageInfo { hasNextPage endCursor }
             edges { node { id titleText { text } releaseDate { year month day } ratingsSummary { aggregateRating voteCount }
-            series { displayableEpisodeNumber { episodeNumber { text } } } } } } } } }`
+            series { displayableEpisodeNumber { episodeNumber { text } displayableSeason { text } } } } } } } } }`
         const xhr = new XMLHttpRequest()
         xhr.onreadystatechange = () => {
             if (xhr.readyState !== XMLHttpRequest.DONE) return
-            let edges = []
-            try { edges = JSON.parse(xhr.responseText).data.title.episodes.episodes.edges } catch (e) {}
-            done(edges.map(edge => {
+            let block = null
+            try { block = JSON.parse(xhr.responseText).data.title.episodes.episodes } catch (e) {}
+            for (const edge of block?.edges ?? []) {
                 const n = edge.node
+                const number = n.series?.displayableEpisodeNumber
                 const date = n.releaseDate
-                return {
-                    Episode: n.series?.displayableEpisodeNumber?.episodeNumber?.text ?? "",
+                const episode = {
+                    Season: Number(number?.displayableSeason?.text),
+                    Episode: number?.episodeNumber?.text ?? "",
                     Title: n.titleText?.text ?? "",
                     Released: date ? [date.day, date.month, date.year].filter(Boolean).join("/") : "",
                     imdbRating: n.ratingsSummary?.aggregateRating != null ? String(n.ratingsSummary.aggregateRating) : "N/A",
                     imdbVotes: n.ratingsSummary?.voteCount ?? 0,
                     imdbID: n.id
                 }
-            }).filter(e => /^\d+$/.test(e.Episode)).sort((a, b) => Number(a.Episode) - Number(b.Episode)))
+                if (episode.Season > 0 && /^\d+$/.test(episode.Episode)) all.push(episode)
+            }
+            if (block?.pageInfo?.hasNextPage && all.length < 2000) root.fetchSeries(id, done, block.pageInfo.endCursor, all)
+            else done(all)
         }
         xhr.open("POST", "https://caching.graphql.imdb.com/")
         xhr.setRequestHeader("Content-Type", "application/json")
@@ -105,11 +140,13 @@ Singleton {
         root.revision
         return root.now ? (root.titleCache[root.now.series.toLowerCase()] ?? null) : null
     }
-    readonly property var seasonEpisodes: {
+    readonly property var allEpisodes: {
         root.revision
-        if (!root.info || !root.now || root.now.season <= 0) return []
-        return root.seasonCache[`${root.info.imdbID}|${root.now.season}`] || []
+        return root.info ? (root.seriesCache[root.info.imdbID] || []) : []
     }
+    readonly property var seasonEpisodes: root.now && root.now.season > 0
+        ? root.allEpisodes.filter(e => e.Season === root.now.season).sort((a, b) => Number(a.Episode) - Number(b.Episode))
+        : []
     readonly property var currentEpisode: root.seasonEpisodes.find(e => Number(e.Episode) === root.now?.episode) ?? null
 
     function ratingOf(episode) {
@@ -136,9 +173,20 @@ Singleton {
         return root.seasonEpisodes.filter(e => root.ratingOf(e) > root.episodeRating).length + 1
     }
     readonly property int ratedCount: root.seasonEpisodes.filter(e => root.ratingOf(e) >= 0).length
+
+    // Where this episode stands in the whole show. The small-show guards keep "top 10" meaningful: in a
+    // 12-episode miniseries almost everything would be.
+    readonly property int seriesRated: root.allEpisodes.filter(e => root.ratingOf(e) >= 0).length
+    readonly property int seriesRank: root.episodeRating < 0 ? -1
+        : root.allEpisodes.filter(e => root.ratingOf(e) > root.episodeRating).length + 1
+    readonly property bool isTop3: root.seriesRank > 0 && root.seriesRank <= 3 && root.seriesRated >= 8
+    readonly property bool isTop10: !root.isTop3 && root.seriesRank > 0 && root.seriesRank <= 10 && root.seriesRated >= 25
+    // One highlight per episode, the rarest that applies
+    readonly property string tier: root.isTop3 ? "top3" : root.isTop10 ? "top10" : root.isBest ? "best"
+        : root.episodeRating >= 8.5 ? "high" : ""
     readonly property bool ready: {
         root.revision
-        return root.info !== null && (root.now?.season <= 0 || root.seasonCache[`${root.info.imdbID}|${root.now.season}`] !== undefined)
+        return root.info !== null && (root.now?.season <= 0 || root.seriesCache[root.info.imdbID] !== undefined)
     }
     // The island only speaks up for an episode's own rating (or a film's). The show's rating is something you
     // already know: it stays small in the expanded view, and a show whose episode isn't known says nothing.
@@ -177,12 +225,12 @@ Singleton {
             return
         }
         if (!cached || root.now.season <= 0) return
-        const seasonKey = `${cached.imdbID}|${root.now.season}`
-        if (root.seasonCache[seasonKey] !== undefined || root.pending[seasonKey]) return
-        root.pending[seasonKey] = true
-        root.fetchSeason(cached.imdbID, root.now.season, episodes => {
-            delete root.pending[seasonKey]
-            root.seasonCache[seasonKey] = episodes
+        const id = cached.imdbID
+        if (root.seriesCache[id] !== undefined || root.pending[id]) return
+        root.pending[id] = true
+        root.fetchSeries(id, episodes => {
+            delete root.pending[id]
+            root.seriesCache[id] = episodes
             root.revision++
         })
     }

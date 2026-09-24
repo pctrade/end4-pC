@@ -521,6 +521,13 @@ Item {
                     f1FlagTimer.restart()
                     simFlagTimer.restart()
                     break
+                case "watchTop3":
+                case "watchTop10":
+                case "watchBest":
+                case "watchHigh":
+                case "watchPlain":
+                    WatchRating.simulate(name.slice(5).toLowerCase())
+                    break
                 case "f1Tyre":
                     root.showF1Event({ kind: "tyre", letter: "H", color: F1.tyreColor("HARD"),
                         title: `VER ${Translation.tr("pitted")} · P4`, subtitle: `${Translation.tr("Tyre")} ${F1.tyreName("HARD")} ${Translation.tr("(new)")}` })
