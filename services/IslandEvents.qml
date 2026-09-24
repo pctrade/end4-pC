@@ -1080,7 +1080,7 @@ Singleton {
     }
 
     Timer {
-        interval: 1000
+        interval: 2000
         repeat: true
         running: root.activities.length > 0
         onTriggered: {
@@ -1614,7 +1614,10 @@ Singleton {
 
     Process {
         id: netSourcesProc
-        running: !root.fakeNet && (root.downloadActive || root.trafficBurst || root.downloadWatch) && (root.cfg.network ?? true)
+        // Who is using the network: only for a real download or with the network view open. A plain traffic
+        // burst (a film streaming) used to keep this running for the whole film.
+        running: !root.fakeNet && (root.downloadActive || root.downloadWatch || (root.trafficBurst && root.downloadMode === "traffic"))
+            && (root.cfg.network ?? true)
         command: ["python3", Quickshell.shellPath("scripts/island/net_sources.py")]
         stdout: SplitParser {
             onRead: line => root.handleNetSources(line)
