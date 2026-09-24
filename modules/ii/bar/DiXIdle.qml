@@ -385,6 +385,13 @@ ColumnLayout {
             onTap: () => Notifications.silent = !Notifications.silent
         }
         Chip {
+            icon: "psychology"
+            label: IslandEvents.focusOn ? Translation.tr("Focus · %1 min").arg(IslandEvents.focusMinutes) : Translation.tr("Focus")
+            active: IslandEvents.focusOn
+            accent: IslandEvents.focusOn ? IslandEvents.colorAttention : Appearance.colors.colOnLayer1
+            onTap: () => IslandEvents.toggleFocus()
+        }
+        Chip {
             icon: "tune"
             label: Translation.tr("Island settings")
             onTap: () => {

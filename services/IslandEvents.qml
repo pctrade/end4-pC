@@ -755,6 +755,56 @@ Singleton {
         }
     }
 
+    // Focus Mode (seção 33): a context, not a timer app. While it's on, non-critical notifications skip
+    // the Peek entirely and go straight to History — Critical still gets through. No forced duration;
+    // it just changes how the island behaves until you turn it off yourself.
+    property bool focusOn: false
+    property double focusSince: 0
+    property int focusSuppressedCount: 0
+
+    function toggleFocus() {
+        if (root.focusOn) {
+            root.focusOn = false
+            const minutes = Math.max(1, Math.round((Date.now() - root.focusSince) / 60000))
+            const suppressed = root.focusSuppressedCount
+            root.focusSuppressedCount = 0
+            root.upsertActivity("focus", Translation.tr("Focus finished"),
+                suppressed > 0 ? Translation.tr("%1 min · %2 waiting").arg(minutes).arg(suppressed) : Translation.tr("%1 min").arg(minutes),
+                "psychology", 1, "done")
+            return
+        }
+        root.focusOn = true
+        root.focusSince = Date.now()
+        root.focusSuppressedCount = 0
+        root.upsertActivity("focus", Translation.tr("Focus"), "", "psychology", -1, "running")
+    }
+
+    Connections {
+        target: Notifications
+        function onNotify(notification) {
+            if (!root.focusOn) return
+            if ((notification?.urgency ?? "").toLowerCase() === "critical") return
+            root.focusSuppressedCount++
+        }
+    }
+
+    property double focusNow: 0
+    readonly property int focusMinutes: root.focusOn ? Math.max(0, Math.round((root.focusNow - root.focusSince) / 60000)) : 0
+
+    Timer {
+        interval: 20000
+        repeat: true
+        running: root.focusOn
+        triggeredOnStart: true
+        onTriggered: {
+            root.focusNow = Date.now()
+            root.upsertActivity("focus", Translation.tr("Focus"),
+                root.focusSuppressedCount > 0 ? Translation.tr("%1 min · %2 waiting").arg(root.focusMinutes).arg(root.focusSuppressedCount)
+                    : Translation.tr("%1 min").arg(root.focusMinutes),
+                "psychology", -1, "running")
+        }
+    }
+
     // Copied YouTube links: download the video or just the audio straight into the drawer
     readonly property bool mediaDownloadBusy: mediaDownloadProc.running
 
@@ -1125,7 +1175,9 @@ Singleton {
     }
 
     function isMuted(notif) {
-        return (root.cfg.mutedConversations ?? []).includes(root.conversationKey(notif))
+        if ((root.cfg.mutedConversations ?? []).includes(root.conversationKey(notif))) return true
+        if (root.focusOn && (notif?.urgency ?? "").toLowerCase() !== "critical") return true
+        return false
     }
 
     function toggleMute(notif) {
