@@ -1258,7 +1258,7 @@ Singleton {
 
     // "Ask Gemini": the conversation goes to Gemini on the web. The prompt rides in the link's #fragment (never
     // sent to any server) and scripts/island/gemini-prompt.user.js, on gemini.google.com, puts it in the box and
-    // sends it — no clipboard, no simulated keys.
+    // sends it; it's copied to the clipboard as well, as a fallback.
     function askGemini(notifs) {
         const list = (notifs ?? []).filter(n => n)
         if (list.length === 0) return
@@ -1272,6 +1272,8 @@ Singleton {
         const prompt = Translation.tr("Conversation on %1 with %2 (oldest first):").arg(parts.app).arg(who)
             + "\n" + lines.join("\n") + "\n\n"
             + Translation.tr("Suggest 3 short, natural replies in Portuguese, in the tone of a personal chat. Only the replies, numbered.")
+        // Also on the clipboard: if the userscript isn't there (or the page changed), it's one paste away
+        Quickshell.execDetached(["sh", "-c", 'printf %s "$1" | wl-copy', "sh", prompt])
         Qt.openUrlExternally(`https://gemini.google.com/app#ilha=${encodeURIComponent(prompt)}`)
     }
 
