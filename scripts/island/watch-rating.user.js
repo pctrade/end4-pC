@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ilha — episódio atual (Netflix / Disney+)
 // @namespace    end4-pC
-// @version      3.1
+// @version      3.2
 // @description  Publica série, temporada e episódio nos metadados de mídia do navegador, que o Chrome repassa ao MPRIS — é daí que a Dynamic Island tira a nota do IMDb de cada episódio.
 // @match        https://www.netflix.com/*
 // @match        https://www.disneyplus.com/*
@@ -68,19 +68,21 @@
     // Netflix keeps the whole show in its player state: the episode is known even with the controls hidden
     // (autoplay included). Internal and undocumented — if it's not there, this just returns nothing.
     function netflixState() {
+        // Seen on the real player (set/2026): videoMetadata[<id in /watch/…>]._metadataObject.video is the show,
+        // with currentEpisode and seasons[].{seq, episodes[].{id, seq, title}} — while the title on screen only
+        // says "Suits · E14 · Coração delicado", with no season at all.
         try {
-            const app = window.netflix?.appContext?.state?.playerApp
-            if (!app) return null
-            const videoPlayer = app.getAPI().videoPlayer
-            const session = videoPlayer.getAllPlayerSessionIds().find(id => id.startsWith("watch"))
-            const movieId = session ? videoPlayer.getVideoPlayerBySessionId(session).getMovieId()
-                : Number(location.pathname.match(/\/watch\/(\d+)/)?.[1])
-            const video = app.getState().videoPlayer.videoMetadata[movieId]?._metadata?.video
+            const metadata = window.netflix?.appContext?.state?.playerApp?.getState()?.videoPlayer?.videoMetadata
+            if (!metadata) return null
+            const watching = Number(location.pathname.match(/\/watch\/(\d+)/)?.[1])
+            const entry = metadata[watching] ?? Object.values(metadata)[0]
+            const video = entry?._metadataObject?.video ?? entry?._metadata?.video
             if (!video) return null
             if (video.type !== "show") return { series: video.title, episode: null }
+            const current = video.currentEpisode ?? watching
             for (const season of video.seasons ?? [])
                 for (const episode of season.episodes ?? [])
-                    if (episode.id === movieId || episode.episodeId === movieId)
+                    if (episode.id === current || episode.episodeId === current)
                         return { series: video.title, episode: { season: season.seq, episode: episode.seq, title: episode.title ?? "" } }
             return { series: video.title, episode: null }
         } catch (e) {
