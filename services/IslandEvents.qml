@@ -118,6 +118,7 @@ Singleton {
     signal pinToggleRequested()
     signal simulateRequested(string name)
     signal viewRequested(string view)
+    signal splitRequested(string id)
     signal scrollRequested(int direction)
     signal homeRequested()
     signal dismissRequested()
@@ -1864,6 +1865,10 @@ Singleton {
         }
         function ocr(path: string): void {
             root.ocrImage(path)
+        }
+        // Compact split: "island split system" puts System beside the main pill; "island split" (empty) ends it
+        function split(id: string): void {
+            root.splitRequested(id)
         }
         function open(view: string): void {
             root.viewRequested(view)

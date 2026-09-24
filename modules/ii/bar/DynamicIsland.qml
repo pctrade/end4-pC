@@ -478,6 +478,11 @@ Item {
         function onViewRequested(view) {
             if (root.onFocusedScreen) root.expandTo(2, view)
         }
+        function onSplitRequested(id) {
+            if (!root.onFocusedScreen) return
+            root.splitSwapDir = 1
+            root.splitId = id
+        }
         function onScrollRequested(direction) {
             if (root.onFocusedScreen) root.scrollVertical(direction)
         }
@@ -1124,7 +1129,12 @@ Item {
         if (root.expandedOverride !== "" && !root.switcherIds.includes(root.expandedOverride)
                 && !root.standaloneViews.includes(root.expandedOverride))
             root.expandedOverride = ""
-        if (root.splitId !== "" && !root.switcherIds.includes(root.splitId) && !root.standaloneViews.includes(root.splitId))
+    }
+
+    // A split partner goes away only when the thing itself is over (a recording that stopped, a timer that
+    // rang) — not merely because it has no full view to open
+    onPersistentIdsChanged: {
+        if (root.splitId !== "" && !root.persistentIds.includes(root.splitId) && !root.standaloneViews.includes(root.splitId))
             root.splitId = ""
     }
 
@@ -1165,7 +1175,7 @@ Item {
         root.wantsKeyboard = false
         root.replyRequested = false
         root.expandedOverride = ""
-        root.splitId = ""
+        // splitId survives on purpose: it's what the compact pill shows beside the main one
         root.splitArmed = false
     }
 
@@ -1186,6 +1196,128 @@ Item {
     function toggleSplitArm() {
         if (root.splitId !== "") { root.splitId = ""; return }
         root.splitArmed = !root.splitArmed
+    }
+
+    // Anything worth keeping beside the pill, active or not: what's live right now, plus the views that make
+    // sense even when nothing is happening in them (the system, the drawer, the agents…)
+    readonly property var splitCandidates: {
+        const always = ["system", "shelf", "agents", "zerotier", "history"]
+        if (F1.enabled) always.push("f1")
+        if (root.hasMedia) always.push("media")
+        const ids = []
+        for (const id of [...root.persistentIds, ...always])
+            if (!ids.includes(id) && id !== root.primaryId && !["idle", "notification"].includes(id)) ids.push(id)
+        return ids
+    }
+
+    function openSplitPicker() {
+        root.splitArmed = true
+        root.expandTo(2, root.hasDetails(root.primaryId) ? undefined : "idle")
+    }
+
+    // Picked from the chooser: close the overlay so the pill splits in two right in front of you
+    function chooseSplit(id) {
+        root.splitArmed = false
+        root.splitSwapDir = 1
+        root.splitId = id
+        root.collapse()
+    }
+
+    function cycleSplit(direction) {
+        const list = root.splitCandidates
+        if (list.length === 0) return
+        const index = list.indexOf(root.splitId)
+        root.splitSwapDir = direction
+        root.splitId = list[(index + direction + list.length) % list.length]
+    }
+
+    function dismissSplit() {
+        root.splitId = ""
+    }
+
+    // The compact second pill lags splitId on purpose: when it's cleared the pill still has to be drawn while
+    // it's reabsorbed into the main one, and when it changes the old content has to leave before the new arrives.
+    property string splitShownId: ""
+    property real splitProgress: 0
+    property int splitSwapDir: 1
+    property real splitDragX: 0
+    property real splitFade: 1
+    property real splitContentY: 0
+    property real splitContentOpacity: 1
+    readonly property bool splitShown: root.splitShownId !== "" && root.splitShownId !== root.primaryId && !root.vertical
+
+    onSplitIdChanged: {
+        if (root.splitId !== "") {
+            splitOut.stop()
+            if (root.splitShownId === "" || root.splitProgress < 0.98) {
+                root.splitShownId = root.splitId
+                splitIn.restart()
+            } else if (root.splitShownId !== root.splitId) {
+                splitSwap.restart()
+            }
+        } else if (root.splitShownId !== "" && !splitFling.running) {
+            splitIn.stop()
+            splitOut.restart()
+        }
+    }
+
+    // Mitosis: the second pill buds off the main one's right edge; the neck between them thins and lets go
+    NumberAnimation {
+        id: splitIn
+        target: root
+        property: "splitProgress"
+        to: 1
+        duration: 720
+        easing.type: Easing.OutBack
+        easing.overshoot: 0.9
+    }
+
+    // …and in reverse: reabsorbed into the main pill
+    NumberAnimation {
+        id: splitOut
+        target: root
+        property: "splitProgress"
+        to: 0
+        duration: 460
+        easing.type: Easing.InOutCubic
+        onFinished: {
+            root.splitShownId = ""
+            root.splitDragX = 0
+        }
+    }
+
+    // Changing what the second pill shows (scroll over it): a slot-machine roll in the wheel's direction
+    SequentialAnimation {
+        id: splitSwap
+        ParallelAnimation {
+            NumberAnimation { target: root; property: "splitContentY"; to: -root.splitSwapDir * 14; duration: 130; easing.type: Easing.InCubic }
+            NumberAnimation { target: root; property: "splitContentOpacity"; to: 0; duration: 130; easing.type: Easing.InCubic }
+        }
+        ScriptAction {
+            script: {
+                root.splitShownId = root.splitId
+                root.splitContentY = root.splitSwapDir * 14
+            }
+        }
+        ParallelAnimation {
+            NumberAnimation { target: root; property: "splitContentY"; to: 0; duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.4 }
+            NumberAnimation { target: root; property: "splitContentOpacity"; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        }
+    }
+
+    // Thrown away with a drag: it keeps going the way you flicked it and fades, no reabsorbing
+    ParallelAnimation {
+        id: splitFling
+        property real toX: 160
+        NumberAnimation { target: root; property: "splitDragX"; to: splitFling.toX; duration: 240; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "splitFade"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+        onFinished: {
+            root.splitShownId = ""
+            root.splitProgress = 0
+            root.splitDragX = 0
+            root.splitFade = 1
+            root.splitId = ""
+        }
     }
 
     // What a pip tap does while armed: pick the split partner instead of replacing the main view
@@ -1646,6 +1778,7 @@ Item {
     implicitHeight: root.pillHeight
     implicitWidth: pill.width + (capsuleRow.visible ? capsuleRow.width : 0)
         + (homeTab.visible ? homeTab.width + 8 : 0) + (f1Chip.visible ? f1Chip.width + 8 : 0) + (deck.visible ? deck.width + 8 : 0)
+        + (root.splitShown ? Math.max(0, splitPill.x + splitPill.width - pill.width) : 0)
 
     // Covers the pill and its bubbles, so hovering a bubble keeps the island revealed
     HoverHandler {
@@ -1809,7 +1942,7 @@ Item {
         id: homeTab
         // Only on a pinned island: a leftover from natural priority or a scroll comes with the pips and the
         // deck already, and this tab used to show for those too — a home icon with no pinned tab in sight.
-        visible: !root.vertical && root.onPinnedView
+        visible: !root.vertical && root.onPinnedView && !root.splitShown
         x: pill.width + 6
         anchors.verticalCenter: pill.verticalCenter
         width: visible ? 24 : 0
@@ -1851,7 +1984,7 @@ Item {
         id: f1Chip
         readonly property var driver: F1.focusDriver
         visible: !root.vertical && !root.overlayShown && F1.enabled && F1.sessionLive && f1Chip.driver !== null
-            && root.primaryId !== "f1" && (root.cfg.f1.pinPosition ?? true)
+            && root.primaryId !== "f1" && (root.cfg.f1.pinPosition ?? true) && !root.splitShown
         x: pill.width + 6 + (homeTab.visible ? homeTab.width + 6 : 0)
         anchors.verticalCenter: pill.verticalCenter
         width: visible ? f1ChipRow.implicitWidth + 14 : 0
@@ -1909,7 +2042,7 @@ Item {
     // The top card shows what comes next; scrolling/swiping up-down (or a click) deals it.
     Item {
         id: deck
-        visible: !root.vertical && root.stackDepth > 0
+        visible: !root.vertical && root.stackDepth > 0 && !root.splitShown
         x: pill.width + 12 + (homeTab.visible ? homeTab.width + 6 : 0) + (f1Chip.visible ? f1Chip.width + 6 : 0)
         anchors.verticalCenter: pill.verticalCenter
         width: visible ? 18 + (root.stackDepth - 1) * 4 + (deckLabel.implicitWidth > 0 ? deckLabel.implicitWidth + 5 : 0) : 0
@@ -2428,7 +2561,7 @@ Item {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             onTapped: (eventPoint, button) => {
                 if (button === Qt.RightButton) {
-                    root.togglePin()
+                    root.openSplitPicker()
                     return
                 }
                 if (root.hasDetails(root.primaryId)) root.toggleExpanded()
@@ -2479,7 +2612,7 @@ Item {
             left: pill.right
             verticalCenter: pill.verticalCenter
         }
-        visible: !root.vertical && root.secondaryIds.length > 0
+        visible: !root.vertical && root.secondaryIds.length > 0 && !root.splitShown
         opacity: root.overlayShown ? 0 : 1
 
         Behavior on opacity {
@@ -2591,6 +2724,228 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    // ── Compact split ─────────────────────────────────────────────────────────────────────────────────────
+    // A second pill beside the main one, holding whatever you chose (live or not). It buds off the main pill's
+    // edge (the neck thins and lets go), rolls to another island when you scroll over it, and goes away when
+    // you throw it off to the side, push it back into the main pill, middle-click it, or tap the × that only
+    // shows up under the pointer.
+    readonly property real splitTargetW: root.splitShownId === "" ? root.pillHeight
+        : Math.max(root.pillHeight + 40, Math.min(220, root.baseWidth(root.splitShownId)))
+    readonly property real splitP: Math.max(0, root.splitProgress)
+    readonly property real splitPc: Math.min(1, root.splitP)
+
+    Rectangle {
+        id: splitNeck
+        visible: splitPill.visible && root.splitPc < 0.9
+        readonly property real thickness: root.pillHeight * 0.8 * Math.max(0, 1 - root.splitPc * 1.35)
+        x: pill.width - 12
+        width: Math.max(0, splitPill.x - pill.width) + 24
+        height: splitNeck.thickness
+        anchors.verticalCenter: pill.verticalCenter
+        radius: height / 2
+        color: root.capsuleColor
+        opacity: splitPill.opacity
+    }
+
+    Rectangle {
+        id: splitPill
+        visible: root.splitShown && root.splitProgress > 0.001
+        x: pill.width + root.capsuleGap * root.splitPc - (1 - root.splitPc) * root.pillHeight * 0.85 + root.splitDragX
+        width: root.pillHeight + (root.splitTargetW - root.pillHeight) * root.splitP
+        height: root.pillHeight
+        anchors.verticalCenter: pill.verticalCenter
+        radius: height / 2
+        color: root.capsuleColor
+        clip: true
+        opacity: Math.min(1, root.splitP * 3) * root.splitFade * (root.overlayShown ? 0 : 1)
+            * (1 - Math.max(0, Math.min(0.6, root.splitDragX / 220)))
+        scale: splitHover.hovered && !splitDrag.active ? 1.03 : 1
+        z: 2
+
+        Behavior on scale {
+            NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
+        }
+        Behavior on width {
+            enabled: !splitIn.running && !splitOut.running
+            NumberAnimation { duration: 380; easing.type: Easing.BezierSpline; easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial }
+        }
+
+        Item {
+            anchors.fill: parent
+            opacity: Math.max(0, Math.min(1, (root.splitPc - 0.5) / 0.35)) * root.splitContentOpacity
+            transform: Translate { y: root.splitContentY }
+
+            // Display only: the pill's own gestures below own every tap, drag and scroll
+            Loader {
+                anchors.fill: parent
+                enabled: false
+                active: root.splitShownId !== ""
+                sourceComponent: root.splitShownId !== "" ? root.componentFor(root.splitShownId) : null
+            }
+        }
+
+        Rectangle {
+            id: splitClose
+            anchors {
+                right: parent.right
+                rightMargin: 6
+                verticalCenter: parent.verticalCenter
+            }
+            width: 20
+            height: 20
+            radius: 10
+            color: Appearance.colors.colLayer2
+            opacity: splitHover.hovered && !splitDrag.active ? 1 : 0
+            scale: splitHover.hovered ? 1 : 0.4
+
+            Behavior on opacity {
+                NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 1.8 }
+            }
+
+            MaterialSymbol {
+                anchors.centerIn: parent
+                text: "close"
+                iconSize: 12
+                fill: 1
+                color: Appearance.colors.colOnLayer1
+            }
+        }
+
+        HoverHandler {
+            id: splitHover
+            cursorShape: splitDrag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+        }
+
+        DragHandler {
+            id: splitDrag
+            target: null
+            xAxis.enabled: true
+            yAxis.enabled: false
+            onTranslationChanged: {
+                const dx = splitDrag.translation.x
+                root.splitDragX = dx > 0 ? dx : root.rubber(dx, 16)
+            }
+            onActiveChanged: {
+                if (splitDrag.active) {
+                    splitSnap.stop()
+                    return
+                }
+                const dx = splitDrag.translation.x
+                if (dx > 44) {
+                    splitFling.toX = root.splitDragX + 150
+                    splitFling.restart()
+                } else if (dx < -36) {
+                    root.splitDragX = 0
+                    root.dismissSplit()
+                } else {
+                    splitSnap.restart()
+                }
+            }
+        }
+
+        NumberAnimation {
+            id: splitSnap
+            target: root
+            property: "splitDragX"
+            to: 0
+            duration: 420
+            easing.type: Easing.OutBack
+            easing.overshoot: 1.6
+        }
+
+        TapHandler {
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            onTapped: (eventPoint, button) => {
+                if (button === Qt.MiddleButton) {
+                    root.dismissSplit()
+                    return
+                }
+                const p = splitClose.mapFromItem(splitPill, eventPoint.position.x, eventPoint.position.y)
+                if (splitClose.opacity > 0.5 && splitClose.contains(p)) {
+                    root.dismissSplit()
+                    return
+                }
+                root.expandTo(2, root.hasDetails(root.primaryId) ? undefined : root.splitShownId)
+            }
+        }
+
+        WheelHandler {
+            id: splitWheel
+            target: null
+            property bool cooling: false
+            onWheel: event => {
+                if (splitWheel.cooling) return
+                splitWheel.cooling = true
+                splitWheelCool.restart()
+                const delta = Math.abs(event.angleDelta.y) >= Math.abs(event.angleDelta.x) ? event.angleDelta.y : event.angleDelta.x
+                root.cycleSplit(delta < 0 ? 1 : -1)
+            }
+        }
+
+        Timer {
+            id: splitWheelCool
+            interval: 260
+            onTriggered: splitWheel.cooling = false
+        }
+    }
+
+    // The way in, for the pointer: a small "+" that slides out beside the island while you hover it
+    Timer {
+        id: splitTabGrace
+        interval: 800
+    }
+    onHoverArmedChanged: if (!root.hoverArmed) splitTabGrace.restart()
+
+    Rectangle {
+        id: splitTab
+        readonly property bool wanted: !root.vertical && !root.overlayShown && !root.splitShown && !root.expanded
+            && root.splitCandidates.length > 0
+            && (root.hoverArmed || tabHover.hovered || splitTabGrace.running)
+        x: root.implicitWidth + 6
+        anchors.verticalCenter: pill.verticalCenter
+        width: 24
+        height: 24
+        radius: 12
+        color: tabHover.hovered ? Appearance.colors.colLayer2 : root.capsuleColor
+        opacity: splitTab.wanted ? 1 : 0
+        scale: splitTab.wanted ? (tabHover.hovered ? 1.1 : 1) : 0.3
+        visible: opacity > 0.01
+
+        Behavior on opacity {
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+        Behavior on scale {
+            NumberAnimation { duration: 340; easing.type: Easing.OutBack; easing.overshoot: 1.8 }
+        }
+        Behavior on color {
+            ColorAnimation { duration: 140 }
+        }
+
+        MaterialSymbol {
+            anchors.centerIn: parent
+            text: "add"
+            iconSize: 16
+            fill: 1
+            color: Appearance.colors.colOnLayer1
+            rotation: splitTab.wanted ? 0 : -90
+
+            Behavior on rotation {
+                NumberAnimation { duration: 340; easing.type: Easing.OutCubic }
+            }
+        }
+
+        HoverHandler {
+            id: tabHover
+            cursorShape: Qt.PointingHandCursor
+        }
+        TapHandler {
+            onTapped: root.openSplitPicker()
         }
     }
 
