@@ -1394,6 +1394,8 @@ Singleton {
     }
     property var finishedDownload: null
     property Flash downloadDone: Flash { duration: 9000 }
+    // IMDb rating of the episode/film that just started in the browser (services/WatchRating.qml)
+    property Flash watchRating: Flash { duration: 6000 }
 
     Process {
         id: downloadWatcher

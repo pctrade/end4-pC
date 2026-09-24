@@ -1179,5 +1179,8 @@
   "%1 min · %2 waiting": "%1 min · %2 esperando",
   "Focus · %1 min": "Foco · %1 min",
   "Iniciando…": "Iniciando…",
-  "Split with…": "Dividir com…"
+  "Split with…": "Dividir com…",
+  "Install scripts/island/watch-rating.user.js in Tampermonkey to see each episode's rating": "Instale scripts/island/watch-rating.user.js no Tampermonkey para ver a nota de cada episódio",
+  "Best of the season": "Melhor da temporada",
+  "#%1 of %2 this season": "#%1 de %2 na temporada"
 }

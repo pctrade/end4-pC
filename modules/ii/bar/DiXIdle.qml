@@ -231,6 +231,7 @@ ColumnLayout {
     // each opening its own view. Before this the expanded Home had no road back to the live islands at all.
     readonly property var nowIds: {
         const ids = xi.di.persistentIds.filter(id => !["idle", "media"].includes(id))
+        if (WatchRating.active && WatchRating.playing && !ids.includes("watchRating")) ids.push("watchRating")
         if (F1.enabled && !ids.includes("f1") && F1.nextSession !== null && F1.secondsToNext > 0 && F1.secondsToNext < 3 * 86400)
             ids.push("f1")
         return ids
