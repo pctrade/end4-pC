@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Ilha — episódio atual (Netflix / Disney+)
 // @namespace    end4-pC
-// @version      3.0
+// @version      3.1
 // @description  Publica série, temporada e episódio nos metadados de mídia do navegador, que o Chrome repassa ao MPRIS — é daí que a Dynamic Island tira a nota do IMDb de cada episódio.
 // @match        https://www.netflix.com/*
 // @match        https://www.disneyplus.com/*
 // @match        https://*.disneyplus.com/*
 // @grant        none
+// @sandbox      JavaScript
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -46,9 +47,45 @@
         return out
     }
 
+    // Every text piece joined with a space: Netflix splits "Suits", "T1:E3" and the title into sibling tags, and
+    // plain textContent glues them into "SuitsT1:E3Title", which no episode pattern can read
+    function textOf(root) {
+        if (!root) return ""
+        const parts = []
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            const text = node.textContent.trim()
+            if (text) parts.push(text)
+        }
+        return parts.join(" ")
+    }
+
     function deepText(element) {
         if (!element) return ""
-        return element.shadowRoot ? element.shadowRoot.textContent : element.textContent
+        return textOf(element.shadowRoot ?? element)
+    }
+
+    // Netflix keeps the whole show in its player state: the episode is known even with the controls hidden
+    // (autoplay included). Internal and undocumented — if it's not there, this just returns nothing.
+    function netflixState() {
+        try {
+            const app = window.netflix?.appContext?.state?.playerApp
+            if (!app) return null
+            const videoPlayer = app.getAPI().videoPlayer
+            const session = videoPlayer.getAllPlayerSessionIds().find(id => id.startsWith("watch"))
+            const movieId = session ? videoPlayer.getVideoPlayerBySessionId(session).getMovieId()
+                : Number(location.pathname.match(/\/watch\/(\d+)/)?.[1])
+            const video = app.getState().videoPlayer.videoMetadata[movieId]?._metadata?.video
+            if (!video) return null
+            if (video.type !== "show") return { series: video.title, episode: null }
+            for (const season of video.seasons ?? [])
+                for (const episode of season.episodes ?? [])
+                    if (episode.id === movieId || episode.episodeId === movieId)
+                        return { series: video.title, episode: { season: season.seq, episode: episode.seq, title: episode.title ?? "" } }
+            return { series: video.title, episode: null }
+        } catch (e) {
+            return null
+        }
     }
 
     function currentEpisode() {
@@ -57,9 +94,11 @@
             const info = parse(deepText(bug))
             if (info) return info
         }
-        // Netflix: the title block of the player controls
+        // Netflix: its own player state first (works with the controls hidden), then the title block on screen
+        const netflix = netflixState()?.episode
+        if (netflix) return netflix
         for (const block of deepAll('[data-uia="video-title"]')) {
-            const info = parse(block.textContent)
+            const info = parse(textOf(block))
             if (info) return info
         }
         return null
@@ -67,14 +106,14 @@
 
     function upNext() {
         for (const tile of deepAll('[data-qa="pivot-tray-tile.episodeTitle"]')) {
-            const info = parse(tile.textContent)
+            const info = parse(textOf(tile))
             if (info) return info
         }
         return null
     }
 
     function seriesName() {
-        const netflix = document.querySelector('[data-uia="video-title"] h4')?.textContent?.trim()
+        const netflix = netflixState()?.series || document.querySelector('[data-uia="video-title"] h4')?.textContent?.trim()
         if (netflix) return netflix
         const title = document.title.replace(/\s*[|–—-]\s*(Disney\+|Netflix)\s*$/i, "").trim()
         return title && !/^(Netflix|Disney\+)$/i.test(title) ? title : ""
