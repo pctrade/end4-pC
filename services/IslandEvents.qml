@@ -1397,14 +1397,46 @@ Singleton {
     // IMDb rating of the episode/film that just started in the browser (services/WatchRating.qml)
     property Flash watchRating: Flash { duration: 6000 }
 
+    // Passive: the kernel tells Qt when the folder changes (FolderListModel sits on inotify), and only a partial
+    // file appearing starts the watcher, which follows the download and exits once nothing is arriving anymore.
+    // Before, the watcher lived all day and listed the folder every 4 seconds.
+    readonly property bool downloadWatchEnabled: (root.cfg.network ?? true) && root.downloadMode === "files" && !root.fakeNet
+
+    FolderListModel {
+        id: partialDownloads
+        folder: Directories.downloads
+        showDirs: false
+        showHidden: true
+        nameFilters: ["*.crdownload", "*.part", "*.partial", "*.download", "*.opdownload", "*.!ut"]
+        onCountChanged: root.startDownloadWatch()
+    }
+
+    // Only a partial file that's actually being written counts: an abandoned .crdownload from weeks ago would
+    // otherwise keep the watcher alive forever (and restart it every time it left)
+    function startDownloadWatch() {
+        if (!root.downloadWatchEnabled || downloadWatcher.running) return
+        for (let i = 0; i < partialDownloads.count; i++) {
+            const modified = partialDownloads.get(i, "fileModified")
+            if (modified && Date.now() - modified.getTime() < 60000) {
+                downloadWatcher.running = true
+                return
+            }
+        }
+    }
+    onDownloadWatchEnabledChanged: {
+        if (root.downloadWatchEnabled) root.startDownloadWatch()
+        else downloadWatcher.running = false
+    }
+
     Process {
         id: downloadWatcher
-        running: (root.cfg.network ?? true) && root.downloadMode === "files" && !root.fakeNet
-        command: ["python3", Quickshell.shellPath("scripts/island/download_watch.py"),
+        command: ["python3", Quickshell.shellPath("scripts/island/download_watch.py"), "--until-idle",
             FileUtils.trimFileProtocol(Directories.downloads)]
         stdout: SplitParser {
             onRead: line => root.handleDownloadWatch(line)
         }
+        // A new download may have started in the instant it was leaving
+        onExited: Qt.callLater(root.startDownloadWatch)
     }
 
     function handleDownloadWatch(line) {
