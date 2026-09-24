@@ -28,6 +28,66 @@ Item {
         }
     }
 
+    component StatusGlyph: Item {
+        id: glyph
+        property string icon
+        property color tone: Appearance.colors.colOnLayer0
+        property bool toned: false
+        property bool filled: false
+        property string badge: ""
+        property var onTap: null
+        implicitWidth: 22
+        implicitHeight: 22
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 22
+            height: 22
+            radius: 11
+            color: Appearance.colors.colLayer2
+            opacity: glyphMouse.containsMouse ? 1 : 0
+            scale: glyphMouse.containsMouse ? 1 : 0.6
+            Behavior on opacity { NumberAnimation { duration: 160 } }
+            Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+        }
+
+        MaterialSymbol {
+            anchors.centerIn: parent
+            text: glyph.icon
+            iconSize: 15
+            fill: glyph.filled ? 1 : 0
+            color: glyph.tone
+            opacity: glyph.toned || glyphMouse.containsMouse ? 1 : 0.72
+            Behavior on opacity { NumberAnimation { duration: 160 } }
+        }
+
+        Rectangle {
+            visible: glyph.badge !== ""
+            anchors { right: parent.right; top: parent.top }
+            height: 11
+            width: Math.max(11, badgeText.implicitWidth + 5)
+            radius: 5.5
+            color: glyph.toned ? glyph.tone : Appearance.colors.colPrimary
+            StyledText {
+                id: badgeText
+                anchors.centerIn: parent
+                text: glyph.badge
+                font.pixelSize: 8
+                font.weight: Font.Bold
+                font.features: { "tnum": 1 }
+                color: Appearance.colors.colOnPrimary
+            }
+        }
+
+        MouseArea {
+            id: glyphMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: glyph.onTap ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: if (glyph.onTap) glyph.onTap()
+        }
+    }
+
     // When the date earns its place: hovering, the weekend (when days blur together), the first hour of a new
     // day, and the first minutes after the machine woke up — the three moments you actually ask "what day is it".
     // Home has room, so the date lives here full time — quiet next to the clock, and brighter on the days when
@@ -81,26 +141,30 @@ Item {
             implicitWidth: 10
         }
 
+        // Status tray: every glyph the same size and the same quiet tone — only what needs you gets colour —
+        // counts ride as a small badge on the corner instead of loose numbers beside them, and every one of them
+        // does something when tapped. Before this, some were clickable, some not (the F1 helmet), and each had its
+        // own size and spacing, so the row read as clutter.
         RowLayout {
             id: iconsRow
             Layout.alignment: Qt.AlignVCenter
-            spacing: 4
+            spacing: 1
 
             Revealer {
                 reveal: !diIdleRoot.systemIconsElsewhere && (Audio.source?.audio?.muted ?? false)
-                MaterialSymbol {
-                    text: "mic_off"
-                    iconSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colOnLayer0
+                StatusGlyph {
+                    icon: "mic_off"
+                    tone: IslandEvents.colorAttention
+                    toned: true
+                    onTap: () => { if (Audio.source?.audio) Audio.source.audio.muted = false }
                 }
             }
 
             Revealer {
                 reveal: !diIdleRoot.systemIconsElsewhere && (Audio.sink?.audio?.muted ?? false)
-                MaterialSymbol {
-                    text: "volume_off"
-                    iconSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colOnLayer0
+                StatusGlyph {
+                    icon: "volume_off"
+                    onTap: () => { if (Audio.sink?.audio) Audio.sink.audio.muted = false }
                 }
             }
 
@@ -108,192 +172,149 @@ Item {
                 reveal: !diIdleRoot.systemIconsElsewhere
                     && !Network.ethernet
                     && (Network.wifiStatus === "disconnected" || Network.wifiStatus === "disabled")
-                MaterialSymbol {
-                    text: "wifi_off"
-                    iconSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colError
+                StatusGlyph {
+                    icon: "wifi_off"
+                    tone: Appearance.colors.colError
+                    toned: true
+                    onTap: () => diIdleRoot.di.expand("download")
                 }
             }
 
-            // Pending updates with their count; a click opens yay in a terminal
             Revealer {
                 reveal: (diIdleRoot.di.cfg.updatesIndicator ?? true) && Updates.updateAdvised
-                Item {
-                    implicitWidth: updatesRow.implicitWidth
-                    implicitHeight: updatesRow.implicitHeight
-
-                    RowLayout {
-                        id: updatesRow
-                        spacing: 2
-                        MaterialSymbol {
-                            text: "system_update_alt"
-                            iconSize: Appearance.font.pixelSize.normal
-                            color: Updates.updateStronglyAdvised ? Appearance.colors.colError : Appearance.colors.colPrimary
-                        }
-                        StyledText {
-                            text: `${Updates.count}`
-                            font.pixelSize: Appearance.font.pixelSize.smallest
-                            font.features: { "tnum": 1 }
-                            color: Updates.updateStronglyAdvised ? Appearance.colors.colError : Appearance.colors.colPrimary
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        anchors.margins: -4
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: IslandEvents.runSystemUpdate()
-                    }
+                StatusGlyph {
+                    icon: "system_update_alt"
+                    badge: `${Updates.count}`
+                    tone: Updates.updateStronglyAdvised ? Appearance.colors.colError : Appearance.colors.colOnLayer0
+                    toned: Updates.updateStronglyAdvised
+                    onTap: () => IslandEvents.runSystemUpdate()
                 }
             }
 
-            // Open AI agent sessions: ONE mark — whichever agent needs you most — plus a count when there's
-            // more than one. Repeating a mark per agent read as a rendering glitch (two near-identical orange
-            // marks), when what mattered was just "an agent is open", not "here is every agent".
+            // Open AI agent sessions: ONE mark — whichever agent needs you most — inside a ring with its 5h usage,
+            // plus a count when there's more than one. Repeating a mark per agent read as a rendering glitch.
             Revealer {
                 reveal: (diIdleRoot.di.cfg.claudeCode ?? true) && ClaudeCode.openCount > 0
                 Item {
-                    implicitWidth: agentsRow.implicitWidth
-                    implicitHeight: agentsRow.implicitHeight
-
-                    readonly property string leadAgent: {
+                    id: agentMark
+                    readonly property string agent: {
                         const waiting = ClaudeCode.liveSessions.find(s => s.state === "waiting")
                         if (waiting) return waiting.agent
                         const working = ClaudeCode.liveSessions.find(s => s.state === "working")
                         if (working) return working.agent
                         return ClaudeCode.openAgents[0] ?? "claude"
                     }
+                    readonly property real used: ClaudeCode.limits[agentMark.agent]?.five ?? -1
+                    readonly property bool waiting: ClaudeCode.liveSessions.some(s => s.agent === agentMark.agent && s.state === "waiting")
+                    readonly property bool working: ClaudeCode.liveSessions.some(s => s.agent === agentMark.agent && s.state === "working")
+                    implicitWidth: 22
+                    implicitHeight: 22
 
-                    RowLayout {
-                        id: agentsRow
-                        spacing: 4
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 22
+                        height: 22
+                        radius: 11
+                        color: Appearance.colors.colLayer2
+                        opacity: agentMouse.containsMouse ? 1 : 0
+                        scale: agentMouse.containsMouse ? 1 : 0.6
+                        Behavior on opacity { NumberAnimation { duration: 160 } }
+                        Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+                    }
 
-                        Item {
-                            id: agentMark
-                            readonly property string modelData: parent.parent.leadAgent
-                            readonly property real used: ClaudeCode.limits[agentMark.modelData]?.five ?? -1
-                            readonly property bool waiting: ClaudeCode.liveSessions.some(s => s.agent === agentMark.modelData && s.state === "waiting")
-                            readonly property bool working: ClaudeCode.liveSessions.some(s => s.agent === agentMark.modelData && s.state === "working")
-                            implicitWidth: 20
-                            implicitHeight: 20
+                    CircularProgress {
+                        anchors.centerIn: parent
+                        visible: agentMark.used >= 0
+                        implicitSize: 18
+                        lineWidth: 2
+                        value: Math.max(0, Math.min(1, agentMark.used / 100))
+                        colPrimary: agentMark.used >= 95 ? IslandEvents.colorError : agentMark.used >= 80 ? IslandEvents.colorAttention : Appearance.colors.colPrimary
+                        colSecondary: ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.85)
+                    }
 
-                            CircularProgress {
-                                anchors.fill: parent
-                                visible: agentMark.used >= 0
-                                implicitSize: 20
-                                lineWidth: 2
-                                value: Math.max(0, Math.min(1, agentMark.used / 100))
-                                colPrimary: agentMark.used >= 95 ? IslandEvents.colorError : agentMark.used >= 80 ? IslandEvents.colorAttention : Appearance.colors.colPrimary
-                                colSecondary: ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.8)
-                            }
-                            DiClaudeIcon {
-                                anchors.centerIn: parent
-                                agent: agentMark.modelData
-                                size: 11
-                                color: agentMark.waiting ? IslandEvents.colorAttention : ClaudeCode.agentColor(agentMark.modelData)
-                                opacity: agentMark.working || agentMark.waiting ? 1 : 0.75
+                    DiClaudeIcon {
+                        anchors.centerIn: parent
+                        agent: agentMark.agent
+                        size: 10
+                        color: agentMark.waiting ? IslandEvents.colorAttention : ClaudeCode.agentColor(agentMark.agent)
+                        opacity: agentMark.working || agentMark.waiting ? 1 : 0.72
 
-                                SequentialAnimation on scale {
-                                    running: agentMark.waiting
-                                    loops: Animation.Infinite
-                                    alwaysRunToEnd: true
-                                    NumberAnimation { to: 1.25; duration: 520; easing.type: Easing.InOutSine }
-                                    NumberAnimation { to: 1; duration: 520; easing.type: Easing.InOutSine }
-                                }
-                            }
+                        SequentialAnimation on scale {
+                            running: agentMark.waiting
+                            loops: Animation.Infinite
+                            alwaysRunToEnd: true
+                            NumberAnimation { to: 1.25; duration: 520; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: 520; easing.type: Easing.InOutSine }
                         }
-                        // Only the percentage: the agent's own mark already says which one it is
-                        Revealer {
-                            reveal: diIdleRoot.di.hoverRevealed && ClaudeCode.limits[agentMark.modelData]
-                            StyledText {
-                                text: ClaudeCode.limits[agentMark.modelData] ? `${Math.round(ClaudeCode.limits[agentMark.modelData].five)}%` : ""
-                                font.pixelSize: Appearance.font.pixelSize.smallest
-                                font.features: { "tnum": 1 }
-                                color: Appearance.colors.colOnLayer0
-                                opacity: 0.75
-                            }
-                        }
+                    }
+
+                    Rectangle {
+                        visible: ClaudeCode.openCount > 1
+                        anchors { right: parent.right; top: parent.top }
+                        height: 11
+                        width: Math.max(11, agentCount.implicitWidth + 5)
+                        radius: 5.5
+                        color: Appearance.colors.colPrimary
                         StyledText {
-                            visible: ClaudeCode.openCount > 1
-                            text: `+${ClaudeCode.openCount - 1}`
-                            font.pixelSize: Appearance.font.pixelSize.smallest
+                            id: agentCount
+                            anchors.centerIn: parent
+                            text: `${ClaudeCode.openCount}`
+                            font.pixelSize: 8
+                            font.weight: Font.Bold
                             font.features: { "tnum": 1 }
-                            color: Appearance.colors.colOnLayer0
-                            opacity: 0.6
+                            color: Appearance.colors.colOnPrimary
                         }
+                    }
+
+                    MouseArea {
+                        id: agentMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: diIdleRoot.di.expand("agents")
                     }
                 }
             }
 
             Revealer {
                 reveal: F1.enabled && F1.nextSession !== null && F1.secondsToNext > 0 && F1.secondsToNext < 24 * 3600
-                MaterialSymbol {
-                    text: "sports_motorsports"
-                    iconSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colPrimary
+                StatusGlyph {
+                    icon: "sports_motorsports"
+                    tone: Appearance.colors.colPrimary
+                    toned: F1.secondsToNext < 3600
+                    onTap: () => diIdleRoot.di.expand("f1")
                 }
             }
 
             // Do not disturb is easy to forget you turned on; the island says so as long as it is on
             Revealer {
                 reveal: Notifications.silent
-                Item {
-                    implicitWidth: dndRow.implicitWidth
-                    implicitHeight: dndRow.implicitHeight
+                StatusGlyph {
+                    icon: "notifications_off"
+                    tone: IslandEvents.colorAttention
+                    toned: true
+                    filled: true
+                    onTap: () => Notifications.silent = false
+                }
+            }
 
-                    RowLayout {
-                        id: dndRow
-                        spacing: 3
-                        MaterialSymbol {
-                            text: "notifications_off"
-                            iconSize: Appearance.font.pixelSize.normal
-                            fill: 1
-                            color: IslandEvents.colorAttention
-                        }
-                        StyledText {
-                            visible: diIdleRoot.di.hoverRevealed
-                            text: Translation.tr("Do not disturb")
-                            font.pixelSize: Appearance.font.pixelSize.smallest
-                            color: IslandEvents.colorAttention
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        anchors.margins: -3
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: Notifications.silent = false
-                    }
+            Revealer {
+                reveal: IslandEvents.focusOn
+                StatusGlyph {
+                    icon: "psychology"
+                    tone: IslandEvents.colorAttention
+                    toned: true
+                    badge: IslandEvents.focusSuppressedCount > 0 ? `${IslandEvents.focusSuppressedCount}` : ""
+                    onTap: () => IslandEvents.toggleFocus()
                 }
             }
 
             Revealer {
                 reveal: (Notifications.unread ?? 0) > 0
-                Item {
-                    implicitWidth: notifRow.implicitWidth
-                    implicitHeight: notifRow.implicitHeight
-
-                    RowLayout {
-                        id: notifRow
-                        spacing: 2
-                        MaterialSymbol {
-                            text: "notifications"
-                            iconSize: Appearance.font.pixelSize.normal
-                            color: Appearance.colors.colOnLayer0
-                        }
-                        StyledText {
-                            text: `${Notifications.unread}`
-                            font.pixelSize: Appearance.font.pixelSize.smallest
-                            font.features: { "tnum": 1 }
-                            color: Appearance.colors.colOnLayer0
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen
-                    }
+                StatusGlyph {
+                    icon: "notifications"
+                    badge: `${Notifications.unread}`
+                    onTap: () => GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen
                 }
             }
         }

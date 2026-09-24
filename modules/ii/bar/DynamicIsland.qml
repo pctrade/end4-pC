@@ -1097,7 +1097,7 @@ Item {
     }
     // Views worth opening even when nothing is happening in them: the system one now holds the temperature,
     // the power profile and every peripheral battery, and the network one holds the downloads
-    readonly property var standaloneViews: ["privacy", "f1", "idle", "weather", "shelf", "overview", "system", "download", "history", "audioOutput", "calendar"]
+    readonly property var standaloneViews: ["privacy", "f1", "idle", "weather", "shelf", "overview", "system", "download", "history", "audioOutput", "calendar", "agents", "clipboard", "zerotier"]
     readonly property string expandedId: root.expandedOverride !== "" ? root.expandedOverride : root.primaryId
 
     readonly property Item surfaceItem: {
@@ -2415,34 +2415,6 @@ Item {
             }
         }
 
-        Row {
-            id: privacyDots
-            anchors {
-                right: parent.right
-                rightMargin: 12
-                top: parent.top
-                topMargin: 2
-            }
-            spacing: 3
-            visible: (root.cfg.privacyIndicators ?? true) && IslandEvents.anyPrivacy
-
-            Repeater {
-                model: [
-                    { show: IslandEvents.micInUse, color: IslandEvents.colorAttention },
-                    { show: IslandEvents.cameraInUse || IslandEvents.screenInUse, color: "#30D158" }
-                ].filter(d => d.show)
-                delegate: Rectangle {
-                    required property var modelData
-                    width: 6
-                    height: 6
-                    radius: 3
-                    color: modelData.color
-
-                }
-            }
-
-        }
-
         // Getting something out of the way: a middle click dismisses what is on screen, holding it silences that
         // island until you ask for it back. Kept on its own handler so a hold never also counts as a tap.
         TapHandler {
@@ -2459,10 +2431,7 @@ Item {
                     root.togglePin()
                     return
                 }
-                const onPrivacy = privacyDots.visible
-                    && privacyDots.contains(privacyDots.mapFromItem(pill, eventPoint.position.x, eventPoint.position.y))
-                if (onPrivacy) root.expandTo(2, "privacy")
-                else if (root.hasDetails(root.primaryId)) root.toggleExpanded()
+                if (root.hasDetails(root.primaryId)) root.toggleExpanded()
             }
         }
 
@@ -2609,12 +2578,117 @@ Item {
                                 root.dismiss(capsuleDelegate.modelData)
                                 return
                             }
+                            // A tap on a capsule is "show me this", not "swap places": open it straight away
+                            // when it has a full view (the drawer, agents, F1…), otherwise bring it to the pill
+                            const id = capsuleDelegate.modelData
+                            if (root.hasDetails(id)) {
+                                root.expandTo(2, id)
+                                return
+                            }
                             root.forceIdle = false
-                            root.manualFocusId = capsuleDelegate.modelData
+                            root.manualFocusId = id
                         }
                     }
                 }
             }
+        }
+    }
+
+    // Privacy: a pip just outside the pill's left edge (like the phone's green/orange dot beside the island),
+    // so it never sits on top of whatever the pill is showing. Mic and camera/screen stack as two dots.
+    // It breathes very slowly while on and sends out one ripple the moment it turns on.
+    Item {
+        id: privacyPip
+        readonly property bool on: (root.cfg.privacyIndicators ?? true) && IslandEvents.anyPrivacy && !root.vertical
+        readonly property var dots: [
+            { show: IslandEvents.micInUse, color: IslandEvents.colorAttention },
+            { show: IslandEvents.cameraInUse || IslandEvents.screenInUse, color: "#30D158" }
+        ].filter(d => d.show)
+        width: 6
+        height: privacyPip.dots.length > 1 ? 15 : 6
+        x: pill.x - width - 7
+        anchors.verticalCenter: pill.verticalCenter
+        opacity: privacyPip.on && !root.overlayShown ? 1 : 0
+        scale: privacyPip.on ? (pipHover.hovered ? 1.35 : 1) : 0.2
+        visible: opacity > 0.01
+
+        Behavior on opacity {
+            NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
+        }
+        Behavior on scale {
+            NumberAnimation { duration: 380; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+        }
+        Behavior on height {
+            NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+        }
+
+        onOnChanged: if (privacyPip.on) pipRipple.restart()
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 3
+
+            Repeater {
+                model: privacyPip.dots
+                delegate: Item {
+                    required property var modelData
+                    width: 6
+                    height: 6
+
+                    // Soft halo that breathes: present, never flashing
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 12
+                        height: 12
+                        radius: 6
+                        color: modelData.color
+                        opacity: 0.18
+
+                        SequentialAnimation on opacity {
+                            running: privacyPip.on
+                            loops: Animation.Infinite
+                            NumberAnimation { to: 0.05; duration: 1600; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 0.22; duration: 1600; easing.type: Easing.InOutSine }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 3
+                        color: modelData.color
+                    }
+                }
+            }
+        }
+
+        // One ripple when it turns on — the only moment it asks for attention
+        Rectangle {
+            id: ripple
+            anchors.centerIn: parent
+            width: 6
+            height: 6
+            radius: width / 2
+            color: "transparent"
+            border.width: 1.5
+            border.color: privacyPip.dots[0]?.color ?? IslandEvents.colorAttention
+            opacity: 0
+
+            ParallelAnimation {
+                id: pipRipple
+                NumberAnimation { target: ripple; property: "width"; from: 6; to: 30; duration: 900; easing.type: Easing.OutCubic }
+                NumberAnimation { target: ripple; property: "height"; from: 6; to: 30; duration: 900; easing.type: Easing.OutCubic }
+                NumberAnimation { target: ripple; property: "opacity"; from: 0.8; to: 0; duration: 900; easing.type: Easing.OutQuad }
+            }
+        }
+
+        HoverHandler {
+            id: pipHover
+            margin: 6
+            cursorShape: Qt.PointingHandCursor
+        }
+        TapHandler {
+            margin: 6
+            onTapped: root.expandTo(2, "privacy")
         }
     }
 
