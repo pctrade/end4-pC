@@ -1256,6 +1256,25 @@ Singleton {
         }
     }
 
+    // "Ask Gemini": the conversation goes to Gemini on the web. The prompt rides in the link's #fragment (never
+    // sent to any server) and scripts/island/gemini-prompt.user.js, on gemini.google.com, puts it in the box and
+    // sends it — no clipboard, no simulated keys.
+    function askGemini(notifs) {
+        const list = (notifs ?? []).filter(n => n)
+        if (list.length === 0) return
+        const parts = root.notificationParts(list[list.length - 1])
+        const who = parts.title || parts.app
+        const lines = list.map(n => {
+            const p = root.notificationParts(n)
+            const body = p.body || (p.media?.label ?? "")
+            return `- ${p.author !== "" ? p.author + ": " : ""}${body}`
+        })
+        const prompt = Translation.tr("Conversation on %1 with %2 (oldest first):").arg(parts.app).arg(who)
+            + "\n" + lines.join("\n") + "\n\n"
+            + Translation.tr("Suggest 3 short, natural replies in Portuguese, in the tone of a personal chat. Only the replies, numbered.")
+        Qt.openUrlExternally(`https://gemini.google.com/app#ilha=${encodeURIComponent(prompt)}`)
+    }
+
     function pasteReplyInto(notif, text) {
         if (text.trim() === "") return false
         const app = `${notif?.notification?.desktopEntry ?? ""} ${notif?.appName ?? ""}`.trim()

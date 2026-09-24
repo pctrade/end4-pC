@@ -537,6 +537,46 @@ ColumnLayout {
         visible: replyRow.visible
         spacing: 6
 
+        // The whole conversation to Gemini (the shell's AI chat), for a few suggested replies
+        Rectangle {
+            id: geminiChip
+            implicitWidth: geminiRow.implicitWidth + 20
+            implicitHeight: 28
+            radius: 14
+            color: geminiArea.containsMouse ? ColorUtils.transparentize("#4796E3", 0.7) : Appearance.colors.colLayer1
+            scale: Math.max(0.01, xn.rise(xn.earlier.length + 2)) * (geminiArea.pressed ? 0.92 : 1)
+
+            Behavior on color {
+                ColorAnimation { duration: 140 }
+            }
+
+            RowLayout {
+                id: geminiRow
+                anchors.centerIn: parent
+                spacing: 5
+                DiClaudeIcon {
+                    agent: "gemini"
+                    size: 13
+                    color: "#4796E3"
+                }
+                StyledText {
+                    text: Translation.tr("Ask Gemini")
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: Appearance.colors.colOnLayer1
+                }
+            }
+            MouseArea {
+                id: geminiArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    IslandEvents.askGemini([...xn.earlier, xn.notif])
+                    xn.di.collapse()
+                }
+            }
+        }
+
         Repeater {
             model: ["👍", "❤️", "😂", Translation.tr("Already looking"), Translation.tr("Ok!")]
             delegate: Rectangle {
