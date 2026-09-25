@@ -20,6 +20,16 @@ MouseArea {
     implicitHeight: vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
 
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
+    // Middle click cycles the power profile: the battery widget is where you look when it is draining fast
+    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+    onClicked: mouse => {
+        if (mouse.button !== Qt.MiddleButton) return
+        const order = ["power-saver", "balanced", "performance"]
+        const next = order[(order.indexOf(IslandHardware.powerProfile) + 1) % order.length]
+        IslandHardware.setPowerProfile(next)
+        IslandHardware.show({ kind: "profile", icon: next === "performance" ? "bolt" : next === "balanced" ? "balance" : "eco",
+            tone: "progress", title: Translation.tr("Power profile"), subtitle: IslandHardware.powerProfileName, value: "", actions: [] }, 3000)
+    }
 
     ClippedProgressBar {
         id: batteryProgress
