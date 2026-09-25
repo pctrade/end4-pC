@@ -12,6 +12,8 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 410
+    // Layouts overwrite implicitWidth with their children's; the container reads this instead
+    readonly property real wantedWidth: 410
 
     readonly property var pdfs: DropShelf.items.filter(p => DropShelf.isPdf(p))
 

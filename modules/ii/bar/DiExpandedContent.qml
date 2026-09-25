@@ -15,7 +15,8 @@ Item {
     readonly property real naturalHeight: (loader.item?.implicitHeight ?? 60) + content.padding * 2
     readonly property bool scrollable: content.naturalHeight > content.maxHeight + 1
 
-    implicitWidth: (loader.item?.implicitWidth ?? 280) + content.padding * 2
+    // A view's own width: layouts overwrite implicitWidth with their children's, so views declare `wantedWidth`
+    implicitWidth: Math.max(loader.item?.implicitWidth ?? 280, loader.item?.wantedWidth ?? 0) + content.padding * 2
     implicitHeight: Math.min(content.naturalHeight, content.maxHeight)
 
     Component.onCompleted: content.shownId = content.contentId

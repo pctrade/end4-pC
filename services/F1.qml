@@ -135,6 +135,32 @@ Singleton {
         }
     }
 
+    // Session names come from the API in English ("Race", "Practice 2"…); this is what the island shows
+    function sessionLabel(name) {
+        if (!name) return ""
+        const practice = name.match(/^Practice (\d)$/)
+        if (practice) return Translation.tr("Practice %1").arg(practice[1])
+        switch (name) {
+            case "Race":              return Translation.tr("Race")
+            case "Qualifying":        return Translation.tr("Qualifying")
+            case "Sprint":            return "Sprint"
+            case "Sprint Qualifying":
+            case "Sprint Shootout":   return Translation.tr("Sprint qualifying")
+            default:                  return name
+        }
+    }
+
+    // Time until something far away, for people: "2d 4h", "15h 41min", "12min"
+    function humanCountdown(seconds) {
+        if (seconds <= 0) return ""
+        const d = Math.floor(seconds / 86400)
+        const h = Math.floor(seconds % 86400 / 3600)
+        const m = Math.floor(seconds % 3600 / 60)
+        if (d > 0) return `${d}d ${h}h`
+        if (h > 0) return `${h}h ${String(m).padStart(2, "0")}min`
+        return `${Math.max(1, m)}min`
+    }
+
     function formatCountdown(seconds) {
         const s = Math.max(0, seconds)
         const m = Math.floor(s / 60)

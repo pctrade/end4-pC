@@ -12,6 +12,8 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 380
+    // Layouts overwrite implicitWidth with their children's; the container reads this instead
+    readonly property real wantedWidth: 380
 
     // Pinned island opened with nothing just copied: show the latest item plus the history
     readonly property bool pinnedMode: !IslandEvents.clipboard.active

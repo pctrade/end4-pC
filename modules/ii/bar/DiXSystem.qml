@@ -10,6 +10,8 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 380
+    // Layouts overwrite implicitWidth with their children's; the container reads this instead
+    readonly property real wantedWidth: 380
 
     // Temperature, fan and power profile are only measured often while this panel is the one you are looking at
     Binding {
@@ -27,11 +29,11 @@ ColumnLayout {
             text: "memory"
             iconSize: 20
             fill: 1
-            color: ResourceUsage.cpuUsage >= 0.9 ? Appearance.colors.colError : Appearance.colors.colPrimary
+            color: Pressure.cpuHigh ? Appearance.colors.colError : Appearance.colors.colPrimary
         }
         StyledText {
             Layout.fillWidth: true
-            text: Translation.tr("High CPU usage")
+            text: Pressure.cpuHigh ? Translation.tr("High CPU usage") : Translation.tr("System")
             font.pixelSize: Appearance.font.pixelSize.small
             font.weight: Font.DemiBold
             color: Appearance.colors.colOnLayer0

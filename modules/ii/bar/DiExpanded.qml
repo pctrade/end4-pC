@@ -301,34 +301,6 @@ Scope {
                     visible: island.splitActive && island.shown
                 }
 
-                // Closes the split pane without collapsing the whole overlay
-                Rectangle {
-                    visible: island.splitActive && island.shown && splitDetail.opacity > 0.6
-                    x: splitDetail.x + splitDetail.width - 11
-                    y: splitDetail.y + 8
-                    width: 22
-                    height: 22
-                    radius: 11
-                    color: splitCloseMouse.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
-                    opacity: splitDetail.opacity
-
-                    MaterialSymbol {
-                        anchors.centerIn: parent
-                        text: "close"
-                        iconSize: 13
-                        fill: 1
-                        color: Appearance.colors.colOnLayer1
-                    }
-
-                    MouseArea {
-                        id: splitCloseMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: scope.di.exitSplit()
-                    }
-                }
-
                 // Shared elements (a view's `hero: { key, item }`): when the compact and the full view have the same one,
                 // it travels from one spot to the other while the island opens or closes, crossfading between both looks
                 readonly property var compactHero: compactLoader.item?.hero ?? null
@@ -422,8 +394,9 @@ Scope {
                 Rectangle {
                     id: splitButton
                     readonly property bool lit: scope.di.splitArmed || scope.di.splitId !== ""
-                    x: island.width - width - 10
-                    y: win.bottomBar ? 4 : island.height - height - 3
+                    // Clear of the rounded corner, level with the page dots
+                    x: island.width - width - Math.max(12, island.radius * 0.75)
+                    y: win.bottomBar ? 5 : island.height - height - 5
                     width: 22
                     height: 14
                     radius: 7

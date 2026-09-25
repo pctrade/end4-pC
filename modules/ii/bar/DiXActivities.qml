@@ -11,6 +11,8 @@ ColumnLayout {
     required property Item di
     spacing: 8
     implicitWidth: 390
+    // Layouts overwrite implicitWidth with their children's; the container reads this instead
+    readonly property real wantedWidth: 390
 
     // A ColumnLayout takes its width from its children and ignores implicitWidth; this is what holds 390
     Item {

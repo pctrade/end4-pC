@@ -1233,5 +1233,10 @@
   "Package cache · %1": "Cache de pacotes · %1",
   "Disk full": "Disco cheio",
   "Disk almost full": "Disco quase cheio",
-  "%1 free · %2% used": "%1 livres · %2% usado"
+  "%1 free · %2% used": "%1 livres · %2% usado",
+  "Practice %1": "Treino livre %1",
+  "Race": "Corrida",
+  "Qualifying": "Classificação",
+  "Sprint qualifying": "Classificação sprint",
+  "in %1": "em %1"
 }

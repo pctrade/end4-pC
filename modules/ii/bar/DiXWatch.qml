@@ -13,6 +13,8 @@ ColumnLayout {
     required property Item di
     spacing: 12
     implicitWidth: 400
+    // Layouts overwrite implicitWidth with their children's; the container reads this instead
+    readonly property real wantedWidth: 400
 
     readonly property var now: WatchRating.now
     readonly property bool hasEpisode: (xw.now?.season ?? 0) > 0
