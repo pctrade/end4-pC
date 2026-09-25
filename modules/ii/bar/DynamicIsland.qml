@@ -984,6 +984,8 @@ Item {
             case "timer":        return 52
             case "recording":    return 70
             case "shelf":        return 110
+            // Quick buttons for what was just copied (Gemini / search or open / drawer)
+            case "clipboard":    return IslandEvents.clipboard.active ? 80 : 0
             default:             return 0
         }
     }

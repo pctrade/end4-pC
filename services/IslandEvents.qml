@@ -1272,9 +1272,16 @@ Singleton {
         const prompt = Translation.tr("Conversation on %1 with %2 (oldest first):").arg(parts.app).arg(who)
             + "\n" + lines.join("\n") + "\n\n"
             + Translation.tr("Suggest 3 short, natural replies in Portuguese, in the tone of a personal chat. Only the replies, numbered.")
-        // Also on the clipboard: if the userscript isn't there (or the page changed), it's one paste away
-        Quickshell.execDetached(["sh", "-c", 'printf %s "$1" | wl-copy', "sh", prompt])
-        Qt.openUrlExternally(`https://gemini.google.com/app#ilha=${encodeURIComponent(prompt)}`)
+        root.sendToGemini(prompt)
+    }
+
+    // Any text to Gemini on the web (the userscript types and sends it). Also left on the clipboard: if the
+    // userscript isn't there (or the page changed), it's one paste away. The clipboard island itself uses this
+    // with what was copied, so it skips the copy — it's already there.
+    function sendToGemini(text, alreadyCopied) {
+        if (!text || text.trim() === "") return
+        if (!alreadyCopied) Quickshell.execDetached(["sh", "-c", 'printf %s "$1" | wl-copy', "sh", text])
+        Qt.openUrlExternally(`https://gemini.google.com/app#ilha=${encodeURIComponent(text)}`)
     }
 
     function pasteReplyInto(notif, text) {

@@ -1203,5 +1203,7 @@
   "Sent": "Enviado",
   "Conversation on %1 with %2 (oldest first):": "Conversa no %1 com %2 (mais antigas primeiro):",
   "Suggest 3 short, natural replies in Portuguese, in the tone of a personal chat. Only the replies, numbered.": "Sugira 3 respostas curtas e naturais em português, no tom de uma conversa pessoal. Só as respostas, numeradas.",
-  "Ask Gemini": "Perguntar ao Gemini"
+  "Ask Gemini": "Perguntar ao Gemini",
+  "Copy in uppercase": "Copiar em maiúsculas",
+  "Copy in lowercase": "Copiar em minúsculas"
 }
