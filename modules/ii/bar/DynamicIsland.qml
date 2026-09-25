@@ -703,7 +703,7 @@ Item {
         const critical = (notif.urgency ?? "").toLowerCase() === "critical"
         if ((notif.appName ?? "") === "Shell" && ["Timers", "Pomodoro"].includes(notif.summary ?? "")) {
             root.fsShowLine({ icon: "alarm", title: notif.summary === "Pomodoro" ? "Pomodoro" : Translation.tr("Timer"),
-                body: parts.body.replace(/^[^\p{L}\p{N}]+/u, ""), color: IslandEvents.colorAttention }, 8000, true)
+                body: parts.body.replace(/^[^A-Za-z0-9À-ÿ]+/, ""), color: IslandEvents.colorAttention }, 8000, true)
             return
         }
         const key = IslandEvents.conversationKey(notif)
