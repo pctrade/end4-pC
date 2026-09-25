@@ -60,6 +60,9 @@ ColumnLayout {
     readonly property int lockedIndex: xn.popups.findIndex(n => n.notificationId === xn.lockedId)
     readonly property int index: xn.lockedIndex >= 0 ? xn.lockedIndex : Math.max(0, xn.popups.length - 1)
     readonly property var notif: xn.popups[xn.index]
+    // Muting asks for how long (1 h, until tomorrow, always) right in the header
+    property bool muteChoosing: false
+    onNotifChanged: xn.muteChoosing = false
         ?? Notifications.list.find(n => n.notificationId === xn.lockedId)
         ?? xn.di.shownNotification ?? xn.di.latestNotification
     function lockOn(index) {
@@ -244,7 +247,7 @@ ColumnLayout {
         }
 
         HeaderIcon {
-            visible: xn.notif !== null
+            visible: xn.notif !== null && !xn.muteChoosing
             icon: "open_in_new"
             tip: `${Translation.tr("Open in")} ${xn.parts.app || Translation.tr("app")}`
             onTap: () => {
@@ -254,16 +257,45 @@ ColumnLayout {
         }
         HeaderIcon {
             visible: xn.notif !== null
-            icon: "notifications_off"
-            tip: Translation.tr("Mute conversation")
-            onTap: () => {
-                const target = xn.notif
-                IslandEvents.toggleMute(target)
-                Notifications.timeoutNotification(target.notificationId)
-                xn.di.collapse()
+            icon: xn.muteChoosing ? "arrow_back" : "notifications_off"
+            tip: xn.muteChoosing ? Translation.tr("Back") : Translation.tr("Mute conversation")
+            onTap: () => { xn.muteChoosing = !xn.muteChoosing }
+        }
+        Repeater {
+            model: xn.muteChoosing ? IslandEvents.muteChoices() : []
+            delegate: Rectangle {
+                id: choice
+                required property var modelData
+                implicitWidth: choiceText.implicitWidth + 16
+                implicitHeight: 24
+                radius: 12
+                color: choiceArea.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
+
+                StyledText {
+                    id: choiceText
+                    anchors.centerIn: parent
+                    text: choice.modelData.label
+                    font.pixelSize: Appearance.font.pixelSize.smallest
+                    font.weight: Font.DemiBold
+                    color: choiceArea.containsMouse ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
+                }
+                MouseArea {
+                    id: choiceArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        const target = xn.notif
+                        IslandEvents.muteKeyFor(IslandEvents.conversationKey(target), choice.modelData.ms)
+                        Notifications.timeoutNotification(target.notificationId)
+                        xn.muteChoosing = false
+                        xn.di.collapse()
+                    }
+                }
             }
         }
         HeaderIcon {
+            visible: !xn.muteChoosing
             icon: "close"
             tip: Translation.tr("Dismiss")
             onTap: () => { if (xn.notif) Notifications.discardNotification(xn.notif.notificationId) }
