@@ -18,9 +18,6 @@ Item {
     property bool showingProfile: false
     property bool isMinimal: Config.options.settings.style === "minimal"
 
-    // A page requested before this panel existed would be missed — the signal fires into nothing and the
-    // pending page just sits in GlobalStates. Applying it on completion too makes "open on page X" work
-    // whichever order the caller does it in.
     Connections {
         target: GlobalStates
         function onSettingsPageChanged() {
@@ -92,7 +89,6 @@ Item {
                 if (loader) loader.active = true
             }
             if (profileLoader) profileLoader.active = true
-            // A page asked for before this panel existed is still waiting in GlobalStates
             root.applyRequestedPage()
         })
     }

@@ -10,7 +10,6 @@ Item {
     anchors.fill: parent
 
     readonly property bool justCopied: IslandEvents.clipboard.active
-    // Pinned: scrolling walks through the history (index kept by the island)
     readonly property int historyIndex: Math.max(0, Math.min(clip.di.clipboardIndex, Cliphist.entries.length - 1))
     readonly property var payload: clip.justCopied ? (IslandEvents.clipboard.payload ?? ({}))
         : (Cliphist.entries.length > 0 ? IslandEvents.payloadFor(Cliphist.entries[clip.historyIndex]) : ({}))
@@ -34,7 +33,6 @@ Item {
         easing.bezierCurve: Appearance.animationCurves.expressiveFastSpatial
     }
     readonly property bool isImage: clip.payload.isImage ?? false
-    // What it is (YouTube link, a color, Python code…): its icon, and a word next to "Copied"
     readonly property var kind: IslandEvents.clipKind(clip.payload)
     readonly property var files: clip.payload.files ?? []
     readonly property bool hasFiles: clip.files.length > 0
@@ -77,7 +75,6 @@ Item {
                 size: 26
             }
 
-            // One instance per entry: CliphistImage only decodes when it's created
             Repeater {
                 model: clip.isImage ? [clip.payload.entry ?? ""] : []
                 delegate: CliphistImage {
@@ -127,7 +124,6 @@ Item {
             opacity: dragArea.containsMouse ? 0.7 : 0.3
         }
 
-        // Room for the quick buttons, which sit above the drag area
         Item {
             visible: clip.showQuick
             implicitWidth: quick.implicitWidth - 6
@@ -135,7 +131,6 @@ Item {
         }
     }
 
-    // Quick buttons on hover: the most likely next step for what was just copied, without opening the full view
     readonly property string text: clip.payload.text ?? ""
     readonly property bool isText: !clip.isImage && !clip.hasFiles && clip.text.trim() !== ""
     readonly property bool isUrl: /^https?:\/\/\S+$/.test(clip.text.trim())
@@ -180,7 +175,6 @@ Item {
                 implicitHeight: 26
                 radius: 13
                 color: quickMouse.containsMouse ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
-                // Staggered slide as the island widens
                 property real shift: clip.showQuick ? 0 : 6 + quickButton.index * 5
                 transform: Translate { x: quickButton.shift }
                 Behavior on shift {
@@ -233,7 +227,6 @@ Item {
             dragProxy.x = 0
             dragProxy.y = 0
         }
-        // Browsing the history: a click copies that item back; otherwise it opens the full view
         onClicked: {
             if (!clip.justCopied && clip.historyIndex > 0) {
                 Cliphist.copy(clip.payload.entry)

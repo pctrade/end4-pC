@@ -13,7 +13,6 @@ ColumnLayout {
     required property Item di
     spacing: 12
     implicitWidth: 400
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 400
 
     readonly property var now: WatchRating.now
@@ -25,7 +24,6 @@ ColumnLayout {
     property int hovered: -1
     readonly property var focusEpisode: xw.hovered >= 0 ? xw.episodes[xw.hovered] : WatchRating.currentEpisode
 
-    // Header: IMDb mark, the show, its overall rating
     RowLayout {
         Layout.fillWidth: true
         spacing: 10
@@ -87,7 +85,6 @@ ColumnLayout {
         }
     }
 
-    // This episode (or the hovered one)
     Rectangle {
         Layout.fillWidth: true
         visible: xw.hasEpisode && xw.focusEpisode !== null
@@ -138,7 +135,6 @@ ColumnLayout {
         }
     }
 
-    // The season, one bar per episode
     Item {
         Layout.fillWidth: true
         visible: xw.hasEpisode && xw.episodes.length > 0
@@ -160,7 +156,6 @@ ColumnLayout {
                     readonly property real rating: WatchRating.ratingOf(barSlot.modelData)
                     readonly property bool current: Number(barSlot.modelData.Episode) === (xw.now?.episode ?? -1)
                     readonly property bool best: WatchRating.bestEpisode === barSlot.modelData
-                    // Spread the season's own range over the bar, keeping a floor so the worst one still shows
                     readonly property real level: barSlot.rating < 0 ? 0.08
                         : 0.18 + 0.82 * (xw.high > xw.low ? (barSlot.rating - xw.low) / (xw.high - xw.low) : 1)
                     property real grow: 0
@@ -199,7 +194,6 @@ ColumnLayout {
             }
         }
 
-        // Where "now" is, under its bar
         Rectangle {
             readonly property int currentIndex: xw.episodes.findIndex(e => Number(e.Episode) === (xw.now?.episode ?? -1))
             visible: currentIndex >= 0

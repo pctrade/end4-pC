@@ -28,7 +28,6 @@ Item {
         border.color: dropState.hovering ? Appearance.colors.colPrimary : Appearance.m3colors.m3success
     }
 
-    // ── While dragging: the zones ──
     Item {
         anchors.fill: parent
         anchors.margins: 4
@@ -88,7 +87,6 @@ Item {
                         }
                     }
 
-                    // Dealt in from the left as the pill opens
                     opacity: 0
                     NumberAnimation on opacity {
                         running: dropState.hovering
@@ -101,7 +99,6 @@ Item {
         }
     }
 
-    // ── After the drop: what happened ──
     RowLayout {
         visible: !dropState.hovering
         anchors {

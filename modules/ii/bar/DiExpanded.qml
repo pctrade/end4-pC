@@ -25,15 +25,12 @@ Scope {
         NumberAnimation {
             duration: scope.di.expanded ? 480 : 380
             easing.type: Easing.BezierSpline
-            // Opening springs out; closing decelerates into the compact shape with no overshoot, so nothing jumps
             easing.bezierCurve: scope.di.expanded
                 ? Appearance.animationCurves.expressiveDefaultSpatial
                 : Appearance.animationCurves.emphasizedDecel
         }
     }
 
-    // Kept created while the island is visible: creating the window on click lost the first frames of the
-    // animation, so the island appeared already halfway grown
     LazyLoader {
         active: scope.di.visible
 
@@ -49,7 +46,6 @@ Scope {
                 win.surface.height
                 scope.pillItem.width
                 scope.di.implicitWidth
-                // The whole visible island: its bar surface and the pill itself, whichever reaches further
                 const s = scope.di.QsWindow.mapFromItem(win.surface, 0, 0)
                 const q = scope.di.QsWindow.mapFromItem(scope.pillItem, 0, 0)
                 const left = Math.min(s.x, q.x)
@@ -65,10 +61,6 @@ Scope {
             exclusiveZone: 0
             WlrLayershell.namespace: "quickshell:dynamicIsland"
             WlrLayershell.layer: WlrLayer.Overlay
-            // Typing a reply grabs the keyboard right away; a visible reply field still accepts focus on click
-            // The keyboard is asked for *before* the overlay opens (requestReply), never switched while it's open:
-            // changing mode mid-way breaks the focus grab and the overlay closes itself. A watchdog in
-            // DynamicIsland gives it back if it's ever left asked for while closed.
             WlrLayershell.keyboardFocus: scope.di.wantsKeyboard ? WlrKeyboardFocus.Exclusive
                 : (scope.di.expanded && scope.di.replyReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
 
@@ -83,7 +75,6 @@ Scope {
                 bottom: win.bottomBar ? win.barMargin : 0
             }
             implicitHeight: 700
-            // Closed: a zero-size input region, so the idle window never catches the pointer, clicks or scrolling
             mask: Region { item: scope.progress > 0.002 ? island : noInput }
 
             Item {
@@ -92,7 +83,6 @@ Scope {
                 height: 0
             }
 
-            // A click anywhere outside the island closes it
             HyprlandFocusGrab {
                 windows: [win]
                 active: scope.di.expanded
@@ -112,19 +102,13 @@ Scope {
                 readonly property real pc: Math.min(1, island.p)
                 readonly property bool settled: scope.di.expanded && island.p > 0.95
 
-                // Exactly the island's current surface, a hair larger so the bar behind never peeks out at the edges
                 readonly property real startW: win.surfaceRect.width + 3
                 readonly property real startH: win.surfaceRect.height + 2
-                // Never taller than ~55% of the screen nor wider than the screen; content scrolls past that
                 readonly property real maxH: Math.min(win.height - 24, (win.screen?.height ?? 1080) * 0.55)
                 readonly property real maxW: win.width - 24
-                // What the content would like to be...
-                // Split View (seção 13): two Tools/Activities side by side, only ever entered explicitly
-                // (armed via the pager's split button, then a pip tap picks the partner) — never automatic.
                 readonly property bool splitActive: scope.di.splitId !== "" && scope.di.splitId !== scope.di.expandedId
                     && scope.di.hasDetails(scope.di.splitId)
 
-                // The bottom strip: page dots + split button, and the split chooser above them while it's armed
                 readonly property real bottomReserve: 18 + (scope.di.splitArmed ? splitPicker.implicitHeight + 10 : 0)
 
                 readonly property real wantedW: Math.min(island.maxW, Math.max(island.startW,
@@ -133,10 +117,6 @@ Scope {
                     Math.max(detail.implicitHeight, island.splitActive ? splitDetail.implicitHeight : 0)
                         + island.bottomReserve)
 
-                // ...and what it is allowed to be while you are using it. Content that changes under the pointer
-                // (a list refreshing, a line appearing) used to shrink the overlay out from under the cursor:
-                // the hover was lost mid-scroll and you had to walk the mouse back in. Growing is safe, shrinking
-                // is not, so while the pointer is inside the overlay never gets smaller than it already was.
                 property real heldW: 0
                 property real heldH: 0
                 onPointerInChanged: {
@@ -155,8 +135,6 @@ Scope {
                 }
 
                 readonly property bool shown: scope.progress > 0.02
-                // The bar's pill hides only once the overlay has surely painted over it (it starts exactly on top of it),
-                // so there is never a frame with neither of them
                 readonly property bool coversPill: scope.progress > 0.2
                 onCoversPillChanged: scope.di.overlayShown = island.coversPill
                 Component.onDestruction: {
@@ -164,7 +142,6 @@ Scope {
                     scope.di.cardHovered = false
                 }
 
-                // "I'm using it": leaning in while the pointer is on it, easing back (with the fuse) once it leaves
                 readonly property bool pointerIn: scope.di.cardHovered
                 readonly property real lean: island.settled ? (island.pointerIn ? 1 : -1) : 0
                 property real leanValue: island.lean
@@ -180,7 +157,6 @@ Scope {
                     yScale: 1 + 0.018 * Math.max(-0.6, island.leanValue)
                 }
 
-                // The sides reach their width early; then the island pulls down from the bar
                 readonly property real pw: Math.min(1, island.p * 2.2)
                 width: island.startW + (island.targetW - island.startW) * island.pw
                 height: island.startH + (island.targetH - island.startH) * island.p
@@ -227,8 +203,6 @@ Scope {
                     onTriggered: wheel.coolingDown = false
                 }
 
-                // Compact content at its original spot: dissolves as the island opens, and comes back only at the
-                // very end of closing, right where the compact island will be
                 Item {
                     id: compactGhost
                     x: (island.width - island.startW) / 2 + 1.5
@@ -254,8 +228,6 @@ Scope {
                     }
                 }
 
-                // Split View: the pair (detail + divider + splitDetail) is centered as a group instead of
-                // detail alone stretching to fill the island
                 readonly property real pairW: island.splitActive ? detail.width + 12 + splitDetail.width : detail.width
 
                 DiExpandedContent {
@@ -268,12 +240,10 @@ Scope {
                     width: island.splitActive ? Math.min(island.maxW, implicitWidth)
                         : Math.min(island.maxW, Math.max(island.width, implicitWidth))
                     height: implicitHeight
-                    // Closing: the details leave first, while the shape is still large, so nothing gets squeezed
                     opacity: (scope.closing
                         ? Math.max(0, Math.min(1, (island.p - 0.5) / 0.5))
                         : Math.max(0, Math.min(1, (island.p - 0.35) / 0.5)))
                         * (1 - 0.04 * Math.max(0, Math.min(1, -island.leanValue)))
-                    // Kept rendered while shown: shared elements are captured from it even before it fades in
                     visible: island.shown
                 }
 
@@ -301,8 +271,6 @@ Scope {
                     visible: island.splitActive && island.shown
                 }
 
-                // Shared elements (a view's `hero: { key, item }`): when the compact and the full view have the same one,
-                // it travels from one spot to the other while the island opens or closes, crossfading between both looks
                 readonly property var compactHero: compactLoader.item?.hero ?? null
                 readonly property var fullHero: detail.viewItem?.hero ?? null
                 readonly property bool heroActive: island.compactHero !== null && island.fullHero !== null
@@ -351,8 +319,6 @@ Scope {
                     }
                 }
 
-                // Discreet page dots when several islands can be opened; the wheel moves between them.
-                // Armed (split button tapped), a pip picks the Split View partner instead of replacing the view.
                 Row {
                     id: pager
                     visible: scope.di.switcherIds.length > 1
@@ -390,11 +356,9 @@ Scope {
                     }
                 }
 
-                // Split button: always there at the bottom-right corner — arms the chooser, or ends a split
                 Rectangle {
                     id: splitButton
                     readonly property bool lit: scope.di.splitArmed || scope.di.splitId !== ""
-                    // Clear of the rounded corner, level with the page dots
                     x: island.width - width - Math.max(12, island.radius * 0.75)
                     y: win.bottomBar ? 5 : island.height - height - 5
                     width: 22
@@ -427,8 +391,6 @@ Scope {
                     }
                 }
 
-                // The chooser: every island that can sit beside the main one, active or not. Chips deal in one
-                // after another from the split button's corner.
                 Flow {
                     id: splitPicker
                     visible: scope.di.splitArmed
@@ -504,7 +466,6 @@ Scope {
                     }
                 }
 
-                // Fuse: time left before it closes by itself, only while the pointer is away
                 Item {
                     id: fuseTrack
                     property real remaining: 1

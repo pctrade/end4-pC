@@ -17,12 +17,10 @@ ColumnLayout {
     required property Item di
     spacing: 14
     implicitWidth: 360
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 360
 
     property bool moreOpen: false
 
-    // "2d 4h", "13h 52min", "38min" — a countdown you read at a glance, not raw minutes
     function humanCountdown(seconds) {
         if (seconds <= 0) return ""
         const d = Math.floor(seconds / 86400)
@@ -102,7 +100,6 @@ ColumnLayout {
         }
     }
 
-    // Dock button: an icon, a one-word label, nothing else. Tools live behind intent, not in the queue.
     component DockButton: ColumnLayout {
         id: dock
         property string icon
@@ -111,7 +108,6 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredWidth: 1
         Layout.minimumWidth: 0
-        // A ColumnLayout inherits its max width from its children (the 44px button), so it would never grow
         Layout.maximumWidth: 10000
         spacing: 4
 
@@ -158,11 +154,8 @@ ColumnLayout {
         }
     }
 
-    // Header: the day, the clock, and the weather as one tappable line — the only things worth knowing
-    // before you have asked for anything.
     ColumnLayout {
         Layout.fillWidth: true
-        // A ColumnLayout computes its own implicitWidth from its children, so the width lives here
         Layout.preferredWidth: 340
         Layout.topMargin: 4
         spacing: 0
@@ -229,8 +222,6 @@ ColumnLayout {
         }
     }
 
-    // Agora: one tappable row per thing that's actually happening (plus the next F1 session when it's close),
-    // each opening its own view. Before this the expanded Home had no road back to the live islands at all.
     readonly property var nowIds: {
         const ids = xi.di.persistentIds.filter(id => !["idle", "media"].includes(id))
         if (WatchRating.active && WatchRating.playing && !ids.includes("watchRating")) ids.push("watchRating")
@@ -272,7 +263,6 @@ ColumnLayout {
                     ColorAnimation { duration: IslandMotion.micro }
                 }
 
-                // Dealt in one after another as the Home opens
                 SequentialAnimation {
                     running: true
                     PauseAnimation { duration: 60 + nowRow.index * 45 }
@@ -282,7 +272,6 @@ ColumnLayout {
                     }
                 }
 
-                // Only for its value text (a lap, a percentage, a countdown): same wording as the side capsules
                 DiCapsule {
                     id: nowValue
                     visible: false
@@ -367,7 +356,6 @@ ColumnLayout {
         }
     }
 
-    // Mini player: not invented content, just the direct answer to "what's happening now" when it applies
     Rectangle {
         Layout.fillWidth: true
         visible: xi.di.hasMedia
@@ -444,8 +432,6 @@ ColumnLayout {
         }
     }
 
-    // What you pushed away lives here: silencing an island must be undoable from one obvious place,
-    // and it is rare enough that it never competes with the dock below.
     Flow {
         Layout.fillWidth: true
         spacing: 6
@@ -464,8 +450,6 @@ ColumnLayout {
         }
     }
 
-    // Tool Dock: four favorites, then More. This is the only way into Tools — they never compete for the
-    // compact pill or the scroll wheel.
     RowLayout {
         Layout.fillWidth: true
         Layout.topMargin: 4
@@ -498,7 +482,6 @@ ColumnLayout {
         }
     }
 
-    // More: everything else, behind one extra tap instead of permanently on screen.
     Flow {
         Layout.fillWidth: true
         spacing: 6

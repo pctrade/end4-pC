@@ -12,7 +12,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 380
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 380
 
     property string kind: Pressure.kind || "cpu"
@@ -64,7 +63,6 @@ ColumnLayout {
         }
     }
 
-    // CPU / Memory / GPU as one slim segmented control, each with its live number
     Rectangle {
         Layout.fillWidth: true
         implicitHeight: 30
@@ -74,7 +72,6 @@ ColumnLayout {
         readonly property var kinds: Pressure.rc6Path !== "" ? ["cpu", "memory", "gpu"] : ["cpu", "memory"]
         readonly property real segment: (width - 4) / kinds.length
 
-        // The selection slides between segments
         Rectangle {
             x: 2 + parent.segment * Math.max(0, parent.kinds.indexOf(xl.kind))
             y: 2

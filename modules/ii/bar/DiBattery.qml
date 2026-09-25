@@ -14,10 +14,8 @@ Item {
     readonly property string kind: batt.di.batteryAlertKind
     readonly property bool critical: batt.hibernate || batt.kind === "critical"
     readonly property color accent: batt.critical ? Appearance.colors.colError : batt.di.batteryAlertColor()
-    // Low or critical on battery: hovering offers the quick savers (the island widens for them)
     readonly property bool showSavers: batt.di.hoverRevealed && !batt.hibernate && ["low", "critical"].includes(batt.kind) && !Battery.isPluggedIn
 
-    // Charge level; hibernation shows the time left instead
     Rectangle {
         anchors {
             left: parent.left
@@ -33,7 +31,6 @@ Item {
             NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutCubic }
         }
 
-        // Critical (not the hibernation countdown): a slow, calm pulse
         SequentialAnimation on opacity {
             running: batt.kind === "critical" && !batt.hibernate
             loops: Animation.Infinite

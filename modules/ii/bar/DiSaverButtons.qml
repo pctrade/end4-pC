@@ -37,7 +37,6 @@ Flow {
                 ColorAnimation { duration: IslandMotion.micro }
             }
 
-            // Staggered slide-in when the pill widens
             property real shift: saver.visible ? 0 : 6 + toggle.index * 5
             transform: Translate { x: toggle.shift }
             Behavior on shift {

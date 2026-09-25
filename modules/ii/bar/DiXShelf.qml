@@ -12,12 +12,10 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 410
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 410
 
     readonly property var pdfs: DropShelf.items.filter(p => DropShelf.isPdf(p))
 
-    // Newest first, split by kind
     readonly property var groups: {
         const defs = [
             ["image", Translation.tr("Images"), p => DropShelf.isImage(p)],
@@ -77,8 +75,6 @@ ColumnLayout {
         required property string path
         required property Item di
         property int order: 0
-        // Dealt out of the drawer: each file drops in from above with a slight tilt that straightens as it
-        // lands, one after another. Hovering lifts it a little, like picking a sheet off the pile.
         property real enterT: 0
         readonly property real tilt: (tile.order % 2 === 0 ? -1 : 1) * (5 + (tile.order % 3) * 2)
         width: 90
@@ -151,7 +147,6 @@ ColumnLayout {
                 color: Appearance.colors.colPrimary
             }
 
-            // Days until it leaves the drawer, only when it's close
             Rectangle {
                 readonly property int days: DropShelf.daysLeft(tile.path)
                 visible: days >= 0 && days <= 2

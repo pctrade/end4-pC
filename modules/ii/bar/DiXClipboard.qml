@@ -12,10 +12,8 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 380
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 380
 
-    // Pinned island opened with nothing just copied: show the latest item plus the history
     readonly property bool pinnedMode: !IslandEvents.clipboard.active
     readonly property var payload: xclip.pinnedMode ? IslandEvents.latestClipboard : (IslandEvents.clipboard.payload ?? ({}))
     readonly property bool isImage: xclip.payload.isImage ?? false
@@ -40,7 +38,6 @@ ColumnLayout {
         }
     }
     readonly property string trackingCode: xclip.isPlainText && /^\s*[A-Z]{2}\d{9}[A-Z]{2}\s*$/.test(xclip.text) ? xclip.text.trim() : ""
-    // Brazilian phone numbers, with or without +55 and punctuation
     readonly property string phoneDigits: {
         if (!xclip.isPlainText || xclip.text.length > 25 || !/^[\s()+\-.\d]+$/.test(xclip.text)) return ""
         let digits = xclip.text.replace(/\D/g, "")
@@ -122,7 +119,7 @@ ColumnLayout {
         property string label
         property var onTap
         property bool primary: false
-        property string agent: ""       // an AI brand mark (gemini) instead of a Material icon
+        property string agent: ""
         implicitWidth: chipRow.implicitWidth + 20
         implicitHeight: 30
         radius: 15
@@ -186,7 +183,6 @@ ColumnLayout {
             color: xclip.status !== "" ? Appearance.m3colors.m3success : Appearance.colors.colOnLayer0
             elide: Text.ElideRight
         }
-        // What it is, in a word: "Python", "YouTube", "#FF9F0A"
         Rectangle {
             visible: xclip.kind.label !== "" && !["text", "file", "files", "image"].includes(xclip.kind.kind)
             implicitWidth: kindText.implicitWidth + 14
@@ -211,7 +207,6 @@ ColumnLayout {
         }
     }
 
-    // Preview doubles as a drag handle
     Item {
         id: preview
         Layout.fillWidth: true
@@ -325,7 +320,6 @@ ColumnLayout {
         }
     }
 
-    // What to do with what was copied: the actions that fit it, the most useful first
     Flow {
         Layout.fillWidth: true
         spacing: 6
@@ -351,7 +345,6 @@ ColumnLayout {
             }
         }
 
-        // Image
         ActionChip {
             visible: xclip.isImage
             icon: "save"
@@ -380,7 +373,6 @@ ColumnLayout {
             }
         }
 
-        // Files
         ActionChip {
             visible: xclip.hasFiles
             icon: "open_in_new"
@@ -412,7 +404,6 @@ ColumnLayout {
             onTap: () => xclip.convertFiles("png")
         }
 
-        // Image tools
         ActionChip {
             visible: (xclip.isImage && xclip.imagePath !== "") || xclip.imageFiles.length > 0
             icon: "document_scanner"
@@ -426,7 +417,6 @@ ColumnLayout {
             onTap: () => IslandEvents.lensSearch(xclip.isImage ? xclip.imagePath : xclip.imageFiles[0])
         }
 
-        // Text
         ActionChip {
             visible: xclip.isUrl
             icon: "link"
@@ -479,7 +469,6 @@ ColumnLayout {
             onTap: () => IslandEvents.translateText(xclip.text)
         }
 
-        // Color: swatch and the same color in other notations
         Rectangle {
             visible: xclip.colorValue !== null
             implicitWidth: 30
@@ -508,7 +497,6 @@ ColumnLayout {
             onTap: () => xclip.copyText(xclip.colorValue.hsl)
         }
 
-        // JSON, package tracking, phone and e-mail
         ActionChip {
             visible: xclip.jsonValue !== null
             icon: "data_object"
@@ -541,7 +529,6 @@ ColumnLayout {
         }
     }
 
-    // Second row: text tools grouped on the left, keep/remove as quiet icons on the right
     component ToolSegment: Rectangle {
         id: seg
         property string icon
@@ -593,7 +580,6 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 6
 
-        // Text: one grouped control instead of three loose chips
         Rectangle {
             visible: !xclip.isImage && !xclip.hasFiles && xclip.text.trim() !== ""
             implicitWidth: textTools.implicitWidth + 8
@@ -642,7 +628,6 @@ ColumnLayout {
         }
     }
 
-    // Translation of copied text in another language
     Rectangle {
         Layout.fillWidth: true
         visible: xclip.showTranslation

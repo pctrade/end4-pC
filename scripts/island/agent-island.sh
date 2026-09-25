@@ -7,14 +7,12 @@ agent=$1
 arg_event=$2
 input=$(cat)
 
-# Antigravity reads a decision from stdout; these keep its normal behavior. Codex needs no output.
 if [[ $agent == gemini ]]; then
     if [[ $arg_event == Stop ]]; then printf '{"decision":""}\n'; else printf '{}\n'; fi
 fi
 command -v qs >/dev/null 2>&1 || exit 0
 [[ -n $input ]] || input='{}'
 
-# Unit-separated: with tabs, bash's read collapses empty fields
 IFS=$'\x1f' read -r event sid cwd sub < <(jq -r '[
     .hook_event_name // .hookEventName // "",
     .session_id // .sessionId // .conversation_id // .conversationId // .thread_id // .threadId // "",
@@ -24,14 +22,11 @@ IFS=$'\x1f' read -r event sid cwd sub < <(jq -r '[
 event=${arg_event:-$event}
 cwd=${cwd:-$PWD}
 [[ -n $event ]] || exit 0
-# Subagent calls belong to the main session's turn
 [[ -n $sub ]] && exit 0
 
-# Latest payload of each event, kept to adjust the parsing if a CLI changes its format
 samples="$HOME/.cache/claude-island/samples"
 mkdir -p "$samples" && printf '%s' "$input" > "$samples/$agent-$event.json"
 
-# The agent process and the terminal window it runs in, walking up from the hook
 agent_pid=0 term=0
 pid=$PPID
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
@@ -43,7 +38,6 @@ for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
     pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
     [[ -n $pid && $pid -gt 1 ]] || break
 done
-# Without a session id in the payload, the agent process identifies the session
 [[ -n $sid ]] || sid="pid-${agent_pid:-$term}"
 
 detail=$(jq -r --arg event "$event" '
@@ -68,7 +62,6 @@ detail=$(jq -r --arg event "$event" '
       | (capture("^(?<s>.{8,110}?[.!?])(\\s|$)").s // .[0:100])
     else "" end' <<< "$input" 2>/dev/null)
 
-# Stop: what changed in the repository ("plus,minus,files"), after a record separator
 if [[ $event == Stop && -n $cwd ]] && git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     stat=$(git -C "$cwd" diff --shortstat HEAD 2>/dev/null)
     if [[ -n $stat ]]; then
@@ -81,7 +74,6 @@ fi
 
 qs -c end4-pC ipc call claude agent "$agent" "$event" "$sid" "$cwd" "$detail" "$term" >/dev/null 2>&1 &
 
-# Codex: plan usage and context size from the session's rollout file
 if [[ $agent == codex && ( $event == Stop || $event == UserPromptSubmit || $event == SessionStart ) ]]; then
     (
         rollout=$(ls -t "$HOME"/.codex/sessions/*/*/*/rollout-*"$sid"*.jsonl 2>/dev/null | head -1)

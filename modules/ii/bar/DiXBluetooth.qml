@@ -11,7 +11,6 @@ ColumnLayout {
     required property Item di
     spacing: 8
     implicitWidth: 340
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 340
 
     readonly property var devices: [...BluetoothStatus.connectedDevices, ...BluetoothStatus.pairedButNotConnectedDevices].slice(0, 6)
@@ -23,7 +22,6 @@ ColumnLayout {
         color: Appearance.colors.colOnLayer0
     }
 
-    // Empty state: nothing paired yet
     StyledText {
         Layout.fillWidth: true
         visible: xb.devices.length === 0

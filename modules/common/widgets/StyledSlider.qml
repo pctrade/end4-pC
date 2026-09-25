@@ -89,8 +89,6 @@ Slider {
         }
     }
 
-    // Clicking anywhere on the track jumps the value there, instead of asking you to grab the handle first and
-    // drag it across. The press is still handed to the Slider, so dragging from that point keeps working.
     MouseArea {
         anchors.fill: parent
         onPressed: (mouse) => {

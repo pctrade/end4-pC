@@ -34,7 +34,6 @@ RowLayout {
         fill: 1
         padding: 5
 
-        // Needs you or something is wrong: a slow pulse
         SequentialAnimation on scale {
             running: hw.payload.tone === "error" || (hw.payload.tone === "attention" && !hw.quick)
             loops: Animation.Infinite

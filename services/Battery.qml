@@ -60,7 +60,6 @@ Singleton {
         return -1
     })()
 
-    // The dynamic island shows battery alerts itself; only fall back to notifications without it
     readonly property bool islandHandlesAlerts: Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
 
     onIsLowAndNotChargingChanged: {
@@ -99,7 +98,6 @@ Singleton {
         if (root.soundEnabled) Audio.playSystemSound("suspend-error");
     }
 
-    // With the island, count down first so it can be seen and cancelled; then hibernate (suspend as fallback)
     property int hibernateCountdown: -1
     readonly property int hibernateDelay: 60
 

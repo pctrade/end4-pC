@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dynamic Island helper for local dev servers (seção 26 — Dev Activity). Framework-agnostic: it never
+# Dynamic Island helper for local dev servers (Dev Activity). Framework-agnostic: it never
 # parses a specific tool's output, only generic patterns (a localhost URL, common error/ready words), so
 # it works the same for Next.js, Vite, Django's runserver, or anything else that prints to stdout.
 #
@@ -17,7 +17,6 @@ id=$1
 title=${2:-$1}
 [[ -n $id ]] || { echo "usage: dev-island.sh <id> [title]" >&2; cat; exit 1; }
 
-# island <state: building|ready|error> <subtitle> [url]
 island() {
     qs -c end4-pC ipc call island dev "$id" "$title" "$2" "$1" "${3:-}" >/dev/null 2>&1
 }
@@ -29,8 +28,6 @@ remove() {
 ready=false
 poll_pid=""
 
-# Keeps "ready" touched so the 30-minute running-state grace window in upsertActivity never runs out on
-# a server that's simply been open a while, and clears the activity once the port stops answering
 poll_port() {
     local host=$1 port=$2 url=$3
     while :; do
@@ -45,9 +42,6 @@ poll_port() {
 }
 
 cleanup() {
-    # EOF on stdin means the wrapped command's own stdout closed — the dev server exited — so the
-    # activity always goes away here. The poller is only a backup for a port that dies without the
-    # wrapping shell noticing (and its own exit removes it independently, see poll_port above).
     [[ -n $poll_pid ]] && kill "$poll_pid" 2>/dev/null
     remove
 }

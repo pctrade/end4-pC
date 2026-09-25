@@ -12,8 +12,6 @@ Singleton {
     id: root
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
-    // Passive: fetched only while something shows lyrics (the island's lyric line, or a Lyrics widget on screen),
-    // and synced only while the music actually plays
     property int viewers: 0
     readonly property bool wanted: root.viewers > 0 || (Config.options?.bar?.dynamicIsland?.lyrics ?? true)
     readonly property bool playing: root.activePlayer?.isPlaying ?? false

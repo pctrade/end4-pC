@@ -20,7 +20,6 @@ git() {
         clone) icon=download; title="git clone"; repo="${${@[-1]##*/}%.git}" ;;
     esac
 
-    # Synchronous so a very fast command can't finish before its activity exists
     qs -c end4-pC ipc call island indeterminate "$id" "$title" "$repo" "$icon" >/dev/null 2>&1
     local start=$SECONDS
     command git "$@"

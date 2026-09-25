@@ -710,7 +710,7 @@ ContentPage {
                 }
             }
 
-            // Tela cheia (seção 29): critical still breaks through; everything else waits behind the hairline
+            // Fullscreen: critical still breaks through; everything else waits behind the hairline
             ContentSubsection {
                 title: Translation.tr("Fullscreen")
                 GroupedList {

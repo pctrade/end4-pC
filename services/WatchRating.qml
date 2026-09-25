@@ -31,7 +31,6 @@ Singleton {
         onLoadFailed: root.apiKey = ""
     }
 
-    // ── What's playing ────────────────────────────────────────────────────────────────────────────────────
     readonly property var browserPlayer: {
         for (const player of Mpris.players.values) {
             const source = `${player.dbusName ?? ""} ${player.identity ?? ""} ${player.desktopEntry ?? ""}`.toLowerCase()
@@ -43,8 +42,6 @@ Singleton {
     readonly property var now: root.fake ?? (root.browserPlayer ? root.parse(root.browserPlayer) : null)
     readonly property bool playing: root.fake !== null || (root.browserPlayer?.isPlaying ?? false)
 
-    // ilha-teste: "island simulate watchTop3|watchTop10|watchBest|watchHigh" plays a real episode of the show
-    // already loaded (whatever is on right now) as if it had just started, for 9 seconds
     property var fake: null
     Timer {
         id: fakeEnd
@@ -73,18 +70,15 @@ Singleton {
     readonly property var siteServices: ({ "disney+": "disneyplus", "netflix": "netflix", "prime video": "primevideo",
         "max": "max", "apple tv+": "appletv", "crunchyroll": "crunchyroll", "paramount+": "paramountplus" })
 
-    // title/artist/album → { series, season, episode, episodeTitle, service } or null when it isn't a show or a film
     function parse(player) {
         const title = (player?.trackTitle ?? "").trim()
         const artist = (player?.trackArtist ?? "").trim()
         const album = (player?.trackAlbum ?? "").trim()
-        // From the userscript: "S06E19|disneyplus" for an episode, "|netflix" for a film
         const code = album.match(/^(?:S(\d+)E(\d+))?\|(\w*)$/i)
         if (code && artist !== "") {
             if (code[1]) return { series: artist, season: Number(code[1]), episode: Number(code[2]), episodeTitle: title, service: code[3], source: "script" }
             return { series: artist, season: 0, episode: 0, episodeTitle: "", service: code[3], source: "script" }
         }
-        // No userscript: the tab title Chrome publishes on its own ("Modern Family | Disney+")
         const site = title.match(/^(.+?)\s*\|\s*(Disney\+|Netflix|Prime Video|Max|Apple TV\+|Crunchyroll|Paramount\+)\s*$/i)
         if (site)
             return { series: site[1].trim(), season: 0, episode: 0, episodeTitle: "", service: root.siteServices[site[2].toLowerCase()] ?? "", source: "page" }
@@ -92,15 +86,10 @@ Singleton {
     }
     readonly property string service: root.now?.service ?? ""
 
-    // ── OMDb ──────────────────────────────────────────────────────────────────────────────────────────────
-    property var titleCache: ({})       // OMDb, per show: its IMDb id, rating, year, genre
-    property var seriesCache: ({})      // IMDb, per show: every episode of every season, with its rating
+    property var titleCache: ({})
+    property var seriesCache: ({})
     property int revision: 0
 
-    // The whole show in one request (paged only past 250 episodes), once per show, straight from the GraphQL
-    // endpoint IMDb's own site uses — OMDb leaves most episodes unrated (15 of 24 in a Modern Family season).
-    // Having every season at once is what makes "top 10 of the show" possible. Unofficial: a failure only costs
-    // the episode ratings.
     function fetchSeries(id, done, after, collected) {
         const all = collected ?? []
         const page = after ? `, after: "${after}"` : ""
@@ -153,7 +142,6 @@ Singleton {
         const value = parseFloat(episode?.imdbRating ?? "")
         return isNaN(value) ? -1 : value
     }
-    // The page's own (localized) title when the userscript saw it; IMDb's when it only inferred the number
     readonly property string episodeTitle: {
         const own = root.now?.episodeTitle ?? ""
         return own !== "" && !/^S\d+E\d+$/i.test(own) ? own : (root.currentEpisode?.Title ?? "")
@@ -167,24 +155,19 @@ Singleton {
     }
     readonly property bool isBest: root.currentEpisode !== null && root.bestEpisode !== null
         && root.episodeRating > 0 && root.episodeRating >= root.ratingOf(root.bestEpisode)
-    // 1 = best of the season, among the episodes that have a rating
     readonly property int rank: {
         if (root.episodeRating < 0) return -1
         return root.seasonEpisodes.filter(e => root.ratingOf(e) > root.episodeRating).length + 1
     }
     readonly property int ratedCount: root.seasonEpisodes.filter(e => root.ratingOf(e) >= 0).length
 
-    // Where this episode stands in the whole show. The small-show guards keep "top 10" meaningful: in a
-    // 12-episode miniseries almost everything would be.
     readonly property int seriesRated: root.allEpisodes.filter(e => root.ratingOf(e) >= 0).length
     readonly property int seriesRank: root.episodeRating < 0 ? -1
         : root.allEpisodes.filter(e => root.ratingOf(e) > root.episodeRating).length + 1
     readonly property bool isTop3: root.seriesRank > 0 && root.seriesRank <= 3 && root.seriesRated >= 8
     readonly property bool isTop10: !root.isTop3 && root.seriesRank > 0 && root.seriesRank <= 10 && root.seriesRated >= 25
-    // One highlight per episode, the rarest that applies
     readonly property string tier: root.isTop3 ? "top3" : root.isTop10 ? "top10" : root.isBest ? "best"
         : root.episodeRating >= 8.5 ? "high" : ""
-    // Any episode's standing, computed the same way as the current one's (for "up next")
     function statsFor(episode) {
         const rating = root.ratingOf(episode)
         if (!episode || rating < 0) return null
@@ -199,7 +182,6 @@ Singleton {
         }
     }
 
-    // The episode after this one: the next in the season, or the first of the next season
     readonly property var nextEpisode: {
         if (!root.now || root.now.season <= 0 || root.allEpisodes.length === 0) return null
         const inSeason = root.seasonEpisodes.find(e => Number(e.Episode) === root.now.episode + 1)
@@ -213,8 +195,6 @@ Singleton {
         root.revision
         return root.info !== null && (root.now?.season <= 0 || root.seriesCache[root.info.imdbID] !== undefined)
     }
-    // The island only speaks up for an episode's own rating (or a film's). The show's rating is something you
-    // already know: it stays small in the expanded view, and a show whose episode isn't known says nothing.
     readonly property bool active: root.enabled && root.now !== null && root.ready && (root.now.season > 0
         ? root.episodeRating >= 0
         : (root.now.source === "script" && root.info?.Type === "movie" && root.seriesRating >= 0))
@@ -268,11 +248,8 @@ Singleton {
     }
     onEnabledChanged: root.lookup()
 
-    // ── The Peek: once per episode (or film), as soon as its rating is known and it's actually playing ──
     property var announced: ({})
 
-    // Only once the episode has held still for a moment: the userscript may briefly infer the wrong number
-    // (a manually picked episode, before the player shows its title) and correct itself a second later.
     Timer {
         id: settle
         interval: 3000
@@ -287,8 +264,6 @@ Singleton {
     }
     onActiveChanged: root.announce()
 
-    // ── Up next: while the credits roll (~100 s before the end), the next episode's rating ──────────────
-    // One timer aimed at that moment, re-aimed when playback pauses, seeks or changes episode — no polling.
     property var announcedNext: ({})
 
     function aimEnding() {

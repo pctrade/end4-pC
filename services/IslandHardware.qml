@@ -21,7 +21,6 @@ Singleton {
     readonly property int slowChargerWatts: root.cfg.slowChargerWatts ?? 25
     readonly property int hotTemperature: root.cfg.hotTemperature ?? 90
 
-    // What's on screen (same contract as IslandEvents' flashes: active, hold, dismiss)
     property var current: null
     readonly property var payload: root.current ?? ({})
     property bool active: false
@@ -50,7 +49,6 @@ Singleton {
         root.active = false
     }
 
-    // Updates what's on screen (the result of an action), without restarting its timer
     function update(changes) {
         if (!root.current) return
         root.current = Object.assign({}, root.current, changes)
@@ -68,8 +66,6 @@ Singleton {
         return `${value.toFixed(value < 10 && unit > 0 ? 1 : 0)} ${units[unit]}`
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Several things plugged in within a couple of seconds (monitor, network, USB hub, power) is a dock
     property var bucket: []
 
     function queue(category, payload) {
@@ -109,8 +105,6 @@ Singleton {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Monitors and keyboard layout: Hyprland events
     readonly property string internalOutput: Hyprland.monitors.values.map(m => m.name).find(n => /^(eDP|LVDS|DSI)/.test(n)) ?? "eDP-1"
     property bool internalDisabled: false
     property string lastLayout: ""
@@ -140,7 +134,6 @@ Singleton {
     }
 
     function monitorRemoved(name) {
-        // Never leave the laptop without a screen
         if (root.internalDisabled) {
             Quickshell.execDetached(["hyprctl", "eval", `hl.monitor({ output = "${root.internalOutput}", mode = "preferred", position = "auto", scale = 1 })`])
             root.internalDisabled = false
@@ -194,7 +187,6 @@ Singleton {
     property string layoutOutput: ""
 
     function applyMonitorLayout(output, mode) {
-        // Simulated monitor (no output): only the picture changes
         if (!output) {
             root.update({ layout: mode })
             return
@@ -204,7 +196,6 @@ Singleton {
         root.layoutPending = mode
         root.runMonitorLayout(output, mode)
         root.update({ layout: mode })
-        // "only" is the dangerous one: check that something is actually lit, and ask before keeping it
         if (mode === "only") layoutVerifyDelay.restart()
         else root.layoutPending = ""
     }
@@ -249,7 +240,6 @@ Singleton {
                 }
                 const external = monitors.find(m => m.name === root.layoutOutput && !m.disabled)
                 if (!external) {
-                    // Nothing came up on the other side: put the laptop screen back before you are left in the dark
                     root.revertMonitorLayout(Translation.tr("The external screen didn't come up"))
                     return
                 }
@@ -282,7 +272,6 @@ Singleton {
         }
     }
 
-    // Starting layout, so the first change is compared with something real
     Process {
         running: root.enabled
         command: ["hyprctl", "devices", "-j"]
@@ -309,8 +298,6 @@ Singleton {
             value: root.layoutCode(layout), urgent: true, actions: [] }, 1600)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // udev: removable drives, game controllers, USB hubs and wired network (for docks)
     Process {
         id: udev
         running: root.enabled
@@ -360,7 +347,6 @@ Singleton {
         }
     }
 
-    // Removable drives
     function driveAdded(p) {
         const device = p.DEVNAME
         const label = p.ID_FS_LABEL || (p.ID_MODEL ?? "").replace(/_/g, " ") || device.split("/").pop()
@@ -431,7 +417,6 @@ Singleton {
         }
     }
 
-    // Game controllers
     property double lastControllerAt: 0
     property string lastControllerName: ""
 
@@ -455,8 +440,6 @@ Singleton {
             subtitle: IslandEvents.shortName(root.lastControllerName), value: "", actions: [] }, 3000)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Charger: plugging in counts toward a dock; a slow one is worth a word once charging settles
     Connections {
         target: Battery
         function onIsPluggedInChanged() {
@@ -480,11 +463,6 @@ Singleton {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Every battery that is not the laptop's, in one list: earbuds, mouse, keyboard, controller, phone.
-    // They arrive from two places (UPower for USB dongles, BlueZ for Bluetooth), which is why one charge
-    // used to be reported in one corner of the shell and another somewhere else.
-    // No refresh timer: UPower and BlueZ both announce a charge change themselves, and this re-evaluates then
     readonly property var peripherals: {
         const items = []
         const seen = {}
@@ -542,7 +520,6 @@ Singleton {
         }
     }
 
-    // Wireless peripherals: warn at 15% and again at 5%, once per charge
     property var peripheralWarned: ({})
 
     function checkPeripheral(id, name, kind, level) {
@@ -594,8 +571,6 @@ Singleton {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Caps Lock: the keyboard LEDs, read a few times per second (no process, just the sysfs file)
     property var capsPaths: []
     property bool capsOn: false
     property bool capsKnown: false
@@ -620,8 +595,6 @@ Singleton {
     }
 
     Timer {
-        // Polling LEDs is the only way to see Caps Lock without a keyboard grab, but four times a second forever
-        // is a lot of wakeups for something that changes a few times a day. Twice a second still feels instant.
         interval: 500
         repeat: true
         running: root.enabled && root.capsPaths.length > 0
@@ -647,8 +620,6 @@ Singleton {
             urgent: true, actions: [] }, 1400)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Waking up: how long it slept and what it cost in battery (logind's PrepareForSleep)
     property double sleptAt: 0
     property real batteryBeforeSleep: -1
 
@@ -674,9 +645,6 @@ Singleton {
         return `${Math.floor(minutes / 60)} h ${minutes % 60} min`
     }
 
-    // What pulled it out of sleep. A machine that wakes up seconds after closing the lid is a bug, not a feature,
-    // and the kernel names the culprit: the IRQ that fired is in /sys/power/pm_wakeup_irq, and /proc/interrupts
-    // says which device that IRQ belongs to.
     property string wakeCause: ""
 
     Process {
@@ -697,7 +665,6 @@ Singleton {
         onTriggered: {
             const ms = Date.now() - root.sleptAt
             root.sleptAt = 0
-            // Woke up almost immediately: that is the failure mode worth reporting, with the device that did it
             if (ms < 60000) {
                 if (ms > 45000 || !root.enabled) return
                 wakeCauseProc.running = true
@@ -727,13 +694,10 @@ Singleton {
         }, 10000)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Heat: 15 s above the limit (at most every 10 min), with the fan speed and the busiest process
     property int hotSamples: 0
     property double lastHotAt: 0
     property string fanPath: ""
 
-    // The same numbers the alert uses, kept readable so the system view can show them without waiting for an alert
     readonly property real temperature: ResourceUsage.cpuTemp
     readonly property bool temperatureHot: root.temperature >= root.hotTemperature - 10
     property int fanRpm: 0
@@ -769,8 +733,6 @@ Singleton {
         }
     }
 
-    // These spawn a process, so they run slowly in the background and are refreshed on demand the moment
-    // something actually wants to show them (the system panel opening, a profile being switched).
     property bool powerWatch: false
 
     function refreshPower() {
@@ -781,8 +743,6 @@ Singleton {
         }
     }
 
-    // Only while the System view is open (it sets powerWatch): nothing else needs the fan or a live profile.
-    // One read at start so the battery's profile shortcut knows where it's cycling from.
     Timer {
         interval: 5000
         repeat: true
@@ -809,7 +769,6 @@ Singleton {
         printErrors: false
     }
 
-    // No timer of its own: listens to the temperature ResourceUsage already samples for the bar
     Connections {
         target: ResourceUsage
         enabled: root.enabled
@@ -840,12 +799,7 @@ Singleton {
         }, 12000)
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Storage almost full. No timer of its own: listens to the `df /` ResourceUsage already runs for the bar.
-    // Low (< 10 GB or < 5 %) warns at most every 6 h; critical (< 2 GB or < 2 %) every 30 min. The last time is
-    // kept on disk so a shell reload doesn't nag again.
     readonly property int diskLevel: {
-        // df fills total, used and free one after another: until all three are in, the numbers don't add up
         const totalKb = ResourceUsage.diskTotal
         if (totalKb <= 1 || ResourceUsage.diskFree <= 0 || ResourceUsage.diskUsed <= 0) return 0
         const freeGb = ResourceUsage.diskFree / 1048576
@@ -855,7 +809,6 @@ Singleton {
     property var diskAlertState: ({ at: 0, level: 0 })
     property bool diskStateReady: false
 
-    // Tiny file, read synchronously at start (a missing file raises no signal to wait for)
     FileView {
         id: diskStateFile
         path: `${Quickshell.env("HOME")}/.cache/quickshell/island-disk-alert.json`
@@ -885,7 +838,6 @@ Singleton {
         diskSizesProc.running = true
     }
 
-    // What could be freed right away, measured once when the alert fires
     Process {
         id: diskSizesProc
         command: ["bash", "-c", `du -sb "$HOME/.local/share/Trash" 2>/dev/null | cut -f1; du -sb /var/cache/pacman/pkg 2>/dev/null | cut -f1`]
@@ -911,7 +863,6 @@ Singleton {
         }, critical ? 20000 : 12000)
     }
 
-    // ---------------------------------------------------------------------------------------------
     function runAction(id) {
         const p = root.current
         if (!p) return
@@ -938,7 +889,6 @@ Singleton {
                 } else if (id === "trash") {
                     Quickshell.execDetached(["dolphin", "trash:/"])
                 } else if (id === "pkgCache") {
-                    // In a terminal, on purpose: you see what goes before it goes
                     Quickshell.execDetached(["kitty", "--class", "ilha-disk", "--title", "Cache de pacotes",
                         "fish", "-c", "echo 'Mantendo só a versão instalada de cada pacote:'; sudo paccache -rk1; sudo paccache -ruk0; echo; df -h /; read -P 'Enter para fechar '"])
                 }
@@ -960,7 +910,6 @@ Singleton {
         }
     }
 
-    // Test payloads (ilha-teste). Actions on fake devices just report that they couldn't run.
     function simulate(kind) {
         const monitorActions = [
             { id: "extend", label: Translation.tr("Extend"), icon: "splitscreen_right" },

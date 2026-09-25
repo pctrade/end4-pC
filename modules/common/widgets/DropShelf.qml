@@ -71,7 +71,6 @@ Singleton {
         if (remote.length > 0) root.download(remote)
     }
 
-    // Text dropped without a file becomes a small note so it can be dragged out again later
     function addText(text) {
         if (!text || text.trim() === "") return
         const name = `nota-${Qt.formatDateTime(new Date(), "yyyyMMdd-hhmmss")}.txt`
@@ -123,7 +122,6 @@ Singleton {
         return Math.max(0, Math.ceil((root.addedAt[path] + root.expireDays * 24 * 3600 * 1000 - Date.now()) / (24 * 3600 * 1000)))
     }
 
-    // PDF tools: results land back in the drawer
     function mergePdfs(paths) {
         if (paths.length < 2) return
         const target = `${root.storeDir}/juntos-${Qt.formatDateTime(new Date(), "yyyyMMdd-hhmmss")}.pdf`
@@ -137,7 +135,6 @@ Singleton {
             target, Translation.tr("PDF compressed"))
     }
 
-    // Files or folders into one .zip kept in the drawer (folders keep their name inside the archive)
     function zipItems(paths) {
         if (!paths || paths.length === 0) return
         const q = p => `'${StringUtils.shellSingleQuoteEscape(p)}'`
@@ -154,7 +151,6 @@ Singleton {
         return /\.(zip|7z|rar|tar|tgz|tar\.(gz|xz|zst|bz2))$/i.test(path)
     }
 
-    // An archive's contents into a folder kept in the drawer
     function extract(path) {
         const q = p => `'${StringUtils.shellSingleQuoteEscape(p)}'`
         const dir = `${root.storeDir}/${root.fileName(path).replace(/\.(zip|7z|rar|tar|tgz|tar\.(gz|xz|zst|bz2))$/i, "")}`

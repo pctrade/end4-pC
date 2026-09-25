@@ -17,9 +17,6 @@ Item {
     readonly property var parts: IslandEvents.notificationParts(notifs.notif)
     readonly property var group: Notifications.popupGroupsByAppName[notifs.notif?.appName ?? ""]
     readonly property int stackCount: notifs.group?.notifications.length ?? 1
-    // Messages from the same conversation collapse into one line with a count
-    // Messages from the same person in a row: counted from the history (last 15 min), not only from what's still
-    // on screen, so the number keeps climbing while they keep writing
     readonly property int conversationCount: {
         const key = IslandEvents.conversationKey(notifs.notif)
         const since = Date.now() - 15 * 60000
@@ -28,7 +25,6 @@ Item {
         return Math.max(1, recent, shown)
     }
     readonly property bool hasImage: (notifs.notif?.image ?? "") !== ""
-    // Shared with the full view: the contact picture travels into it
     readonly property var hero: notifs.hasImage ? { key: "notif-avatar", item: avatarCircle } : null
     readonly property bool messaging: IslandEvents.isMessagingApp(notifs.parts.app)
     readonly property bool pointerOn: notifs.di.hoverArmed
@@ -43,8 +39,6 @@ Item {
         border.color: ColorUtils.transparentize(notifs.accent, 0.7)
     }
 
-    // "Kettily · Certo" doesn't deserve the same pill as a long message. These copies are never drawn; they only
-    // measure the text, so the island can ask for the width this notification actually needs.
     Item {
         id: measure
         visible: false
@@ -84,18 +78,16 @@ Item {
     }
     readonly property real lineWidth: {
         const stack = Math.min(2, notifs.stackCount - 1)
-        let width = (notifs.di.isMaterial ? 3 : 5) + 26 + 9 + stack * 3   // avatar and its margins
+        let width = (notifs.di.isMaterial ? 3 : 5) + 26 + 9 + stack * 3
         width += Math.min(220, titleMeasure.implicitWidth)
         if (notifs.conversationCount === 2) width += 28
         else if (notifs.conversationCount >= 3) width += countMeasure.implicitWidth + 6
         if (notifs.parts.author !== "") width += Math.min(110, authorMeasure.implicitWidth) + 6
         if (notifs.parts.media !== null) width += 21
         if (notifs.parts.body !== "") width += Math.min(240, bodyMeasure.implicitWidth) + 6
-        return width + 8 + 14   // right padding, and room for the pill's own rounding
+        return width + 8 + 14
     }
 
-    // Arrival, kept quiet so it never gets between you and the words: the photo settles in and the two lines
-    // fade up a couple of pixels, in about a quarter of a second
     property real t: 0
     readonly property string notifKey: `${notifs.notif?.notificationId ?? ""}`
     onNotifKeyChanged: arrival.restart()
@@ -115,7 +107,6 @@ Item {
     onNaturalWidthChanged: notifs.di.notifContentWidth = notifs.naturalWidth
     Component.onCompleted: notifs.di.notifContentWidth = notifs.naturalWidth
 
-    // OutBack on 0..1, for the photo's pop
     function back(x) {
         const c1 = 1.9
         return 1 + (c1 + 1) * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
@@ -131,7 +122,6 @@ Item {
         width: 26
         height: 26
 
-        // Stacked cards peeking behind the avatar
         Repeater {
             model: Math.min(2, notifs.stackCount - 1)
             delegate: Rectangle {
@@ -145,7 +135,6 @@ Item {
             }
         }
 
-        // Chats: how many messages in a row, on the photo; it bumps every time another one arrives
         Rectangle {
             id: countBadge
             visible: notifs.messaging && notifs.conversationCount >= 2
@@ -185,7 +174,6 @@ Item {
             function onConversationCountChanged() { if (notifs.conversationCount >= 2) badgeBump.restart() }
         }
 
-        // Chats: a thin ring in the app's colour instead of an outline around the whole pill
         Rectangle {
             visible: notifs.messaging
             anchors.centerIn: avatarCircle
@@ -234,7 +222,6 @@ Item {
                 }
             }
 
-            // No contact picture: the app's own mark, then its system icon, then a plain bell
             DiBrandIcon {
                 anchors.centerIn: parent
                 visible: !notifs.hasImage && notifs.parts.brand !== ""
@@ -264,7 +251,6 @@ Item {
             }
         }
 
-        // App badge over the contact picture: the app's own mark (WhatsApp, Telegram…), not the browser's
         Rectangle {
             visible: notifs.hasImage && (notifs.parts.brand !== "" || (notifs.notif?.appIcon ?? "") !== "")
             anchors {
@@ -296,7 +282,6 @@ Item {
         }
     }
 
-    // One readable line: sender (and message count), group author, media kind, message
     RowLayout {
         id: textRow
         visible: !notifs.messaging
@@ -358,8 +343,6 @@ Item {
             opacity: 0.85
         }
 
-        // Three or more from the same conversation: say how many and show only the last one, instead of
-        // replacing the island on every message
         StyledText {
             visible: notifs.conversationCount >= 3
             text: Translation.tr("%1 messages").arg(notifs.conversationCount)
@@ -368,7 +351,6 @@ Item {
             color: notifs.accent
         }
 
-        // Long messages scroll slowly while the pointer is on the island
         Item {
             id: bodyClip
             Layout.fillWidth: true
@@ -416,7 +398,6 @@ Item {
         }
     }
 
-    // Chats: two lines — who wrote, and then the message with the whole width to itself
     Item {
         id: chatText
         visible: notifs.messaging
@@ -506,7 +487,6 @@ Item {
         }
     }
 
-    // Tapping the message goes to the app; tapping the picture opens the full view with reply
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
@@ -522,7 +502,6 @@ Item {
         onClicked: notifs.di.toggleExpanded()
     }
 
-    // Quick reply shortcut, only for chats and only under the pointer
     Item {
         id: trailing
         readonly property bool shown: notifs.messaging && notifs.pointerOn

@@ -30,7 +30,6 @@ run_field() {
     gh run list --commit "$sha" --limit 1 --json "$1" --jq ".[0].$1" 2>/dev/null
 }
 
-# GitHub takes a few seconds to create the run; give up if nothing shows in a minute (no workflow for this repo)
 for _ in $(seq 1 20); do
     status=$(run_field status)
     [[ -n $status ]] && break

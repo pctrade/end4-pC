@@ -24,7 +24,6 @@ MouseArea {
         if (mouse.button === Qt.LeftButton) {
             updateProc.running = true
         } else if (mouse.button === Qt.MiddleButton) {
-            // Middle click lists what is pending without installing anything
             Quickshell.execDetached(["kitty", "--class", "ilha-updates-list", "--title", "Atualizações pendentes",
                 "fish", "-c", "yay -Qu; echo; read -P 'Enter para fechar '"])
         }

@@ -30,7 +30,6 @@ Item {
 
     readonly property var procs: Pressure.procs[list.kind] ?? []
 
-    // Strict on purpose: a real app icon or none (a fuzzy guess puts random icons on compilers and daemons)
     function iconFor(app) {
         if (!app) return ""
         const entry = DesktopEntries.byId(app) ?? DesktopEntries.heuristicLookup(app)
@@ -69,7 +68,6 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         interactive: contentHeight > height
 
-        // Keeps every wheel event, even at the ends, so it never turns into island navigation
         MouseArea {
             parent: scroller
             anchors.fill: parent
@@ -124,7 +122,6 @@ Item {
                             ColorAnimation { duration: IslandMotion.micro }
                         }
 
-                        // Its share of the resource, as a faint pill growing from the left
                         Rectangle {
                             anchors {
                                 left: parent.left
@@ -205,7 +202,6 @@ Item {
                             color: row.abnormal ? Appearance.colors.colError : Appearance.colors.colOnLayer0
                         }
 
-                        // End button: only on hover (or always for the one out of line)
                         Rectangle {
                             id: killButton
                             readonly property bool wide: row.armed || row.killState === "stuck"
@@ -271,7 +267,6 @@ Item {
         }
     }
 
-    // More below: a soft fade at the bottom edge
     Rectangle {
         anchors {
             left: parent.left

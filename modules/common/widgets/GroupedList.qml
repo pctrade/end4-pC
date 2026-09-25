@@ -4,10 +4,6 @@ import QtQuick.Layouts
 
 Item {
     id: root
-    // Each declared child becomes one row. A `Repeater` cannot be used here: a `default property list<Item>`
-    // captures the Repeater itself as a single entry whose implicitHeight is 0, so every row it generates
-    // collapses into one sliver that then renders unclipped over whatever follows this list. Build rows from
-    // a model outside the GroupedList, or declare them one by one.
     default property list<Item> items
     property real bigRadius: Appearance.rounding.normal
     property real smallRadius: Appearance.rounding.unsharpenmore

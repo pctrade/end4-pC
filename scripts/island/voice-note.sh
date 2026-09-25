@@ -35,7 +35,6 @@ stop() {
     rm -f "$pidfile"
     sleep 0.3
 
-    # Anything under a second is a slip of the finger, not a note
     size=$(stat -c %s "$wav" 2>/dev/null || echo 0)
     if (( size < 32000 )); then
         island remove voice-note

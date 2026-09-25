@@ -19,7 +19,6 @@ _island_cmd_preexec() {
     [[ $first == (sudo|env|time|nohup) ]] && first=${words[2]}
     (( ${ISLAND_CMD_SKIP[(Ie)${first:t}]} )) && return
     typeset -g _island_cmd=${1[1,60]} _island_cmd_full=$1 _island_cmd_start=$EPOCHREALTIME _island_cmd_id="cmd-$$-$RANDOM"
-    # The activity only appears once the command has really been running for a while
     { sleep $ISLAND_CMD_MIN; bash $_island_helper start "$_island_cmd_id" "$_island_cmd" $$ } >/dev/null 2>&1 &!
     typeset -g _island_cmd_timer=$!
 }
@@ -37,5 +36,4 @@ _island_cmd_precmd() {
 }
 
 add-zsh-hook preexec _island_cmd_preexec
-# First in line so the exit code isn't replaced by other prompt hooks
 precmd_functions=(_island_cmd_precmd ${precmd_functions:#_island_cmd_precmd})

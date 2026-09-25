@@ -12,7 +12,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 380
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 380
 
     readonly property bool active: IslandEvents.downloadActive
@@ -21,7 +20,6 @@ ColumnLayout {
     readonly property string topName: IslandEvents.downloadTop?.name ?? ""
     property double now: Date.now()
 
-    // Keep measuring per process while the details are open, even between bursts
     Binding {
         target: IslandEvents
         property: "downloadWatch"
@@ -129,7 +127,6 @@ ColumnLayout {
         }
     }
 
-    // Files arriving right now: one row each, with the browser's own total when it is known
     StyledText {
         visible: IslandEvents.partialFiles.length > 0
         text: Translation.tr("Files arriving")
@@ -207,7 +204,6 @@ ColumnLayout {
                             NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutCubic }
                         }
 
-                        // No total to go by: a shuttle that says "still moving"
                         SequentialAnimation on x {
                             running: fileRow.progress < 0
                             loops: Animation.Infinite
@@ -355,7 +351,6 @@ ColumnLayout {
         }
     }
 
-    // Browsers funnel every tab through one network process; point to their own task managers
     Rectangle {
         Layout.fillWidth: true
         visible: hintText.text !== ""

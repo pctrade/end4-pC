@@ -12,7 +12,6 @@ ColumnLayout {
     required property Item di
     spacing: 8
     implicitWidth: 400
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 400
 
     property double now: Date.now()

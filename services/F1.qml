@@ -40,7 +40,6 @@ Singleton {
     readonly property var leader: root.drivers.length > 0 ? root.drivers[0] : null
     readonly property var focusDriver: root.drivers.find(d => d.tla === root.favoriteDriver) ?? root.leader
 
-    // Test hook: forces a flag without being overwritten by the live feed
     property string flagOverride: ""
     readonly property string flag: {
         if (root.flagOverride !== "") return root.flagOverride
@@ -73,7 +72,6 @@ Singleton {
     property int fastestLapMs: 0
     property int announcedLapsToGo: -1
 
-    // "1:24.624" -> 84624
     function parseLapTime(text) {
         const m = /^(?:(\d+):)?(\d+)\.(\d+)$/.exec((text ?? "").trim())
         if (!m) return 0
@@ -135,7 +133,6 @@ Singleton {
         }
     }
 
-    // Session names come from the API in English ("Race", "Practice 2"…); this is what the island shows
     function sessionLabel(name) {
         if (!name) return ""
         const practice = name.match(/^Practice (\d)$/)
@@ -150,7 +147,6 @@ Singleton {
         }
     }
 
-    // Time until something far away, for people: "2d 4h", "15h 41min", "12min"
     function humanCountdown(seconds) {
         if (seconds <= 0) return ""
         const d = Math.floor(seconds / 86400)
@@ -203,7 +199,6 @@ Singleton {
         if (root.sessionLive && root.raceControl && prevRc !== -1 && root.raceControl.id !== prevRc)
             root.newRaceControlMessage(root.raceControl)
 
-        // Pit stop: the focused driver's compound now belongs to a newer stint
         const focus = root.focusDriver
         const tyreStint = focus?.tyreStint ?? 0
         if (root.racing && focus && root.lastFocusTyreStint > 0 && tyreStint > root.lastFocusTyreStint)
@@ -215,7 +210,6 @@ Singleton {
         if (prevStatus === "Started" && root.sessionStatus === "Finished")
             root.sessionResult(root.drivers.slice(0, 3))
 
-        // Team radio of the focused driver (favorite, or the leader when there is none)
         const radio = root.teamRadio
         if (root.sessionLive && radio && radio.id > prevRadio && radio.tla !== "" && radio.tla === root.focusDriver?.tla
                 && (Config.options.bar.dynamicIsland.f1.teamRadio ?? true))
@@ -226,14 +220,12 @@ Singleton {
             root.announcedLapsToGo = -1
         }
 
-        // Blue flag waved for the focused driver
         const rc = root.raceControl
         if (root.sessionLive && rc && prevRc !== -1 && rc.id !== prevRc && rc.flag === "BLUE"
                 && (rc.racingNumber ?? "") !== "" && rc.racingNumber === root.focusDriver?.num)
             root.blueFlag(root.focusDriver)
 
         if (root.racing && root.isRace) {
-            // Fastest lap of the race so far (the first one only sets the reference)
             if (root.lap > 2) {
                 let best = null
                 for (const d of root.drivers) {
@@ -245,7 +237,6 @@ Singleton {
                     root.fastestLapMs = best.ms
                 }
             }
-            // 10 and 5 laps to go, and the final lap
             const togo = root.totalLaps - root.lap
             if (root.totalLaps > 0 && [10, 5, 0].includes(togo) && root.announcedLapsToGo !== togo) {
                 root.announcedLapsToGo = togo
@@ -254,7 +245,6 @@ Singleton {
         }
     }
 
-    // Team radio clips are short audio files on the live timing server; tapping again stops playback
     function playRadio(url) {
         if (radioPlayer.running) {
             radioPlayer.running = false
@@ -285,7 +275,6 @@ Singleton {
     }
     Component.onCompleted: daemon.running = root.enabled
 
-    // The countdown only needs seconds in its last hour; before that, a tick a minute is plenty
     Timer {
         interval: root.sessionLive || (root.secondsToNext >= 0 && root.secondsToNext <= 3600) ? 1000 : 60000
         repeat: true
@@ -309,7 +298,6 @@ Singleton {
         if (!root.enabled || root.daemonArgs[0] !== "live") return
         const start = root.nextSession ? Date.parse(root.nextSession.start) : NaN
         if (isNaN(start)) {
-            // Off-season or the schedule couldn't be fetched: look again in six hours
             wakeTimer.interval = 6 * 3600 * 1000
         } else {
             const until = start - root.preWindowMs - Date.now()
@@ -317,7 +305,7 @@ Singleton {
                 restartTimer.restart()
                 return
             }
-            wakeTimer.interval = Math.min(until, 2000000000)   // Timer tops out around 24.8 days
+            wakeTimer.interval = Math.min(until, 2000000000)
         }
         wakeTimer.restart()
     }

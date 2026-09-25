@@ -10,7 +10,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 480
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 480
 
     readonly property color flagColor: F1.flagColor(F1.flag)
@@ -83,8 +82,6 @@ ColumnLayout {
         }
     }
 
-    // Top 10 in two columns. Rows are placed by their current slot, so a position change
-    // physically moves the car across the grid instead of re-sorting a list.
     Item {
         id: grid
         Layout.fillWidth: true
@@ -144,7 +141,6 @@ ColumnLayout {
                     trendTimer.restart()
                 }
 
-                // The overtaking car rises above the one it passes, then settles
                 SequentialAnimation {
                     id: liftAnim
                     NumberAnimation { target: row; property: "lift"; to: 1; duration: IslandMotion.short; easing.type: Easing.OutCubic }

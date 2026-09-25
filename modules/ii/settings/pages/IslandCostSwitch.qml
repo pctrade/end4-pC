@@ -6,13 +6,13 @@ import qs.modules.common.widgets
 import qs.modules.common.functions
 
 // A Dynamic Island feature with what it actually costs: what runs, when, and a weight tag (heavy / medium /
-// light). Turning it off stops that work, not just the drawing (each one was audited — ILHA.md § passivo).
+// light). Turning it off stops that work, not just the drawing (each one was audited to be passive).
 RippleButton {
     id: row
     property string buttonIcon: ""
     property string title: ""
     property string detail: ""
-    property string cost: "light"   // heavy | medium | light
+    property string cost: "light"
     colBackgroundHover: "transparent"
 
     Layout.fillWidth: true

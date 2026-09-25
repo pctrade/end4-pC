@@ -8,7 +8,6 @@ Item {
     id: art
     property bool open: false
     property bool busy: false
-    // Play the lid motion on creation: connecting/connected starts closed, disconnected starts open
     property bool animateEntrance: true
     implicitWidth: 28
     implicitHeight: 28
@@ -63,7 +62,6 @@ Item {
         mipmap: true
     }
 
-    // Lid lifts a little, then the open case bounces in
     SequentialAnimation {
         id: openAnim
         ParallelAnimation {
@@ -84,7 +82,6 @@ Item {
         }
     }
 
-    // Open case sinks, the closed one snaps back with a small bounce
     SequentialAnimation {
         id: closeAnim
         ParallelAnimation {
@@ -96,7 +93,6 @@ Item {
         ScriptAction { script: openImg.scale = 1 }
     }
 
-    // Looking for the earbuds: the closed case wiggles now and then
     SequentialAnimation {
         running: art.busy && !art.shownOpen
         loops: Animation.Infinite

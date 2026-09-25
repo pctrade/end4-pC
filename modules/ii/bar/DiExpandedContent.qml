@@ -10,12 +10,10 @@ Item {
     readonly property real padding: 14
     property string shownId: ""
 
-    // The loaded view (the overlay looks for its shared elements)
     readonly property Item viewItem: loader.item
     readonly property real naturalHeight: (loader.item?.implicitHeight ?? 60) + content.padding * 2
     readonly property bool scrollable: content.naturalHeight > content.maxHeight + 1
 
-    // A view's own width: layouts overwrite implicitWidth with their children's, so views declare `wantedWidth`
     implicitWidth: Math.max(loader.item?.implicitWidth ?? 280, loader.item?.wantedWidth ?? 0) + content.padding * 2
     implicitHeight: Math.min(content.naturalHeight, content.maxHeight)
 
@@ -75,7 +73,6 @@ Item {
         }
     }
 
-    // Content taller than the island's height limit scrolls inside it instead of stretching the island
     Flickable {
         id: flick
         anchors.fill: parent
@@ -85,8 +82,6 @@ Item {
         contentHeight: content.naturalHeight
         boundsBehavior: Flickable.StopAtBounds
 
-        // A view taller than the overlay scrolls on its own and keeps every wheel event, even at the ends, so
-        // scrolling to the bottom doesn't carry on into the next view
         MouseArea {
             parent: flick
             anchors.fill: parent

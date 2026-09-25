@@ -81,7 +81,6 @@ Item {
         }
     }
 
-    // Remaining time as a thin bar that shrinks along the bottom of the island
     Item {
         visible: timers.di.engagedTimerKind !== "stopwatch"
         anchors {

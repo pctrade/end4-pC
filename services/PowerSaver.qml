@@ -25,9 +25,8 @@ Singleton {
     readonly property bool profileOn: IslandHardware.powerProfile === "power-saver"
     property bool dimOn: false
     property bool effectsOn: false
-    property bool bluetoothOn: false   // true = the saver turned Bluetooth off
+    property bool bluetoothOn: false
 
-    // What to restore
     property string previousProfile: ""
     property real previousBrightness: -1
     property bool previousAnimations: true
@@ -74,7 +73,6 @@ Singleton {
             `hl.config({ animations = { enabled = ${animations} }, decoration = { blur = { enabled = ${blur} } } })`])
     }
 
-    // Read what's set now, so turning effects back on restores exactly that
     Process {
         id: effectsReadProc
         command: ["bash", "-c", "hyprctl getoption animations:enabled -j; hyprctl getoption decoration:blur:enabled -j"]
@@ -107,7 +105,6 @@ Singleton {
         }
     }
 
-    // Everything at once (what's already on stays on)
     function saveAll() {
         if (!root.profileOn) root.toggleProfile()
         if (!root.dimOn) root.toggleDim()
@@ -115,7 +112,6 @@ Singleton {
         if (!root.bluetoothOn && root.bluetoothOffered) root.toggleBluetooth()
     }
 
-    // Charger in: undo whatever the saver did
     function restoreAll() {
         if (root.profileOn && root.previousProfile !== "") root.toggleProfile()
         if (root.dimOn) root.toggleDim()

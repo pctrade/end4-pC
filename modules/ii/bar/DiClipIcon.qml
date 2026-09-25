@@ -12,7 +12,6 @@ Item {
     id: clipIcon
     property var kind: ({ kind: "text", icon: "content_paste" })
     property real size: 28
-    // `tinted` paints the plain symbols in the secondary container colours (the pill); off for a quiet list row
     property bool tinted: true
 
     readonly property bool isSwatch: clipIcon.kind?.swatch !== undefined

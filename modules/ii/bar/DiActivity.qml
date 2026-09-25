@@ -39,9 +39,6 @@ RowLayout {
 
             spinning: act.state === "running" && act.progress < 0
 
-            // Stepped instead of animated: a smooth 60 fps spin means the bar repaints sixty times a second for
-            // a 26-pixel ring, and that alone measured around fifteen points of CPU. Sixteen steps per turn look
-            // the same at this size and cost a quarter of that.
             Timer {
                 interval: 60
                 repeat: true
@@ -62,7 +59,6 @@ RowLayout {
             fill: 1
             padding: act.state === "running" ? 2 : 5
 
-            // Waiting for you: a slow pulse until it's answered
             SequentialAnimation on scale {
                 running: act.state === "attention"
                 loops: Animation.Infinite

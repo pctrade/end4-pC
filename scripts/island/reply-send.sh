@@ -37,7 +37,6 @@ if ! focused_is_chat; then
     exit 1
 fi
 
-# The conversation opens and its composer takes focus a beat after the window does
 sleep 0.5
 focused_is_chat || { printf '%s' "$text" | wl-copy; exit 1; }
 wtype -- "$text"

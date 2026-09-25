@@ -1,19 +1,16 @@
 // ==UserScript==
-// @name         Ilha — enviar pro Gemini
+// @name         Dynamic Island — send to Gemini
 // @namespace    end4-pC
 // @version      1.0
-// @description  Recebe um texto da Dynamic Island pelo link (gemini.google.com/app#ilha=…), coloca na caixa do Gemini e envia.
+// @description  Takes a text from the Dynamic Island through the link (gemini.google.com/app#ilha=…), types it into Gemini and sends it.
 // @match        https://gemini.google.com/*
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
 
-// Contrato com a Ilha (IslandEvents.askGemini): o texto vem no #fragmento do link, que nunca sai do navegador.
-// Passivo: só age quando o link traz "#ilha=" — nenhum loop, nenhuma checagem fora disso.
-//
-// O que a página real mostrou (set/2026): a caixa é `rich-textarea .ql-editor` (contenteditable, Quill); o botão
-// de enviar só aparece depois que há texto, com aria-label "Enviar mensagem" (ou "Send message" em inglês); e a
-// página bloqueia innerHTML (Trusted Types), então o texto entra só por execCommand("insertText").
+// The text comes in the #fragment of the link (IslandEvents.askGemini), so it never leaves the browser. Only acts
+// when the link carries "#ilha=". The page blocks innerHTML (Trusted Types), so the text goes in through
+// execCommand("insertText"), and the send button only appears once there is text.
 
 (function () {
     "use strict"
@@ -32,7 +29,7 @@
     async function deliver() {
         if (!location.hash.startsWith("#ilha=")) return
         const text = decodeURIComponent(location.hash.slice("#ilha=".length))
-        history.replaceState(null, "", location.pathname + location.search)   // no resend on reload
+        history.replaceState(null, "", location.pathname + location.search)
         if (!text.trim()) return
 
         const editor = await until(() => document.querySelector("rich-textarea .ql-editor"), 15000)

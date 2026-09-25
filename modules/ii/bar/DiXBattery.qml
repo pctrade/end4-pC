@@ -10,7 +10,6 @@ ColumnLayout {
     required property Item di
     spacing: 12
     implicitWidth: 360
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 360
 
     readonly property bool onBattery: !Battery.isPluggedIn
@@ -65,7 +64,6 @@ ColumnLayout {
         }
     }
 
-    // On battery: quick ways to make it last, all undone when the charger goes in
     RowLayout {
         Layout.fillWidth: true
         visible: xbat.onBattery
@@ -126,7 +124,6 @@ ColumnLayout {
         }
     }
 
-    // What's draining it right now (scanned only while this is open)
     StyledText {
         visible: xbat.onBattery
         text: Translation.tr("Using the most right now")

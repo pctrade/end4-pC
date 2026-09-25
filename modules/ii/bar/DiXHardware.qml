@@ -12,7 +12,6 @@ ColumnLayout {
     required property Item di
     spacing: 12
     implicitWidth: 360
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 360
 
     readonly property var payload: IslandHardware.payload
@@ -68,7 +67,6 @@ ColumnLayout {
         }
     }
 
-    // Screens: the laptop and the external monitor, arranged like the chosen layout
     Item {
         id: diagram
         Layout.fillWidth: true
@@ -148,7 +146,6 @@ ColumnLayout {
         }
     }
 
-    // What an action is doing right now (mounting, copying, ejecting…)
     StyledText {
         Layout.fillWidth: true
         visible: text !== ""

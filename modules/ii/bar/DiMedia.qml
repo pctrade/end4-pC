@@ -18,7 +18,6 @@ Item {
     readonly property real progress: (media.player?.length ?? 0) > 0 ? Math.min(1, media.player.position / media.player.length) : 0
     readonly property bool showLyric: !media.di.mediaTrackInfoVisible && media.di.lyricLine !== ""
     readonly property bool hasArt: (media.player?.trackArtUrl ?? "") !== ""
-    // Shared with the full view: the album art travels into the big cover
     readonly property var hero: media.hasArt ? { key: "media-art", item: artMask } : null
 
     Rectangle {

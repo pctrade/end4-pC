@@ -11,7 +11,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 360
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 360
 
     readonly property var payload: IslandEvents.screenshot.payload ?? ({})

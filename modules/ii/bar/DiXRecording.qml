@@ -9,7 +9,6 @@ RowLayout {
     required property Item di
     spacing: 14
     implicitWidth: 280
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 280
 
     Rectangle {

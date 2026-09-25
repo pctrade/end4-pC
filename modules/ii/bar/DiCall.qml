@@ -40,7 +40,6 @@ Item {
                 size: 15
                 color: "#8C95FF"
             }
-            // Live dot: the call is on
             Rectangle {
                 anchors {
                     right: parent.right

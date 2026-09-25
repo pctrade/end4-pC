@@ -88,16 +88,8 @@ Item {
         }
     }
 
-    // When the date earns its place: hovering, the weekend (when days blur together), the first hour of a new
-    // day, and the first minutes after the machine woke up — the three moments you actually ask "what day is it".
-    // Home has room, so the date lives here full time — quiet next to the clock, and brighter on the days when
-    // it is the thing you are actually asking about. Hovering spells out the long date with the weather, so the
-    // short one steps aside then instead of repeating itself.
     readonly property bool dateWorthShowing: !diIdleRoot.di.hoverRevealed && (diIdleRoot.di.cfg.anchorDate ?? true)
 
-    // One row for everything: the photo is a layout item, not an overlay, so a hover that reveals more text
-    // pushes the row instead of sliding under the photo. If the island still runs out of room the
-    // spacer collapses and the long texts elide, and nothing is ever covered.
     RowLayout {
         id: row
         anchors {
@@ -134,17 +126,12 @@ Item {
             }
         }
 
-        // Breathing room between the photo and the indicators; the first thing to give way when space runs short
         Item {
             Layout.fillWidth: true
             Layout.minimumWidth: 6
             implicitWidth: 10
         }
 
-        // Status tray: every glyph the same size and the same quiet tone — only what needs you gets colour —
-        // counts ride as a small badge on the corner instead of loose numbers beside them, and every one of them
-        // does something when tapped. Before this, some were clickable, some not (the F1 helmet), and each had its
-        // own size and spacing, so the row read as clutter.
         RowLayout {
             id: iconsRow
             Layout.alignment: Qt.AlignVCenter
@@ -191,8 +178,6 @@ Item {
                 }
             }
 
-            // Open AI agent sessions: ONE mark — whichever agent needs you most — inside a ring with its 5h usage,
-            // plus a count when there's more than one. Repeating a mark per agent read as a rendering glitch.
             Revealer {
                 reveal: (diIdleRoot.di.cfg.claudeCode ?? true) && ClaudeCode.openCount > 0
                 Item {
@@ -286,7 +271,6 @@ Item {
                 }
             }
 
-            // Do not disturb is easy to forget you turned on; the island says so as long as it is on
             Revealer {
                 reveal: Notifications.silent
                 StatusGlyph {
@@ -319,7 +303,6 @@ Item {
             }
         }
 
-        // Weather and date, revealed on hover. Elides before anything else is pushed off.
         Revealer {
             id: detailRevealer
             Layout.alignment: Qt.AlignVCenter
@@ -356,8 +339,6 @@ Item {
             }
         }
 
-        // The date, shown when it is worth knowing rather than always: on the weekend, on the first hour after
-        // the day turned, after coming back from sleep into a new day, or whenever there is room on hover.
         Revealer {
             Layout.alignment: Qt.AlignVCenter
             reveal: diIdleRoot.dateWorthShowing
@@ -372,7 +353,6 @@ Item {
             }
         }
 
-        // With a clock widget already beside the island, the idle face shows the weather instead
         Loader {
             Layout.alignment: Qt.AlignVCenter
             sourceComponent: Config.options.bar.dynamicIsland.leftWidget === "clockWidget" ? weatherComponent : clockComponent

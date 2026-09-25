@@ -9,7 +9,6 @@ RowLayout {
     required property Item di
     spacing: 16
     implicitWidth: 320
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 320
 
     readonly property int group: Math.floor((Weather.data?.wCode ?? 800) / 100)

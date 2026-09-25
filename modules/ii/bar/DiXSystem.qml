@@ -10,10 +10,8 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 380
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 380
 
-    // Temperature, fan and power profile are only measured often while this panel is the one you are looking at
     Binding {
         target: IslandHardware
         property: "powerWatch"
@@ -77,7 +75,6 @@ ColumnLayout {
         }
     }
 
-    // Temperature, and a way out of it: the power profile is what actually brings the fan down
     Rectangle {
         Layout.fillWidth: true
         visible: IslandHardware.temperature > 0
@@ -165,7 +162,6 @@ ColumnLayout {
         }
     }
 
-    // The heaviest processes right now (scanned only while this panel is open), with a way to end them
     StyledText {
         text: Translation.tr("Processes")
         font.pixelSize: Appearance.font.pixelSize.smallest
@@ -181,7 +177,6 @@ ColumnLayout {
         fadeColor: xs.di.surfaceColor
     }
 
-    // Every other battery in the house: earbuds, mouse, keyboard, controller
     StyledText {
         visible: IslandHardware.peripherals.length > 0
         text: Translation.tr("Peripherals")

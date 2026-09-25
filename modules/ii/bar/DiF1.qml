@@ -24,7 +24,6 @@ Item {
         }
     }
 
-    // Overtake tracking for the focused driver (favourite, or whoever leads)
     readonly property int focusPosition: f1.driver?.position ?? 0
     readonly property string focusTla: f1.driver?.tla ?? ""
     property int lastPosition: 0
@@ -44,7 +43,6 @@ Item {
             return
         }
         if (tla !== f1.lastTla) {
-            // Following the leader: a different car at the front is itself an overtake
             if (F1.favoriteDriver === "" && pos === 1) f1.celebrate(1, `▲ ${tla}`, f1.lastPosition)
             f1.lastTla = tla
             f1.lastPosition = pos
@@ -105,7 +103,6 @@ Item {
         }
     }
 
-    // Countdown to the next session
     RowLayout {
         anchors {
             fill: parent
@@ -138,7 +135,6 @@ Item {
         }
     }
 
-    // Live session
     RowLayout {
         anchors {
             fill: parent
@@ -160,7 +156,6 @@ Item {
 
         }
 
-        // Position number rolls up when gaining places, down when losing them
         Item {
             implicitWidth: Math.max(positionMetrics.implicitWidth, 22)
             implicitHeight: 20

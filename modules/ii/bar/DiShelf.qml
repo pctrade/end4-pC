@@ -26,12 +26,10 @@ Item {
     Drag.supportedActions: Qt.CopyAction
     Drag.mimeData: ({ "text/uri-list": shelf.items.map(p => `file://${p}`).join("\r\n") })
 
-    // Fanned stack of the last files, like papers in a drawer
     Item {
         id: stack
         x: 9
         anchors.verticalCenter: parent.verticalCenter
-        // The fan opens up under the pointer, like thumbing through the top of the pile
         readonly property real spread: shelf.di.hoverRevealed ? 13 : 7
         readonly property real fan: shelf.di.hoverRevealed ? 15 : 9
         width: 22 + Math.max(0, shelf.preview.length - 1) * stack.spread

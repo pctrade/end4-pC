@@ -20,7 +20,6 @@ Item {
     anchors.fill: parent
 
     readonly property var now: WatchRating.now
-    // "Up next" (during the credits): the same piece, about the next episode (WatchRating.announceNext)
     readonly property var next: IslandEvents.watchRating.payload?.next ?? null
     readonly property bool isFilm: !watch.next && (watch.now?.season ?? 0) <= 0
     readonly property real rating: watch.next ? watch.next.rating : watch.isFilm ? WatchRating.seriesRating : WatchRating.episodeRating
@@ -38,7 +37,6 @@ Item {
         : watch.tier === "top10" ? Translation.tr("Top 10 of the show")
         : watch.tier === "best" ? Translation.tr("Best of the season") : ""
 
-    // 0 → 1 drives the whole entrance
     property real t: 0
     SequentialAnimation {
         id: entrance
@@ -49,7 +47,6 @@ Item {
     }
     onRatingChanged: entrance.restart()
 
-    // The line under the name only rises once the score has landed
     readonly property real landed: Math.max(0, Math.min(1, (watch.t - 0.7) / 0.3))
 
     RowLayout {
@@ -96,7 +93,6 @@ Item {
                 spacing: 4
                 opacity: watch.landed
 
-                // The highlight, in words, in its own colour
                 StyledText {
                     visible: watch.badgeText !== ""
                     text: watch.badgeText
@@ -118,7 +114,6 @@ Item {
             }
         }
 
-        // Medal / trophy / crown: drops in once the score has landed
         MaterialSymbol {
             visible: watch.badgeIcon !== ""
             text: watch.badgeIcon
@@ -151,14 +146,11 @@ Item {
             }
         }
 
-        // The score: a ring drawing itself to rating/10 with the number counting up inside it
         Item {
             id: score
             implicitWidth: 28
             implicitHeight: 28
 
-            // Halo behind the ring: pulses for anything highlighted
-            // A thin ring that swells just past the score and fades — kept inside the pill's height, which clips
             Rectangle {
                 id: halo
                 anchors.centerIn: parent
@@ -189,7 +181,6 @@ Item {
                 color: Appearance.colors.colOnLayer0
             }
 
-            // Top 3: a burst of confetti out of the ring
             Repeater {
                 model: watch.tier === "top3" ? 12 : 0
                 delegate: Rectangle {
@@ -225,7 +216,6 @@ Item {
         }
     }
 
-    // One sweep of light for the highlighted ones, in their colour
     Item {
         anchors.fill: parent
         clip: true
@@ -247,7 +237,6 @@ Item {
         }
     }
 
-    // What plays once the score has landed
     SequentialAnimation {
         id: highlight
         ParallelAnimation {

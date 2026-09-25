@@ -7,7 +7,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 
-// A fullscreen window buries the bar, and the island with it (DynamicIsland.qml § Tela cheia decides what each
+// A fullscreen window buries the bar, and the island with it (DynamicIsland.qml decides what each
 // island does then). This is what is left of it at the top edge, only while something is there:
 //  - a mini island for what has to break through: critical (hibernating, battery, heat, the power menu), taking
 //    input, and feedback on what you just did (volume, a screenshot), click-through
@@ -36,7 +36,6 @@ Scope {
             readonly property color tone: win.attention ? IslandEvents.colorAttention
                 : (peek.di.fsQueueLevel >= 2 ? Appearance.colors.colError : Appearance.colors.colPrimary)
 
-            // Horizontal centre of the island in the (buried) bar, so everything comes out where the island lives
             readonly property real centerX: {
                 peek.di.surfaceItem.width
                 peek.di.implicitWidth
@@ -44,8 +43,6 @@ Scope {
                 return p.x + peek.di.surfaceItem.width / 2
             }
 
-            // ── Mini island ─────────────────────────────────────────────────────────────────────────────
-            // Lags behind what the island wants, so the exit animation still has something to show
             property string miniId: ""
             readonly property string wantedMini: peek.di.fsMiniId
             readonly property bool miniShown: win.wantedMini !== ""
@@ -67,18 +64,15 @@ Scope {
                 onTriggered: win.miniId = ""
             }
 
-            // ── Discreet line: a message, or a short confirmation ─────────────────────────────────────────
             readonly property var message: peek.di.fsMessage
             readonly property var notice: peek.di.fsNotice
             readonly property bool toastShown: win.message !== null || win.notice !== null
-            // Kept while it slides away, so the text doesn't vanish before the line does
             property var shownMessage: null
             property var shownNotice: null
             onMessageChanged: if (win.message !== null) win.shownMessage = win.message
             onNoticeChanged: if (win.notice !== null) win.shownNotice = win.notice
             readonly property bool showingNotice: win.notice !== null || (win.message === null && win.shownNotice !== null && win.shownMessage === null)
 
-            // ── Hover: a fixed hit zone, a pause before opening, a grace period before closing ──────────
             property bool panelOpen: false
             readonly property bool pointerIn: edgeHover.hovered || panelHover.hovered
             property double openedAt: 0
@@ -127,7 +121,6 @@ Scope {
             exclusiveZone: 0
             WlrLayershell.namespace: "quickshell:islandPeek"
             WlrLayershell.layer: WlrLayer.Overlay
-            // The power menu is driven by the keyboard; nothing else here ever takes it
             WlrLayershell.keyboardFocus: win.miniShown && win.miniId === "session" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
             anchors {
@@ -137,8 +130,6 @@ Scope {
             }
             implicitHeight: 260
 
-            // Input only where something answers: the hit zone never moves, the panel and the critical mini island
-            // add to it only while they are fully there — no region that slides away from under a resting pointer
             mask: Region {
                 item: edgeZone
                 Region { item: panelZone }
@@ -186,7 +177,6 @@ Scope {
                 height: win.miniCritical ? mini.height : 0
             }
 
-            // ── Hairline ────────────────────────────────────────────────────────────────────────────────
             property real pulse: 1
 
             SequentialAnimation {
@@ -222,7 +212,6 @@ Scope {
                 height: 3
                 radius: 1.5
                 color: win.tone
-                // Quiet: still there (it keeps counting), just barely
                 opacity: !win.hairlineShown || win.panelOpen ? 0
                     : (peek.di.fsQuiet && !win.attention ? 0.3 : 0.45 + 0.5 * win.pulse)
 
@@ -234,7 +223,6 @@ Scope {
                 }
             }
 
-            // Recording: the one live thing that must never go unseen
             Rectangle {
                 x: win.centerX + Math.max(hairline.width, 0) / 2 + 8
                 y: 0
@@ -249,7 +237,6 @@ Scope {
                 }
             }
 
-            // ── Mini island ─────────────────────────────────────────────────────────────────────────────
             Rectangle {
                 id: mini
                 width: win.miniId !== "" ? peek.di.baseWidth(win.miniId) : 160
@@ -279,13 +266,11 @@ Scope {
                 }
             }
 
-            // ── Discreet line ───────────────────────────────────────────────────────────────────────────
             Rectangle {
                 id: toast
                 readonly property bool expandedButtons: toastHover.hovered && !win.showingNotice && !peek.di.fsGame
                 readonly property color lineColor: win.shownMessage?.color ?? IslandEvents.appColor(win.shownMessage?.app ?? "", Appearance.colors.colPrimary)
                 readonly property bool mutable: (win.shownMessage?.key ?? "") !== ""
-                // Muting asks for how long, in place of the other buttons
                 property bool muteChoosing: false
                 onExpandedButtonsChanged: if (!toast.expandedButtons) toast.muteChoosing = false
                 width: Math.min(460, toastRow.implicitWidth + 24)
@@ -330,7 +315,6 @@ Scope {
                     }
                     spacing: 7
 
-                    // Message: the app's mark in its colour, sender, text
                     DiBrandIcon {
                         visible: !win.showingNotice && (win.shownMessage?.brand ?? "") !== ""
                         source: win.shownMessage?.brand ?? ""
@@ -362,7 +346,6 @@ Scope {
                         elide: Text.ElideRight
                     }
 
-                    // Notice action (undo)
                     ToastButton {
                         visible: win.showingNotice && (win.shownNotice?.actionLabel ?? "") !== ""
                         label: win.shownNotice?.actionLabel ?? ""
@@ -373,7 +356,6 @@ Scope {
                         }
                     }
 
-                    // Message actions, only while the pointer rests on the line
                     ToastButton {
                         visible: toast.expandedButtons && !toast.muteChoosing && (win.shownMessage?.messaging ?? false)
                         icon: "reply"
@@ -449,7 +431,6 @@ Scope {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: if (button.onTap) button.onTap()
                 }
-                // Below, not above: the line sits against the top of the screen
                 StyledToolTip {
                     extraVisibleCondition: false
                     alternativeVisibleCondition: button.tip !== "" && buttonMouse.containsMouse
@@ -458,7 +439,6 @@ Scope {
                 }
             }
 
-            // ── Panel: the approval to answer, then the queue ───────────────────────────────────────────
             ColumnLayout {
                 id: panel
                 x: win.centerX - width / 2
@@ -480,7 +460,6 @@ Scope {
                     id: panelHover
                 }
 
-                // The same pill as on the bar, buttons and all: approve or deny without leaving the game
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
                     visible: win.attention
@@ -569,7 +548,6 @@ Scope {
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: win.openHistory()
                                 }
-                                // A conversation that keeps interrupting: mute it right from the queue
                                 property bool choosing: false
                                 onMutableChanged: row.choosing = false
                                 Connections {
@@ -604,7 +582,6 @@ Scope {
                     }
                 }
 
-                // Always there, even with only an agent waiting: hush the rest of this fullscreen, or see it all
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 6

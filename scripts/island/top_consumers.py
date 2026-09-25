@@ -42,12 +42,10 @@ PRETTY = {
     "spotify": "Spotify", "qs": "Quickshell", "quickshell": "Quickshell", "claude": "Claude Code", "discord": "Discord", "java": "Java", "python3": "Python", "node": "Node",
 }
 
-
 def pids():
     for entry in os.listdir("/proc"):
         if entry.isdigit():
             yield int(entry)
-
 
 def read(path):
     try:
@@ -56,17 +54,14 @@ def read(path):
     except OSError:
         return None
 
-
 def owner(pid):
     try:
         return os.stat(f"/proc/{pid}").st_uid
     except OSError:
         return -1
 
-
 def name_of(pid):
     return (read(f"/proc/{pid}/comm") or "?").strip()
-
 
 def app_of(pid, name):
     """What to look the icon up by: the executable's name, with Chrome's helpers folded into Chrome."""
@@ -77,9 +72,7 @@ def app_of(pid, name):
     base = os.path.basename(exe).removesuffix(" (deleted)") or name
     if base == "chrome" or "google-chrome" in exe or name == "chrome":
         return "google-chrome"
-    # Versioned binaries (e.g. ~/.local/share/claude/versions/2.1.282) say nothing; the process name does
     return name if not any(c.isalpha() for c in base) else base
-
 
 def label_of(pid, name):
     """A name people recognise: Chrome's renderers are tabs, its GPU process says so."""
@@ -99,7 +92,6 @@ def label_of(pid, name):
             return f"Python · {script}"
     return pretty
 
-
 def cpu_ticks():
     ticks = {}
     for pid in pids():
@@ -112,7 +104,6 @@ def cpu_ticks():
         except (IndexError, ValueError):
             pass
     return ticks
-
 
 def gpu_ns():
     """Engine time per process from the DRM fdinfo, counted once per DRM client (an fd can be duplicated)."""
@@ -143,13 +134,11 @@ def gpu_ns():
             usage[pid] = sum(clients.values())
     return usage
 
-
 def human_bytes(value):
     for unit, size in (("GB", 1 << 30), ("MB", 1 << 20)):
         if value >= size:
             return f"{value / size:.1f} {unit}" if unit == "GB" else f"{value / size:.0f} {unit}"
     return f"{value / 1024:.0f} KB"
-
 
 def measure():
     if KIND == "memory":
@@ -175,7 +164,6 @@ def measure():
     time.sleep(1)
     second = cpu_ticks()
     return {pid: (second[pid] - first[pid]) / TICK for pid in second if pid in first}, float(CORES)
-
 
 def main():
     values, capacity = measure()
@@ -207,7 +195,6 @@ def main():
             "protected": (not mine) or name in PROTECTED or pid == os.getppid(),
         })
     print(json.dumps({"kind": KIND, "procs": procs}, ensure_ascii=False))
-
 
 if __name__ == "__main__":
     main()

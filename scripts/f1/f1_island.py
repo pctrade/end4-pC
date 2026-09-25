@@ -32,22 +32,17 @@ PRE_WINDOW = dt.timedelta(minutes=30)
 POST_WINDOW = dt.timedelta(minutes=45)
 FINISHED = ("Finalised", "Ends")
 
-
 def log(*parts):
     print("[f1]", *parts, file=sys.stderr, flush=True)
 
-
 def utcnow():
     return dt.datetime.now(dt.timezone.utc)
-
 
 def http_get(url, timeout=20):
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as resp:
         return resp.read().decode("utf-8-sig")
 
-
 def merge(base, update):
-    # Live timing sends partial updates; lists are patched through {"index": value} dicts.
     if isinstance(update, dict):
         if isinstance(base, list):
             for key, value in update.items():
@@ -72,7 +67,6 @@ def merge(base, update):
     if isinstance(update, list):
         return [merge(None, item) for item in update]
     return update
-
 
 class State:
     def __init__(self):
@@ -107,7 +101,6 @@ class State:
             raw_stints = (app_lines.get(num) or {}).get("Stints") or []
             stints = raw_stints if isinstance(raw_stints, list) else list(raw_stints.values())
             stints = [s for s in stints if isinstance(s, dict)]
-            # A fresh stint starts as UNKNOWN during the stop; keep showing the last known compound
             tyre = next((s for s in reversed(stints) if s.get("Compound") not in (None, "", "UNKNOWN")), {})
             out.append({
                 "num": num,
@@ -192,7 +185,6 @@ class State:
             "next": next_session,
         }
 
-
 class Emitter:
     def __init__(self, min_interval=0.35):
         self.min_interval = min_interval
@@ -215,7 +207,6 @@ class Emitter:
     def maybe(self, state, mode, connected, next_session, force=False):
         if (state.dirty or force) and self.emit(state.view(mode, connected, next_session), force):
             state.dirty = False
-
 
 def fetch_schedule():
     since = (utcnow() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -244,10 +235,8 @@ def fetch_schedule():
     out.sort(key=lambda s: s["_start"])
     return out
 
-
 def public(session):
     return {k: v for k, v in session.items() if not k.startswith("_")} if session else None
-
 
 def negotiate():
     req = urllib.request.Request(NEGOTIATE, method="POST", headers=UA)
@@ -255,7 +244,6 @@ def negotiate():
         body = json.loads(resp.read())
         cookie = resp.headers.get("Set-Cookie", "")
     return body.get("connectionToken") or body["connectionId"], cookie.split(";")[0] if cookie else ""
-
 
 async def stream_live(emitter, next_session, window_end):
     import websockets
@@ -306,7 +294,6 @@ async def stream_live(emitter, next_session, window_end):
                 emitter.maybe(state, "live", False, next_session, force=True)
                 return
 
-
 async def run_live(force, until_idle=False):
     emitter = Emitter()
     schedule, fetched_at = [], 0.0
@@ -336,12 +323,9 @@ async def run_live(force, until_idle=False):
                 force = False
         else:
             emitter.emit(idle.view("idle", False, public(nxt)), force=True)
-            # Passive mode: say when the next session is and leave; the shell wakes this up again right before
-            # it, instead of a process sitting here between race weekends
             if until_idle:
                 return
             await asyncio.sleep(30)
-
 
 def resolve_replay_path(arg):
     if arg and arg != "latest":
@@ -355,11 +339,9 @@ def resolve_replay_path(arg):
     )
     return races[-1][1]
 
-
 def parse_offset(text):
     h, m, s = text.split(":")
     return int(h) * 3600 + int(m) * 60 + float(s)
-
 
 def load_stream(path, topic):
     try:
@@ -376,7 +358,6 @@ def load_stream(path, topic):
         except ValueError:
             continue
     return events
-
 
 async def run_replay(path_arg, speed, start):
     path = await asyncio.to_thread(resolve_replay_path, path_arg)
@@ -411,18 +392,14 @@ async def run_replay(path_arg, speed, start):
     await asyncio.sleep(120)
     emitter.maybe(state, "replay", False, None, force=True)
 
-
 def die_with_parent():
-    # Quickshell stops `uv run` on reload; without this the python child outlives it forever
     try:
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, signal.SIGTERM)  # PR_SET_PDEATHSIG
     except OSError:
         pass
 
-
 def orphaned():
     return os.getppid() == 1
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -443,7 +420,6 @@ def main():
             asyncio.run(run_live(getattr(args, "force", False), getattr(args, "until_idle", False)))
     except KeyboardInterrupt:
         pass
-
 
 if __name__ == "__main__":
     main()

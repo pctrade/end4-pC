@@ -14,7 +14,6 @@ RowLayout {
     }
     spacing: 8
 
-    // An alert when the weather turns; otherwise the current conditions (pinned island)
     readonly property bool alert: IslandEvents.weather.active
     readonly property var payload: IslandEvents.weather.payload ?? ({})
     readonly property int code: weather.alert ? (weather.payload.code ?? 500) : (Weather.data?.wCode ?? 800)

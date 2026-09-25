@@ -68,7 +68,6 @@ Item {
                     sourceSize.width: 176
                     sourceSize.height: 176
 
-                    // The cover can be pulled out of the island: dropping it somewhere shares the image file
                     Drag.active: artDrag.drag.active
                     Drag.dragType: Drag.Automatic
                     Drag.supportedActions: Qt.CopyAction
@@ -180,7 +179,6 @@ Item {
                         }
                     }
 
-                    // Spotify: like the song (its Alt+Shift+B shortcut, sent to the Spotify window)
                     Rectangle {
                         id: likeButton
                         property bool justLiked: false
@@ -292,7 +290,6 @@ Item {
             }
         }
 
-        // Synced lyrics: the whole song scrolls smoothly with the current line centered; tap a line to jump there
         Item {
             id: lyricsView
             Layout.fillWidth: true
@@ -358,7 +355,6 @@ Item {
             }
         }
 
-        // No synced lyrics: say so instead of leaving a gap
         StyledText {
             Layout.fillWidth: true
             visible: (xm.di.cfg.lyrics ?? true) && !xm.showLyrics && xm.player !== null && (xm.player?.trackTitle ?? "") !== ""

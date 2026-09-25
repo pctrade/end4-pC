@@ -9,7 +9,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 320
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 320
 
     StyledText {

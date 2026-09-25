@@ -11,7 +11,6 @@ ColumnLayout {
     required property Item di
     spacing: 8
     implicitWidth: 380
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 380
 
     readonly property var ids: xo.di.persistentIds
@@ -54,7 +53,6 @@ ColumnLayout {
                 ColorAnimation { duration: IslandMotion.micro }
             }
 
-            // Cards deal in one after another
             SequentialAnimation {
                 running: true
                 PauseAnimation { duration: card.index * 60 }
@@ -155,7 +153,6 @@ ColumnLayout {
                     }
                 }
 
-                // Quick controls
                 Repeater {
                     model: {
                         switch (card.modelData) {

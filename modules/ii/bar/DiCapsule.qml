@@ -94,14 +94,10 @@ RowLayout {
         }
     }
 
-    // Short, fixed-format labels (mm:ss, a percentage, a lap count) always fit and always say something useful,
-    // so they stay on screen. "Claude · sema-php" or a hardware title can run long and change constantly — those
-    // are icon-only until you actually hover this capsule, matched by the `hovered` property the caller sets.
     property bool hovered: false
     readonly property bool compactLabel: ["recording", "f1", "timer", "systemLoad", "shelf"].includes(capsule.providerId)
     readonly property bool labelVisible: (capsule.showLabel && capsule.compactLabel) || capsule.hovered
 
-    // Used by the deck's own name tag, which has no hover of its own to react to
     readonly property string shortLabel: {
         const head = capsule.label.split(" · ")[0].trim()
         return head.length > 16 ? `${head.slice(0, 15)}…` : head
@@ -161,8 +157,6 @@ RowLayout {
 
         }
 
-        // Agent marks are SVGs, not glyphs in the icon font: drawing "claude" as MaterialSymbol text gives an
-        // empty box, which is exactly the bug the icon default used to have for this capsule.
         readonly property bool agentIcon: (capsule.providerId === "activity" || capsule.providerId === "agents")
             && ["claude", "codex", "gemini"].includes(capsule.providerId === "agents" ? (ClaudeCode.openAgents[0] ?? "") : (capsule.activity?.icon ?? ""))
 

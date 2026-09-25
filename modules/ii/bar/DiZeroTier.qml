@@ -21,7 +21,6 @@ RowLayout {
     readonly property color accent: zt.risky ? IslandEvents.colorAttention
         : zt.up ? IslandEvents.colorSuccess : Appearance.colors.colOnLayer0
 
-    // While this island is on screen its state is worth checking often; the rest of the time it is not
     Binding {
         target: IslandEvents
         property: "ztWatch"

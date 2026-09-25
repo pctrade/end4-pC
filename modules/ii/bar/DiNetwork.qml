@@ -21,7 +21,6 @@ RowLayout {
     readonly property string kind: net.payload.kind ?? ""
     readonly property bool lost: net.alert && (net.kind === "lost" || net.kind === "ztFailed")
     readonly property bool zerotier: net.alert && ["zerotier", "ztOff", "ztRestore", "ztFailed"].includes(net.kind)
-    // ZeroTier alerts act on tap: stop it during the call, start it again afterwards
     readonly property bool actionable: net.alert && (net.kind === "zerotier" || net.kind === "ztRestore" || net.kind === "portal")
     readonly property color accent: net.lost ? Appearance.colors.colError
         : (net.kind === "zerotier" || net.kind === "weak" || net.kind === "portal") ? IslandEvents.colorAttention : Appearance.colors.colPrimary
@@ -86,7 +85,6 @@ RowLayout {
             padding: 4
         }
 
-        // How far along, when the browser tells us the total; otherwise the arrows below say "still going"
         CircularProgress {
             anchors.fill: parent
             visible: !net.alert && IslandEvents.downloadFileProgress >= 0
@@ -106,9 +104,6 @@ RowLayout {
             color: Appearance.colors.colPrimary
         }
 
-        // Download without a known total: arrows keep falling through the icon. Stepped rather than animated —
-        // a download can run for an hour, and an hour of sixty-frames-a-second for two little arrows is the kind
-        // of thing that made the whole shell the heaviest process on the machine.
         Repeater {
             model: net.alert || IslandEvents.downloadFileProgress >= 0 ? 0 : 2
             delegate: MaterialSymbol {

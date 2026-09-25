@@ -14,7 +14,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 360
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 360
 
     property int monthShift: 0
@@ -29,7 +28,6 @@ ColumnLayout {
         }
     }
 
-    // Today, large: the answer to "what day is it" before the grid is even read
     RowLayout {
         Layout.fillWidth: true
         spacing: 12
@@ -56,7 +54,6 @@ ColumnLayout {
 
         Item { Layout.fillWidth: true }
 
-        // Week number and how much of the year is gone: the context a date has that a clock does not
         ColumnLayout {
             Layout.alignment: Qt.AlignRight
             spacing: -3
@@ -80,7 +77,6 @@ ColumnLayout {
         }
     }
 
-    // Month header with its own navigation; scrolling anywhere on the grid also moves months
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
@@ -204,7 +200,6 @@ ColumnLayout {
         }
     }
 
-    // What the shell already knows is coming today
     StyledText {
         Layout.fillWidth: true
         visible: xc.di.hasActiveTimer || (F1.enabled && F1.nextSession !== null && F1.secondsToNext < 86400)
@@ -223,7 +218,6 @@ ColumnLayout {
 
     function weekNumber(date) {
         const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-        // ISO 8601: week 1 is the one holding the first Thursday of the year
         const day = (target.getDay() + 6) % 7
         target.setDate(target.getDate() - day + 3)
         const firstThursday = new Date(target.getFullYear(), 0, 4)

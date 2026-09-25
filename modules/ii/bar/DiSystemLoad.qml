@@ -5,7 +5,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 
 // Sustained pressure (CPU, memory or GPU) and who's behind it. When one process is out of line (Pressure.culprit)
-// the island says so by name — "Chrome · aba está fora do normal" — instead of a generic "high CPU".
+// the island says so by name — "Chrome · a tab is misbehaving" — instead of a generic "high CPU".
 RowLayout {
     id: load
     required property Item di

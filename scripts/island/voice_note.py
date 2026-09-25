@@ -18,7 +18,6 @@ from faster_whisper import WhisperModel
 
 MODEL = "base"
 
-
 def main():
     if len(sys.argv) < 2:
         return 1
@@ -30,7 +29,6 @@ def main():
     text = " ".join(segment.text.strip() for segment in segments).strip()
     print(text)
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

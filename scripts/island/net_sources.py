@@ -52,17 +52,14 @@ KNOWN = {
 
 IDENT = re.compile(r"^(.*)/(\d+)/(\d+)$", re.S)
 
-
 def die_with_parent():
     try:
         ctypes.CDLL("libc.so.6").prctl(1, signal.SIGTERM)  # PR_SET_PDEATHSIG
     except OSError:
         pass
 
-
 def emit(payload):
     print(json.dumps(payload), flush=True)
-
 
 def describe(ident):
     match = IDENT.match(ident)
@@ -76,7 +73,6 @@ def describe(ident):
         name = os.path.basename(path.split(" ")[0])
     label, icon = KNOWN.get(name, (name, name.lower()))
     return name, label, icon, pid
-
 
 def main():
     die_with_parent()
@@ -116,7 +112,6 @@ def main():
         name, label, icon, pid = describe(fields[0])
         key = label or name
         source = batch.setdefault(key, {"name": name, "label": label, "icon": icon, "pid": pid, "rx": 0.0, "tx": 0.0})
-        # The process doing most of the traffic gives the row its pid
         if received > source.get("topRx", -1):
             source["pid"], source["topRx"] = pid, received
         source["rx"] += received
@@ -124,7 +119,6 @@ def main():
     proc.wait()
     if proc.returncode not in (0, None, -signal.SIGTERM):
         emit({"error": "failed"})
-
 
 if __name__ == "__main__":
     main()

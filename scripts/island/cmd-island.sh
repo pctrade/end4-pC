@@ -7,7 +7,6 @@
 command -v qs >/dev/null 2>&1 || exit 0
 mode=$1 id=$2 title=$3 shell=$4
 
-# Walks up from the shell to the terminal window process
 terminal_of() {
     local pid=$1 comm
     for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
@@ -52,8 +51,6 @@ case $mode in
         elif (( code != 0 )); then
             sub="$sub · erro $code"
             ok=false
-            # foot remembers the last command's output (OSC 133 marks from the shell); its
-            # pipe-command-output binding (Ctrl+Shift+Super+F12 in foot.ini) writes it to a file
             if [[ $comm == foot ]]; then
                 out="/tmp/quickshell/island/cmdout-$term.log"
                 rm -f "$out"
@@ -71,7 +68,6 @@ case $mode in
         fi
         island command "$id" "$title" "$sub" "$ok" "$cwd" "$cmd" "$term" "$log"
 
-        # A push that worked hands the story over to CI: the island keeps following it from here
         if [[ $ok == true && $cmd == git*push* ]]; then
             setsid "$(dirname "$0")/ci-watch.sh" "$cwd" >/dev/null 2>&1 < /dev/null &
         fi

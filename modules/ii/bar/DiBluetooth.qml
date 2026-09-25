@@ -21,7 +21,6 @@ RowLayout {
     readonly property bool connected: bt.phase === "connected" || bt.lowBattery
     readonly property real battery: bt.payload.battery !== undefined ? bt.payload.battery
         : (bt.device?.batteryAvailable ? Number(bt.device.battery) : -1)
-    // "soundcore Liberty 4 NC" -> "Liberty 4 NC": the brand only takes room
     readonly property string shortName: IslandEvents.shortName(bt.payload.name ?? "")
 
     readonly property bool caseArt: IslandEvents.hasCaseArt(bt.payload.name) && IslandEvents.caseClosedArt !== ""
@@ -80,7 +79,6 @@ RowLayout {
         }
     }
 
-    // What happened first (low battery / connected…), the device underneath
     ColumnLayout {
         Layout.fillWidth: true
         spacing: -3
@@ -105,7 +103,6 @@ RowLayout {
         }
     }
 
-    // Battery: big and red when it's the reason the island is showing
     RowLayout {
         visible: bt.connected && bt.battery >= 0
         spacing: 2

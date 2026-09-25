@@ -23,7 +23,6 @@ Item {
     readonly property var metric: sys.metrics[sys.index]
     readonly property color accent: sys.metric.alert ? Appearance.colors.colError : Appearance.colors.colPrimary
 
-    // Metric changes slide in from the direction of the scroll
     property int lastIndex: sys.index
     property real slide: 0
 
@@ -91,7 +90,6 @@ Item {
         }
     }
 
-    // Position among the metrics
     Column {
         anchors {
             right: parent.right

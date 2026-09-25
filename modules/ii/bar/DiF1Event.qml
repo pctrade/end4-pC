@@ -19,7 +19,6 @@ RowLayout {
     readonly property var payload: event.di.f1Event ?? ({})
     readonly property color accent: event.payload.color ?? Appearance.colors.colPrimary
 
-    // Team radio: tap to listen, tap again to stop
     TapHandler {
         enabled: event.payload.kind === "radio"
         onTapped: F1.playRadio(event.payload.url ?? "")
@@ -55,7 +54,6 @@ RowLayout {
             color: event.accent
         }
 
-        // Pit stop: the wheel spins in, rain: a gentle drip
         RotationAnimation on rotation {
             running: event.payload.kind === "tyre"
             from: -360

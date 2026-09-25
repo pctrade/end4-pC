@@ -26,7 +26,6 @@ Singleton {
     readonly property real memoryThreshold: (root.cfg.memoryThreshold ?? 90) / 100
     readonly property real gpuThreshold: (root.cfg.gpuThreshold ?? 90) / 100
 
-    // Seconds each resource has been above its line (decays twice as fast as it builds, so a spike doesn't linger)
     property real cpuSeconds: 0
     property real memorySeconds: 0
     property real gpuSeconds: 0
@@ -34,7 +33,6 @@ Singleton {
     property bool memoryHigh: false
     property bool gpuHigh: false
 
-    // Memory first: it's the one that ends in a frozen machine
     readonly property string kind: root.fakeKind !== "" ? root.fakeKind
         : root.memoryHigh ? "memory" : root.cpuHigh ? "cpu" : root.gpuHigh ? "gpu" : ""
     readonly property bool active: root.kind !== ""
@@ -68,13 +66,11 @@ Singleton {
         }
     }
 
-    // Processes, per resource: whatever the alert or an open panel needs
     property var procs: ({ cpu: [], memory: [], gpu: [] })
     readonly property var alertProcs: root.kind !== "" ? (root.procs[root.kind] ?? []) : []
     readonly property var top: root.alertProcs[0] ?? null
     readonly property var culprit: root.alertProcs.find(p => p.abnormal) ?? null
 
-    // A panel listing processes registers here while it is open (count per kind)
     property var watchers: ({ cpu: 0, memory: 0, gpu: 0 })
     function watch(kind, on) {
         const next = Object.assign({}, root.watchers)
@@ -117,7 +113,6 @@ Singleton {
         return current
     }
 
-    // GPU busy from RC6: one small sysfs read per sample, nothing when the file doesn't exist (non-Intel)
     property string rc6Path: ""
     property real gpuBusy: 0
     property list<real> gpuHistory: []
@@ -153,7 +148,6 @@ Singleton {
         root.lastRc6At = now
     }
 
-    // Who: one kind per run, round-robin over what's wanted
     property int queueIndex: 0
 
     Timer {
@@ -193,8 +187,7 @@ Singleton {
         }
     }
 
-    // Ending a process: SIGTERM first; if it's still on the list a few seconds later, offer SIGKILL
-    property var kills: ({})   // pid -> { at: ms, forced: bool }
+    property var kills: ({})
 
     function kill(pid, force) {
         const proc = [].concat(root.procs.cpu ?? [], root.procs.memory ?? [], root.procs.gpu ?? []).find(p => p.pid === pid)
@@ -216,7 +209,7 @@ Singleton {
         id: refreshSoon
         interval: 3500
         onTriggered: {
-            root.kills = Object.assign({}, root.kills)   // re-evaluate "stuck"
+            root.kills = Object.assign({}, root.kills)
             refreshTimer.restart()
         }
     }
@@ -232,7 +225,6 @@ Singleton {
         if (changed) root.kills = next
     }
 
-    // ilha-teste: a fake alert with a made-up culprit, no process scan
     property string fakeKind: ""
 
     function simulate(kind) {

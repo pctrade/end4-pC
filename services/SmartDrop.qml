@@ -6,7 +6,7 @@ import Quickshell
 import qs.modules.common
 
 /**
- * Smart Drop (seção 21): what can be done with whatever is being dragged onto the island, by kind.
+ * Smart Drop: what can be done with whatever is being dragged onto the island, by kind.
  *
  * To add a kind: extend kindOf(). To add an action: put it in `catalog` and handle it in run(). Actions get
  * paths and text as separate argv entries (never spliced into a shell string), so a file name with quotes or
@@ -44,7 +44,6 @@ Singleton {
         return "file"
     }
 
-    // The first one is what a drop does when you don't aim at anything in particular
     function actionsFor(urls, text) {
         switch (root.kindOf(urls, text)) {
             case "image":   return ["shelf", "edit", "copy", "png"]
@@ -62,8 +61,6 @@ Singleton {
         Quickshell.execDetached(["sh", "-c", script, "sh", ...args])
     }
 
-    // Runs everything except "shelf" (the island keeps that one: it knows how to fill the drawer).
-    // Returns what to say about it afterwards: { icon, label }.
     function run(action, urls, text) {
         const paths = Array.from(urls ?? []).map(u => /^https?:/.test(String(u)) ? String(u) : root.pathOf(u))
         const first = paths[0] ?? (text ?? "").trim()

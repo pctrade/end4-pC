@@ -70,7 +70,6 @@ Item {
     property var screen: root.QsWindow.window?.screen
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
 
-
     Rectangle {
         id: barBackground
         anchors.fill: parent
@@ -183,8 +182,6 @@ Item {
         anchors.fill: barBackground
         anchors.margins: root.barPadding
 
-        // How much room the island is taking from each side right now. A long notification or a download used to
-        // slide under the widgets; instead the sides slip outwards and fade, and come back when it shrinks.
         readonly property real sideRoom: Math.max(0, contentContainer.width / 2 - absoluteCenter.width / 2 - 14)
         readonly property real leftPush: Math.max(0, leftSection.width - contentContainer.sideRoom)
         readonly property real rightPush: Math.max(0, rightSection.width - contentContainer.sideRoom)
@@ -219,8 +216,6 @@ Item {
                     anchors.centerIn: parent
                     spacing: 3
 
-                    // Only the layout on screen builds its widgets: the hidden copy used to run every binding, timer
-                    // and window of each widget too (two Dynamic Islands, two fullscreen hairlines)
                     Repeater {
                         model: root.isMaterial ? root.effectiveLeftLayout : []
                         delegate: leftMaterialGroupDelegate

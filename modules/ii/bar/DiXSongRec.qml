@@ -9,7 +9,6 @@ RowLayout {
     required property Item di
     spacing: 14
     implicitWidth: 320
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 320
 
     readonly property bool showResult: xsr.di.expandedId === "songRecResult"

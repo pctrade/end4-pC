@@ -12,7 +12,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
     implicitWidth: 340
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 340
 
     readonly property bool brightnessMode: xa.di.expandedId === "osd" && GlobalStates.osdIndicatorType === "brightness"
@@ -141,8 +140,6 @@ ColumnLayout {
         }
     }
 
-    // Outputs that are not devices right now, because the card is in another profile. Selecting one switches
-    // the profile — which is the only way back to the laptop speakers once a monitor took the card over.
     Repeater {
         model: xa.brightnessMode ? [] : IslandEvents.audioProfiles.filter(p => !p.active)
 
@@ -199,7 +196,6 @@ ColumnLayout {
         }
     }
 
-    // Per-app volume: turning the video down without turning the call down
     StyledText {
         visible: !xa.brightnessMode && IslandEvents.audioStreams.length > 0
         text: Translation.tr("Apps")

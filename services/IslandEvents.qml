@@ -20,7 +20,6 @@ Singleton {
 
     readonly property var cfg: Config.options.bar.dynamicIsland
 
-    // Startup emits a burst of "changes" (clipboard load, sink discovery, first weather fetch)
     property bool armed: false
     Timer {
         interval: 5000
@@ -57,7 +56,6 @@ Singleton {
         }
     }
 
-    // Semantic colors, one meaning on every island: needs you, problem, done, in progress
     readonly property color colorAttention: "#FF9F0A"
     readonly property color colorError: Appearance.colors.colError
     readonly property color colorSuccess: Appearance.m3colors.m3success
@@ -73,7 +71,6 @@ Singleton {
         }
     }
 
-    // The Material symbol for an OpenWeather condition code, shared by every island that shows the weather
     function weatherSymbol(code) {
         switch (Math.floor((code ?? 800) / 100)) {
             case 2: return "thunderstorm"
@@ -88,7 +85,6 @@ Singleton {
         }
     }
 
-    // Short names: brands, vendors, serial numbers and paths take room without saying anything new
     function shortName(text) {
         const original = (text ?? "").toString().trim()
         if (original === "") return ""
@@ -123,11 +119,8 @@ Singleton {
     signal homeRequested()
     signal dismissRequested()
     signal silenceRequested()
-    // One key to hush everything: over a fullscreen window it silences the rest of that fullscreen, otherwise it
-    // toggles Focus Mode (DynamicIsland.qml decides which)
     signal quietRequested()
 
-    // Clipboard
     property string lastClipEntry: ""
     property int lastClipCount: 0
     property real lastScreenshotAt: 0
@@ -159,17 +152,14 @@ Singleton {
     function payloadFor(entry) {
         const isImage = Cliphist.entryIsImage(entry)
         const text = entry.replace(/^\d+\t/, "").trim()
-        // Files copied in a file manager arrive as file:// lines (or plain absolute paths)
         const files = isImage ? [] : text.split(/\r?\n/).map(s => s.trim())
             .filter(s => /^file:\/\//.test(s) || /^\/\S.*\.[A-Za-z0-9]{1,8}$/.test(s))
             .map(s => s.startsWith("file://") ? decodeURIComponent(s.slice(7)) : s)
         return { entry: entry, isImage: isImage, text: text, files: files }
     }
 
-    // What the pinned clipboard island shows when nothing was just copied
     readonly property var latestClipboard: Cliphist.entries.length > 0 ? root.payloadFor(Cliphist.entries[0]) : ({})
 
-    // Copied images get a real file so they can be dragged, saved or converted
     property string clipboardImagePath: ""
 
     Process {
@@ -182,7 +172,6 @@ Singleton {
         }
     }
 
-    // Screenshots saved to ~/Pictures/Prints
     FolderListModel {
         id: printsModel
         property int knownCount: -1
@@ -219,7 +208,6 @@ Singleton {
         }
     }
 
-    // Bluetooth devices
     Instantiator {
         model: Bluetooth.devices
         delegate: Connections {
@@ -244,8 +232,6 @@ Singleton {
             default: return
         }
         if (/audio/.test(device.icon ?? "") && (root.cfg.pauseOnHeadphonesDisconnect ?? true)) root.headphonesChanged(phase)
-        // Headphones that connect should get the sound. PipeWire only publishes their sink a beat after BlueZ
-        // says "connected", so the switch waits for the sink to show up instead of firing into the void.
         if (phase === "connected" && /audio|headset|headphone/.test(device.icon ?? "") && (root.cfg.followHeadphones ?? true)) {
             root.pendingSinkAddress = device.address
             root.pendingSinkName = device.name || device.deviceName || ""
@@ -260,7 +246,6 @@ Singleton {
         root.bluetooth.show(payload, phase === "connecting" ? 20000 : undefined)
     }
 
-    // Moving the sound to a device that just arrived
     property string pendingSinkAddress: ""
     property string pendingSinkName: ""
     property int sinkFollowTries: 0
@@ -295,7 +280,6 @@ Singleton {
                 Audio.setDefaultSink(sink)
                 return
             }
-            // Give it about seven seconds: after that the device simply has no sink (a controller, a keyboard)
             root.sinkFollowTries++
             if (root.sinkFollowTries > 10) {
                 sinkFollowTimer.stop()
@@ -333,7 +317,6 @@ Singleton {
         return Bluetooth.devices.values.find(d => d.address === address) ?? null
     }
 
-    // Headphone battery: warn once at 20% and again at 10% per charge
     property var lowBatteryWarned: ({})
 
     function bluetoothBatteryChanged(device) {
@@ -351,7 +334,6 @@ Singleton {
         }
     }
 
-    // Earbuds case art: loaded once, recolored to the theme's primary hue keeping each shade's lightness
     property string caseClosedRaw: ""
     property string caseOpenRaw: ""
     readonly property string caseClosedArt: root.themedSvg(root.caseClosedRaw, Appearance.colors.colPrimary)
@@ -384,7 +366,6 @@ Singleton {
         return lower !== "" && (root.cfg.caseArtDevices ?? []).some(d => lower.includes(d.toLowerCase()))
     }
 
-    // Default audio output
     property string lastSinkName: ""
 
     function sinkIcon(sink) {
@@ -410,7 +391,6 @@ Singleton {
         }
     }
 
-    // Weather turning into rain/snow/storm
     property int lastWeatherGroup: -1
 
     Connections {
@@ -427,13 +407,11 @@ Singleton {
         }
     }
 
-    // Sustained CPU / memory / GPU pressure lives in Pressure; these stay for the older readers (thermal alert)
     readonly property bool systemLoadActive: Pressure.active
     readonly property var cpuTop: (Pressure.procs.cpu ?? [])[0] ?? null
     readonly property string topProcess: root.cpuTop?.label ?? ""
     readonly property real topProcessCpu: (root.cpuTop?.value ?? 0) * 100
 
-    // Song recognition result
     property string lastSongTitle: ""
 
     Connections {
@@ -446,7 +424,6 @@ Singleton {
         }
     }
 
-    // Privacy: microphone, camera and screen capture consumers
     readonly property var privacyLinks: Pipewire.linkGroups.values.filter(g => g.source && g.target && (
         (g.source.type === PwNodeType.AudioSource && g.target.type === PwNodeType.AudioInStream)
         || g.source.type === PwNodeType.VideoSource))
@@ -493,7 +470,6 @@ Singleton {
     readonly property bool screenInUse: root.privacy.screen.length > 0
     readonly property bool anyPrivacy: root.micInUse || root.cameraInUse || root.screenInUse
 
-    // Headphones: pause when they drop, resume when they come back (after the audio route settles)
     property bool pausedByHeadphones: false
 
     function headphonesChanged(phase) {
@@ -516,18 +492,11 @@ Singleton {
         onTriggered: MprisController.activePlayer?.play()
     }
 
-    // ZeroTier's virtual interface breaks WebRTC voice in Vesktop/Discord: warn during calls, offer to stop it,
-    // and offer to bring it back once the call is over
     readonly property bool voiceCallActive: root.fakeCall || root.privacyLinks.some(link => link.source.type === PwNodeType.AudioSource
         && /vesktop|discord|webcord/i.test(`${link.target.properties?.["application.name"] ?? ""} ${link.target.properties?.["application.process.binary"] ?? ""}`))
     property bool ztWarned: false
     property bool ztStoppedForCall: false
 
-    // Call controls, straight on the app's own PipeWire streams: the state shown is the real one, and it works
-    // whatever the app's keybinds are. Mute silences its capture stream; deafen also silences everything it plays.
-    // Leaving needs the app's own shortcut (Discord has none by default): set `callLeaveShortcut`, e.g.
-    // "CTRL SHIFT, E" matching Discord → Settings → Keybinds → "Disconnect from voice"; without it the button
-    // brings the call window up instead.
     readonly property var callAppPattern: /vesktop|discord|webcord/i
     readonly property var callInStreams: root.privacyLinks.filter(link => link.source.type === PwNodeType.AudioSource
         && root.callAppPattern.test(`${link.target.properties?.["application.name"] ?? ""} ${link.target.properties?.["application.process.binary"] ?? ""}`))
@@ -541,7 +510,6 @@ Singleton {
 
     readonly property bool callMuted: root.fakeCall ? root.fakeCallMuted : root.callInStreams.length > 0 && root.callInStreams.every(n => n.audio?.muted ?? false)
     readonly property bool callDeafened: root.fakeCall ? root.fakeCallDeaf : root.callOutStreams.length > 0 && root.callOutStreams.every(n => n.audio?.muted ?? false)
-    // ilha-teste: a call without a call
     property bool fakeCall: false
     property bool fakeCallMuted: false
     property bool fakeCallDeaf: false
@@ -567,7 +535,6 @@ Singleton {
         }
         const deaf = !root.callDeafened
         for (const node of root.callOutStreams) if (node.audio) node.audio.muted = deaf
-        // Deafened means nobody hears you either, like the app's own deafen
         if (deaf && !root.callMuted) root.toggleCallMute()
         else if (!deaf && root.callMuted) root.toggleCallMute()
     }
@@ -585,7 +552,6 @@ Singleton {
         root.hyprDispatch(`hl.dsp.focus({ window = "class:^(vesktop|discord|WebCord|webcord)$" })`)
     }
 
-    // How long you have been on the call: worth anchoring, since a call is exactly when you lose track of time
     property double voiceCallSince: 0
     property int voiceCallMinutes: 0
 
@@ -657,8 +623,6 @@ Singleton {
         root.setZeroTier(!root.ztUp)
     }
 
-    // Whether ZeroTier is actually up, and on which network — it breaks voice calls, so it is worth seeing
-    // at a glance instead of only hearing about it once a call is already broken.
     property bool ztUp: false
     property string ztNetwork: ""
     property bool ztBusy: ztControl.running
@@ -675,9 +639,6 @@ Singleton {
         }
     }
 
-    // A VPN interface appears and disappears a couple of times a week, so polling it every ten seconds is pure
-    // waste. It is checked slowly, and immediately whenever it starts mattering: during a call, or while the
-    // ZeroTier island is the one on screen.
     property bool ztWatch: false
 
     Timer {
@@ -688,9 +649,6 @@ Singleton {
         onTriggered: ztState.running = true
     }
 
-    // 14. A Wi-Fi that connects but does not reach the internet is almost always a captive portal (a café, a
-    // hotel, the university). Instead of leaving you to discover it by a page that never loads, the island
-    // checks for the redirect the moment a network comes up and offers to open the login page.
     property bool portalChecking: false
 
     Connections {
@@ -712,7 +670,6 @@ Singleton {
 
     Process {
         id: portalProbe
-        // The standard "am I behind a portal" endpoint: a 204 with no body means the internet is really there
         command: ["curl", "-s", "-m", "6", "-o", "/dev/null", "-w", "%{http_code} %{redirect_url}",
             "http://connectivitycheck.gstatic.com/generate_204"]
         stdout: StdioCollector {
@@ -736,8 +693,6 @@ Singleton {
         root.networkAlert.dismiss()
     }
 
-    // 15. Keeping the machine awake on purpose: a download that must finish, a video playing to the room, a
-    // long build. systemd-inhibit holds the lock for as long as its child lives, so the island owns that child.
     property bool caffeineOn: false
     property double caffeineUntil: 0
 
@@ -785,9 +740,6 @@ Singleton {
         }
     }
 
-    // Focus Mode (seção 33): a context, not a timer app. While it's on, non-critical notifications skip
-    // the Peek entirely and go straight to History — Critical still gets through. No forced duration;
-    // it just changes how the island behaves until you turn it off yourself.
     property bool focusOn: false
     property double focusSince: 0
     property int focusSuppressedCount: 0
@@ -835,7 +787,6 @@ Singleton {
         }
     }
 
-    // Copied YouTube links: download the video or just the audio straight into the drawer
     readonly property bool mediaDownloadBusy: mediaDownloadProc.running
 
     function downloadMedia(url, audioOnly) {
@@ -875,7 +826,6 @@ Singleton {
         }
     }
 
-    // Copied text in another language: translate to Portuguese (translate-shell)
     property var translation: ({ source: "", result: "", busy: false })
 
     function looksForeign(text) {
@@ -903,7 +853,6 @@ Singleton {
         }
     }
 
-    // "#FF9F0A", "#fa0" or "rgb(255, 159, 10)" -> the color plus HEX, RGB and HSL notations
     function parseColor(text) {
         const t = (text ?? "").trim()
         let r, g, b, m
@@ -930,10 +879,6 @@ Singleton {
         }
     }
 
-    // What was copied, for its icon and label. One place decides it, so the pill, the expanded view and the
-    // history all agree. Returns { kind, label, brand?, color?, icon, swatch? }:
-    //   brand — an SVG in assets/island/apps (painted in `color`); icon — a Material Symbol fallback
-    //   swatch — a copied color shows itself instead of an icon
     readonly property var linkBrands: [
         { re: /(^|\.)(youtube\.com|youtu\.be)$/, brand: "youtube", color: "#FF0000", label: "YouTube" },
         { re: /(^|\.)github\.com$/, brand: "github", color: "#FFFFFF", label: "GitHub" },
@@ -1004,8 +949,6 @@ Singleton {
         return { kind: "text", label: "", icon: "content_paste" }
     }
 
-    // Best guess at the language of copied code, or "" when it doesn't look like code. Only strong signals:
-    // prose that happens to contain "import" or a colon must stay prose.
     function codeLanguage(text) {
         const t = (text ?? "").trim()
         if (t.length < 8 || t.length > 20000) return ""
@@ -1046,7 +989,6 @@ Singleton {
             || /\b\d+\s+[A-Za-z]+\s+(street|st\.|avenue|ave\.|road|rd\.|boulevard|blvd)\b/i.test(t)
     }
 
-    // Weak Wi-Fi while it matters (a call or a download): signal and link rate, at most every 10 minutes
     property double weakWifiAt: 0
 
     Timer {
@@ -1073,7 +1015,6 @@ Singleton {
         }
     }
 
-    // Hyprland (Lua config): dispatchers are Lua expressions
     function hyprDispatch(expression) {
         Quickshell.execDetached(["hyprctl", "dispatch", expression])
     }
@@ -1086,13 +1027,11 @@ Singleton {
         root.hyprDispatch('hl.dsp.send_shortcut({ mods = "ALT SHIFT", key = "B", window = "class:^([Ss]potify)$" })')
     }
 
-    // A finished terminal command can be run again, in a new terminal at the same folder
     function rerunCommand(data) {
         if (!data?.command) return
         Quickshell.execDetached(["foot", "--working-directory", data.cwd || Quickshell.env("HOME"), "fish", "-C", data.command])
     }
 
-    // System updates: a terminal with yay, re-checked when it closes
     function runSystemUpdate() {
         if (updateProc.running) return
         updateProc.running = true
@@ -1104,17 +1043,11 @@ Singleton {
         onExited: (exitCode, exitStatus) => Updates.refresh()
     }
 
-    // Live activities (IPC and notify-send hints)
     property var activities: []
     readonly property var latestActivity: root.activities.length > 0 ? root.activities[root.activities.length - 1] : null
 
-    // "attention": something is waiting for you (a question, a permission); stays until it changes
     signal activityNeedsAttention(var activity)
 
-    // Getting an island out of the way. "Dismiss" is not "turn off": a song you already know about should leave
-    // the front, but the next song is news again. So a dismissal is stored together with the state that was
-    // dismissed (the track name, the file being downloaded); when that state changes the island comes back on
-    // its own. "Silence" is the stronger one — the island stays away for the rest of the session.
     property var dismissedIslands: ({})
     property var silencedIslands: []
 
@@ -1142,9 +1075,6 @@ Singleton {
         return dismissed !== undefined && dismissed === (stamp ?? "")
     }
 
-    // What already went by. An island lives for a few seconds and then the moment is gone: a notification you
-    // looked away from, a command that failed, a download that landed. This keeps the last ones so they can be
-    // found again instead of being lost the instant the island shrinks.
     property var eventLog: []
 
     function logEvent(kind, icon, title, subtitle, action) {
@@ -1158,7 +1088,6 @@ Singleton {
         }
         if (entry.title === "") return
         const last = root.eventLog[0]
-        // The same thing updating itself (a progress bar, a repeated notification) is one event, not twenty
         if (last && last.kind === kind && last.title === entry.title && entry.time - last.time < 4000) {
             root.eventLog = [entry, ...root.eventLog.slice(1)]
             return
@@ -1198,7 +1127,6 @@ Singleton {
             state: state || "running",
             started: previous?.started ?? now,
             updated: now,
-            // Extra details for the expanded view (terminal commands: cwd, command, terminal pid, output log)
             data: data ?? previous?.data ?? null
         }
         root.activities = [...root.activities.filter(a => a.id !== id), activity]
@@ -1221,7 +1149,6 @@ Singleton {
         }
     }
 
-    // notify-send -h string:x-island-id:build -h int:value:40 [-h string:x-island-icon:build] [-h string:x-island-state:done] "Title" "Body"
     function handleNotification(notification) {
         const hints = notification.hints ?? {}
         const id = hints["x-island-id"]
@@ -1234,8 +1161,6 @@ Singleton {
         return true
     }
 
-    // Browser web apps (WhatsApp Web in Chrome, etc.) send the site on the first body line and the browser as
-    // the app name. Split that back into a readable app name, title and message.
     readonly property var siteNames: ({
         "web.whatsapp.com": "WhatsApp", "web.telegram.org": "Telegram", "discord.com": "Discord",
         "mail.google.com": "Gmail", "outlook.live.com": "Outlook", "outlook.office.com": "Outlook",
@@ -1243,7 +1168,6 @@ Singleton {
         "www.messenger.com": "Messenger", "calendar.google.com": "Google Calendar", "www.youtube.com": "YouTube"
     })
 
-    // Brand marks for apps that reach us through a browser: their own mark, not the browser's icon
     readonly property var appBrands: ({
         "whatsapp": "whatsapp", "telegram": "telegram", "discord": "discord", "vesktop": "discord",
         "gmail": "gmail", "outlook": "microsoftoutlook", "instagram": "instagram", "messenger": "messenger",
@@ -1265,7 +1189,6 @@ Singleton {
         const app = origin !== "" ? (root.siteNames[origin] ?? origin.replace(/^www\./, "")) : root.shortName(notif?.appName ?? "")
         const title = (notif?.summary ?? "").replace(/\s+/g, " ").trim()
         let body = lines.join(" ").replace(/\s+/g, " ").trim()
-        // Group chats send "Author: message"
         let author = ""
         const authorMatch = body.match(/^([^:]{1,32}):\s+(.+)$/)
         if (authorMatch && root.isMessagingApp(app) && authorMatch[1] !== title && !/^https?$/i.test(authorMatch[1])) {
@@ -1280,7 +1203,6 @@ Singleton {
         return { origin: origin, app: app, title: title, author: author, body: body, media: media, brand: root.brandIcon(app) }
     }
 
-    // Only these apps get to pull attention on their own (the island reveals itself); everything else waits its turn
     function isPriorityNotification(notif) {
         const app = root.notificationParts(notif).app.toLowerCase()
         return app !== "" && (root.cfg.priorityNotificationApps ?? ["whatsapp"]).some(a => app.includes(a.toLowerCase()))
@@ -1290,7 +1212,6 @@ Singleton {
         return /whats|zap|telegram|discord|vesktop|signal|slack|teams|instagram|messenger/i.test(app ?? "")
     }
 
-    // Photos, voice notes, stickers… arrive as an emoji plus a word; turn them into an icon and a clean label
     function mediaKind(body, image) {
         const kinds = [
             { test: /^(📷|🖼|📸)|^(foto|photo|imagem|image)$/i, icon: "photo_camera", label: Translation.tr("Photo"), words: "foto|photo|imagem|image" },
@@ -1328,8 +1249,6 @@ Singleton {
         else root.muteKeyFor(key, 0)
     }
 
-    // Muting for a while: `ms` > 0 lasts that long, 0 is for good. Timed entries live in their own list as
-    // "<until>|App|Title" and simply stop counting once the time has passed (swept on the next mute).
     function muteKeyFor(key, ms) {
         if ((key ?? "") === "") return
         const now = Date.now()
@@ -1357,7 +1276,6 @@ Singleton {
             Number(entry.split("|")[0]) > now && entry.slice(entry.indexOf("|") + 1) === key)
     }
 
-    // The three lengths offered wherever a conversation can be muted
     function muteChoices() {
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -1369,14 +1287,11 @@ Singleton {
         ]
     }
 
-    // How long a notification needs to be read: ~60 ms per character, between 3 and 8 seconds
     function readingTime(notif) {
         const length = `${notif?.summary ?? ""} ${(notif?.body ?? "").replace(/<[^>]*>/g, "")}`.length
         return Math.max(3000, Math.min(8000, 1500 + length * 60))
     }
 
-    // How long a notification stays up. A personal chat message (one person, not a group) stays much longer:
-    // it's the kind you actually want to read, and it used to be gone before you'd finished it.
     function displayTime(notif) {
         const reading = root.readingTime(notif)
         const parts = root.notificationParts(notif)
@@ -1385,7 +1300,6 @@ Singleton {
         return reading
     }
 
-    // Brings up the app a notification came from: its default action, its desktop entry, or the web app's site
     function openNotificationSource(notif) {
         if (!notif) return
         if ((notif.actions ?? []).some(a => a.identifier === "default")) {
@@ -1400,13 +1314,6 @@ Singleton {
         Notifications.timeoutNotification(notif.notificationId)
     }
 
-    // Chat apps running as web apps (WhatsApp in Chrome, for one) don't offer the inline reply the notification
-    // protocol has, so there is nothing to send the text to. The next best thing: copy it, bring the chat to the
-    // front and paste it there, leaving the Enter to you — never send something you haven't seen in the chat.
-    // WhatsApp Web: a real reply. The notification's own "default" action (what clicking it does) makes the web
-    // app open *that* conversation; reply-send.sh then waits for the focused window to really be WhatsApp,
-    // types the text without touching the clipboard and presses Enter. If the chat never comes up nothing is
-    // typed anywhere — the text is left on the clipboard and the island says so.
     function replyToChat(notif, text) {
         if (!notif || text.trim() === "") return false
         const parts = root.notificationParts(notif)
@@ -1432,9 +1339,6 @@ Singleton {
         }
     }
 
-    // "Ask Gemini": the conversation goes to Gemini on the web. The prompt rides in the link's #fragment (never
-    // sent to any server) and scripts/island/gemini-prompt.user.js, on gemini.google.com, puts it in the box and
-    // sends it; it's copied to the clipboard as well, as a fallback.
     function askGemini(notifs) {
         const list = (notifs ?? []).filter(n => n)
         if (list.length === 0) return
@@ -1451,9 +1355,6 @@ Singleton {
         root.sendToGemini(prompt)
     }
 
-    // Any text to Gemini on the web (the userscript types and sends it). Also left on the clipboard: if the
-    // userscript isn't there (or the page changed), it's one paste away. The clipboard island itself uses this
-    // with what was copied, so it skips the copy — it's already there.
     function sendToGemini(text, alreadyCopied) {
         if (!text || text.trim() === "") return
         if (!alreadyCopied) Quickshell.execDetached(["sh", "-c", 'printf %s "$1" | wl-copy', "sh", text])
@@ -1472,10 +1373,6 @@ Singleton {
         id: pasteProc
     }
 
-    // Outputs that exist *and* outputs that could exist. A sound card only publishes the sinks of its active
-    // profile: plug in a monitor, the card switches to hdmi-stereo, and the laptop speakers stop being a device
-    // at all — which is why they vanished from the list instead of simply being unselected. So the island also
-    // offers the card's other output profiles, and picking one switches the profile before switching the sink.
     property var audioProfiles: []
 
     Process {
@@ -1538,8 +1435,6 @@ Singleton {
         onTriggered: root.refreshAudioProfiles()
     }
 
-    // Who is making noise, and how loud. One master volume is a blunt instrument when a video, a call and
-    // music are all playing: these are the individual streams, straight from PipeWire.
     readonly property var audioStreams: {
         const items = []
         for (const node of Pipewire.nodes.values) {
@@ -1571,7 +1466,6 @@ Singleton {
         if (node?.audio) node.audio.muted = !node.audio.muted
     }
 
-    // Image tools (OCR, Google Lens), reported as live activities
     function ocrImage(path) {
         if (!path) return
         root.upsertActivity("ocr", Translation.tr("Reading text from image"), path.split("/").pop(), "document_scanner", -1, "running")
@@ -1585,7 +1479,6 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const count = parseInt(text.trim()) || 0
-                // The OCR activity already reports the copy; don't also flash "Copied"
                 root.quietClipboardUntil = Date.now() + 4000
                 if (count > 0) root.upsertActivity("ocr", "", `${count} ${Translation.tr("characters copied")}`, "", 1, "done")
                 else root.upsertActivity("ocr", "", Translation.tr("No text found"), "", -1, "error")
@@ -1609,7 +1502,6 @@ Singleton {
         }
     }
 
-    // Network: sustained downloads and connection changes
     property real downloadRate: 0
     property real uploadRate: 0
     property real burstBytes: 0
@@ -1622,16 +1514,9 @@ Singleton {
     property double prevNetTime: 0
     property Flash networkAlert: Flash { duration: 5500 }
 
-    // What counts as a download. Traffic alone is a bad signal: a video playing or a game patching pulls more
-    // megabytes than an installer, and the island ended up announcing every YouTube tab. In "files" mode the
-    // island only speaks when a file is actually landing in the downloads folder (browsers write .crdownload/.part
-    // while they fetch); the per-process traffic is still measured, it just no longer decides on its own.
     readonly property string downloadMode: root.cfg.downloadDetection ?? "files"
     readonly property var partialSuffixes: [".crdownload", ".part", ".partial", ".download", ".opdownload", ".!ut"]
 
-    // Live downloads, as seen on disk: name, bytes so far, the browser's own total (so the progress is real,
-    // not a guess) and speed. A partial file nobody has written to for a while is abandoned, not a download —
-    // a forgotten 4 GB .crdownload would otherwise keep the island up forever.
     property var partialFiles: []
     readonly property bool fileDownloadActive: root.partialFiles.length > 0
     readonly property var downloadFile: root.partialFiles[0] ?? null
@@ -1643,14 +1528,9 @@ Singleton {
     }
     property var finishedDownload: null
     property Flash downloadDone: Flash { duration: 9000 }
-    // IMDb rating of the episode/film that just started in the browser (services/WatchRating.qml)
     property Flash watchRating: Flash { duration: 6000 }
-    // What queued up behind a fullscreen window, handed back once it ends (DynamicIsland.qml § Tela cheia)
     property Flash fullscreenDigest: Flash { duration: 9000 }
 
-    // Passive: the kernel tells Qt when the folder changes (FolderListModel sits on inotify), and only a partial
-    // file appearing starts the watcher, which follows the download and exits once nothing is arriving anymore.
-    // Before, the watcher lived all day and listed the folder every 4 seconds.
     readonly property bool downloadWatchEnabled: (root.cfg.network ?? true) && root.downloadMode === "files" && !root.fakeNet
 
     FolderListModel {
@@ -1662,8 +1542,6 @@ Singleton {
         onCountChanged: root.startDownloadWatch()
     }
 
-    // Only a partial file that's actually being written counts: an abandoned .crdownload from weeks ago would
-    // otherwise keep the watcher alive forever (and restart it every time it left)
     function startDownloadWatch() {
         if (!root.downloadWatchEnabled || downloadWatcher.running) return
         for (let i = 0; i < partialDownloads.count; i++) {
@@ -1686,7 +1564,6 @@ Singleton {
         stdout: SplitParser {
             onRead: line => root.handleDownloadWatch(line)
         }
-        // A new download may have started in the instant it was leaving
         onExited: Qt.callLater(root.startDownloadWatch)
     }
 
@@ -1707,7 +1584,6 @@ Singleton {
         }
     }
 
-    // A .sha256 sitting next to the file is there to be checked
     function verifyChecksum(download) {
         root.upsertActivity("checksum", Translation.tr("Checking %1").arg(download.name), Translation.tr("Comparing SHA-256…"),
             "verified_user", -1, "running")
@@ -1731,7 +1607,6 @@ Singleton {
         }
     }
 
-    // Actions offered when a download lands
     function openDownload(path) {
         Quickshell.execDetached(["xdg-open", path])
     }
@@ -1770,7 +1645,6 @@ Singleton {
         }
     }
 
-    // Who is downloading: nethogs (TCP + UDP) per process while a burst lasts or its details are open
     property var downloadSources: []
     property string downloadSourcesError: ""
     property var downloadHistory: []
@@ -1782,8 +1656,6 @@ Singleton {
     readonly property var downloadTop: root.downloadSources.length > 0 ? root.downloadSources[0] : null
     readonly property string downloadLogPath: `${Quickshell.env("HOME")}/.local/state/quickshell/ilha-downloads.log`
 
-    // The island and the log answer different questions. The island shows a file arriving; the log keeps every
-    // sustained burst, island or not, so traffic that appears out of nowhere can still be traced afterwards.
     onTrafficBurstChanged: {
         if (root.trafficBurst) {
             root.downloadSince = Date.now()
@@ -1803,7 +1675,6 @@ Singleton {
         }
     }
 
-    // "12 s", "3 min", "1 h 12 min" — what is left of a download
     function remainingTime(seconds) {
         const total = Math.max(0, Math.round(seconds))
         if (total < 60) return Translation.tr("%1 s").arg(total)
@@ -1837,7 +1708,6 @@ Singleton {
         root.downloadTotals = totals
     }
 
-    // Each burst goes to a log, so a download that shows up out of nowhere can be traced later
     function finishDownloadBurst() {
         const seconds = Math.round((Date.now() - root.downloadSince) / 1000)
         const top = Object.entries(root.downloadTotals).sort((a, b) => b[1].bytes - a[1].bytes).slice(0, 3)
@@ -1859,8 +1729,6 @@ Singleton {
 
     Process {
         id: netSourcesProc
-        // Who is using the network: only for a real download or with the network view open. A plain traffic
-        // burst (a film streaming) used to keep this running for the whole film.
         running: !root.fakeNet && (root.downloadActive || root.downloadWatch || (root.trafficBurst && root.downloadMode === "traffic"))
             && (root.cfg.network ?? true)
         command: ["python3", Quickshell.shellPath("scripts/island/net_sources.py")]
@@ -1904,7 +1772,6 @@ Singleton {
             const seconds = (now - root.prevNetTime) / 1000
             root.downloadRate = (rx - root.prevRx) / seconds
             root.uploadRate = (tx - root.prevTx) / seconds
-            // Counted in real seconds, since the sampling slows down to 5 s when the network is quiet
             if (root.downloadRate > 350 * 1024) root.fastSeconds = Math.min(root.fastSeconds + seconds, 10)
             else if (root.downloadRate < 80 * 1024) root.fastSeconds = Math.max(root.fastSeconds - 2 * seconds, 0)
             if (!root.trafficBurst && root.fastSeconds >= 4 && (root.cfg.network ?? true)) {
@@ -1933,8 +1800,6 @@ Singleton {
         onLoaded: root.updateNet(netStats.text())
     }
 
-    // Network traffic has no event to listen to, so it's sampled — but slowly while nothing is happening, and
-    // every second only while something is actually moving (a burst, a download, the network view open)
     Timer {
         interval: root.trafficBurst || root.downloadActive || root.downloadWatch || root.voiceCallActive ? 1000 : 5000
         repeat: true
@@ -1963,15 +1828,12 @@ Singleton {
         function onNetworkNameChanged() { networkDebounce.restart() }
     }
 
-    // Wi-Fi status flickers while roaming; judge it once it settles
     Timer {
         id: networkDebounce
         interval: 1500
         onTriggered: root.networkChanged()
     }
 
-    // Real backlight level. The Brightness service only reads it at startup and then trusts its own writes,
-    // so changes made elsewhere (brightnessctl fallback, power profiles) would show a stale value.
     property real realBrightness: -1
     property bool brightnessWatch: false
 
@@ -1996,7 +1858,6 @@ Singleton {
         onTriggered: if (!brightnessRead.running) brightnessRead.running = true
     }
 
-    // Test helpers: fake the events that normally need real hardware or weather
     property bool fakePrivacy: false
     property var pendingStep: null
 
@@ -2128,14 +1989,6 @@ Singleton {
         function remove(id: string): void {
             root.removeActivity(id)
         }
-        // Dev Activity (seção 26): a local dev server, framework-agnostic. state: "building" | "ready" | "error".
-        // First support is a generic hook (scripts/island/dev-island.sh) that scans stdout for a localhost URL
-        // and common error/ready keywords — not per-framework parsing. url travels in `data` for whatever reads
-        // it next (there is no live action button on the card yet, same as the "command" activity).
-        // "ready" stays LIVE (state: "running", static full ring instead of a spinner) because the server keeps
-        // running for as long as you're using it — unlike "done", which the cleanup timer sweeps after 6s. The
-        // wrapper script re-touches it periodically (well under the 30 min running-state grace window) so a
-        // server left open all afternoon doesn't quietly vanish.
         function dev(id: string, title: string, subtitle: string, state: string, url: string): void {
             if (state === "error") { root.upsertActivity(id, title, subtitle, "web", -1, "error", { url: url, kind: "dev" }); return }
             root.upsertActivity(id, title, subtitle, "web", state === "building" ? -1 : 1, "running", { url: url, kind: "dev" })
@@ -2161,7 +2014,6 @@ Singleton {
         function ocr(path: string): void {
             root.ocrImage(path)
         }
-        // Compact split: "island split system" puts System beside the main pill; "island split" (empty) ends it
         function split(id: string): void {
             root.splitRequested(id)
         }

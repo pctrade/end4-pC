@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 
 /**
- * Motion tokens for the Dynamic Island (ILHA.md § Motion). Four speeds, each with one job — so the same kind of
+ * Motion tokens for the Dynamic Island. Four speeds, each with one job — so the same kind of
  * change feels the same everywhere:
  *
  *   micro  150  hover, press, colour and small opacity flips

@@ -27,13 +27,11 @@ Item {
             default:           return Audio.sink?.audio?.volume ?? 0
         }
     }
-    // The volume keys allow up to 150% (wpctl -l 1.5); everything else stops at 100%
     readonly property real maxValue: osd.kind === "volume" ? (osd.di.cfg.volumeMax ?? 1.5) : 1
     readonly property real clamped: Math.max(0, Math.min(osd.maxValue, osd.value))
     readonly property bool boosted: osd.kind === "volume" && !osd.muted && osd.shown > 1.005
     readonly property color boostColor: IslandEvents.colorAttention
 
-    // Liquid fill: a soft spring that sloshes past the target a little
     property real shown: osd.clamped
     Behavior on shown {
         NumberAnimation { duration: IslandMotion.micro; easing.type: Easing.OutCubic }
@@ -68,7 +66,6 @@ Item {
         }
     }
 
-    // Above 100%: the bar stays full and an amber layer grows over it for the extra (100% → max)
     Rectangle {
         id: boostFill
         anchors {
@@ -94,7 +91,6 @@ Item {
         }
     }
 
-    // Click the left part to lower, the right part to raise; the middle opens the full view
     function nudge(step) {
         if (osd.kind === "brightness") {
             osd.brightnessMonitor?.setBrightness(Math.max(0, Math.min(1, osd.clamped + step)))
@@ -156,7 +152,6 @@ Item {
         }
         spacing: 6
 
-        // The icon is the mute button: it is the thing you are already looking at when you want silence
         MaterialShapeWrappedMaterialSymbol {
             id: osdIcon
 

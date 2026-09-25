@@ -8,7 +8,6 @@ import qs.modules.common
 Item {
     id: root
 
-    // Set by whoever animates this ring's rotation, so it can be cached as a texture while it turns
     property bool spinning: false
     property int implicitSize: 30
     property int lineWidth: 2
@@ -52,9 +51,6 @@ Item {
 
     Shape {
         anchors.fill: parent
-        // A spinning ring is the one case where the layer pays for itself: the arc is rasterised once and the
-        // texture is rotated, instead of the curve renderer rebuilding the geometry on every single frame.
-        // Standing still, the layer is just an extra render-to-texture pass, so it is off.
         layer.enabled: root.spinning
         layer.smooth: root.spinning
         preferredRendererType: Shape.CurveRenderer

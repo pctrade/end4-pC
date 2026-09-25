@@ -33,14 +33,12 @@ CHROMIUM_HISTORIES = [
 ]
 FIREFOX_PROFILE_GLOBS = ["~/.mozilla/firefox", "~/.zen"]
 
-
 def strip_partial(name):
     lowered = name.lower()
     for suffix in PARTIAL_SUFFIXES:
         if lowered.endswith(suffix):
             return name[: -len(suffix)]
     return name
-
 
 def copy_db(path):
     """A browser holds its database open; read a snapshot instead of fighting for the lock."""
@@ -54,7 +52,6 @@ def copy_db(path):
         return tmp
     except OSError:
         return None
-
 
 def chromium_totals():
     """{target_path: (total_bytes, received_bytes, state)} for downloads the browser knows about."""
@@ -85,7 +82,6 @@ def chromium_totals():
                 except OSError:
                     pass
     return totals
-
 
 def firefox_totals():
     """Firefox stores the expected size in a page annotation on the download's source URL."""
@@ -127,7 +123,6 @@ def firefox_totals():
                         pass
     return totals
 
-
 def scan(folders):
     partials = {}
     for folder in folders:
@@ -146,11 +141,9 @@ def scan(folders):
             partials[path] = stat
     return partials
 
-
 def is_archive(name):
     lowered = name.lower()
     return any(lowered.endswith(suffix) for suffix in ARCHIVE_SUFFIXES)
-
 
 def checksum_file(final_path):
     """A .sha256 next to the download means it can be verified."""
@@ -160,10 +153,7 @@ def checksum_file(final_path):
             return candidate
     return None
 
-
 def main():
-    # --until-idle: the shell starts this only when a partial file shows up (inotify, on its side) and it leaves
-    # once nothing is arriving anymore — after reporting what finished — instead of watching the folder all day
     until_idle = "--until-idle" in sys.argv
     folders = [os.path.expanduser(p) for p in (a for a in sys.argv[1:] if a != "--until-idle")] or [os.path.expanduser("~/Downloads")]
     previous = {}
@@ -221,17 +211,12 @@ def main():
         items.sort(key=lambda item: -item["bytes"])
         print(json.dumps({"downloads": items, "finished": finished}), flush=True)
 
-        # A partial file nobody has written to in a minute (an abandoned download from weeks ago) isn't something
-        # arriving; it must not keep this running
         if until_idle and not any(now - st.st_mtime <= 60 for st in current.values()) and not previous_fresh:
             return
         previous_fresh = any(now - st.st_mtime <= 60 for st in current.values())
         previous = current
         previous_time = now
-        # Idling costs a directory listing every few seconds instead of every second: the same responsiveness
-        # once a download starts, a fraction of the wakeups the rest of the day.
         time.sleep(POLL_ACTIVE_SECONDS if current or until_idle else POLL_IDLE_SECONDS)
-
 
 if __name__ == "__main__":
     try:

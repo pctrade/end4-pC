@@ -26,8 +26,6 @@ RowLayout {
         }
         return worst
     }
-    // ONE mark for whichever agent needs attention most, not one per agent — a second near-identical mark
-    // reads as a glitch, not as "two agents".
     readonly property string leadAgent: agents.waiting[0]?.agent ?? agents.working[0]?.agent ?? (ClaudeCode.openAgents[0] ?? "claude")
 
     Item {
@@ -119,7 +117,6 @@ RowLayout {
         }
     }
 
-    // The number that decides whether you can keep going today
     StyledText {
         visible: agents.worstLimit >= 0
         text: `${Math.round(agents.worstLimit)}%`

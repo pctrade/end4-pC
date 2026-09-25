@@ -51,7 +51,6 @@ RowLayout {
         }
     }
 
-    // The file itself can be pulled straight out of the island into a chat or a folder
     Item {
         Layout.alignment: Qt.AlignVCenter
         implicitWidth: 26

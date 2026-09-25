@@ -26,8 +26,6 @@ Singleton {
         }
     }
 
-    // key -> { key, agent, realId, cwd, project, state: idle|working|waiting|ended, detail, workStarted, shown, termPid,
-    //          question, options, waitingText, summary, diff, model, context, contextWarned, updated }
     property var sessions: ({})
     property var claudeIds: []
     readonly property var sessionList: Object.values(root.sessions)
@@ -36,12 +34,9 @@ Singleton {
     readonly property int openCount: root.liveSessions.length
     readonly property bool anyWorking: root.liveSessions.some(s => s.state === "working")
     readonly property bool anyWaiting: root.liveSessions.some(s => s.state === "waiting")
-    // A session stopped on a permission dialog: the island treats it as CRITICAL (ahead of everything; over a
-    // fullscreen window, a pulsing hairline) and answers it from the pill (approve / deny), see DiApproval.qml
     readonly property var approval: root.liveSessions.find(s => s.state === "waiting" && (s.permission ?? "") !== "" && !s.approvalHidden) ?? null
     readonly property var openAgents: ["claude", "codex", "gemini"].filter(a => root.liveSessions.some(s => s.agent === a))
 
-    // agent -> { five, fiveReset, week, weekReset } (percent used, unix seconds)
     property var limits: ({})
     readonly property real fiveHourUsed: root.limits.claude?.five ?? -1
     readonly property string fiveHourReset: root.formatReset(root.limits.claude?.fiveReset)
@@ -77,7 +72,6 @@ Singleton {
         return `${Math.floor(m / 60)}h${(m % 60).toString().padStart(2, "0")}`
     }
 
-    // "120,34,5" -> "+120 −34 · 5 files"
     function formatDiff(diff) {
         const m = /^(\d+),(\d+),(\d+)$/.exec((diff ?? "").trim())
         if (!m) return ""
@@ -148,7 +142,6 @@ Singleton {
         IslandEvents.removeActivity(root.activityId(key))
     }
 
-    // Closed sessions stay listed for a while so they can be resumed
     function end(key) {
         if (!root.sessions[key]) return
         IslandEvents.removeActivity(root.activityId(key))
@@ -177,12 +170,10 @@ Singleton {
         }
     }
 
-    // Brings the session's terminal window forward
     function focusSession(key) {
         IslandEvents.focusWindowPid(root.sessions[key]?.termPid ?? 0)
     }
 
-    // Opens the session again in a new terminal at its folder
     function resume(key) {
         const s = root.sessions[key]
         if (!s) return
@@ -193,14 +184,12 @@ Singleton {
         root.forget(key)
     }
 
-    // What changed in the repository, in lazygit
     function openDiff(key) {
         const s = root.sessions[key]
         if (!s?.cwd) return
         Quickshell.execDetached(["foot", "--working-directory", s.cwd, "lazygit"])
     }
 
-    // Answers the pending question: its number key, sent straight to the session's terminal window
     function answer(key, index) {
         const pid = root.sessions[key]?.termPid ?? 0
         if (pid <= 0) return
@@ -210,12 +199,9 @@ Singleton {
         root.updateWaitingGroup()
     }
 
-    // Permission dialogs, answered in the session's own terminal: "1" (Claude, Gemini) / "y" (Codex) approves
-    // once, Escape denies. Nothing is typed if the terminal isn't known.
     function approve(key) {
         const s = root.sessions[key]
         if (!s) return
-        // Terminal unknown: nothing to type into — step aside so it can be answered where it is
         if ((s.termPid ?? 0) <= 0) {
             root.hideApproval(key)
             return
@@ -237,12 +223,10 @@ Singleton {
         IslandEvents.upsertActivity(root.activityId(key), root.titleFor(root.sessions[key]), Translation.tr("Denied"), s.agent, -1, "error")
         root.updateWaitingGroup()
     }
-    // "Later": back to an ordinary waiting activity (still in Agents), no longer blocking the pill
     function hideApproval(key) {
         root.update(key, "", { approvalHidden: true })
     }
 
-    // Work shows up after a few seconds, so quick back-and-forth answers don't flash the island
     function syncWorking(key) {
         const s = root.sessions[key]
         if (!s || s.state !== "working") return
@@ -256,7 +240,6 @@ Singleton {
         IslandEvents.upsertActivity(root.activityId(key), root.titleFor(s), subtitle, s.agent, -1, "attention")
     }
 
-    // Two or more agents waiting: one "N agents waiting" instead of a pile of separate alerts
     function updateWaitingGroup() {
         const waiting = root.liveSessions.filter(s => s.state === "waiting")
         if (waiting.length >= 2) {
@@ -271,7 +254,6 @@ Singleton {
         }
     }
 
-    // Runs `show` unless the given terminal is the focused window (then `skip`): no need to announce what you're looking at
     property var focusQueue: []
 
     function unlessTerminalFocused(pid, show, skip) {
@@ -301,7 +283,6 @@ Singleton {
 
     function handle(agent, name, sid, cwd, detail, termPid) {
         if (!root.enabled || sid === "") return
-        // Antigravity calls the start of each model call PreInvocation: only the first one starts a turn
         if (agent === "gemini") {
             if (name === "PreInvocation") name = root.sessions[root.keyFor(agent, sid)]?.state === "working" ? "" : "UserPromptSubmit"
             else if (name === "PostInvocation") name = ""
@@ -339,8 +320,6 @@ Singleton {
                 break
             }
             case "PermissionRequest":
-                // Claude also reports the dialog itself (Notification permission_prompt): only then is it really waiting.
-                // Codex and Gemini have no such event, so their request counts right away.
                 if (agent === "claude") {
                     root.update(key, cwd, { pendingPermission: root.toolLabel(detail) })
                     break
@@ -403,7 +382,6 @@ Singleton {
         }
     }
 
-    // Sessions killed without SessionEnd fade away after a long silence; closed ones after a few hours
     Timer {
         interval: 10 * 60 * 1000
         repeat: true
@@ -417,7 +395,6 @@ Singleton {
         }
     }
 
-    // Short notices (usage and context) share one slot and clear themselves
     function notice(key, title, subtitle, icon, state) {
         if (root.warned[key]) return
         root.warned = Object.assign({}, root.warned, { [key]: true })
@@ -444,7 +421,6 @@ Singleton {
         if (week >= 90)
             root.notice(`${agent}-7d90-${weekReset}`, Translation.tr("%1 · weekly limit at %2%").arg(name).arg(Math.round(week)),
                 Translation.tr("Resets %1").arg(Qt.formatDateTime(new Date(weekReset * 1000), "ddd hh:mm")), "calendar_month", "attention")
-        // Every agent you use is close to its limit: worth knowing before starting something long
         const near = Object.keys(root.limits).filter(a => (root.limits[a].five ?? 0) >= 80)
         if (near.length >= 2)
             root.notice(`near-${near.join("-")}-${Math.floor(Date.now() / 3600000)}`,
@@ -463,11 +439,9 @@ Singleton {
             data.seven_day?.used_percentage ?? 0, data.seven_day?.resets_at ?? 0)
     }
 
-    // A 5h window that is nearly used up and about to reset is worth knowing (you can wait instead of stopping)
     Timer {
         interval: 60000
         repeat: true
-        // Only while some agent is actually close to its 5h limit — the only case this can ever speak up in
         running: root.enabled && Object.values(root.limits).some(l => (l.five ?? 0) >= 70 && l.fiveReset)
         onTriggered: {
             for (const agent of Object.keys(root.limits)) {
@@ -530,7 +504,6 @@ Singleton {
         function hook(event: string, session: string, cwd: string, detail: string, terminal: int): void {
             root.handle("claude", event, session, cwd, detail, terminal)
         }
-        // Codex and Gemini hooks (agent-island.sh)
         function agent(agent: string, event: string, session: string, cwd: string, detail: string, terminal: int): void {
             root.handle(agent, event, session, cwd, detail, terminal)
         }
@@ -543,7 +516,6 @@ Singleton {
         function status(): string {
             return JSON.stringify(root.sessionList)
         }
-        // Test notices (ilha-teste): limit, soon, context, near
         function demo(kind: string): void {
             const stamp = Date.now()
             if (kind === "limit")

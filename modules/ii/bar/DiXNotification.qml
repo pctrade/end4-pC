@@ -17,8 +17,6 @@ ColumnLayout {
     required property Item di
     spacing: 10
 
-    // A ColumnLayout takes its width from its children and ignores implicitWidth; this is what holds 420,
-    // and every wrapping text below asks for almost nothing so it wraps inside it instead of widening it
     Item {
         Layout.preferredWidth: 420
         implicitHeight: 0
@@ -26,7 +24,6 @@ ColumnLayout {
 
     readonly property var popups: xn.di.visibleNotifications
 
-    // Let the overlay accept keyboard focus while there is a reply field, and keep it open while typing
     Binding {
         target: xn.di
         property: "replyReady"
@@ -46,21 +43,14 @@ ColumnLayout {
         xn.di.wantsKeyboard = true
         Qt.callLater(() => replyField.forceActiveFocus())
     }
-    // Chats opened with a click arrive ready to type: the island asks for the keyboard *before* opening (see
-    // DynamicIsland.toggleExpanded → requestReply), so the window never switches keyboard mode while open —
-    // switching it mid-way breaks the focus grab and the overlay closes itself. Opened by hovering, it leaves the
-    // keyboard alone; one click in the field and you're typing.
     Connections {
         target: xn.di
         function onReplyRequestedChanged() { xn.focusReplyIfRequested() }
     }
-    // Locked on the notification you opened: one arriving meanwhile (another app, a usage-limit notice) waits in
-    // the pager instead of swapping out the conversation you're reading or answering. The arrows move the lock.
     property int lockedId: -1
     readonly property int lockedIndex: xn.popups.findIndex(n => n.notificationId === xn.lockedId)
     readonly property int index: xn.lockedIndex >= 0 ? xn.lockedIndex : Math.max(0, xn.popups.length - 1)
     readonly property var notif: xn.popups[xn.index]
-    // Muting asks for how long (1 h, until tomorrow, always) right in the header
     property bool muteChoosing: false
     onNotifChanged: xn.muteChoosing = false
         ?? Notifications.list.find(n => n.notificationId === xn.lockedId)
@@ -77,7 +67,6 @@ ColumnLayout {
     readonly property var parts: IslandEvents.notificationParts(xn.notif)
     readonly property bool critical: (xn.notif?.urgency ?? "").toLowerCase() === "critical"
     readonly property color accent: xn.critical ? Appearance.colors.colError : IslandEvents.appColor(xn.parts.app, Appearance.colors.colPrimary)
-    // image-path hints arrive through the icon provider, which only hands out a thumbnail
     readonly property string rawImage: xn.notif?.image ?? ""
     readonly property string imageSource: xn.rawImage.startsWith("image://icon//")
         ? `file://${xn.rawImage.slice("image://icon/".length)}` : xn.rawImage
@@ -87,12 +76,9 @@ ColumnLayout {
     readonly property bool bigImage: imageProbe.status === Image.Ready
         && (Math.max(imageProbe.implicitWidth, imageProbe.implicitHeight) >= 200 || xn.imageAspect < 0.8 || xn.imageAspect > 1.25)
 
-    // Messaging apps always get a quick reply; without inline-reply support it copies the text and opens the chat
     readonly property bool messaging: /whats|zap|telegram|discord|vesktop|signal|slack|teams|instagram|messenger/i.test(xn.parts.app)
     property string replyHint: ""
 
-    // The rest of the conversation — every message from the same person in the last hour, oldest first — so the
-    // thread can be scrolled back instead of showing only the newest one
     readonly property var earlier: {
         if (!xn.notif || !xn.messaging) return []
         const key = IslandEvents.conversationKey(xn.notif)
@@ -110,7 +96,6 @@ ColumnLayout {
 
     function sendText(text) {
         if (text.trim() === "" || !xn.notif) return
-        // The overlay lets go of the keyboard first: the text is typed into the chat window, not into us
         xn.di.wantsKeyboard = false
         if (xn.notif.hasInlineReply) {
             Notifications.sendInlineReply(xn.notif.notificationId, text)
@@ -122,7 +107,6 @@ ColumnLayout {
         IslandEvents.replyToChat(target, text)
     }
 
-    // Opening: the bubbles rise in one after another
     property real enter: 0
     NumberAnimation on enter {
         from: 0
@@ -141,7 +125,6 @@ ColumnLayout {
         asynchronous: true
     }
 
-    // ── Header: the app, when, and the small controls ──
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
@@ -302,7 +285,6 @@ ColumnLayout {
         }
     }
 
-    // ── Who, and what they said ──
     RowLayout {
         Layout.fillWidth: true
         spacing: 12
@@ -351,7 +333,6 @@ ColumnLayout {
                 opacity: xn.rise(0)
             }
 
-            // The thread: scrolls back through the conversation, opens at the newest message
             Flickable {
                 id: thread
                 Layout.fillWidth: true
@@ -370,7 +351,6 @@ ColumnLayout {
                     width: thread.width
                     spacing: 5
 
-                    // Earlier in the same conversation: smaller, quieter bubbles
                     Repeater {
                         model: xn.earlier
                         delegate: Rectangle {
@@ -406,7 +386,6 @@ ColumnLayout {
                         }
                     }
 
-                    // The message itself, in a bubble with its time tucked into the corner
                     Rectangle {
                         id: bubble
                         visible: xn.parts.body !== "" || xn.parts.media !== null
@@ -480,8 +459,6 @@ ColumnLayout {
                     policy: thread.interactive ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                     width: 4
                 }
-                // Every wheel event over the thread stays here — including a touchpad's momentum once it hits the
-                // end — instead of spilling over into the island's "next view" scrolling
                 MouseArea {
                     parent: thread
                     anchors.fill: parent
@@ -499,7 +476,6 @@ ColumnLayout {
         }
     }
 
-    // Stickers, photos and other media previews (when the app attaches them — WhatsApp Web doesn't)
     Rectangle {
         id: mediaFrame
         visible: xn.bigImage || xn.animatedImage
@@ -536,7 +512,6 @@ ColumnLayout {
         }
     }
 
-    // The app's own actions, when it sends any
     Flow {
         Layout.fillWidth: true
         visible: (xn.notif?.actions ?? []).some(a => a.identifier !== "default")
@@ -576,13 +551,11 @@ ColumnLayout {
         }
     }
 
-    // One-tap replies: they go through the same path as the field below
     Flow {
         Layout.fillWidth: true
         visible: replyRow.visible
         spacing: 6
 
-        // The whole conversation to Gemini (the shell's AI chat), for a few suggested replies
         Rectangle {
             id: geminiChip
             implicitWidth: geminiRow.implicitWidth + 20

@@ -10,7 +10,6 @@ RowLayout {
     required property Item di
     spacing: 18
     implicitWidth: 320
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 320
 
     readonly property string kind: xt.di.engagedTimerKind

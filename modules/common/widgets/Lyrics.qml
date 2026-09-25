@@ -19,7 +19,6 @@ Item {
     implicitWidth: 200
     implicitHeight: 200
 
-    // Registers with LyricsService while on screen: lyrics are only fetched and synced while someone shows them
     property bool registered: false
     function syncViewer() {
         if (root.visible === root.registered) return

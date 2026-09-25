@@ -12,7 +12,6 @@ ColumnLayout {
     required property Item di
     spacing: 12
     implicitWidth: 340
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 340
 
     readonly property bool muted: IslandEvents.callMuted

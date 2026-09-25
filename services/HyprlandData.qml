@@ -140,8 +140,6 @@ Singleton {
             if (["openlayer", "closelayer", "screencast", "submap", "activelayout"].includes(name)) return;
 
             if (name.startsWith("workspace") || name.startsWith("moveworkspace")) {
-                // Switching workspace changes the monitor's activeWorkspace too: without refreshing monitors,
-                // anything keyed on it (the bar hiding under a fullscreen window) kept looking at the old one
                 root.queueUpdate(false, true, true, false);
             } else if (name.startsWith("createworkspace") || name.startsWith("destroyworkspace") || name === "renameworkspace") {
                 root.queueUpdate(false, true, false, false);

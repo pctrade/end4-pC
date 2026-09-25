@@ -19,7 +19,6 @@ RowLayout {
 
     readonly property var payload: IslandEvents.audioOutput.payload ?? ({})
     readonly property bool switching: output.payload.switching ?? false
-    // The hand-off happens once, a beat after the island appears: everything else follows this single flag
     property bool handedOver: false
 
     onSwitchingChanged: {
@@ -35,8 +34,6 @@ RowLayout {
         onTriggered: output.handedOver = true
     }
 
-    // The hand-off, drawn as one object instead of a parade of sparks: the old device fades back, a single arc
-    // of sound sweeps across, and the new one settles in. One movement, one meaning.
     Item {
         Layout.alignment: Qt.AlignVCenter
         implicitWidth: output.switching ? 52 : 26
@@ -46,7 +43,6 @@ RowLayout {
             NumberAnimation { duration: IslandMotion.long; easing.type: Easing.BezierSpline; easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial }
         }
 
-        // Where the sound is leaving from: present, then quietly out of the way
         MaterialSymbol {
             id: fromIcon
             anchors.verticalCenter: parent.verticalCenter
@@ -67,7 +63,6 @@ RowLayout {
             }
         }
 
-        // The sound crossing over: a short arc that grows out of the old device and lands on the new one
         Rectangle {
             id: trail
             anchors.verticalCenter: parent.verticalCenter

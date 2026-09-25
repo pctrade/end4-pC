@@ -92,8 +92,6 @@ Singleton {
         NotifTimer {}
     }
 
-    // Safety net: a popup whose timer was stopped (hover, an overlay) and never restarted would stay on the island
-    // forever. Anything non-critical older than two minutes stops being a popup; it stays in the notification list.
     Timer {
         interval: 10000
         running: root.popupList.length > 0
@@ -191,8 +189,6 @@ Singleton {
             // Popup
             if (!root.popupInhibited) {
                 newNotifObject.popup = true;
-                // expireTimeout 0 asks for a popup that never leaves. Only critical ones get that: a browser tab
-                // saying a livestream started also sends 0, and it would sit on the island forever.
                 const critical = (notification.urgency?.toString() ?? "").toLowerCase() === "critical";
                 if (notification.expireTimeout != 0 || !critical) {
                     newNotifObject.timer = notifTimerComponent.createObject(root, {

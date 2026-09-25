@@ -11,16 +11,13 @@ ColumnLayout {
     required property Item di
     spacing: 8
     implicitWidth: 390
-    // Layouts overwrite implicitWidth with their children's; the container reads this instead
     readonly property real wantedWidth: 390
 
-    // A ColumnLayout takes its width from its children and ignores implicitWidth; this is what holds 390
     Item {
         Layout.preferredWidth: 390
         implicitHeight: 0
     }
 
-    // Agent sessions have their own section; the plain list skips their activity entries
     readonly property var otherActivities: [...IslandEvents.activities].reverse()
         .filter(a => !a.id.startsWith("agent-") && a.id !== "agents-waiting")
     readonly property var limitAgents: ["claude", "codex", "gemini"].filter(a => ClaudeCode.limits[a] !== undefined)
@@ -93,7 +90,6 @@ ColumnLayout {
         }
     }
 
-    // AI agents: title, then each agent's plan usage as a small ring
     RowLayout {
         Layout.fillWidth: true
         visible: ClaudeCode.sessionList.length > 0 || xact.limitAgents.length > 0
@@ -183,7 +179,6 @@ ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 9
 
-                    // The agent's mark, with a small dot for its state
                     Item {
                         implicitWidth: 20
                         implicitHeight: 20
@@ -270,7 +265,6 @@ ColumnLayout {
                     }
                 }
 
-                // Context window
                 RowLayout {
                     Layout.fillWidth: true
                     visible: (session.modelData.context ?? -1) >= 0 && !session.ended
@@ -302,7 +296,6 @@ ColumnLayout {
                     }
                 }
 
-                // What the last turn changed in the repository
                 RowLayout {
                     Layout.fillWidth: true
                     visible: session.diffText !== "" && !session.working
@@ -329,7 +322,6 @@ ColumnLayout {
                     }
                 }
 
-                // A question from the agent: answer it right here (the number key goes to its terminal)
                 Flow {
                     Layout.fillWidth: true
                     visible: session.waiting && session.canType && (session.modelData.options ?? []).length > 0
@@ -358,7 +350,6 @@ ColumnLayout {
         visible: xact.otherActivities.length > 0 || ClaudeCode.sessionList.length === 0
     }
 
-    // Empty state: says what would show up here
     ColumnLayout {
         Layout.fillWidth: true
         visible: xact.otherActivities.length === 0 && ClaudeCode.sessionList.length === 0
@@ -502,7 +493,6 @@ ColumnLayout {
                     }
                 }
 
-                // Terminal commands: see the output, run it again, jump back to the terminal
                 Flow {
                     Layout.fillWidth: true
                     visible: item.isCommand && item.modelData.state !== "running"

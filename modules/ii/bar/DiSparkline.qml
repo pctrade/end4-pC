@@ -58,7 +58,6 @@ Canvas {
             ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y)
         }
 
-        // Fill: the area under the line, fading out toward the bottom
         const gradient = ctx.createLinearGradient(0, 0, 0, h)
         gradient.addColorStop(0, ColorUtils.transparentize(spark.color, 0.62))
         gradient.addColorStop(1, ColorUtils.transparentize(spark.color, 1))

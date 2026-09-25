@@ -17,7 +17,6 @@ Item {
     readonly property string agent: approval.session?.agent ?? "claude"
     readonly property color accent: ClaudeCode.agentColor(approval.agent)
 
-    // Slow breathing ring behind the mark
     property real breath: 0
     SequentialAnimation on breath {
         running: approval.session !== null
