@@ -986,6 +986,7 @@ Item {
             case "shelf":        return 110
             // Quick buttons for what was just copied (Gemini / search or open / drawer)
             case "clipboard":    return IslandEvents.clipboard.active ? 80 : 0
+            case "battery":      return ["low", "critical"].includes(root.batteryAlertKind) && !Battery.isPluggedIn ? 96 : 0
             default:             return 0
         }
     }
@@ -1008,7 +1009,7 @@ Item {
             case "f1":            return F1.sessionLive ? 222 : 186
             case "timer":         return 150
             case "activity":      return 236
-            case "systemLoad":    return 190
+            case "systemLoad":    return Pressure.culprit || Pressure.top ? 280 : 200
             case "system":        return 214
             case "songRec":       return 150
             case "shelf":         return 132
@@ -1193,7 +1194,7 @@ Item {
 
     function hasDetails(id) {
         if (id === "hardware") return (IslandHardware.payload.actions ?? []).length > 0
-        return !["session", "f1Start", "battery", "recording", "networkAlert", "hibernate", "downloadDone"].includes(id)
+        return !["session", "f1Start", "recording", "networkAlert", "hibernate", "downloadDone"].includes(id)
     }
 
     function canExpand(id) {
@@ -1974,7 +1975,7 @@ Item {
                 const title = IslandEvents.latestActivity?.title ?? Translation.tr("Activity")
                 return title.split(" · ")[0]
             }
-            case "systemLoad": return Translation.tr("System")
+            case "systemLoad": return Pressure.title(Pressure.kind || "cpu")
             case "system":     return Translation.tr("System")
             case "songRec":    return Translation.tr("Listening…")
             case "shelf":      return Translation.tr("Drawer")
@@ -2005,7 +2006,7 @@ Item {
             case "f1":         return "sports_motorsports"
             case "timer":      return root.timerIcon()
             case "activity":   return IslandEvents.latestActivity?.icon ?? "bolt"
-            case "systemLoad": return "memory"
+            case "systemLoad": return Pressure.icon(Pressure.kind || "cpu")
             case "system":     return "monitoring"
             case "songRec":    return "graphic_eq"
             case "shelf":      return "inventory_2"

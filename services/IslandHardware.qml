@@ -790,7 +790,10 @@ Singleton {
         triggeredOnStart: true
         onTriggered: root.refreshPower()
     }
-    Component.onCompleted: if (root.enabled) root.refreshPower()
+    Component.onCompleted: {
+        if (root.enabled) root.refreshPower()
+        root.loadDiskState()
+    }
 
     Process {
         running: root.enabled
@@ -838,6 +841,77 @@ Singleton {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // Storage almost full. No timer of its own: listens to the `df /` ResourceUsage already runs for the bar.
+    // Low (< 10 GB or < 5 %) warns at most every 6 h; critical (< 2 GB or < 2 %) every 30 min. The last time is
+    // kept on disk so a shell reload doesn't nag again.
+    readonly property int diskLevel: {
+        // df fills total, used and free one after another: until all three are in, the numbers don't add up
+        const totalKb = ResourceUsage.diskTotal
+        if (totalKb <= 1 || ResourceUsage.diskFree <= 0 || ResourceUsage.diskUsed <= 0) return 0
+        const freeGb = ResourceUsage.diskFree / 1048576
+        const ratio = ResourceUsage.diskFree / totalKb
+        return freeGb < 2 || ratio < 0.02 ? 2 : (freeGb < 10 || ratio < 0.05) ? 1 : 0
+    }
+    property var diskAlertState: ({ at: 0, level: 0 })
+    property bool diskStateReady: false
+
+    // Tiny file, read synchronously at start (a missing file raises no signal to wait for)
+    FileView {
+        id: diskStateFile
+        path: `${Quickshell.env("HOME")}/.cache/quickshell/island-disk-alert.json`
+        blockLoading: true
+        printErrors: false
+    }
+
+    function loadDiskState() {
+        try {
+            root.diskAlertState = JSON.parse(diskStateFile.text()) ?? root.diskAlertState
+        } catch (e) {}
+        root.diskStateReady = true
+        root.checkDisk()
+    }
+
+    onDiskLevelChanged: root.checkDisk()
+    onEnabledChanged: root.checkDisk()
+
+    function checkDisk() {
+        if (!root.enabled || !root.diskStateReady || root.diskLevel === 0 || ResourceUsage.diskTotal <= 1) return
+        const since = Date.now() - (root.diskAlertState.at ?? 0)
+        const escalated = root.diskLevel > (root.diskAlertState.level ?? 0) && since > 60000
+        const cooldown = root.diskLevel === 2 ? 30 * 60000 : 6 * 3600000
+        if (!escalated && since < cooldown) return
+        root.diskAlertState = { at: Date.now(), level: root.diskLevel }
+        diskStateFile.setText(JSON.stringify(root.diskAlertState))
+        diskSizesProc.running = true
+    }
+
+    // What could be freed right away, measured once when the alert fires
+    Process {
+        id: diskSizesProc
+        command: ["bash", "-c", `du -sb "$HOME/.local/share/Trash" 2>/dev/null | cut -f1; du -sb /var/cache/pacman/pkg 2>/dev/null | cut -f1`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const [trash, pkg] = text.trim().split("\n").map(v => parseInt(v) || 0)
+                root.showDisk(trash, pkg)
+            }
+        }
+    }
+
+    function showDisk(trashBytes, pkgBytes) {
+        const critical = root.diskLevel === 2
+        const free = root.formatSize(ResourceUsage.diskFree * 1024)
+        const actions = [{ id: "diskUsage", label: Translation.tr("What's using it"), icon: "data_usage" }]
+        if (trashBytes > 200e6) actions.push({ id: "trash", label: Translation.tr("Trash · %1").arg(root.formatSize(trashBytes)), icon: "delete" })
+        if (pkgBytes > 1e9) actions.push({ id: "pkgCache", label: Translation.tr("Package cache · %1").arg(root.formatSize(pkgBytes)), icon: "inventory_2" })
+        root.show({
+            kind: "diskLow", icon: critical ? "hard_drive" : "storage", tone: critical ? "error" : "attention", urgent: critical,
+            title: critical ? Translation.tr("Disk full") : Translation.tr("Disk almost full"),
+            subtitle: Translation.tr("%1 free · %2% used").arg(free).arg(Math.round(ResourceUsage.diskUsedPercentage * 100)),
+            value: free, actions: actions
+        }, critical ? 20000 : 12000)
+    }
+
+    // ---------------------------------------------------------------------------------------------
     function runAction(id) {
         const p = root.current
         if (!p) return
@@ -855,6 +929,18 @@ Singleton {
                     root.update({ status: Translation.tr("Power saver on") })
                 } else if (id === "system") {
                     IslandEvents.viewRequested("system")
+                }
+                break
+            case "diskLow":
+                if (id === "diskUsage") {
+                    Quickshell.execDetached(["kitty", "--class", "ilha-disk", "--title", "Uso do disco",
+                        "fish", "-c", "dust -n 40 -d 3 ~; echo; read -P 'Enter para fechar '"])
+                } else if (id === "trash") {
+                    Quickshell.execDetached(["dolphin", "trash:/"])
+                } else if (id === "pkgCache") {
+                    // In a terminal, on purpose: you see what goes before it goes
+                    Quickshell.execDetached(["kitty", "--class", "ilha-disk", "--title", "Cache de pacotes",
+                        "fish", "-c", "echo 'Mantendo só a versão instalada de cada pacote:'; sudo paccache -rk1; sudo paccache -ruk0; echo; df -h /; read -P 'Enter para fechar '"])
                 }
                 break
             case "monitorConfirm":
@@ -923,6 +1009,9 @@ Singleton {
             case "resume":
                 root.show({ kind: "resume", icon: "bedtime", tone: "progress", title: Translation.tr("Slept for %1").arg("2 h 14 min"),
                     subtitle: Translation.tr("Battery %1%").arg("−3"), value: "−3%", actions: [] }, 6000)
+                break
+            case "diskLow":
+                diskSizesProc.running = true
                 break
             case "thermal":
                 root.show({ kind: "thermal", icon: "device_thermostat", tone: "error", title: Translation.tr("Running hot · %1 °C").arg(94),

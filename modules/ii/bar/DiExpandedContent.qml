@@ -49,8 +49,8 @@ Item {
             case "bluetooth":     return bluetoothView
             case "activity":
             case "agents":        return activitiesView
-            case "system":
-            case "systemLoad":    return systemView
+            case "system":        return systemView
+            case "systemLoad":    return loadView
             case "battery":       return batteryView
             case "screenshot":    return screenshotView
             case "clipboard":     return clipboardView
@@ -133,6 +133,7 @@ Item {
     Component { id: bluetoothView; DiXBluetooth { di: content.di } }
     Component { id: activitiesView; DiXActivities { di: content.di } }
     Component { id: systemView; DiXSystem { di: content.di } }
+    Component { id: loadView; DiXLoad { di: content.di } }
     Component { id: batteryView; DiXBattery { di: content.di } }
     Component { id: screenshotView; DiXScreenshot { di: content.di } }
     Component { id: clipboardView; DiXClipboard { di: content.di } }

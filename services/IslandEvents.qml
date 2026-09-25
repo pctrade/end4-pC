@@ -424,53 +424,11 @@ Singleton {
         }
     }
 
-    // Sustained CPU load
-    property real loadSeconds: 0
-    property bool systemLoadActive: false
-    property string topProcess: ""
-    property real topProcessCpu: 0
-
-    // No timer of its own: ResourceUsage already samples the CPU for the bar, so this just listens to it and
-    // counts real seconds between samples (the bar's interval, 3 s by default)
-    property double lastLoadSample: 0
-
-    Connections {
-        target: ResourceUsage
-        enabled: root.cfg.systemLoad ?? true
-        function onCpuUsageChanged() {
-            if (root.fakeLoad) return
-            const now = Date.now()
-            const seconds = root.lastLoadSample > 0 ? Math.min(10, (now - root.lastLoadSample) / 1000) : 1
-            root.lastLoadSample = now
-            const threshold = (root.cfg.systemLoadThreshold ?? 90) / 100
-            const cpu = ResourceUsage.cpuUsage
-            if (cpu >= threshold) root.loadSeconds = Math.min(root.loadSeconds + seconds, 30)
-            else if (cpu < threshold - 0.1) root.loadSeconds = Math.max(root.loadSeconds - 2 * seconds, 0)
-            if (!root.systemLoadActive && root.loadSeconds >= 10) root.systemLoadActive = true
-            else if (root.systemLoadActive && root.loadSeconds <= 0) root.systemLoadActive = false
-        }
-    }
-
-    Timer {
-        interval: 3000
-        repeat: true
-        triggeredOnStart: true
-        running: root.systemLoadActive
-        onTriggered: topProcessProc.running = true
-    }
-
-    Process {
-        id: topProcessProc
-        command: ["bash", "-c", "ps -eo comm=,%cpu= --sort=-%cpu | head -n1"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const match = text.trim().match(/^(.*\S)\s+([\d.]+)$/)
-                if (!match) return
-                root.topProcess = match[1]
-                root.topProcessCpu = parseFloat(match[2])
-            }
-        }
-    }
+    // Sustained CPU / memory / GPU pressure lives in Pressure; these stay for the older readers (thermal alert)
+    readonly property bool systemLoadActive: Pressure.active
+    readonly property var cpuTop: (Pressure.procs.cpu ?? [])[0] ?? null
+    readonly property string topProcess: root.cpuTop?.label ?? ""
+    readonly property real topProcessCpu: (root.cpuTop?.value ?? 0) * 100
 
     // Song recognition result
     property string lastSongTitle: ""
@@ -1819,7 +1777,6 @@ Singleton {
     }
 
     // Test helpers: fake the events that normally need real hardware or weather
-    property bool fakeLoad: false
     property bool fakePrivacy: false
     property var pendingStep: null
 
@@ -1869,14 +1826,14 @@ Singleton {
                 root.weather.show({ group: 5, code: 501, temp: Weather.data?.temp || "21°C", description: "chuva moderada", city: Weather.data?.city ?? "" })
                 break
             case "systemLoad":
-                root.fakeLoad = true
-                root.topProcess = "cargo"
-                root.topProcessCpu = 384
-                root.systemLoadActive = true
-                root.later(15000, () => {
-                    root.fakeLoad = false
-                    root.systemLoadActive = false
-                })
+            case "cpuHigh":
+                Pressure.simulate("cpu")
+                break
+            case "memoryHigh":
+                Pressure.simulate("memory")
+                break
+            case "gpuHigh":
+                Pressure.simulate("gpu")
                 break
             case "songRec":
                 root.songRecResult.show({ title: "Blinding Lights", subtitle: "The Weeknd", url: "https://www.shazam.com" })
