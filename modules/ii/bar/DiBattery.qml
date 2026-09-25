@@ -30,7 +30,7 @@ Item {
         opacity: batt.critical ? 0.28 : 0.18
 
         Behavior on width {
-            NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutCubic }
         }
 
         // Critical (not the hibernation countdown): a slow, calm pulse

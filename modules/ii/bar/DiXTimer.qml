@@ -31,7 +31,7 @@ RowLayout {
         scale: buttonMouse.pressed ? 0.9 : 1
 
         Behavior on scale {
-            NumberAnimation { duration: 180; easing.type: Easing.OutBack }
+            NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack }
         }
 
         RowLayout {

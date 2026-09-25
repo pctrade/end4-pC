@@ -99,8 +99,8 @@ Item {
 
                 SequentialAnimation {
                     id: artSwap
-                    NumberAnimation { target: bigArt; property: "scale"; to: 0.85; duration: 120; easing.type: Easing.InQuad }
-                    NumberAnimation { target: bigArt; property: "scale"; to: 1; duration: 480; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+                    NumberAnimation { target: bigArt; property: "scale"; to: 0.85; duration: IslandMotion.micro; easing.type: Easing.InQuad }
+                    NumberAnimation { target: bigArt; property: "scale"; to: 1; duration: IslandMotion.long; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
                 }
             }
 
@@ -155,10 +155,10 @@ Item {
                             scale: controlMouse.pressed ? 0.88 : 1
 
                             Behavior on radius {
-                                NumberAnimation { duration: 300; easing.type: Easing.OutBack }
+                                NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutBack }
                             }
                             Behavior on scale {
-                                NumberAnimation { duration: 180; easing.type: Easing.OutBack }
+                                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack }
                             }
 
                             MaterialSymbol {
@@ -192,7 +192,7 @@ Item {
                         scale: likeMouse.pressed ? 0.85 : 1
 
                         Behavior on scale {
-                            NumberAnimation { duration: 180; easing.type: Easing.OutBack }
+                            NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack }
                         }
 
                         MaterialSymbol {
@@ -204,7 +204,7 @@ Item {
                             scale: likeButton.justLiked ? 1.15 : 1
 
                             Behavior on scale {
-                                NumberAnimation { duration: 320; easing.type: Easing.OutBack; easing.overshoot: 3 }
+                                NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutBack; easing.overshoot: 3 }
                             }
                         }
 
@@ -248,7 +248,7 @@ Item {
                     color: ColorUtils.transparentize(xm.accent, 0.75)
 
                     Behavior on height {
-                        NumberAnimation { duration: 150 }
+                        NumberAnimation { duration: IslandMotion.micro }
                     }
 
                     Rectangle {
@@ -342,10 +342,10 @@ Item {
                     maximumLineCount: 2
 
                     Behavior on opacity {
-                        NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutCubic }
                     }
                     Behavior on scale {
-                        NumberAnimation { duration: 460; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutCubic }
                     }
 
                     MouseArea {

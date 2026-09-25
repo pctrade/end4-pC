@@ -219,7 +219,7 @@ ColumnLayout {
             color: headerIconArea.containsMouse ? Appearance.colors.colLayer2 : "transparent"
 
             Behavior on color {
-                ColorAnimation { duration: 140 }
+                ColorAnimation { duration: IslandMotion.micro }
             }
 
             MaterialSymbol {
@@ -499,7 +499,7 @@ ColumnLayout {
             running: mediaFrame.visible
             from: 0.6
             to: 1
-            duration: 520
+            duration: IslandMotion.long
             easing.type: Easing.OutBack
         }
     }
@@ -521,7 +521,7 @@ ColumnLayout {
                 color: actionMouse.containsMouse ? ColorUtils.transparentize(xn.accent, 0.65) : ColorUtils.transparentize(xn.accent, 0.82)
 
                 Behavior on color {
-                    ColorAnimation { duration: 150 }
+                    ColorAnimation { duration: IslandMotion.micro }
                 }
 
                 StyledText {
@@ -560,7 +560,7 @@ ColumnLayout {
             scale: Math.max(0.01, xn.rise(xn.earlier.length + 2)) * (geminiArea.pressed ? 0.92 : 1)
 
             Behavior on color {
-                ColorAnimation { duration: 140 }
+                ColorAnimation { duration: IslandMotion.micro }
             }
 
             RowLayout {
@@ -603,7 +603,7 @@ ColumnLayout {
                 scale: Math.max(0.01, xn.rise(xn.earlier.length + 2 + quick.index * 0.35)) * (quickArea.pressed ? 0.92 : 1)
 
                 Behavior on color {
-                    ColorAnimation { duration: 140 }
+                    ColorAnimation { duration: IslandMotion.micro }
                 }
 
                 StyledText {
@@ -684,10 +684,10 @@ ColumnLayout {
             opacity: replyField.text !== "" ? 1 : 0.6
 
             Behavior on scale {
-                NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
             }
             Behavior on opacity {
-                NumberAnimation { duration: 160 }
+                NumberAnimation { duration: IslandMotion.micro }
             }
 
             MaterialSymbol {

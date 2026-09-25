@@ -36,6 +36,9 @@ Singleton {
     readonly property int openCount: root.liveSessions.length
     readonly property bool anyWorking: root.liveSessions.some(s => s.state === "working")
     readonly property bool anyWaiting: root.liveSessions.some(s => s.state === "waiting")
+    // A session stopped on a permission dialog: the island treats it as CRITICAL (ahead of everything, even over a
+    // fullscreen window) and answers it from the pill (approve / deny), see DiApproval.qml
+    readonly property var approval: root.liveSessions.find(s => s.state === "waiting" && (s.permission ?? "") !== "" && !s.approvalHidden) ?? null
     readonly property var openAgents: ["claude", "codex", "gemini"].filter(a => root.liveSessions.some(s => s.agent === a))
 
     // agent -> { five, fiveReset, week, weekReset } (percent used, unix seconds)
@@ -207,6 +210,38 @@ Singleton {
         root.updateWaitingGroup()
     }
 
+    // Permission dialogs, answered in the session's own terminal: "1" (Claude, Gemini) / "y" (Codex) approves
+    // once, Escape denies. Nothing is typed if the terminal isn't known.
+    function approve(key) {
+        const s = root.sessions[key]
+        if (!s) return
+        // Terminal unknown: nothing to type into — step aside so it can be answered where it is
+        if ((s.termPid ?? 0) <= 0) {
+            root.hideApproval(key)
+            return
+        }
+        IslandEvents.hyprDispatch(`hl.dsp.send_shortcut({ mods = "", key = "${s.agent === "codex" ? "y" : "1"}", window = "pid:${s.termPid}" })`)
+        root.update(key, "", { state: "working", permission: "", approvalHidden: false, workStarted: s.workStarted || Date.now() })
+        root.syncWorking(key)
+        root.updateWaitingGroup()
+    }
+    function deny(key) {
+        const s = root.sessions[key]
+        if (!s) return
+        if ((s.termPid ?? 0) <= 0) {
+            root.hideApproval(key)
+            return
+        }
+        IslandEvents.hyprDispatch(`hl.dsp.send_shortcut({ mods = "", key = "Escape", window = "pid:${s.termPid}" })`)
+        root.update(key, "", { state: "idle", permission: "", approvalHidden: false })
+        IslandEvents.upsertActivity(root.activityId(key), root.titleFor(root.sessions[key]), Translation.tr("Denied"), s.agent, -1, "error")
+        root.updateWaitingGroup()
+    }
+    // "Later": back to an ordinary waiting activity (still in Agents), no longer blocking the pill
+    function hideApproval(key) {
+        root.update(key, "", { approvalHidden: true })
+    }
+
     // Work shows up after a few seconds, so quick back-and-forth answers don't flash the island
     function syncWorking(key) {
         const s = root.sessions[key]
@@ -283,7 +318,7 @@ Singleton {
                 root.update(key, cwd, { state: "idle", detail: "" })
                 break
             case "UserPromptSubmit":
-                root.update(key, cwd, { state: "working", detail: "", workStarted: Date.now(), shown: false, options: [], question: "", diff: "" })
+                root.update(key, cwd, { state: "working", detail: "", workStarted: Date.now(), shown: false, options: [], question: "", diff: "", permission: "", approvalHidden: false })
                 root.syncWorking(key)
                 break
             case "PreToolUse":
@@ -296,7 +331,8 @@ Singleton {
                 }
                 const s = root.sessions[key]
                 const working = s?.state === "working" || s?.state === "waiting"
-                const changes = { state: "working", workStarted: working && s.workStarted ? s.workStarted : Date.now(), options: [], question: "", pendingPermission: "" }
+                const changes = { state: "working", workStarted: working && s.workStarted ? s.workStarted : Date.now(), options: [], question: "", pendingPermission: "",
+                    permission: "", approvalHidden: false }
                 if (name === "PreToolUse" || !working) changes.detail = root.toolLabel(detail)
                 root.update(key, cwd, changes)
                 root.syncWorking(key)
@@ -309,14 +345,16 @@ Singleton {
                     root.update(key, cwd, { pendingPermission: root.toolLabel(detail) })
                     break
                 }
-                root.needsYou(key, cwd, `${Translation.tr("Needs permission")}: ${root.toolLabel(detail)}`)
+                root.needsYou(key, cwd, `${Translation.tr("Needs permission")}: ${root.toolLabel(detail)}`,
+                    { permission: root.toolLabel(detail) || Translation.tr("an action"), approvalHidden: false })
                 break
             case "Notification":
                 if (!["permission_prompt", "elicitation_dialog", "elicitation_url_dialog", "agent_needs_input"].includes(kind)) break
                 if (root.sessions[key]?.state === "waiting") break
                 const pending = root.sessions[key]?.pendingPermission ?? ""
                 root.needsYou(key, cwd, kind === "permission_prompt" && pending !== ""
-                    ? `${Translation.tr("Needs permission")}: ${pending}` : (text || Translation.tr("Waiting for you")))
+                    ? `${Translation.tr("Needs permission")}: ${pending}` : (text || Translation.tr("Waiting for you")),
+                    kind === "permission_prompt" ? { permission: pending || text || Translation.tr("an action"), approvalHidden: false } : undefined)
                 break
             case "PreCompact":
                 root.update(key, cwd, { state: "working", detail: Translation.tr("Compacting context…"), contextWarned: false,
@@ -328,7 +366,7 @@ Singleton {
                 const took = s?.workStarted ? Date.now() - s.workStarted : 0
                 const [summary, diff] = (detail ?? "").split("")
                 const next = root.update(key, cwd, { state: "idle", detail: "", shown: false, options: [], question: "",
-                    summary: (summary ?? "").trim(), diff: (diff ?? "").trim() })
+                    summary: (summary ?? "").trim(), diff: (diff ?? "").trim(), permission: "" })
                 if (!(s?.shown || took >= root.doneMinSeconds * 1000)) {
                     IslandEvents.removeActivity(root.activityId(key))
                     break
@@ -517,6 +555,12 @@ Singleton {
             else if (kind === "context")
                 root.notice(`demo-${stamp}`, `Claude · meu-projeto · ${Translation.tr("Context at %1%").arg(82)}`,
                     Translation.tr("It will compact soon"), "data_usage", "attention")
+            else if (kind === "approval") {
+                const key = root.ensure("claude", `demo-approval-${stamp}`, `${root.home}/meu-projeto`)
+                root.needsYou(key, `${root.home}/meu-projeto`, `${Translation.tr("Needs permission")}: Bash · git push origin main`,
+                    { permission: "Bash · git push origin main", approvalHidden: false })
+                root.updateWaitingGroup()
+            }
             else if (kind === "near")
                 root.notice(`demo-${stamp}`, Translation.tr("%1 near the 5h limit").arg("Claude · Codex"),
                     Translation.tr("Switch agents or wait for a reset"), "balance", "attention")

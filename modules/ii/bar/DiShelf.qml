@@ -38,7 +38,7 @@ Item {
         height: 24
 
         Behavior on width {
-            NumberAnimation { duration: 360; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
+            NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
         }
 
         MaterialSymbol {
@@ -62,10 +62,10 @@ Item {
                 rotation: (index - (shelf.preview.length - 1) / 2) * stack.fan
 
                 Behavior on x {
-                    NumberAnimation { duration: 360; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
+                    NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
                 }
                 Behavior on rotation {
-                    NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.6 }
+                    NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutBack; easing.overshoot: 1.6 }
                 }
                 color: Appearance.colors.colLayer2
                 border.width: 1
@@ -95,7 +95,7 @@ Item {
                 NumberAnimation on scale {
                     from: 0.3
                     to: 1
-                    duration: 420
+                    duration: IslandMotion.long
                     easing.type: Easing.OutBack
                 }
             }

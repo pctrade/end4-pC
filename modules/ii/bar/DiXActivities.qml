@@ -58,10 +58,10 @@ ColumnLayout {
         scale: buttonMouse.pressed ? 0.94 : 1
 
         Behavior on color {
-            ColorAnimation { duration: 150 }
+            ColorAnimation { duration: IslandMotion.micro }
         }
         Behavior on scale {
-            NumberAnimation { duration: 160; easing.type: Easing.OutBack }
+            NumberAnimation { duration: IslandMotion.micro; easing.type: Easing.OutBack }
         }
 
         RowLayout {
@@ -165,7 +165,7 @@ ColumnLayout {
             opacity: session.ended ? 0.7 : 1
 
             Behavior on color {
-                ColorAnimation { duration: 200 }
+                ColorAnimation { duration: IslandMotion.short }
             }
 
             ColumnLayout {
@@ -289,7 +289,7 @@ ColumnLayout {
                             color: session.modelData.context >= 80 ? IslandEvents.colorAttention : Appearance.colors.colPrimary
 
                             Behavior on width {
-                                NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                                NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutCubic }
                             }
                         }
                     }
@@ -488,7 +488,7 @@ ColumnLayout {
                         x: 0
 
                         Behavior on width {
-                            NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                            NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutCubic }
                         }
 
                         NumberAnimation on x {

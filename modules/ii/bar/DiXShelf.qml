@@ -91,17 +91,17 @@ ColumnLayout {
         transform: Translate { y: (1 - tile.enterT) * -30 - (tileMouse.containsMouse && !tileMouse.drag.active ? 3 : 0) }
 
         Behavior on color {
-            ColorAnimation { duration: 150 }
+            ColorAnimation { duration: IslandMotion.micro }
         }
         Behavior on scale {
             enabled: tile.enterT >= 1
-            NumberAnimation { duration: 180; easing.type: Easing.OutBack }
+            NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack }
         }
 
         SequentialAnimation {
             running: true
             PauseAnimation { duration: 40 + Math.min(tile.order, 12) * 38 }
-            NumberAnimation { target: tile; property: "enterT"; to: 1; duration: 460; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
+            NumberAnimation { target: tile; property: "enterT"; to: 1; duration: IslandMotion.long; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
         }
 
         Drag.active: tileMouse.drag.active
@@ -215,7 +215,7 @@ ColumnLayout {
             opacity: tileMouse.containsMouse || buttonsHover.hovered ? 1 : 0
 
             Behavior on opacity {
-                NumberAnimation { duration: 150 }
+                NumberAnimation { duration: IslandMotion.micro }
             }
 
             HoverHandler {

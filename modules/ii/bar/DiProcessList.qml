@@ -25,7 +25,7 @@ Item {
 
     implicitHeight: list.procs.length === 0 ? 36 : Math.min(list.procs.length, list.visibleRows) * list.rowHeight
     Behavior on implicitHeight {
-        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
     }
 
     readonly property var procs: Pressure.procs[list.kind] ?? []
@@ -121,7 +121,7 @@ Item {
                             : rowHover.hovered ? Appearance.colors.colLayer1 : "transparent"
 
                         Behavior on color {
-                            ColorAnimation { duration: 140 }
+                            ColorAnimation { duration: IslandMotion.micro }
                         }
 
                         // Its share of the resource, as a faint pill growing from the left
@@ -137,7 +137,7 @@ Item {
                             opacity: 0.08
 
                             Behavior on width {
-                                NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                                NumberAnimation { duration: IslandMotion.long; easing.type: Easing.OutCubic }
                             }
                         }
                     }
@@ -219,10 +219,10 @@ Item {
                                 : Appearance.colors.colLayer2
 
                             Behavior on Layout.preferredWidth {
-                                NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
+                                NumberAnimation { duration: IslandMotion.micro; easing.type: Easing.OutCubic }
                             }
                             Behavior on opacity {
-                                NumberAnimation { duration: 140 }
+                                NumberAnimation { duration: IslandMotion.micro }
                             }
 
                             MaterialSymbol {

@@ -97,7 +97,7 @@ Item {
             opacity: root.mediaTrackInfoVisible ? 1 : 0
 
             Behavior on opacity {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
             }
 
             StyledText {

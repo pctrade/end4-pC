@@ -19,6 +19,7 @@ ColumnLayout {
     readonly property bool pinnedMode: !IslandEvents.clipboard.active
     readonly property var payload: xclip.pinnedMode ? IslandEvents.latestClipboard : (IslandEvents.clipboard.payload ?? ({}))
     readonly property bool isImage: xclip.payload.isImage ?? false
+    readonly property var kind: IslandEvents.clipKind(xclip.payload)
     readonly property var files: xclip.payload.files ?? []
     readonly property bool hasFiles: xclip.files.length > 0
     readonly property string text: xclip.payload.text ?? ""
@@ -130,12 +131,12 @@ ColumnLayout {
             : (chipMouse.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1)
 
         Behavior on color {
-            ColorAnimation { duration: 140 }
+            ColorAnimation { duration: IslandMotion.micro }
         }
         scale: chipMouse.pressed ? 0.93 : 1
 
         Behavior on scale {
-            NumberAnimation { duration: 160; easing.type: Easing.OutBack }
+            NumberAnimation { duration: IslandMotion.micro; easing.type: Easing.OutBack }
         }
 
         RowLayout {
@@ -173,11 +174,9 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: 8
-        MaterialSymbol {
-            text: xclip.hasFiles ? "file_copy" : "content_paste"
-            iconSize: 18
-            fill: 1
-            color: Appearance.colors.colPrimary
+        DiClipIcon {
+            kind: xclip.kind
+            size: 24
         }
         StyledText {
             Layout.fillWidth: true
@@ -186,6 +185,23 @@ ColumnLayout {
             font.weight: Font.DemiBold
             color: xclip.status !== "" ? Appearance.m3colors.m3success : Appearance.colors.colOnLayer0
             elide: Text.ElideRight
+        }
+        // What it is, in a word: "Python", "YouTube", "#FF9F0A"
+        Rectangle {
+            visible: xclip.kind.label !== "" && !["text", "file", "files", "image"].includes(xclip.kind.kind)
+            implicitWidth: kindText.implicitWidth + 14
+            implicitHeight: 20
+            radius: 10
+            color: ColorUtils.transparentize(xclip.kind.color || Appearance.colors.colPrimary, 0.82)
+
+            StyledText {
+                id: kindText
+                anchors.centerIn: parent
+                text: xclip.kind.label
+                font.pixelSize: Appearance.font.pixelSize.smallest
+                font.weight: Font.DemiBold
+                color: Appearance.colors.colOnLayer0
+            }
         }
         MaterialSymbol {
             text: "drag_indicator"
@@ -538,7 +554,7 @@ ColumnLayout {
         color: segArea.containsMouse ? Appearance.colors.colLayer2 : "transparent"
 
         Behavior on color {
-            ColorAnimation { duration: 120 }
+            ColorAnimation { duration: IslandMotion.micro }
         }
 
         RowLayout {
@@ -703,7 +719,7 @@ ColumnLayout {
                 color: historyMouse.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
 
                 Behavior on color {
-                    ColorAnimation { duration: 140 }
+                    ColorAnimation { duration: IslandMotion.micro }
                 }
 
                 RowLayout {
@@ -724,12 +740,11 @@ ColumnLayout {
                             radius: 6
                         }
                     }
-                    MaterialSymbol {
+                    DiClipIcon {
                         visible: !historyItem.image
-                        text: "content_paste"
-                        iconSize: 15
-                        color: Appearance.colors.colOnLayer1
-                        opacity: 0.6
+                        kind: historyItem.image ? ({}) : IslandEvents.clipKind(IslandEvents.payloadFor(historyItem.modelData))
+                        size: 20
+                        tinted: false
                     }
                     StyledText {
                         Layout.fillWidth: true

@@ -527,6 +527,9 @@ Item {
                 case "watchPlain":
                     WatchRating.simulate(name.slice(5).toLowerCase())
                     break
+                case "watchNext":
+                    WatchRating.announceNext(true)
+                    break
                 case "f1Tyre":
                     root.showF1Event({ kind: "tyre", letter: "H", color: F1.tyreColor("HARD"),
                         title: `VER ${Translation.tr("pitted")} · P4`, subtitle: `${Translation.tr("Tyre")} ${F1.tyreName("HARD")} ${Translation.tr("(new)")}` })
@@ -635,7 +638,7 @@ Item {
 
     // Providers: interrupts are short-lived and take the pill; persistent ones share it via split capsules
     readonly property var interruptIds: ["session", "f1Start", "osd", "notification", "battery", "bluetooth",
-        "audioOutput", "screenshot", "clipboard", "songRecResult", "weather", "f1Flag", "shelfDrop", "f1Event", "networkAlert", "hardware", "hibernate", "downloadDone", "watchRating"]
+        "audioOutput", "screenshot", "clipboard", "songRecResult", "weather", "f1Flag", "shelfDrop", "f1Event", "networkAlert", "hardware", "hibernate", "downloadDone", "watchRating", "approval"]
 
     // The semantic model (ILHA.md § Modelo semântico): every id above answers to one of four questions.
     // CRITICAL and PEEK are both `interruptIds` — CRITICAL is the subset that can genuinely preempt (a
@@ -645,8 +648,8 @@ Item {
     // back exactly as it was. LIVE is what persists and is the only thing the scroll wheel walks through
     // (`cycleIds` below). TOOL is content you asked to see; it never competes for the pill or the wheel —
     // it only opens from the Tool Dock in the expanded Home (`DiXIdle.qml`) or the switcher strip.
-    readonly property var criticalIds: ["hibernate", "session"]
-    readonly property var liveIds: ["recording", "f1", "timer", "activity", "systemLoad", "download", "agents", "songRec", "media"]
+    readonly property var criticalIds: ["hibernate", "session", "approval"]
+    readonly property var liveIds: ["recording", "call", "f1", "timer", "activity", "systemLoad", "download", "agents", "songRec", "media"]
     readonly property var toolIds: ["weather", "shelf", "clipboard", "system", "zerotier", "history"]
     // Everything else in `interruptIds` that isn't dynamically critical (see `isCriticalNow`) is a Peek.
     readonly property var peekIds: root.interruptIds.filter(id => !root.criticalIds.includes(id))
@@ -661,6 +664,8 @@ Item {
     readonly property var activeIds: {
         const ids = []
         if (root.hibernateSeconds >= 0) ids.push("hibernate")
+        // An agent blocked on a permission dialog outranks everything else (it's stuck until you answer)
+        if (ClaudeCode.approval !== null && (root.cfg.claudeCode ?? true)) ids.push("approval")
         if (root.dropHovering || root.shelfAddedFlash) ids.push("shelfDrop")
         if (GlobalStates.diSessionOpen) ids.push("session")
         if (root.f1StartActive) ids.push("f1Start")
@@ -680,16 +685,20 @@ Item {
         if (IslandEvents.watchRating.active && WatchRating.active) ids.push("watchRating")
         if (IslandHardware.active || root.heldId === "hardware") ids.push("hardware")
         if (root.isRecording) ids.push("recording")
+        if (IslandEvents.voiceCallActive && (root.cfg.callActivity ?? true)) ids.push("call")
         if (F1.enabled && (F1.sessionLive || F1.countdownActive)) ids.push("f1")
         if (root.hasActiveTimer) ids.push("timer")
-        if (IslandEvents.activities.length > 0) ids.push("activity")
+        // While an approval is up it *is* that agent's island: its own activity (and the agents summary below)
+        // would only repeat the same mark beside it
+        const approvalActivity = ClaudeCode.approval ? ClaudeCode.activityId(ClaudeCode.approval.key) : ""
+        if (IslandEvents.activities.some(a => a.id !== approvalActivity && !(approvalActivity !== "" && a.id === "agents-waiting"))) ids.push("activity")
         if (IslandEvents.systemLoadActive) ids.push("systemLoad")
         if (IslandEvents.downloadActive || root.heldId === "download") ids.push("download")
         // One island per agent session, not two: while a specific task is already showing as an "activity"
         // (richer: title, subtitle, progress), the general "agents" summary would just repeat the same
         // agent's mark a second time — same fact, two Live ids competing for the pill/deck at once.
         const agentActivityShown = IslandEvents.activities.some(a => ["claude", "codex", "gemini"].includes(a.icon))
-        if (ClaudeCode.openCount > 0 && (root.cfg.claudeCode ?? true) && !agentActivityShown) ids.push("agents")
+        if (ClaudeCode.openCount > 0 && (root.cfg.claudeCode ?? true) && !agentActivityShown && approvalActivity === "") ids.push("agents")
         if (DropShelf.items.length > 0) ids.push("shelf")
         if (SongRec.running) ids.push("songRec")
         if (root.hasMedia) ids.push("media")
@@ -743,7 +752,7 @@ Item {
         if (root.hasActiveTimer)
             return { text: root.timerValueText(), icon: root.timerIcon(), tone: "attention" }
         // On a call you lose track of time in a different way: the clock matters less than how long you have been talking
-        if (IslandEvents.voiceCallActive)
+        if (IslandEvents.voiceCallActive && root.primaryId !== "call")
             return { text: IslandEvents.voiceCallMinutes < 1 ? DateTime.time : `${IslandEvents.voiceCallMinutes} min`,
                 icon: "call", tone: "plain" }
         // About to run out of agent budget is more urgent than the time, and only you can act on it
@@ -857,7 +866,7 @@ Item {
 
     // What is actually shown: follows the hierarchy but keeps each island up for a minimum time,
     // so a new event doesn't yank away something you just started reading. Urgent ones and your own switches skip the wait.
-    readonly property var urgentIds: ["hibernate", "session", "osd", "f1Start", "shelfDrop"]
+    readonly property var urgentIds: ["hibernate", "approval", "session", "osd", "f1Start", "shelfDrop"]
     property string primaryId: "idle"
     property real primarySince: 0
     property bool userSwitch: false
@@ -1016,6 +1025,8 @@ Item {
             case "shelfDrop":     return root.dropHovering ? Math.max(236, root.dropActions.length * 82 + 10) : 236
             case "f1Event":       return 262
             case "hibernate":     return 280
+            case "approval":      return 430
+            case "call":          return 290
             case "networkAlert":  return 300
             case "hardware":      return ["caps", "layout"].includes(IslandHardware.payload.kind) ? 214 : 300
             case "download":      return 250
@@ -1038,6 +1049,7 @@ Item {
             case "idle":         return 0
             case "battery":      return root.batteryAlertKind === "critical" ? 2 : 1
             case "hibernate":    return 2
+            case "approval":     return 2
             case "notification": return root.latestNotificationCritical ? 2 : 1
             case "f1Flag":       return F1.flag === "red" ? 2 : 1
             default:             return root.interruptIds.includes(id) ? 1 : 0
@@ -1083,6 +1095,7 @@ Item {
             case "f1Start":  root.f1StartActive = false; break
             case "f1Event":  root.f1EventActive = false; break
             case "hibernate": root.cancelHibernate(); break
+            case "approval":  if (ClaudeCode.approval) ClaudeCode.hideApproval(ClaudeCode.approval.key); break
             case "shelfDrop":
                 root.shelfAddedFlash = false
                 root.dropHovering = false
@@ -1742,6 +1755,8 @@ Item {
             case "shelfDrop":     return shelfDropComponent
             case "f1Event":       return f1EventComponent
             case "hibernate":     return batteryComponent
+            case "approval":      return approvalComponent
+            case "call":          return callComponent
             case "networkAlert":
             case "download":      return networkComponent
             case "agents":        return agentsComponent
@@ -1976,6 +1991,8 @@ Item {
                 return title.split(" · ")[0]
             }
             case "systemLoad": return Pressure.title(Pressure.kind || "cpu")
+            case "approval":   return Translation.tr("Needs permission")
+            case "call":       return Translation.tr("On a call")
             case "system":     return Translation.tr("System")
             case "songRec":    return Translation.tr("Listening…")
             case "shelf":      return Translation.tr("Drawer")
@@ -2007,6 +2024,8 @@ Item {
             case "timer":      return root.timerIcon()
             case "activity":   return IslandEvents.latestActivity?.icon ?? "bolt"
             case "systemLoad": return Pressure.icon(Pressure.kind || "cpu")
+            case "approval":   return "front_hand"
+            case "call":       return "call"
             case "system":     return "monitoring"
             case "songRec":    return "graphic_eq"
             case "shelf":      return "inventory_2"
@@ -3179,6 +3198,8 @@ Item {
     Component { id: audioOutputComponent; DiAudioOutput { di: root } }
     Component { id: screenshotComponent; DiScreenshot { di: root } }
     Component { id: clipboardComponent; DiClipboard { di: root } }
+    Component { id: approvalComponent; DiApproval { di: root } }
+    Component { id: callComponent; DiCall { di: root } }
     Component { id: songRecComponent; DiSongRec { di: root } }
     Component { id: weatherComponent; DiWeather { di: root } }
     Component { id: f1FlagComponent; DiF1Flag { di: root } }

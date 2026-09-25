@@ -36,7 +36,7 @@ ColumnLayout {
             color: F1.sessionLive ? xf.flagColor : Appearance.colors.colLayer2
 
             Behavior on color {
-                ColorAnimation { duration: 300 }
+                ColorAnimation { duration: IslandMotion.medium }
             }
 
             MaterialSymbol {
@@ -134,7 +134,7 @@ ColumnLayout {
                     NumberAnimation { duration: 760; easing.type: Easing.BezierSpline; easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial }
                 }
                 Behavior on opacity {
-                    NumberAnimation { duration: 300 }
+                    NumberAnimation { duration: IslandMotion.medium }
                 }
 
                 onSlotChanged: {
@@ -147,9 +147,9 @@ ColumnLayout {
                 // The overtaking car rises above the one it passes, then settles
                 SequentialAnimation {
                     id: liftAnim
-                    NumberAnimation { target: row; property: "lift"; to: 1; duration: 260; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: row; property: "lift"; to: 1; duration: IslandMotion.short; easing.type: Easing.OutCubic }
                     PauseAnimation { duration: 320 }
-                    NumberAnimation { target: row; property: "lift"; to: 0; duration: 520; easing.type: Easing.OutBack; easing.overshoot: 2 }
+                    NumberAnimation { target: row; property: "lift"; to: 0; duration: IslandMotion.long; easing.type: Easing.OutBack; easing.overshoot: 2 }
                 }
 
                 Timer {
@@ -216,7 +216,7 @@ ColumnLayout {
                                 running: false
                                 from: 0.2
                                 to: 1
-                                duration: 380
+                                duration: IslandMotion.medium
                                 easing.type: Easing.OutBack
                             }
                         }
@@ -248,7 +248,7 @@ ColumnLayout {
                         border.color: F1.tyreColor(row.tyre)
 
                         Behavior on border.color {
-                            ColorAnimation { duration: 400 }
+                            ColorAnimation { duration: IslandMotion.long }
                         }
 
                         StyledText {

@@ -29,11 +29,13 @@ Item {
         target: clip
         property: "slide"
         to: 0
-        duration: 360
+        duration: IslandMotion.medium
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Appearance.animationCurves.expressiveFastSpatial
     }
     readonly property bool isImage: clip.payload.isImage ?? false
+    // What it is (YouTube link, a color, Python code…): its icon, and a word next to "Copied"
+    readonly property var kind: IslandEvents.clipKind(clip.payload)
     readonly property var files: clip.payload.files ?? []
     readonly property bool hasFiles: clip.files.length > 0
 
@@ -68,16 +70,11 @@ Item {
             implicitWidth: clip.isImage ? 40 : 28
             implicitHeight: 28
 
-            MaterialShapeWrappedMaterialSymbol {
+            DiClipIcon {
                 anchors.centerIn: parent
                 visible: !clip.isImage
-                wrappedShape: MaterialShape.Shape.Cookie7Sided
-                color: Appearance.colors.colSecondaryContainer
-                colSymbol: Appearance.colors.colOnSecondaryContainer
-                text: clip.hasFiles ? (clip.files.length > 1 ? "file_copy" : DropShelf.iconFor(clip.files[0])) : "content_paste"
-                iconSize: 15
-                fill: 1
-                padding: 5
+                kind: clip.kind
+                size: 26
             }
 
             // One instance per entry: CliphistImage only decodes when it's created
@@ -100,7 +97,8 @@ Item {
             spacing: -3
 
             StyledText {
-                text: clip.justCopied ? Translation.tr("Copied")
+                text: clip.justCopied ? (clip.kind.label && !["text", "file", "files", "image"].includes(clip.kind.kind)
+                        ? `${Translation.tr("Copied")} · ${clip.kind.label}` : Translation.tr("Copied"))
                     : clip.historyIndex > 0 ? `${Translation.tr("History")} ${clip.historyIndex + 1}/${Cliphist.entries.length}`
                     : Translation.tr("Clipboard")
                 font.pixelSize: Appearance.font.pixelSize.smaller
@@ -111,7 +109,9 @@ Item {
                 Layout.fillWidth: true
                 text: clip.hasFiles
                     ? (clip.files.length > 1 ? `${clip.files.length} ${Translation.tr("files")}` : DropShelf.fileName(clip.files[0]))
-                    : clip.isImage ? Translation.tr("Image") : (clip.payload.text ?? "").replace(/\s+/g, " ")
+                    : clip.isImage ? Translation.tr("Image")
+                    : clip.kind.kind === "color" ? (IslandEvents.parseColor(clip.payload.text)?.rgb ?? "")
+                    : (clip.payload.text ?? "").replace(/\s+/g, " ")
                 font.pixelSize: Appearance.font.pixelSize.smallest
                 color: Appearance.colors.colOnLayer0
                 opacity: 0.7
@@ -167,7 +167,7 @@ Item {
         enabled: clip.showQuick
         opacity: clip.showQuick ? 1 : 0
         Behavior on opacity {
-            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
         }
 
         Repeater {

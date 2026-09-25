@@ -84,7 +84,7 @@ ColumnLayout {
             color: Appearance.colors.colSecondaryContainer
 
             Behavior on x {
-                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
             }
         }
 

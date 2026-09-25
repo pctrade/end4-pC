@@ -79,6 +79,7 @@ Scope {
                 property bool monitorHasCritical: (Battery.hibernateCountdown ?? -1) >= 0
                     || Battery.isCriticalAndNotCharging
                     || (IslandHardware.active && IslandHardware.payload.kind === "thermal")
+                    || ClaudeCode.approval !== null
                 exclusionMode: ExclusionMode.Ignore
                 property int normalExclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
                     ? 0

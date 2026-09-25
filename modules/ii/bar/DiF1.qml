@@ -100,7 +100,7 @@ Item {
 
         SequentialAnimation {
             id: washAnim
-            NumberAnimation { target: wash; property: "opacity"; to: 0.2; duration: 180; easing.type: Easing.OutQuad }
+            NumberAnimation { target: wash; property: "opacity"; to: 0.2; duration: IslandMotion.short; easing.type: Easing.OutQuad }
             NumberAnimation { target: wash; property: "opacity"; to: 0; duration: 1200; easing.type: Easing.InQuad }
         }
     }
@@ -155,7 +155,7 @@ Item {
             color: f1.flagColor
 
             Behavior on color {
-                ColorAnimation { duration: 300 }
+                ColorAnimation { duration: IslandMotion.medium }
             }
 
         }
@@ -195,7 +195,7 @@ Item {
                 color: f1.trend > 0 ? Appearance.m3colors.m3success : f1.trend < 0 ? Appearance.colors.colError : Appearance.colors.colOnLayer0
 
                 Behavior on color {
-                    ColorAnimation { duration: 400 }
+                    ColorAnimation { duration: IslandMotion.long }
                 }
             }
         }
@@ -207,7 +207,7 @@ Item {
             color: f1.driver?.color ?? Appearance.colors.colPrimary
 
             Behavior on implicitWidth {
-                NumberAnimation { duration: 250; easing.type: Easing.OutBack }
+                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack }
             }
         }
 
@@ -275,7 +275,7 @@ Item {
                 property: "opacity"
                 from: 0
                 to: 0.9
-                duration: 320
+                duration: IslandMotion.medium
                 easing.type: Easing.OutCubic
             }
         }

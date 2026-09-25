@@ -515,10 +515,72 @@ Singleton {
 
     // ZeroTier's virtual interface breaks WebRTC voice in Vesktop/Discord: warn during calls, offer to stop it,
     // and offer to bring it back once the call is over
-    readonly property bool voiceCallActive: root.privacyLinks.some(link => link.source.type === PwNodeType.AudioSource
+    readonly property bool voiceCallActive: root.fakeCall || root.privacyLinks.some(link => link.source.type === PwNodeType.AudioSource
         && /vesktop|discord|webcord/i.test(`${link.target.properties?.["application.name"] ?? ""} ${link.target.properties?.["application.process.binary"] ?? ""}`))
     property bool ztWarned: false
     property bool ztStoppedForCall: false
+
+    // Call controls, straight on the app's own PipeWire streams: the state shown is the real one, and it works
+    // whatever the app's keybinds are. Mute silences its capture stream; deafen also silences everything it plays.
+    // Leaving needs the app's own shortcut (Discord has none by default): set `callLeaveShortcut`, e.g.
+    // "CTRL SHIFT, E" matching Discord → Settings → Keybinds → "Disconnect from voice"; without it the button
+    // brings the call window up instead.
+    readonly property var callAppPattern: /vesktop|discord|webcord/i
+    readonly property var callInStreams: root.privacyLinks.filter(link => link.source.type === PwNodeType.AudioSource
+        && root.callAppPattern.test(`${link.target.properties?.["application.name"] ?? ""} ${link.target.properties?.["application.process.binary"] ?? ""}`))
+        .map(link => link.target)
+    readonly property var callOutStreams: root.voiceCallActive ? Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioOutStream
+        && root.callAppPattern.test(`${n.properties?.["application.name"] ?? ""} ${n.properties?.["application.process.binary"] ?? ""}`)) : []
+
+    PwObjectTracker {
+        objects: root.callOutStreams
+    }
+
+    readonly property bool callMuted: root.fakeCall ? root.fakeCallMuted : root.callInStreams.length > 0 && root.callInStreams.every(n => n.audio?.muted ?? false)
+    readonly property bool callDeafened: root.fakeCall ? root.fakeCallDeaf : root.callOutStreams.length > 0 && root.callOutStreams.every(n => n.audio?.muted ?? false)
+    // ilha-teste: a call without a call
+    property bool fakeCall: false
+    property bool fakeCallMuted: false
+    property bool fakeCallDeaf: false
+    readonly property string callApp: {
+        const node = root.callInStreams[0]
+        const name = `${node?.properties?.["application.name"] ?? ""}`
+        return /vesktop/i.test(name) ? "Vesktop" : /webcord/i.test(name) ? "WebCord" : "Discord"
+    }
+
+    function toggleCallMute() {
+        if (root.fakeCall) {
+            root.fakeCallMuted = !root.fakeCallMuted
+            return
+        }
+        const muted = !root.callMuted
+        for (const node of root.callInStreams) if (node.audio) node.audio.muted = muted
+    }
+    function toggleCallDeafen() {
+        if (root.fakeCall) {
+            root.fakeCallDeaf = !root.fakeCallDeaf
+            root.fakeCallMuted = root.fakeCallDeaf
+            return
+        }
+        const deaf = !root.callDeafened
+        for (const node of root.callOutStreams) if (node.audio) node.audio.muted = deaf
+        // Deafened means nobody hears you either, like the app's own deafen
+        if (deaf && !root.callMuted) root.toggleCallMute()
+        else if (!deaf && root.callMuted) root.toggleCallMute()
+    }
+    readonly property string callLeaveShortcut: root.cfg.callLeaveShortcut ?? ""
+    function leaveCall() {
+        const target = 'class:^(vesktop|discord|WebCord|webcord)$'
+        if (root.callLeaveShortcut !== "") {
+            const [mods, key] = root.callLeaveShortcut.split(",").map(p => p.trim())
+            root.hyprDispatch(`hl.dsp.send_shortcut({ mods = "${mods}", key = "${key}", window = "${target}" })`)
+        } else {
+            root.hyprDispatch(`hl.dsp.focus({ window = "${target}" })`)
+        }
+    }
+    function openCall() {
+        root.hyprDispatch(`hl.dsp.focus({ window = "class:^(vesktop|discord|WebCord|webcord)$" })`)
+    }
 
     // How long you have been on the call: worth anchoring, since a call is exactly when you lose track of time
     property double voiceCallSince: 0
@@ -863,6 +925,114 @@ Singleton {
             rgb: `rgb(${r}, ${g}, ${b})`,
             hsl: `hsl(${Math.round(Math.max(0, color.hslHue) * 360)}, ${Math.round(color.hslSaturation * 100)}%, ${Math.round(color.hslLightness * 100)}%)`
         }
+    }
+
+    // What was copied, for its icon and label. One place decides it, so the pill, the expanded view and the
+    // history all agree. Returns { kind, label, brand?, color?, icon, swatch? }:
+    //   brand — an SVG in assets/island/apps (painted in `color`); icon — a Material Symbol fallback
+    //   swatch — a copied color shows itself instead of an icon
+    readonly property var linkBrands: [
+        { re: /(^|\.)(youtube\.com|youtu\.be)$/, brand: "youtube", color: "#FF0000", label: "YouTube" },
+        { re: /(^|\.)github\.com$/, brand: "github", color: "#FFFFFF", label: "GitHub" },
+        { re: /(^|\.)(x\.com|twitter\.com)$/, brand: "x", color: "#FFFFFF", label: "X" },
+        { re: /(^|\.)reddit\.com$/, brand: "reddit", color: "#FF4500", label: "Reddit" },
+        { re: /(^|\.)instagram\.com$/, brand: "instagram", color: "#E4405F", label: "Instagram" },
+        { re: /(^|\.)tiktok\.com$/, brand: "tiktok", color: "#FFFFFF", label: "TikTok" },
+        { re: /(^|\.)twitch\.tv$/, brand: "twitch", color: "#9146FF", label: "Twitch" },
+        { re: /(^|\.)pinterest\.[a-z.]+$/, brand: "pinterest", color: "#E60023", label: "Pinterest" },
+        { re: /(^|\.)open\.spotify\.com$/, brand: "spotify", color: "#1DB954", label: "Spotify" },
+        { re: /(^|\.)(wa\.me|whatsapp\.com)$/, brand: "whatsapp", color: "#25D366", label: "WhatsApp" },
+        { re: /(^|\.)(discord\.gg|discord\.com)$/, brand: "discord", color: "#5865F2", label: "Discord" },
+        { re: /(^|\.)(t\.me|telegram\.org)$/, brand: "telegram", color: "#26A5E4", label: "Telegram" },
+        { re: /^docs\.google\.com$/, path: /^\/spreadsheets/, brand: "googlesheets", color: "#34A853", label: "Google Sheets" },
+        { re: /^docs\.google\.com$/, brand: "googledocs", color: "#4285F4", label: "Google Docs" },
+        { re: /^drive\.google\.com$/, brand: "googledrive", color: "#4285F4", label: "Google Drive" },
+        { re: /^(maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl)$/, brand: "googlemaps", color: "#4285F4", label: "Google Maps" },
+        { re: /(^|\.)google\.[a-z.]+$/, path: /^\/maps/, brand: "googlemaps", color: "#4285F4", label: "Google Maps" },
+        { re: /^mail\.google\.com$/, brand: "gmail", color: "#EA4335", label: "Gmail" },
+        { re: /(^|\.)stackoverflow\.com$/, brand: "stackoverflow", color: "#F58025", label: "Stack Overflow" },
+        { re: /(^|\.)wikipedia\.org$/, brand: "wikipedia", color: "#FFFFFF", label: "Wikipedia" },
+        { re: /(^|\.)notion\.(so|site)$/, brand: "notion", color: "#FFFFFF", label: "Notion" },
+        { re: /(^|\.)figma\.com$/, brand: "figma", color: "#F24E1E", label: "Figma" },
+        { re: /(^|\.)netflix\.com$/, brand: "netflix", color: "#E50914", label: "Netflix" },
+        { re: /(^|\.)disneyplus\.com$/, brand: "disneyplus", color: "#FFFFFF", label: "Disney+" },
+        { re: /(^|\.)primevideo\.com$/, brand: "primevideo", color: "#00A8E1", label: "Prime Video" },
+        { re: /(^|\.)shopee\.com(\.br)?$/, brand: "shopee", color: "#EE4D2D", label: "Shopee" },
+        { re: /(^|\.)aliexpress\.[a-z.]+$/, brand: "aliexpress", color: "#FF4747", label: "AliExpress" }
+    ]
+    readonly property var codeBrands: ({
+        "Python": ["python", "#3776AB"], "JavaScript": ["javascript", "#F7DF1E"], "TypeScript": ["typescript", "#3178C6"],
+        "Shell": ["gnubash", "#4EAA25"], "PHP": ["php", "#777BB4"], "Rust": ["rust", "#FFFFFF"], "Go": ["go", "#00ADD8"],
+        "C++": ["cplusplus", "#00599C"], "C": ["c", "#A8B9CC"], "Java": ["openjdk", "#FFFFFF"], "HTML": ["html5", "#E34F26"],
+        "CSS": ["css", "#663399"], "Lua": ["lua", "#5B7CF0"], "QML": ["qt", "#41CD52"], "JSON": ["json", "#FFFFFF"],
+        "Markdown": ["markdown", "#FFFFFF"], "SQL": ["", ""]
+    })
+
+    function clipKind(payload) {
+        const text = (payload?.text ?? "").trim()
+        const files = payload?.files ?? []
+        if (payload?.isImage) return { kind: "image", label: Translation.tr("Image"), icon: "image" }
+        if (files.length > 1) return { kind: "files", label: `${files.length} ${Translation.tr("files")}`, icon: "file_copy" }
+        if (files.length === 1) return { kind: "file", label: DropShelf.fileName(files[0]), icon: DropShelf.iconFor(files[0]) }
+        if (text === "") return { kind: "text", label: Translation.tr("Clipboard"), icon: "content_paste" }
+
+        const color = root.parseColor(text)
+        if (color) return { kind: "color", label: color.hex, icon: "palette", swatch: color.color }
+
+        if (/^https?:\/\/\S+$/.test(text)) {
+            const m = /^https?:\/\/([^\/?#:]+)[^\/?#]*([^?#]*)/.exec(text)
+            const host = (m?.[1] ?? "").toLowerCase().replace(/^www\./, "")
+            const path = m?.[2] ?? ""
+            const hit = root.linkBrands.find(b => b.re.test(host) && (!b.path || b.path.test(path)))
+            if (hit) return { kind: "link", label: hit.label, brand: hit.brand, color: hit.color, icon: "link" }
+            if (/\.pdf([?#]|$)/i.test(text)) return { kind: "link", label: "PDF", icon: "picture_as_pdf" }
+            return { kind: "link", label: host, icon: "link" }
+        }
+        if (/^\s*[^\s@]+@[^\s@]+\.[^\s@]+\s*$/.test(text)) return { kind: "email", label: Translation.tr("Email"), icon: "alternate_email" }
+        if (text.length <= 25 && /^[\s()+\-.\d]+$/.test(text) && text.replace(/\D/g, "").length >= 10) return { kind: "phone", label: Translation.tr("Phone"), icon: "call" }
+        if (/^\s*[A-Z]{2}\d{9}[A-Z]{2}\s*$/.test(text)) return { kind: "tracking", label: Translation.tr("Tracking code"), icon: "local_shipping" }
+        if (root.looksLikeAddress(text)) return { kind: "address", label: Translation.tr("Address"), brand: "googlemaps", color: "#4285F4", icon: "location_on" }
+
+        const language = root.codeLanguage(text)
+        if (language !== "") {
+            const b = root.codeBrands[language] ?? ["", ""]
+            return { kind: "code", label: language, brand: b[0], color: b[1], icon: language === "SQL" ? "database" : "code" }
+        }
+        return { kind: "text", label: "", icon: "content_paste" }
+    }
+
+    // Best guess at the language of copied code, or "" when it doesn't look like code. Only strong signals:
+    // prose that happens to contain "import" or a colon must stay prose.
+    function codeLanguage(text) {
+        const t = (text ?? "").trim()
+        if (t.length < 8 || t.length > 20000) return ""
+        const lines = t.split("\n")
+        const multi = lines.length > 1
+        if (/^\s*[\[{]/.test(t)) {
+            try {
+                JSON.parse(t)
+                return "JSON"
+            } catch (e) {}
+        }
+        if (/^#!.*\b(ba|z|fi)?sh\b/.test(t)) return "Shell"
+        if (/^<\?php/.test(t)) return "PHP"
+        if (/^\s*import Qt(Quick|Qml)?\b/m.test(t) || (/^\s*\w+ \{\s*$/m.test(t) && /^\s+(id|anchors\.\w+|property \w+ \w+):/m.test(t))) return "QML"
+        if (/^\s*(SELECT\s+[\s\S]+\s+FROM|INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|CREATE\s+(TABLE|INDEX|VIEW)|ALTER\s+TABLE|DROP\s+TABLE)\b/i.test(t)) return "SQL"
+        if (/<(!DOCTYPE|html|head|body|div|span|section|a\s+href|p|ul|li|button|script)\b[^>]*>/i.test(t) && /<\/\w+>/.test(t)) return "HTML"
+        if (/\bfn\s+\w+\s*\(.*\)\s*(->\s*[\w<>&]+\s*)?\{/.test(t) || /\blet\s+mut\b/.test(t) || /\bimpl\b.*\{/.test(t)) return "Rust"
+        if (/^package\s+\w+/m.test(t) && /\bfunc\b/.test(t) || /\bfunc\s+(\(\w+\s+\*?\w+\)\s*)?\w+\(.*\)\s*[\w()*, ]*\{/.test(t) || /:=/.test(t) && /\bfunc\b/.test(t)) return "Go"
+        if (/#include\s*[<"]/.test(t)) return /\bstd::|\bclass\b|\bnamespace\b|\bcout\b|\btemplate\s*</.test(t) ? "C++" : "C"
+        if (/\bpublic\s+(static\s+)?(class|void|interface)\b/.test(t) || /System\.out\.print/.test(t)) return "Java"
+        if (/^\s*(def\s+\w+\(.*\)\s*(->\s*[\w\[\], .]+)?:|class\s+\w+(\(.*\))?:|from\s+[\w.]+\s+import\s+|import\s+[\w.]+(\s+as\s+\w+)?\s*$|if\s+__name__\s*==)/m.test(t)
+            || (/\bprint\(.*\)/.test(t) && /:\s*$/m.test(t) && !/;\s*$/m.test(t))) return "Python"
+        if (/^\s*local\s+(function\s+)?\w+/m.test(t) || (/\bfunction\b.*\)\s*$/m.test(t) && /^\s*end\s*$/m.test(t))) return "Lua"
+        const ts = /:\s*(string|number|boolean|void|any|unknown)\b[\s,;)=]/.test(t) || /\binterface\s+\w+\s*\{/.test(t) || /\btype\s+\w+\s*=/.test(t)
+        if (/\b(const|let|var)\s+\w+\s*=/.test(t) || /=>\s*[{(]?/.test(t) || /\bfunction\s*\w*\s*\(/.test(t) || /^\s*(import|export)\s+.*from\s+['"]/m.test(t) || /console\.log\(/.test(t))
+            return ts ? "TypeScript" : "JavaScript"
+        if (/^[.#@]?[\w-][^{}\n]{0,80}\{\s*$/m.test(t) && /^\s*[\w-]{2,}\s*:\s*[^;{}\n]{1,120};\s*$/m.test(t)) return "CSS"
+        if (/^\s*(if\s+\[|for\s+\w+\s+in\b|echo\s|export\s+\w+=|sudo\s|cd\s|ls(\s|$)|grep\s|curl\s|git\s|npm\s|pacman\s|systemctl\s|\w+=\$\()/m.test(t) && (multi || /[|&;$]/.test(t) || /^(sudo|git|npm|pacman|systemctl|curl)\s/.test(t))) return "Shell"
+        if (multi && /^#{1,6}\s+\S/m.test(t) && (/^\s*[-*]\s+\S/m.test(t) || /\[.+\]\(.+\)/.test(t) || /```/.test(t))) return "Markdown"
+        return ""
     }
 
     function looksLikeAddress(text) {
@@ -1828,6 +1998,11 @@ Singleton {
             case "systemLoad":
             case "cpuHigh":
                 Pressure.simulate("cpu")
+                break
+            case "call":
+                root.fakeCall = !root.fakeCall
+                root.fakeCallMuted = false
+                root.fakeCallDeaf = false
                 break
             case "memoryHigh":
                 Pressure.simulate("memory")

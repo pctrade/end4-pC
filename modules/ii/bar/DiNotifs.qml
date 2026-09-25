@@ -106,7 +106,7 @@ Item {
         property: "t"
         from: 0
         to: 1
-        duration: 260
+        duration: IslandMotion.short
         easing.type: Easing.OutCubic
         running: true
     }
@@ -176,8 +176,8 @@ Item {
             SequentialAnimation on scale {
                 id: badgeBump
                 running: false
-                NumberAnimation { to: 1.35; duration: 110; easing.type: Easing.OutQuad }
-                NumberAnimation { to: 1; duration: 320; easing.type: Easing.OutBack; easing.overshoot: 2.4 }
+                NumberAnimation { to: 1.35; duration: IslandMotion.micro; easing.type: Easing.OutQuad }
+                NumberAnimation { to: 1; duration: IslandMotion.medium; easing.type: Easing.OutBack; easing.overshoot: 2.4 }
             }
         }
         Connections {
@@ -409,7 +409,7 @@ Item {
                     target: bodyText
                     property: "x"
                     to: 0
-                    duration: 420
+                    duration: IslandMotion.long
                     easing.type: Easing.OutCubic
                 }
             }
@@ -535,7 +535,7 @@ Item {
         implicitHeight: 24
 
         Behavior on implicitWidth {
-            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
         }
 
         Rectangle {
@@ -548,13 +548,13 @@ Item {
             color: replyMouse.containsMouse ? notifs.accent : ColorUtils.transparentize(notifs.accent, 0.7)
 
             Behavior on scale {
-                NumberAnimation { duration: 220; easing.type: Easing.OutBack }
+                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack }
             }
             Behavior on opacity {
-                NumberAnimation { duration: 160 }
+                NumberAnimation { duration: IslandMotion.micro }
             }
             Behavior on color {
-                ColorAnimation { duration: 150 }
+                ColorAnimation { duration: IslandMotion.micro }
             }
 
             MaterialSymbol {

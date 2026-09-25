@@ -20,18 +20,21 @@ Item {
     anchors.fill: parent
 
     readonly property var now: WatchRating.now
-    readonly property bool isFilm: (watch.now?.season ?? 0) <= 0
-    readonly property real rating: watch.isFilm ? WatchRating.seriesRating : WatchRating.episodeRating
-    readonly property string tier: watch.isFilm ? "" : WatchRating.tier
+    // "Up next" (during the credits): the same piece, about the next episode (WatchRating.announceNext)
+    readonly property var next: IslandEvents.watchRating.payload?.next ?? null
+    readonly property bool isFilm: !watch.next && (watch.now?.season ?? 0) <= 0
+    readonly property real rating: watch.next ? watch.next.rating : watch.isFilm ? WatchRating.seriesRating : WatchRating.episodeRating
+    readonly property string tier: watch.next ? watch.next.tier : watch.isFilm ? "" : WatchRating.tier
+    readonly property int seriesRank: watch.next ? watch.next.seriesRank : WatchRating.seriesRank
     readonly property color tone: watch.rating >= 8.5 ? "#F5C518"
         : watch.rating >= 7.5 ? "#30D158"
         : watch.rating >= 6 ? "#FF9F0A" : "#FF453A"
-    readonly property color medal: WatchRating.seriesRank === 1 ? "#F5C518" : WatchRating.seriesRank === 2 ? "#D7DDE5" : "#D08A4E"
+    readonly property color medal: watch.seriesRank === 1 ? "#F5C518" : watch.seriesRank === 2 ? "#D7DDE5" : "#D08A4E"
     readonly property color accent: watch.tier === "top3" ? watch.medal
         : watch.tier === "top10" ? "#BF5AF2" : "#F5C518"
     readonly property string badgeIcon: watch.tier === "top3" ? "workspace_premium"
         : watch.tier === "top10" ? "military_tech" : watch.tier === "best" ? "crown" : ""
-    readonly property string badgeText: watch.tier === "top3" ? Translation.tr("#%1 of the show").arg(WatchRating.seriesRank)
+    readonly property string badgeText: watch.tier === "top3" ? Translation.tr("#%1 of the show").arg(watch.seriesRank)
         : watch.tier === "top10" ? Translation.tr("Top 10 of the show")
         : watch.tier === "best" ? Translation.tr("Best of the season") : ""
 
@@ -105,6 +108,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
                     text: watch.isFilm ? (WatchRating.info?.Year ?? "")
+                        : watch.next ? `${watch.badgeText !== "" ? "· " : ""}${Translation.tr("Up next")} · T${watch.next.season} · E${watch.next.episode}${watch.next.title ? " · " + watch.next.title : ""}`
                         : `${watch.badgeText !== "" ? "· " : ""}T${watch.now?.season} · E${watch.now?.episode}${WatchRating.episodeTitle ? " · " + WatchRating.episodeTitle : ""}`
                     font.pixelSize: Appearance.font.pixelSize.smallest
                     color: Appearance.colors.colOnLayer0

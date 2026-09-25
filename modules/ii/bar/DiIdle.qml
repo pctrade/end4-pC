@@ -47,8 +47,8 @@ Item {
             color: Appearance.colors.colLayer2
             opacity: glyphMouse.containsMouse ? 1 : 0
             scale: glyphMouse.containsMouse ? 1 : 0.6
-            Behavior on opacity { NumberAnimation { duration: 160 } }
-            Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+            Behavior on opacity { NumberAnimation { duration: IslandMotion.micro } }
+            Behavior on scale { NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack } }
         }
 
         MaterialSymbol {
@@ -58,7 +58,7 @@ Item {
             fill: glyph.filled ? 1 : 0
             color: glyph.tone
             opacity: glyph.toned || glyphMouse.containsMouse ? 1 : 0.72
-            Behavior on opacity { NumberAnimation { duration: 160 } }
+            Behavior on opacity { NumberAnimation { duration: IslandMotion.micro } }
         }
 
         Rectangle {
@@ -218,8 +218,8 @@ Item {
                         color: Appearance.colors.colLayer2
                         opacity: agentMouse.containsMouse ? 1 : 0
                         scale: agentMouse.containsMouse ? 1 : 0.6
-                        Behavior on opacity { NumberAnimation { duration: 160 } }
-                        Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+                        Behavior on opacity { NumberAnimation { duration: IslandMotion.micro } }
+                        Behavior on scale { NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutBack } }
                     }
 
                     CircularProgress {
@@ -243,8 +243,8 @@ Item {
                             running: agentMark.waiting
                             loops: Animation.Infinite
                             alwaysRunToEnd: true
-                            NumberAnimation { to: 1.25; duration: 520; easing.type: Easing.InOutSine }
-                            NumberAnimation { to: 1; duration: 520; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1.25; duration: IslandMotion.long; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: IslandMotion.long; easing.type: Easing.InOutSine }
                         }
                     }
 

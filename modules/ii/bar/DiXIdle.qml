@@ -69,10 +69,10 @@ ColumnLayout {
         scale: chipMouse.pressed ? 0.94 : 1
 
         Behavior on color {
-            ColorAnimation { duration: 160 }
+            ColorAnimation { duration: IslandMotion.micro }
         }
         Behavior on scale {
-            NumberAnimation { duration: 160; easing.type: Easing.OutBack }
+            NumberAnimation { duration: IslandMotion.micro; easing.type: Easing.OutBack }
         }
 
         RowLayout {
@@ -124,10 +124,10 @@ ColumnLayout {
             scale: dockMouse.pressed ? 0.94 : 1
 
             Behavior on color {
-                ColorAnimation { duration: 140 }
+                ColorAnimation { duration: IslandMotion.micro }
             }
             Behavior on scale {
-                NumberAnimation { duration: 140; easing.type: Easing.OutBack }
+                NumberAnimation { duration: IslandMotion.micro; easing.type: Easing.OutBack }
             }
 
             MaterialSymbol {
@@ -269,7 +269,7 @@ ColumnLayout {
                 transform: Translate { id: nowShift; x: -14 }
 
                 Behavior on color {
-                    ColorAnimation { duration: 140 }
+                    ColorAnimation { duration: IslandMotion.micro }
                 }
 
                 // Dealt in one after another as the Home opens
@@ -277,8 +277,8 @@ ColumnLayout {
                     running: true
                     PauseAnimation { duration: 60 + nowRow.index * 45 }
                     ParallelAnimation {
-                        NumberAnimation { target: nowRow; property: "opacity"; to: 1; duration: 240; easing.type: Easing.OutCubic }
-                        NumberAnimation { target: nowShift; property: "x"; to: 0; duration: 380; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
+                        NumberAnimation { target: nowRow; property: "opacity"; to: 1; duration: IslandMotion.short; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: nowShift; property: "x"; to: 0; duration: IslandMotion.medium; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
                     }
                 }
 
@@ -345,7 +345,7 @@ ColumnLayout {
                         iconSize: 16
                         color: Appearance.colors.colOnLayer1
                         opacity: nowMouse.containsMouse ? 0.8 : 0.35
-                        Behavior on opacity { NumberAnimation { duration: 140 } }
+                        Behavior on opacity { NumberAnimation { duration: IslandMotion.micro } }
                     }
                 }
 

@@ -50,7 +50,7 @@ ColumnLayout {
                 : (rowMouse.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1)
 
             Behavior on color {
-                ColorAnimation { duration: 200 }
+                ColorAnimation { duration: IslandMotion.short }
             }
 
             RowLayout {

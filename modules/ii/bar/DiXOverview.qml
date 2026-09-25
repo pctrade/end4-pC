@@ -51,7 +51,7 @@ ColumnLayout {
             transform: Translate { id: slideIn; y: 10 }
 
             Behavior on color {
-                ColorAnimation { duration: 160 }
+                ColorAnimation { duration: IslandMotion.micro }
             }
 
             // Cards deal in one after another
@@ -59,8 +59,8 @@ ColumnLayout {
                 running: true
                 PauseAnimation { duration: card.index * 60 }
                 ParallelAnimation {
-                    NumberAnimation { target: card; property: "opacity"; to: 1; duration: 260; easing.type: Easing.OutCubic }
-                    NumberAnimation { target: slideIn; property: "y"; to: 0; duration: 380; easing.type: Easing.OutBack }
+                    NumberAnimation { target: card; property: "opacity"; to: 1; duration: IslandMotion.short; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: slideIn; property: "y"; to: 0; duration: IslandMotion.medium; easing.type: Easing.OutBack }
                 }
             }
 

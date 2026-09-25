@@ -204,7 +204,7 @@ ColumnLayout {
                         opacity: fileRow.progress >= 0 ? 1 : 0.5
 
                         Behavior on width {
-                            NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+                            NumberAnimation { duration: IslandMotion.medium; easing.type: Easing.OutCubic }
                         }
 
                         // No total to go by: a shuttle that says "still moving"

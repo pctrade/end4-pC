@@ -49,6 +49,7 @@ Item {
             case "audioOutput":   return audioView
             case "bluetooth":     return bluetoothView
             case "activity":
+            case "approval":
             case "agents":        return activitiesView
             case "system":        return systemView
             case "systemLoad":    return loadView
@@ -69,6 +70,7 @@ Item {
             case "download":
             case "zerotier":      return networkView
             case "hardware":      return hardwareView
+            case "call":          return callView
             default:              return idleView
         }
     }
@@ -135,6 +137,7 @@ Item {
     Component { id: activitiesView; DiXActivities { di: content.di } }
     Component { id: systemView; DiXSystem { di: content.di } }
     Component { id: loadView; DiXLoad { di: content.di } }
+    Component { id: callView; DiXCall { di: content.di } }
     Component { id: batteryView; DiXBattery { di: content.di } }
     Component { id: screenshotView; DiXScreenshot { di: content.di } }
     Component { id: clipboardView; DiXClipboard { di: content.di } }

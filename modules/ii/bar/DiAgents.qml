@@ -59,8 +59,8 @@ RowLayout {
                 running: mark.isWaiting
                 loops: Animation.Infinite
                 alwaysRunToEnd: true
-                NumberAnimation { to: 1.25; duration: 520; easing.type: Easing.InOutSine }
-                NumberAnimation { to: 1; duration: 520; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 1.25; duration: IslandMotion.long; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 1; duration: IslandMotion.long; easing.type: Easing.InOutSine }
             }
         }
 

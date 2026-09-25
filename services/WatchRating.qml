@@ -184,6 +184,31 @@ Singleton {
     // One highlight per episode, the rarest that applies
     readonly property string tier: root.isTop3 ? "top3" : root.isTop10 ? "top10" : root.isBest ? "best"
         : root.episodeRating >= 8.5 ? "high" : ""
+    // Any episode's standing, computed the same way as the current one's (for "up next")
+    function statsFor(episode) {
+        const rating = root.ratingOf(episode)
+        if (!episode || rating < 0) return null
+        const season = root.allEpisodes.filter(e => e.Season === episode.Season)
+        const best = season.every(e => root.ratingOf(e) <= rating)
+        const seriesRank = root.allEpisodes.filter(e => root.ratingOf(e) > rating).length + 1
+        const top3 = seriesRank <= 3 && root.seriesRated >= 8
+        const top10 = !top3 && seriesRank <= 10 && root.seriesRated >= 25
+        return {
+            season: episode.Season, episode: Number(episode.Episode), title: episode.Title ?? "", rating: rating, seriesRank: seriesRank,
+            tier: top3 ? "top3" : top10 ? "top10" : best ? "best" : rating >= 8.5 ? "high" : ""
+        }
+    }
+
+    // The episode after this one: the next in the season, or the first of the next season
+    readonly property var nextEpisode: {
+        if (!root.now || root.now.season <= 0 || root.allEpisodes.length === 0) return null
+        const inSeason = root.seasonEpisodes.find(e => Number(e.Episode) === root.now.episode + 1)
+        if (inSeason) return inSeason
+        return root.allEpisodes.filter(e => e.Season === root.now.season + 1)
+            .sort((a, b) => Number(a.Episode) - Number(b.Episode))[0] ?? null
+    }
+    readonly property var nextStats: root.statsFor(root.nextEpisode)
+
     readonly property bool ready: {
         root.revision
         return root.info !== null && (root.now?.season <= 0 || root.seriesCache[root.info.imdbID] !== undefined)
@@ -239,6 +264,7 @@ Singleton {
     onNowKeyChanged: {
         root.lookup()
         settle.restart()
+        root.aimEnding()
     }
     onEnabledChanged: root.lookup()
 
@@ -260,6 +286,44 @@ Singleton {
         IslandEvents.watchRating.show({ key: root.nowKey }, 6000)
     }
     onActiveChanged: root.announce()
-    onPlayingChanged: root.announce()
+
+    // ── Up next: while the credits roll (~100 s before the end), the next episode's rating ──────────────
+    // One timer aimed at that moment, re-aimed when playback pauses, seeks or changes episode — no polling.
+    property var announcedNext: ({})
+
+    function aimEnding() {
+        endingTimer.stop()
+        const player = root.browserPlayer
+        if (root.fake || !root.enabled || !root.playing || !player || !root.now || root.now.season <= 0) return
+        const length = player.length ?? 0
+        if (!(length > 300)) return
+        const left = length - (player.position ?? 0) - 100
+        if (left < -60) return
+        endingTimer.interval = Math.max(1000, left * 1000)
+        endingTimer.restart()
+    }
+
+    Timer {
+        id: endingTimer
+        onTriggered: root.announceNext()
+    }
+
+    Connections {
+        target: root.browserPlayer
+        ignoreUnknownSignals: true
+        function onPositionChanged() { root.aimEnding() }
+        function onLengthChanged() { root.aimEnding() }
+    }
+
+    function announceNext(force) {
+        const stats = root.nextStats
+        if (!stats || (!force && root.announcedNext[root.nowKey])) return
+        root.announcedNext[root.nowKey] = true
+        IslandEvents.watchRating.show({ key: root.nowKey, next: stats }, 9000)
+    }
+    onPlayingChanged: {
+        root.announce()
+        root.aimEnding()
+    }
     onRevisionChanged: root.announce()
 }
