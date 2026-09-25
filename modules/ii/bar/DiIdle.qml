@@ -372,21 +372,52 @@ Item {
             }
         }
 
-        StyledText {
+        // With a clock widget already beside the island, the idle face shows the weather instead
+        Loader {
             Layout.alignment: Qt.AlignVCenter
-            text: DateTime.time
-            font.family: diIdleRoot.displayFont
-            font.pixelSize: diIdleRoot.di.isMaterial ? Appearance.font.pixelSize.large : Appearance.font.pixelSize.normal
-            font.weight: Font.Medium
-            font.letterSpacing: 0.6
-            font.features: { "tnum": 1 }
-            color: Appearance.colors.colOnLayer0
+            sourceComponent: Config.options.bar.dynamicIsland.leftWidget === "clockWidget" ? weatherComponent : clockComponent
 
-            MouseArea {
-                anchors.fill: parent
-                anchors.margins: -4
-                cursorShape: Qt.PointingHandCursor
-                onClicked: diIdleRoot.di.expandTo(2, "calendar")
+            Component {
+                id: clockComponent
+                StyledText {
+                    text: DateTime.time
+                    font.family: diIdleRoot.displayFont
+                    font.pixelSize: diIdleRoot.di.isMaterial ? Appearance.font.pixelSize.large : Appearance.font.pixelSize.normal
+                    font.weight: Font.Medium
+                    font.letterSpacing: 0.6
+                    font.features: { "tnum": 1 }
+                    color: Appearance.colors.colOnLayer0
+
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: diIdleRoot.di.expandTo(2, "calendar")
+                    }
+                }
+            }
+
+            Component {
+                id: weatherComponent
+                RowLayout {
+                    spacing: 4
+
+                    MaterialSymbol {
+                        fill: 0
+                        text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                        iconSize: Appearance.font.pixelSize.normal
+                        color: Appearance.colors.colOnLayer0
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    StyledText {
+                        font.pixelSize: diIdleRoot.di.isMaterial ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
+                        font.features: { "tnum": 1 }
+                        color: Appearance.colors.colOnLayer0
+                        text: Weather.data?.temp ?? "--°"
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+                }
             }
         }
 
