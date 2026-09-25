@@ -5,8 +5,8 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 
-// An agent stopped on a permission dialog (ClaudeCode.approval) — CRITICAL: ahead of every other island, and
-// above a fullscreen window. Answered right here: Approve types "1"/"y" into the session's terminal, Deny sends
+// An agent stopped on a permission dialog (ClaudeCode.approval) — CRITICAL: ahead of every other island. Over a
+// fullscreen window it waits behind a pulsing hairline instead, and shows up there on hover. Answered right here: Approve types "1"/"y" into the session's terminal, Deny sends
 // Escape. The mark breathes slowly so it reads as "waiting on you" without flashing.
 Item {
     id: approval

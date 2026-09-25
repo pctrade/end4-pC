@@ -532,11 +532,19 @@ Singleton {
                     property int gpuThreshold: 90
                     property real volumeMax: 1.5
                     property bool hoverExpandsMessages: true
-                    property bool fullscreenPeek: true // a hairline with the latest event while an app is fullscreen
+                    property bool fullscreenPeek: true // a hairline while an app is fullscreen, only when something queued up
+                    property bool fullscreenFeedback: true // volume/brightness and screenshots still show, as a mini island
+                    property bool fullscreenCatchUp: true // one summary of what queued up once the fullscreen ends
+                    property bool fullscreenMessages: true // messages from priority apps (WhatsApp) as a discreet line over fullscreen
+                    property int fullscreenHoverDelay: 350 // ms resting on the hairline before it opens
+                    // Fullscreen windows treated as games (class substring): the top edge takes no input at all
+                    property list<string> fullscreenGameClasses: ["steam_app_", "gamescope", "minecraft", "retroarch"]
+                    property bool fullscreenGameQuiet: true // games start in quiet mode: only critical and your own timers
                     // "files": only a file landing in the downloads folder counts; "traffic": any sustained burst
                     property string downloadDetection: "files"
                     property int shelfExpireDays: 14 // 0 keeps files in the drawer forever
                     property list<string> mutedConversations: [] // "App|Title" keys the island doesn't show
+                    property list<string> mutedConversationsUntil: [] // "<epoch ms>|App|Title": muted for a while (1 h, until tomorrow)
                     property list<string> priorityNotificationApps: ["whatsapp"] // only these reveal the island by themselves
                     property list<string> caseArtDevices: ["liberty 4 nc"] // Bluetooth names (substring) shown as the animated earbuds case
                     property bool pauseOnHeadphonesDisconnect: true // and resume when they reconnect

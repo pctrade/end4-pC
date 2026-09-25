@@ -30,7 +30,7 @@ Item {
         ? "transparent" : root.surfaceColor
     readonly property color capsuleColor: root.isMaterial ? Appearance.colors.colLayer1 : root.surfaceColor
 
-    // BarContent instantiates the middle layout twice (material + classic); only the visible island may react
+    // Only the visible island may react (BarContent used to build the middle layout twice, material + classic)
     readonly property bool onFocusedScreen: root.visible && (root.QsWindow.window?.screen?.name ?? "") === (Hyprland.focusedMonitor?.name ?? "")
 
     // Media
@@ -123,6 +123,10 @@ Item {
         target: Notifications
         function onNotify(notif) {
             if (Notifications.popupInhibited || IslandEvents.isMuted(notif)) return
+            if (root.buried) {
+                root.fsOnNotify(notif)
+                return
+            }
             // Critical ones always; otherwise only apps with priority (WhatsApp by default)
             if ((notif.urgency ?? "").toLowerCase() === "critical"
                     || (notif.image !== "" && IslandEvents.isPriorityNotification(notif))) root.peek()
@@ -495,6 +499,11 @@ Item {
         function onSilenceRequested() {
             if (root.onFocusedScreen) root.silenceIsland(root.primaryId)
         }
+        function onQuietRequested() {
+            if (!root.onFocusedScreen) return
+            if (root.buried) root.fsToggleQuiet()
+            else IslandEvents.toggleFocus()
+        }
         function onSimulateRequested(name) {
             if (!root.onFocusedScreen) return
             switch (name) {
@@ -639,7 +648,7 @@ Item {
 
     // Providers: interrupts are short-lived and take the pill; persistent ones share it via split capsules
     readonly property var interruptIds: ["session", "f1Start", "osd", "notification", "battery", "bluetooth",
-        "audioOutput", "screenshot", "clipboard", "songRecResult", "weather", "f1Flag", "shelfDrop", "f1Event", "networkAlert", "hardware", "hibernate", "downloadDone", "watchRating", "approval"]
+        "audioOutput", "screenshot", "clipboard", "songRecResult", "weather", "f1Flag", "shelfDrop", "f1Event", "networkAlert", "hardware", "hibernate", "downloadDone", "watchRating", "approval", "fsDigest"]
 
     // The semantic model (ILHA.md § Modelo semântico): every id above answers to one of four questions.
     // CRITICAL and PEEK are both `interruptIds` — CRITICAL is the subset that can genuinely preempt (a
@@ -662,6 +671,289 @@ Item {
         return false
     }
 
+    // ── Tela cheia (seção 29) ───────────────────────────────────────────────────────────────────────────
+    // A fullscreen window buries the bar and the pill with it. Nothing non-critical should break through a video
+    // or a game, but nothing should be lost either, so every island answers to one tier while buried:
+    //   critical  → a floating mini island over the fullscreen window (DiFullscreenPeek.qml), takes input
+    //   feedback  → the same mini island for a moment, click-through (you caused it: volume, a screenshot)
+    //   attention → the hairline pulses until you answer (an agent waiting on a permission)
+    //   live      → stays quiet; only a recording leaves its red dot
+    //   ambient   → queues up behind the hairline and comes back as one summary once the fullscreen ends
+    readonly property var fsMonitor: HyprlandData.monitors.find(m => m.name === root.QsWindow.window?.screen?.name) ?? null
+    // Quickshell's own model follows a workspace switch at once; HyprlandData's copy lags until it refreshes
+    readonly property int fsWorkspaceId: (root.QsWindow.window?.screen ? Hyprland.monitorFor(root.QsWindow.window.screen)?.activeWorkspace?.id : undefined)
+        ?? root.fsMonitor?.activeWorkspace?.id ?? -1
+    // True fullscreen only (mode 2): a maximized window (mode 1) leaves the bar where it is
+    readonly property var fsWindow: root.fsWorkspaceId === -1 ? null
+        : (HyprlandData.windowList.find(w => w.workspace?.id === root.fsWorkspaceId && w.fullscreen === 2) ?? null)
+    // A special workspace over the fullscreen window brings the bar back on top (Bar.qml), so nothing is buried then
+    readonly property bool buried: root.visible && !root.vertical && root.fsWindow !== null
+        && (root.fsMonitor?.specialWorkspace?.name ?? "") === ""
+    // Games: the top edge takes no input at all (strategy games scroll the map by pushing the pointer there)
+    readonly property bool fsGame: {
+        const w = root.fsWindow
+        if (!w) return false
+        if (w.contentType === "game") return true
+        const cls = `${w.class ?? ""} ${w.initialClass ?? ""}`.toLowerCase()
+        return (root.cfg.fullscreenGameClasses ?? []).some(c => String(c) !== "" && cls.includes(String(c).toLowerCase()))
+    }
+
+    // Noise once you are back: things you did yourself or that only mattered in the moment
+    readonly property var fsIgnoredIds: ["clipboard", "shelfDrop", "watchRating", "fsDigest"]
+
+    function fullscreenTier(id) {
+        if (id === "approval") return "attention"
+        if (id === "session" || id === "hibernate") return "critical"
+        if (id === "battery" && root.batteryAlertKind === "critical") return "critical"
+        if (id === "hardware" && ((IslandHardware.payload.urgent ?? false) || IslandHardware.payload.kind === "thermal")) return "critical"
+        if (id === "notification" && root.latestNotificationCritical) return "critical"
+        if (id === "osd" || id === "screenshot") return (root.cfg.fullscreenFeedback ?? true) ? "feedback" : "ignored"
+        if (root.fsIgnoredIds.includes(id)) return "ignored"
+        if (root.liveIds.includes(id)) return "live"
+        return "ambient"
+    }
+
+    readonly property string fsCriticalId: root.buried ? (root.activeIds.find(id => root.fullscreenTier(id) === "critical") ?? "") : ""
+    readonly property string fsFeedbackId: root.buried && !root.fsQuiet ? (root.activeIds.find(id => root.fullscreenTier(id) === "feedback") ?? "") : ""
+    // What the mini island shows: critical first, then what you just did
+    readonly property string fsMiniId: root.fsCriticalId !== "" ? root.fsCriticalId : root.fsFeedbackId
+    readonly property bool fsAttention: root.buried && root.activeIds.includes("approval")
+    readonly property bool fsRecording: root.buried && root.isRecording
+
+    // What went by while buried, newest first: { id, icon, title, level, time }
+    property var fsQueue: []
+    // Bumps on every new entry, so the hairline pulses again even when the colour stays the same
+    property int fsQueueSerial: 0
+    readonly property int fsQueueLevel: root.fsQueue.reduce((top, e) => Math.max(top, e.level), 0)
+
+    function fsEnqueue(id, icon, title, level, key) {
+        const entry = { id: id, icon: icon, title: title, level: level, time: Date.now(), key: key ?? "" }
+        // One line per island: a second Wi-Fi change replaces the first. Every notification is its own line.
+        const rest = id === "notification" ? root.fsQueue : root.fsQueue.filter(e => e.id !== id)
+        root.fsQueue = [entry, ...rest].slice(0, 20)
+        root.fsQueueSerial++
+    }
+
+    // Seen: opening History from the hairline or the summary empties the queue
+    function fsClearQueue() {
+        root.fsQueue = []
+    }
+
+    // Quiet (one key, `ipc call island quiet`, or a middle click on the hairline): until this fullscreen ends,
+    // no messages and no feedback come up and the hairline stops pulsing — it still counts, and critical and an
+    // agent waiting on you still get through
+    property bool fsQuiet: false
+
+    function fsToggleQuiet() {
+        root.fsQuiet = !root.fsQuiet
+        if (root.fsQuiet) root.fsMessage = null
+        root.fsNotify(root.fsQuiet ? "notifications_paused" : "notifications_active",
+            root.fsQuiet ? Translation.tr("Quiet until fullscreen ends") : Translation.tr("Notifying again"))
+    }
+
+    // A message from a priority app (WhatsApp by default) as one discreet line: sender and text, a few seconds,
+    // nothing to click unless you want to — reply, mute that conversation, or hush everything
+    property var fsMessage: null
+    // A short confirmation in the same place ("Conversation muted"), optionally with one action (undo)
+    property var fsNotice: null
+
+    function fsOnNotify(notif) {
+        const parts = IslandEvents.notificationParts(notif)
+        const critical = (notif.urgency ?? "").toLowerCase() === "critical"
+        // A timer or pomodoro you set yourself ringing: it's the one thing you asked to be told, even in quiet
+        // (TimerService sends them as "Shell" notifications)
+        if ((notif.appName ?? "") === "Shell" && ["Timers", "Pomodoro"].includes(notif.summary ?? "")) {
+            root.fsShowLine({ icon: "alarm", title: notif.summary === "Pomodoro" ? "Pomodoro" : Translation.tr("Timer"),
+                body: parts.body.replace(/^[^\p{L}\p{N}]+/u, ""), color: IslandEvents.colorAttention }, 8000, true)
+            return
+        }
+        const key = IslandEvents.conversationKey(notif)
+        root.fsEnqueue("notification", "notifications", parts.title || parts.app || Translation.tr("Notification"), critical ? 2 : 1, key)
+        if (critical || !(root.cfg.fullscreenMessages ?? true) || !IslandEvents.isPriorityNotification(notif)) return
+        root.fsShowLine({
+            key: key,
+            app: parts.app,
+            title: parts.author !== "" ? `${parts.author} · ${parts.title}` : parts.title,
+            body: parts.body,
+            brand: parts.brand,
+            icon: parts.media?.icon ?? "chat",
+            messaging: IslandEvents.isMessagingApp(parts.app),
+            notificationId: notif.notificationId
+        }, Math.min(6000, IslandEvents.readingTime(notif)), false)
+    }
+
+    // One discreet line at a time: { icon, title, body, color?, brand?, app?, key? (mutable), messaging? }.
+    // `force` gets through quiet mode (only a timer you set does that).
+    function fsShowLine(line, ms, force) {
+        if (!root.buried || (root.fsQuiet && !force)) return
+        root.fsMessage = line
+        fsMessageTimer.interval = ms
+        if (!root.fsMessageHeld) fsMessageTimer.restart()
+    }
+
+    // Important but not critical: worth a discreet line instead of only a place in the queue
+    function fsImportantLine(id) {
+        switch (id) {
+            case "battery":
+                if (root.batteryAlertKind !== "low") return null
+                return { icon: root.batteryIcon(), title: Translation.tr("Battery low"), body: `${Math.round(Battery.percentage * 100)}%`, color: Appearance.colors.colError }
+            case "bluetooth":
+                if (IslandEvents.bluetooth.payload?.phase !== "lowBattery") return null
+                return { icon: "bluetooth", title: IslandEvents.bluetooth.payload?.name ?? "Bluetooth", body: Translation.tr("Low battery"), color: IslandEvents.colorAttention }
+            case "hardware": {
+                const hw = IslandHardware.payload
+                if (["caps", "layout"].includes(hw.kind)) return null
+                return { icon: hw.icon ?? "memory", title: hw.title ?? Translation.tr("Hardware"), body: hw.subtitle ?? "",
+                    color: hw.tone === "error" ? Appearance.colors.colError : (hw.tone === "progress" ? Appearance.colors.colPrimary : IslandEvents.colorAttention) }
+            }
+            default:
+                return null
+        }
+    }
+
+    // A task that ended while you were away (an agent finishing, a build, a command that failed) comes through
+    // History's log; only what happened after the fullscreen started counts
+    property double fsSince: 0
+    Connections {
+        target: IslandEvents
+        function onEventLogChanged() {
+            const entry = IslandEvents.eventLog[0]
+            if (!root.buried || !entry || entry.time < root.fsSince) return
+            if (entry.kind !== "error" && entry.kind !== "activity") return
+            root.fsSince = entry.time + 1
+            root.fsEnqueue(entry.kind === "error" ? "activityError" : "activityDone", entry.icon || "task_alt", entry.title, entry.kind === "error" ? 2 : 1)
+            root.fsShowLine({ icon: entry.kind === "error" ? "error" : (entry.icon || "task_alt"), title: entry.title, body: entry.subtitle,
+                color: entry.kind === "error" ? Appearance.colors.colError : IslandEvents.colorSuccess }, 5000, false)
+        }
+    }
+
+    // Games (seção 29): quiet by itself, only critical and your own timers get through
+    function fsApplyGameQuiet() {
+        if (root.buried && root.fsGame && !root.fsQuiet && (root.cfg.fullscreenGameQuiet ?? true)) {
+            root.fsQuiet = true
+            root.fsMessage = null
+        }
+    }
+    onFsGameChanged: Qt.callLater(root.fsApplyGameQuiet)
+
+    property bool fsMessageHeld: false
+    onFsMessageHeldChanged: {
+        if (root.fsMessageHeld) {
+            fsMessageTimer.stop()
+            fsMessageHoldCap.restart()
+        } else if (root.fsMessage !== null) {
+            fsMessageHoldCap.stop()
+            fsMessageTimer.interval = 2000
+            fsMessageTimer.restart()
+        }
+    }
+
+    Timer {
+        id: fsMessageTimer
+        onTriggered: root.fsMessage = null
+    }
+    // A pointer parked where the line happens to appear must not pin it there forever
+    Timer {
+        id: fsMessageHoldCap
+        interval: 15000
+        onTriggered: root.fsMessage = null
+    }
+
+    function fsNotify(icon, text, actionLabel, action) {
+        root.fsNotice = { icon: icon, text: text, actionLabel: actionLabel ?? "", action: action ?? null }
+        fsNoticeTimer.restart()
+    }
+
+    Timer {
+        id: fsNoticeTimer
+        interval: 2600
+        onTriggered: root.fsNotice = null
+    }
+
+    // Mutes the conversation for good (same list as the notification view), takes its lines out of the queue,
+    // and offers an undo for a moment
+    function fsMuteConversation(key, ms) {
+        if ((key ?? "") === "" || IslandEvents.isKeyMuted(key)) return
+        IslandEvents.muteKeyFor(key, ms ?? 0)
+        if (root.fsMessage?.key === key) root.fsMessage = null
+        root.fsQueue = root.fsQueue.filter(e => e.key !== key)
+        const name = key.split("|").slice(1).join("|") || key
+        root.fsNotify("notifications_off", Translation.tr("%1 muted").arg(name), Translation.tr("Undo"),
+            () => IslandEvents.unmuteKey(key))
+    }
+
+    // Answering from fullscreen: the notification view with its reply field, keyboard included
+    function fsOpenMessage() {
+        const message = root.fsMessage
+        root.fsMessage = null
+        if (message && root.primaryId === "notification" && message.messaging) root.requestReply()
+        else {
+            root.fsClearQueue()
+            root.expandTo(2, "history")
+        }
+    }
+
+    function fsSummary(queue) {
+        const notifs = queue.filter(e => e.id === "notification").length
+        const others = queue.filter(e => e.id !== "notification")
+        const parts = []
+        if (notifs === 1) parts.push(Translation.tr("1 notification"))
+        else if (notifs > 1) parts.push(Translation.tr("%1 notifications").arg(notifs))
+        for (const e of others.slice(0, 2)) parts.push(e.title)
+        if (others.length > 2) parts.push(`+${others.length - 2}`)
+        return parts.join(" · ")
+    }
+
+    // Ambient islands that come up while buried go to the queue (and to History, which only keeps notifications,
+    // activities and downloads on its own) instead of flashing behind the fullscreen window where nobody sees them
+    property var fsLastActive: []
+    onActiveIdsChanged: {
+        const before = root.fsLastActive
+        root.fsLastActive = root.activeIds
+        if (!root.buried) return
+        for (const id of root.activeIds) {
+            if (before.includes(id) || id === "notification") continue
+            if (root.fullscreenTier(id) !== "ambient") continue
+            const title = root.longNameForId(id)
+            const icon = root.iconForId(id)
+            root.fsEnqueue(id, icon, title, root.importance(id))
+            const line = root.fsImportantLine(id)
+            if (line) root.fsShowLine(line, 5000, false)
+            if (!["activity", "download", "downloadDone"].includes(id))
+                IslandEvents.logEvent(id === "hardware" && (IslandHardware.payload.urgent ?? false) ? "error" : "peek", icon, title, "")
+        }
+    }
+
+    onBuriedChanged: {
+        Qt.callLater(root.fsReportBuried)
+        root.fsQuiet = false
+        root.fsMessage = null
+        root.fsNotice = null
+        root.fsSince = Date.now()
+        if (root.buried) {
+            Qt.callLater(root.fsApplyGameQuiet)
+            // What was already on screen before the fullscreen started is not news
+            root.fsLastActive = root.activeIds
+            root.fsQueue = []
+            if (root.expanded && root.fsCriticalId === "") root.collapse()
+            return
+        }
+        if (root.fsQueue.length > 0 && (root.cfg.fullscreenCatchUp ?? true))
+            IslandEvents.fullscreenDigest.show({ count: root.fsQueue.length, level: root.fsQueueLevel, summary: root.fsSummary(root.fsQueue) })
+        root.fsQueue = []
+    }
+
+    // Only the island actually on screen reports (BarContent also builds a hidden copy of it)
+    function fsReportBuried() {
+        const name = root.QsWindow.window?.screen?.name ?? ""
+        if (name === "" || !root.visible) return
+        const map = Object.assign({}, GlobalStates.islandBuriedByScreen)
+        if (map[name] === root.buried) return
+        map[name] = root.buried
+        GlobalStates.islandBuriedByScreen = map
+    }
+    onVisibleChanged: Qt.callLater(root.fsReportBuried)
+
     readonly property var activeIds: {
         const ids = []
         if (root.hibernateSeconds >= 0) ids.push("hibernate")
@@ -683,6 +975,7 @@ Item {
         if (root.f1EventActive || root.heldId === "f1Event") ids.push("f1Event")
         if (IslandEvents.networkAlert.active) ids.push("networkAlert")
         if (IslandEvents.downloadDone.active) ids.push("downloadDone")
+        if (IslandEvents.fullscreenDigest.active) ids.push("fsDigest")
         if (IslandEvents.watchRating.active && WatchRating.active) ids.push("watchRating")
         if (IslandHardware.active || root.heldId === "hardware") ids.push("hardware")
         if (root.isRecording) ids.push("recording")
@@ -784,7 +1077,7 @@ Item {
     // volume you are turning — get the whole pill. Anything that sits there for minutes shares it with the anchor.
     readonly property var anchorFreeIds: ["notification", "bluetooth", "audioOutput", "osd", "screenshot",
         "clipboard", "songRecResult", "weather", "f1Flag", "f1Start", "f1Event", "shelfDrop", "networkAlert",
-        "downloadDone", "hardware", "session", "hibernate", "battery", "idle", "history", "watchRating"]
+        "downloadDone", "hardware", "session", "hibernate", "battery", "idle", "history", "watchRating", "fsDigest"]
 
     readonly property bool anchorShown: !root.vertical && !root.overlayShown
         && (root.cfg.anchor ?? true)
@@ -1044,6 +1337,7 @@ Item {
             case "zerotier":      return 210
             case "downloadDone":  return 320
             case "watchRating":   return 300
+            case "fsDigest":      return 300
             case "session":       return 164
             default:              return Math.max(144, root.idleTextContentWidth)
         }
@@ -1084,6 +1378,7 @@ Item {
             case "networkAlert":  return IslandEvents.networkAlert
             case "downloadDone":  return IslandEvents.downloadDone
             case "watchRating":   return IslandEvents.watchRating
+            case "fsDigest":      return IslandEvents.fullscreenDigest
             case "hardware":      return IslandHardware
             default:              return null
         }
@@ -1216,7 +1511,8 @@ Item {
 
     function hasDetails(id) {
         if (id === "hardware") return (IslandHardware.payload.actions ?? []).length > 0
-        return !["session", "f1Start", "recording", "networkAlert", "hibernate", "downloadDone"].includes(id)
+        // The fullscreen summary opens History itself (DiFsDigest.qml): it has no full view of its own
+        return !["session", "f1Start", "recording", "networkAlert", "hibernate", "downloadDone", "fsDigest"].includes(id)
     }
 
     function canExpand(id) {
@@ -1774,6 +2070,7 @@ Item {
             case "downloadDone":  return downloadDoneComponent
             case "hardware":      return hardwareComponent
             case "session":       return sessionComponent
+            case "fsDigest":      return fsDigestComponent
             default:              return idleComponent
         }
     }
@@ -1808,6 +2105,7 @@ Item {
         root.primarySince = Date.now()
         root.shownNotification = root.latestNotification
         root.switchContent()
+        Qt.callLater(root.fsReportBuried)
     }
 
     component ContentSlot: Loader {
@@ -1946,7 +2244,8 @@ Item {
         ScriptAction {
             script: {
                 root.markUserSwitch()
-                root.expandTo(2, root.hasDetails(root.primaryId) ? undefined : "overview")
+                root.expandTo(2, root.primaryId === "fsDigest" ? "history"
+                    : (root.hasDetails(root.primaryId) ? undefined : "overview"))
                 insistRelease.restart()
             }
         }
@@ -2021,6 +2320,7 @@ Item {
             case "privacy":    return Translation.tr("Privacy")
             case "watchRating": return WatchRating.now?.series ?? "IMDb"
             case "hardware":   return IslandHardware.payload.title ?? Translation.tr("Hardware")
+            case "fsDigest":   return Translation.tr("While fullscreen")
             default:           return id
         }
     }
@@ -2054,6 +2354,7 @@ Item {
             case "privacy":    return "privacy_tip"
             case "watchRating": return "movie"
             case "hardware":   return IslandHardware.payload.icon ?? "memory"
+            case "fsDigest":   return "fullscreen_exit"
             default:           return "stacks"
         }
     }
@@ -2472,6 +2773,8 @@ Item {
             anchors.fill: parent
             anchors.rightMargin: root.anchorInset
             clip: true
+            // Buried under a fullscreen window nobody sees it: stop drawing (visualizer, spinners, marquees)
+            visible: !root.buried
             transform: Translate { x: root.swipeOffsetX; y: root.swipeOffsetY }
 
             Behavior on anchors.rightMargin {
@@ -2683,6 +2986,12 @@ Item {
             onTapped: (eventPoint, button) => {
                 if (button === Qt.RightButton) {
                     root.openSplitPicker()
+                    return
+                }
+                // The fullscreen summary leads straight to what it summarizes
+                if (root.primaryId === "fsDigest") {
+                    IslandEvents.fullscreenDigest.dismiss()
+                    root.expandTo(2, "history")
                     return
                 }
                 if (root.hasDetails(root.primaryId)) root.toggleExpanded()
@@ -3230,4 +3539,5 @@ Item {
     Component { id: hardwareComponent; DiHardware { di: root } }
     Component { id: sessionComponent; DiSession { di: root } }
     Component { id: watchRatingComponent; DiWatch { di: root } }
+    Component { id: fsDigestComponent; DiFsDigest { di: root } }
 }

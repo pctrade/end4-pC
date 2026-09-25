@@ -36,8 +36,8 @@ Singleton {
     readonly property int openCount: root.liveSessions.length
     readonly property bool anyWorking: root.liveSessions.some(s => s.state === "working")
     readonly property bool anyWaiting: root.liveSessions.some(s => s.state === "waiting")
-    // A session stopped on a permission dialog: the island treats it as CRITICAL (ahead of everything, even over a
-    // fullscreen window) and answers it from the pill (approve / deny), see DiApproval.qml
+    // A session stopped on a permission dialog: the island treats it as CRITICAL (ahead of everything; over a
+    // fullscreen window, a pulsing hairline) and answers it from the pill (approve / deny), see DiApproval.qml
     readonly property var approval: root.liveSessions.find(s => s.state === "waiting" && (s.permission ?? "") !== "" && !s.approvalHidden) ?? null
     readonly property var openAgents: ["claude", "codex", "gemini"].filter(a => root.liveSessions.some(s => s.agent === a))
 

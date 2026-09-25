@@ -123,6 +123,9 @@ Singleton {
     signal homeRequested()
     signal dismissRequested()
     signal silenceRequested()
+    // One key to hush everything: over a fullscreen window it silences the rest of that fullscreen, otherwise it
+    // toggles Focus Mode (DynamicIsland.qml decides which)
+    signal quietRequested()
 
     // Clipboard
     property string lastClipEntry: ""
@@ -1310,15 +1313,60 @@ Singleton {
     }
 
     function isMuted(notif) {
-        if ((root.cfg.mutedConversations ?? []).includes(root.conversationKey(notif))) return true
+        if (root.isKeyMuted(root.conversationKey(notif))) return true
         if (root.focusOn && (notif?.urgency ?? "").toLowerCase() !== "critical") return true
         return false
     }
 
     function toggleMute(notif) {
-        const key = root.conversationKey(notif)
+        root.toggleMuteKey(root.conversationKey(notif))
+    }
+
+    function toggleMuteKey(key) {
+        if ((key ?? "") === "") return
+        if (root.isKeyMuted(key)) root.unmuteKey(key)
+        else root.muteKeyFor(key, 0)
+    }
+
+    // Muting for a while: `ms` > 0 lasts that long, 0 is for good. Timed entries live in their own list as
+    // "<until>|App|Title" and simply stop counting once the time has passed (swept on the next mute).
+    function muteKeyFor(key, ms) {
+        if ((key ?? "") === "") return
+        const now = Date.now()
+        const timed = Array.from(root.cfg.mutedConversationsUntil ?? [])
+            .filter(entry => Number(entry.split("|")[0]) > now && entry.slice(entry.indexOf("|") + 1) !== key)
+        if (ms > 0) {
+            Config.options.bar.dynamicIsland.mutedConversationsUntil = [...timed, `${now + ms}|${key}`]
+            return
+        }
+        Config.options.bar.dynamicIsland.mutedConversationsUntil = timed
         const muted = Array.from(root.cfg.mutedConversations ?? [])
-        Config.options.bar.dynamicIsland.mutedConversations = muted.includes(key) ? muted.filter(k => k !== key) : [...muted, key]
+        if (!muted.includes(key)) Config.options.bar.dynamicIsland.mutedConversations = [...muted, key]
+    }
+
+    function unmuteKey(key) {
+        Config.options.bar.dynamicIsland.mutedConversations = Array.from(root.cfg.mutedConversations ?? []).filter(k => k !== key)
+        Config.options.bar.dynamicIsland.mutedConversationsUntil = Array.from(root.cfg.mutedConversationsUntil ?? [])
+            .filter(entry => entry.slice(entry.indexOf("|") + 1) !== key)
+    }
+
+    function isKeyMuted(key) {
+        if ((root.cfg.mutedConversations ?? []).includes(key)) return true
+        const now = Date.now()
+        return (root.cfg.mutedConversationsUntil ?? []).some(entry =>
+            Number(entry.split("|")[0]) > now && entry.slice(entry.indexOf("|") + 1) === key)
+    }
+
+    // The three lengths offered wherever a conversation can be muted
+    function muteChoices() {
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        tomorrow.setHours(8, 0, 0, 0)
+        return [
+            { label: Translation.tr("1 h"), ms: 3600000 },
+            { label: Translation.tr("Until tomorrow"), ms: tomorrow.getTime() - Date.now() },
+            { label: Translation.tr("Always"), ms: 0 }
+        ]
     }
 
     // How long a notification needs to be read: ~60 ms per character, between 3 and 8 seconds
@@ -1597,6 +1645,8 @@ Singleton {
     property Flash downloadDone: Flash { duration: 9000 }
     // IMDb rating of the episode/film that just started in the browser (services/WatchRating.qml)
     property Flash watchRating: Flash { duration: 6000 }
+    // What queued up behind a fullscreen window, handed back once it ends (DynamicIsland.qml § Tela cheia)
+    property Flash fullscreenDigest: Flash { duration: 9000 }
 
     // Passive: the kernel tells Qt when the folder changes (FolderListModel sits on inotify), and only a partial
     // file appearing starts the watcher, which follows the download and exits once nothing is arriving anymore.
@@ -2129,6 +2179,9 @@ Singleton {
         }
         function silence(): void {
             root.silenceRequested()
+        }
+        function quiet(): void {
+            root.quietRequested()
         }
         function silenceId(id: string): void {
             root.silenceIsland(id)

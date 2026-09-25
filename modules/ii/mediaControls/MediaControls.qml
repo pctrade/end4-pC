@@ -86,6 +86,8 @@ Scope {
             Config.options.bar.layouts.leftLayout.includes("visualizer") ||
             Config.options.bar.layouts.middleLayout.includes("visualizer") ||
             (Config.options.bar.layouts.middleLayout.includes("dynamicIsland") &&
+                // An island buried under a fullscreen video or game draws nothing: no cava for it
+                Object.values(GlobalStates.islandBuriedByScreen).some(buried => !buried) &&
                 (Config.options.bar.dynamicIsland.visualizerStyle === "wave" ||
                 (Config.options.bar.dynamicIsland.visualizerStyle === "dots" && !Config.options.bar.dynamicIsland.showMediaControls))) ||
             Config.options.bar.layouts.rightLayout.includes("visualizer") ||

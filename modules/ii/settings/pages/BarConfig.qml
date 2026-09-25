@@ -707,11 +707,64 @@ ContentPage {
                             { displayName: Translation.tr("Any heavy traffic"), icon: "network_check", value: "traffic" }
                         ]
                     }
+                }
+            }
+
+            // Tela cheia (seção 29): critical still breaks through; everything else waits behind the hairline
+            ContentSubsection {
+                title: Translation.tr("Fullscreen")
+                GroupedList {
                     ConfigSwitch {
-                        buttonIcon: "fullscreen"
-                        text: Translation.tr("Hairline with events while fullscreen")
+                        buttonIcon: "horizontal_rule"
+                        text: Translation.tr("Hairline when something waits")
                         checked: Config.options.bar.dynamicIsland.fullscreenPeek
                         onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenPeek = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "volume_up"
+                        text: Translation.tr("Volume and screenshots still show")
+                        checked: Config.options.bar.dynamicIsland.fullscreenFeedback
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenFeedback = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "chat"
+                        text: Translation.tr("Discreet messages (priority apps)")
+                        checked: Config.options.bar.dynamicIsland.fullscreenMessages
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenMessages = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "fullscreen_exit"
+                        text: Translation.tr("Summary when leaving fullscreen")
+                        checked: Config.options.bar.dynamicIsland.fullscreenCatchUp
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenCatchUp = checked; }
+                    }
+                    ConfigSpinBox {
+                        icon: "timer"
+                        text: Translation.tr("Wait before opening the hairline (ms)")
+                        value: Config.options.bar.dynamicIsland.fullscreenHoverDelay
+                        from: 0
+                        to: 1500
+                        stepSize: 50
+                        onValueChanged: { Config.options.bar.dynamicIsland.fullscreenHoverDelay = value; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "sports_esports"
+                        text: Translation.tr("Games start quiet")
+                        checked: Config.options.bar.dynamicIsland.fullscreenGameQuiet
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenGameQuiet = checked; }
+                    }
+                }
+
+                // Loaded once and written back parsed, never bound: a binding would rewrite the text (and move the
+                // cursor) on every keystroke
+                MaterialTextArea {
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Game windows (class, comma separated)")
+                    wrapMode: TextEdit.Wrap
+                    Component.onCompleted: text = (Config.options.bar.dynamicIsland.fullscreenGameClasses ?? []).join(", ")
+                    onTextChanged: {
+                        const classes = text.split(",").map(c => c.trim()).filter(c => c !== "")
+                        Qt.callLater(() => { Config.options.bar.dynamicIsland.fullscreenGameClasses = classes; })
                     }
                 }
             }
