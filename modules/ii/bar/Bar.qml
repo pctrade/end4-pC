@@ -71,15 +71,16 @@ Scope {
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
                 property var thisMonitorData: HyprlandData.monitors.find(m => m.name === barRoot.screen?.name)
-                property bool monitorHasFullscreen: HyprlandData.workspaceById[thisMonitorData?.activeWorkspace?.id]?.hasfullscreen ?? false
+                // Straight from Quickshell's own Hyprland model: it follows a workspace switch immediately, while
+                // HyprlandData's copy only catches up after a refresh
+                property int activeWorkspaceId: Hyprland.monitorFor(barRoot.screen)?.activeWorkspace?.id ?? thisMonitorData?.activeWorkspace?.id ?? -1
+                property bool monitorHasFullscreen: HyprlandData.workspaceById[activeWorkspaceId]?.hasfullscreen ?? false
                 property bool monitorHasSpecialOpen: (thisMonitorData?.specialWorkspace?.name ?? "") !== ""
-                // CRITICAL still has to work in fullscreen (game/video): hibernating imminently, or the
-                // battery truly critical, is not something to leave behind a barely-visible hairline
-                // (DiFullscreenPeek.qml) for. Everything else non-essential stays buried, as normal.
-                property bool monitorHasCritical: (Battery.hibernateCountdown ?? -1) >= 0
-                    || Battery.isCriticalAndNotCharging
-                    || (IslandHardware.active && IslandHardware.payload.kind === "thermal")
-                    || ClaudeCode.approval !== null
+                // A true fullscreen window (mode 2, not maximized) owns the screen. Hyprland 0.56 no longer buries the
+                // Top layer under it, so the bar steps aside itself instead of relying on the compositor; the island
+                // keeps living at the edge through DiFullscreenPeek.qml. A special workspace on top brings it back.
+                property bool hiddenByFullscreen: !monitorHasSpecialOpen
+                    && HyprlandData.windowList.some(w => w.workspace?.id === barRoot.activeWorkspaceId && w.fullscreen === 2)
                 exclusionMode: ExclusionMode.Ignore
                 property int normalExclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
                     ? 0
@@ -91,11 +92,11 @@ Scope {
                     ? Config.options.bar.frameThickness
                     : Config.options.bar.cornerStyle === 4 ? normalExclusiveZone + 4 : normalExclusiveZone
                 WlrLayershell.namespace: "quickshell:bar"
-                // Overlay layer while a special workspace sits on top of a fullscreen window, or while
-                // something CRITICAL is happening — else Top layer so fullscreen apps cover the bar as normal
-                // (Hyprland buries Top layer under fullscreen+special). Quiet Mode (seção 29): everything
-                // non-critical stays buried behind the fullscreen window, same as always.
-                WlrLayershell.layer: (monitorHasFullscreen && (monitorHasSpecialOpen || monitorHasCritical)) ? WlrLayer.Overlay : WlrLayer.Top
+                // Overlay layer while a special workspace sits on top of a fullscreen window, else Top layer so
+                // fullscreen apps cover the bar as normal (Hyprland buries Top layer under fullscreen+special).
+                // Quiet Mode (seção 29): the bar never comes back over a fullscreen window by itself — what has
+                // to break through (critical, feedback) comes up as a floating mini island (DiFullscreenPeek.qml).
+                WlrLayershell.layer: (monitorHasFullscreen && monitorHasSpecialOpen) ? WlrLayer.Overlay : WlrLayer.Top
                 implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                 // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
@@ -105,7 +106,7 @@ Scope {
                 property int cornerOpenCutWidth: cutOutCornerOpenZones ? Config.options.sidebar.cornerOpen.cornerRegionWidth : 0
                 property int cornerOpenCutHeight: cutOutCornerOpenZones ? Config.options.sidebar.cornerOpen.cornerRegionHeight : 0
                 mask: Region {
-                    item: hoverMaskRegion
+                    item: barRoot.hiddenByFullscreen ? noInputRegion : hoverMaskRegion
                     Region {
                         intersection: Intersection.Subtract
                         x: 0
@@ -145,9 +146,18 @@ Scope {
                     GlobalFocusGrab.removePersistent(barRoot);
                 }
 
+                Item {
+                    id: noInputRegion
+                    width: 0
+                    height: 0
+                }
+
                 MouseArea  {
                     id: hoverRegion
                     hoverEnabled: true
+                    enabled: !barRoot.hiddenByFullscreen
+                    // Transparent rather than invisible: the island inside must stay "visible" to keep working
+                    opacity: barRoot.hiddenByFullscreen ? 0 : 1
                     anchors {
                         fill: parent
                         rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * 1
