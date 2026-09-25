@@ -501,6 +501,60 @@ Singleton {
                 property JsonObject dynamicIsland: JsonObject {
                     property string visualizerStyle: "dots" // "dots", "wave", "none"
                     property bool showMediaControls: false
+                    property bool expandOnHover: true
+                    property int hoverExpandDelay: 250
+                    property bool autoExpand: true
+                    property int autoExpandDuration: 4500
+                    property bool splitMode: false // false: active islands as a card stack
+                    property list<string> pinned: ["weather", "shelf"]
+                    property bool lyrics: true
+                    property bool albumColors: true
+                    property bool privacyIndicators: true
+                    property list<string> privacyIgnoredApps: ["easyeffects", "quickshell", "cava", "songrec"]
+                    property bool clipboard: true
+                    property bool screenshots: true
+                    property bool bluetooth: true
+                    property bool audioOutput: true
+                    property bool weatherAlerts: true
+                    property bool systemLoad: true
+                    property int systemLoadThreshold: 90
+                    property bool updatesIndicator: true
+                    property bool liveActivities: true
+                    property bool network: true
+                    property bool anchor: true // keep one fact (the clock, or something more urgent) pinned to the pill
+                    property bool anchorDate: true // the date above the clock, quiet most days
+                    property string anchorFont: "expressive" // expressive | numbers | monospace | main
+                    property bool anchorAlwaysTime: false // the clock never gives its place away; urgent facts become its icon
+                    property bool watchRatings: true // IMDb rating of the episode playing in the browser (OMDb key in ~/.config/illogical-impulse/omdb.key)
+                    property bool callActivity: true // Vesktop/Discord call as a Live Activity with mute/deafen
+                    property string callLeaveShortcut: "" // Discord keybind for "Disconnect", e.g. "CTRL SHIFT, E"
+                    property int memoryThreshold: 90
+                    property int gpuThreshold: 90
+                    property real volumeMax: 1.5
+                    property bool hoverExpandsMessages: true
+                    property bool fullscreenPeek: true // a hairline with the latest event while an app is fullscreen
+                    // "files": only a file landing in the downloads folder counts; "traffic": any sustained burst
+                    property string downloadDetection: "files"
+                    property int shelfExpireDays: 14 // 0 keeps files in the drawer forever
+                    property list<string> mutedConversations: [] // "App|Title" keys the island doesn't show
+                    property list<string> priorityNotificationApps: ["whatsapp"] // only these reveal the island by themselves
+                    property list<string> caseArtDevices: ["liberty 4 nc"] // Bluetooth names (substring) shown as the animated earbuds case
+                    property bool pauseOnHeadphonesDisconnect: true // and resume when they reconnect
+                    property bool followHeadphones: true // move the sound to headphones as soon as they connect
+                    property bool claudeCode: true // Claude Code sessions (hooks + statusline caches)
+                    property int claudeDoneMinSeconds: 20 // shorter turns finish silently
+                    property bool hardware: true // monitors, drives, docks, peripherals, Caps Lock, sleep, heat
+                    property int slowChargerWatts: 25
+                    property int hotTemperature: 90
+                    property JsonObject f1: JsonObject {
+                        property bool enable: true
+                        property string favoriteDriver: "" // Driver TLA, e.g. "NOR"; empty follows the leader
+                        property bool autoExpandFlags: true
+                        property int countdownMinutes: 15
+                        property bool teamRadio: true // radio messages of the focused driver
+                        property bool autoPlayRadio: false
+                        property bool pinPosition: true // position chip beside the island during a session
+                    }
                     property string leftWidget: "none"
                     property string rightWidget: "none"
                 }

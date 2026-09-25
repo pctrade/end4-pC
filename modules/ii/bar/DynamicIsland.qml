@@ -98,7 +98,8 @@ Item {
 
     ColorQuantizer {
         id: artQuantizer
-        source: root.mediaArtReady ? `file://${root.mediaArtPath}` : ""
+        // Off: the cover is never quantized at all
+        source: (root.cfg.albumColors ?? true) && root.mediaArtReady ? `file://${root.mediaArtPath}` : ""
         depth: 0
         rescaleSize: 1
     }
@@ -744,7 +745,15 @@ Item {
         return worst
     }
 
+    // "Always show the time": the clock never gives its place away — what would have replaced it (battery, call
+    // length, a timer…) stays as the icon beside it, and it stays even on islands that normally take the whole pill
+    readonly property bool anchorAlwaysTime: root.cfg.anchorAlwaysTime ?? false
     readonly property var anchorInfo: {
+        const info = root.anchorFact
+        if (!root.anchorAlwaysTime || (info.text === DateTime.time)) return info
+        return { text: DateTime.time, icon: info.icon, tone: info.tone === "error" ? "error" : "plain" }
+    }
+    readonly property var anchorFact: {
         if (Battery.available && !Battery.isCharging && Battery.percentage <= 0.15)
             return { text: `${Math.round(Battery.percentage * 100)}%`, icon: "battery_alert", tone: "error" }
         if (root.isRecording)
@@ -779,7 +788,7 @@ Item {
 
     readonly property bool anchorShown: !root.vertical && !root.overlayShown
         && (root.cfg.anchor ?? true)
-        && !root.anchorFreeIds.includes(root.primaryId)
+        && (root.anchorAlwaysTime ? !["idle", "session", "hibernate"].includes(root.primaryId) : !root.anchorFreeIds.includes(root.primaryId))
         && root.anchorInfo.text !== ""
 
     readonly property real anchorInset: root.anchorShown ? anchorRow.implicitWidth + 16 : 0
