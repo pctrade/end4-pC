@@ -7,40 +7,55 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.common.functions
 
 Item {
-    id: diMediaRoot
+    id: media
     required property Item di
     anchors.fill: parent
 
-    Rectangle {
-        id: mediaMask
-        anchors.fill: parent
-        color: "transparent"
-        radius: height / 2
+    readonly property MprisPlayer player: media.di.activePlayer
+    readonly property real progress: (media.player?.length ?? 0) > 0 ? Math.min(1, media.player.position / media.player.length) : 0
+    readonly property bool showLyric: !media.di.mediaTrackInfoVisible && media.di.lyricLine !== ""
+    readonly property bool hasArt: (media.player?.trackArtUrl ?? "") !== ""
+    // Shared with the full view: the album art travels into the big cover
+    readonly property var hero: media.hasArt ? { key: "media-art", item: artMask } : null
 
-        layer.enabled: true
-        layer.effect: OpacityMask {
-            maskSource: Rectangle {
-                width: mediaMask.width
-                height: mediaMask.height
-                radius: mediaMask.radius
-            }
+    Rectangle {
+        anchors.fill: parent
+        radius: height / 2
+        visible: media.di.cfg.albumColors ?? true
+        color: ColorUtils.transparentize(media.di.mediaArtColor, 0.84)
+
+        Behavior on color {
+            ColorAnimation { duration: 600 }
+        }
+    }
+
+    Item {
+        id: artBox
+        x: media.di.isMaterial ? 1 : 3
+        anchors.verticalCenter: parent.verticalCenter
+        width: 30
+        height: 30
+
+        CircularProgress {
+            anchors.fill: parent
+            implicitSize: 30
+            lineWidth: 2
+            value: media.progress
+            colPrimary: media.di.mediaArtColor
+            colSecondary: ColorUtils.transparentize(media.di.mediaArtColor, 0.8)
+            enableAnimation: false
         }
 
         Rectangle {
             id: artMask
-            width: root.isMaterial ? root.pillHeight : root.pillHeight - 8
-            height: root.isMaterial ? root.pillHeight : root.pillHeight - 8
-            anchors {
-                left: parent.left
-                leftMargin: root.isMaterial ? 0 : 4
-                verticalCenter: parent.verticalCenter
-            }
-            radius: root.isMaterial ? Appearance.rounding?.full : Appearance.rounding?.small ?? 8
+            anchors.centerIn: parent
+            width: 22
+            height: 22
+            radius: 11
             color: Appearance.colors.colLayer1
-            clip: true
-
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: Rectangle {
@@ -53,195 +68,200 @@ Item {
             StyledImage {
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
-                source: root.activePlayer?.trackArtUrl ?? ""
-                sourceSize.width: artMask.width * 2
-                sourceSize.height: artMask.height * 2
-                visible: (root.activePlayer?.trackArtUrl ?? "") !== ""
+                source: media.player?.trackArtUrl ?? ""
+                sourceSize.width: 48
+                sourceSize.height: 48
+                visible: media.hasArt
             }
 
             MaterialSymbol {
                 anchors.centerIn: parent
                 text: "music_note"
-                iconSize: 14
+                iconSize: 13
                 color: Appearance.colors.colOnLayer1
-                visible: (root.activePlayer?.trackArtUrl ?? "") === ""
+                visible: !media.hasArt
             }
         }
 
+        SequentialAnimation {
+            id: swapArt
+            ParallelAnimation {
+                NumberAnimation { target: artMask; property: "scale"; to: 0.3; duration: IslandMotion.micro; easing.type: Easing.InQuad }
+                NumberAnimation { target: artMask; property: "rotation"; to: -90; duration: IslandMotion.micro; easing.type: Easing.InQuad }
+            }
+            PropertyAction { target: artMask; property: "rotation"; value: 90 }
+            ParallelAnimation {
+                NumberAnimation { target: artMask; property: "scale"; to: 1; duration: IslandMotion.long; easing.type: Easing.OutBack; easing.overshoot: 2 }
+                NumberAnimation { target: artMask; property: "rotation"; to: 0; duration: IslandMotion.long; easing.type: Easing.OutBack }
+            }
+        }
+
+        Connections {
+            target: media.player
+            function onTrackTitleChanged() {}
+        }
+    }
+
+    StyledText {
+        id: trackTitleMetrics
+        visible: false
+        text: media.player?.trackTitle ?? ""
+        font.pixelSize: Appearance.font.pixelSize.smaller
+        font.weight: Font.DemiBold
+    }
+    StyledText {
+        id: trackArtistMetrics
+        visible: false
+        text: media.player?.trackArtist ?? ""
+        font.pixelSize: Appearance.font.pixelSize.smallest
+    }
+
+    readonly property Item trailingItem: mediaControlsRow.visible ? mediaControlsRow
+        : (visualizerCanvas.visible ? visualizerCanvas : (islandVisualizer.visible ? islandVisualizer : null))
+
+    ColumnLayout {
+        id: trackInfoColumn
+        anchors {
+            left: artBox.right
+            leftMargin: 7
+            verticalCenter: parent.verticalCenter
+            right: media.trailingItem ? media.trailingItem.left : parent.right
+            rightMargin: 8
+        }
+        spacing: media.di.isMaterial ? -2 : -4
+        opacity: media.di.mediaTrackInfoVisible ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
+        }
+
         StyledText {
-            id: trackTitleMetrics
-            visible: false
-            text: root.activePlayer?.trackTitle ?? ""
+            Layout.fillWidth: true
+            text: media.player?.trackTitle ?? ""
             font.pixelSize: Appearance.font.pixelSize.smaller
             font.weight: Font.DemiBold
+            color: Appearance.colors.colOnLayer0
+            elide: Text.ElideRight
+            maximumLineCount: 1
         }
         StyledText {
-            id: trackArtistMetrics
-            visible: false
-            text: root.activePlayer?.trackArtist ?? ""
+            Layout.fillWidth: true
+            text: media.player?.trackArtist ?? ""
             font.pixelSize: Appearance.font.pixelSize.smallest
-        }
-
-        ColumnLayout {
-            id: trackInfoColumn
-            anchors {
-                left: artMask.right
-                leftMargin: 8
-                verticalCenter: parent.verticalCenter
-                right: mediaControlsRow.visible ? mediaControlsRow.left
-                    : (visualizerCanvas.visible ? visualizerCanvas.left
-                    : (islandVisualizer.visible ? islandVisualizer.left : parent.right))
-                rightMargin: 8
-            }
-            spacing: root.isMaterial ? -2 : -4
-            opacity: root.mediaTrackInfoVisible ? 1 : 0
-
-            Behavior on opacity {
-                NumberAnimation { duration: IslandMotion.short; easing.type: Easing.OutCubic }
-            }
-
-            StyledText {
-                Layout.fillWidth: true
-                text: root.activePlayer?.trackTitle ?? ""
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                font.weight: Font.DemiBold
-                color: Appearance.colors.colOnLayer0
-                elide: Text.ElideRight
-                wrapMode: Text.NoWrap
-                maximumLineCount: 1
-            }
-            StyledText {
-                Layout.fillWidth: true
-                text: root.activePlayer?.trackArtist ?? ""
-                font.pixelSize: Appearance.font.pixelSize.smallest
-                color: Appearance.colors.colOnLayer0
-                opacity: 0.7
-                elide: Text.ElideRight
-                wrapMode: Text.NoWrap
-                maximumLineCount: 1
-            }
-
-            readonly property real widestLineWidth: Math.max(trackTitleMetrics.implicitWidth, trackArtistMetrics.implicitWidth)
-
-            readonly property real computedContentWidth: artMask.width
-                + (root.isMaterial ? 14 : 8)
-                + trackInfoColumn.widestLineWidth
-                + 12
-                + (mediaControlsRow.visible ? mediaControlsRow.implicitWidth
-                    : (visualizerCanvas.visible ? visualizerCanvas.width
-                    : (islandVisualizer.visible ? islandVisualizer.width : 0)))
-                + (root.isMaterial ? 0 : 4)
-                + 10
-
-            onComputedContentWidthChanged: root.mediaTextContentWidth = trackInfoColumn.computedContentWidth
-            Component.onCompleted: root.mediaTextContentWidth = trackInfoColumn.computedContentWidth
-        }
-
-        WaveVisualizer {
-            id: visualizerCanvas
-            anchors {
-                right: mediaControlsRow.visible ? mediaControlsRow.left : parent.right
-                rightMargin: mediaControlsRow.visible ? 6 : 10
-                verticalCenter: parent.verticalCenter
-            }
-            width: root.isMaterial ? 60 : 50
-            height: root.isMaterial ? root.pillHeight * 1.5 : root.pillHeight * 0.85
-            live: root.activePlayer?.isPlaying
-            points: GlobalStates.visualizerPoints
-            maxVisualizerValue: 1000
-            smoothing: 2
             color: Appearance.colors.colOnLayer0
-            visible: Config.options.bar.dynamicIsland.visualizerStyle === "wave"
+            opacity: 0.7
+            elide: Text.ElideRight
+            maximumLineCount: 1
         }
 
-        Visualizer {
-            id: islandVisualizer
-            anchors {
-                right: parent.right
-                rightMargin: 10
-                verticalCenter: parent.verticalCenter
-            }
-            height: root.isMaterial ? root.pillHeight * 1.5 : root.pillHeight * 0.85
-            vertical: false
-            isMaterial: false
-            barCount: 5
-            dotSize: 3
-            dotSpacing: 3
-            maxBarHeight: root.isMaterial ? root.pillHeight * 1.5 : root.pillHeight * 0.85
-            barColor: Appearance.colors.colOnLayer0
-            visible: !Config.options.bar.dynamicIsland.showMediaControls
-                && Config.options.bar.dynamicIsland.visualizerStyle === "dots"
+        readonly property real computedContentWidth: artBox.width + (media.di.isMaterial ? 1 : 3) + 7
+            + Math.max(trackTitleMetrics.implicitWidth, trackArtistMetrics.implicitWidth)
+            + 10 + (media.trailingItem ? media.trailingItem.width : 0) + 10
+
+        onComputedContentWidthChanged: media.di.mediaTextContentWidth = trackInfoColumn.computedContentWidth
+        Component.onCompleted: media.di.mediaTextContentWidth = trackInfoColumn.computedContentWidth
+    }
+
+    StyledText {
+        id: lyricText
+        anchors {
+            left: artBox.right
+            leftMargin: 7
+            verticalCenter: parent.verticalCenter
+            right: media.trailingItem ? media.trailingItem.left : parent.right
+            rightMargin: 8
         }
+        text: media.di.lyricLine
+        font.pixelSize: Appearance.font.pixelSize.smaller
+        font.weight: Font.DemiBold
+        font.italic: true
+        color: Appearance.colors.colOnLayer0
+        elide: Text.ElideRight
+        opacity: media.showLyric ? 1 : 0
+        visible: opacity > 0
 
-        RowLayout {
-            id: mediaControlsRow
-            anchors {
-                right: parent.right
-                rightMargin: root.isMaterial ? 4 : 8
-                verticalCenter: parent.verticalCenter
-            }
-            spacing: root.isMaterial ? -2 : -4
-            visible: Config.options.bar.dynamicIsland.showMediaControls
+        property real slide: 0
+        transform: Translate { y: lyricText.slide }
 
-            Item {
+        onTextChanged: lyricIn.restart()
+
+        ParallelAnimation {
+            id: lyricIn
+            NumberAnimation { target: lyricText; property: "slide"; from: 7; to: 0; duration: IslandMotion.medium; easing.type: Easing.OutCubic }
+            NumberAnimation { target: lyricText; property: "opacity"; from: 0; to: media.showLyric ? 1 : 0; duration: IslandMotion.medium; easing.type: Easing.OutCubic }
+        }
+    }
+
+    WaveVisualizer {
+        id: visualizerCanvas
+        anchors {
+            right: mediaControlsRow.visible ? mediaControlsRow.left : parent.right
+            rightMargin: mediaControlsRow.visible ? 6 : 10
+            verticalCenter: parent.verticalCenter
+        }
+        width: media.di.isMaterial ? 60 : 50
+        height: media.di.isMaterial ? media.di.pillHeight * 1.5 : media.di.pillHeight * 0.85
+        live: media.player?.isPlaying ?? false
+        points: GlobalStates.visualizerPoints
+        maxVisualizerValue: 1000
+        smoothing: 2
+        color: (media.di.cfg.albumColors ?? true) ? media.di.mediaArtColor : Appearance.colors.colOnLayer0
+        visible: media.di.cfg.visualizerStyle === "wave"
+    }
+
+    Visualizer {
+        id: islandVisualizer
+        anchors {
+            right: parent.right
+            rightMargin: 10
+            verticalCenter: parent.verticalCenter
+        }
+        height: media.di.isMaterial ? media.di.pillHeight * 1.5 : media.di.pillHeight * 0.85
+        vertical: false
+        isMaterial: false
+        barCount: 5
+        dotSize: 3
+        dotSpacing: 3
+        maxBarHeight: height
+        barColor: (media.di.cfg.albumColors ?? true) ? media.di.mediaArtColor : Appearance.colors.colOnLayer0
+        visible: !media.di.cfg.showMediaControls && media.di.cfg.visualizerStyle === "dots"
+    }
+
+    RowLayout {
+        id: mediaControlsRow
+        anchors {
+            right: parent.right
+            rightMargin: media.di.isMaterial ? 4 : 8
+            verticalCenter: parent.verticalCenter
+        }
+        spacing: media.di.isMaterial ? -2 : -4
+        visible: media.di.cfg.showMediaControls ?? false
+
+        Repeater {
+            model: [
+                { icon: "skip_previous", size: 20, show: media.player?.canGoPrevious ?? false, action: () => media.player?.previous() },
+                { icon: media.player?.isPlaying ? "pause" : "play_arrow", size: 22, show: true, action: () => media.player?.togglePlaying() },
+                { icon: "skip_next", size: 20, show: media.player?.canGoNext ?? false, action: () => media.player?.next() }
+            ]
+            delegate: Item {
+                required property var modelData
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 20
-                implicitHeight: 20
-                visible: root.activePlayer?.canGoPrevious ?? false
+                implicitWidth: modelData.size
+                implicitHeight: modelData.size
+                visible: modelData.show
 
                 MaterialSymbol {
                     anchors.centerIn: parent
-                    text: "skip_previous"
+                    text: modelData.icon
                     fill: 1
-                    iconSize: root.isMaterial ? 20 : 16
+                    iconSize: media.di.isMaterial ? 20 : modelData.size - 3
                     color: Appearance.colors.colOnLayer0
                 }
 
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.activePlayer?.previous()
-                }
-            }
-
-            Item {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 22
-                implicitHeight: 22
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: root.activePlayer?.isPlaying ? "pause" : "play_arrow"
-                    fill: 1
-                    iconSize: root.isMaterial ? 20 : 18
-                    color: Appearance.colors.colOnLayer0
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.activePlayer?.togglePlaying()
-                }
-            }
-
-            Item {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 20
-                implicitHeight: 20
-                visible: root.activePlayer?.canGoNext ?? false
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: "skip_next"
-                    fill: 1
-                    iconSize: root.isMaterial ? 20 : 16
-                    color: Appearance.colors.colOnLayer0
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.activePlayer?.next()
+                    onClicked: modelData.action()
                 }
             }
         }

@@ -89,9 +89,20 @@ Slider {
         }
     }
 
+    // Clicking anywhere on the track jumps the value there, instead of asking you to grab the handle first and
+    // drag it across. The press is still handed to the Slider, so dragging from that point keeps working.
     MouseArea {
         anchors.fill: parent
-        onPressed: (mouse) => mouse.accepted = false
+        onPressed: (mouse) => {
+            const usable = Math.max(1, root.availableWidth)
+            const position = Math.max(0, Math.min(1, (mouse.x - root.leftPadding - root.handle.width / 2) / (usable - root.handle.width)))
+            const target = root.from + position * (root.to - root.from)
+            if (Math.abs(target - root.value) > (root.to - root.from) * 0.005) {
+                root.value = target
+                root.moved()
+            }
+            mouse.accepted = false
+        }
         cursorShape: root.pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor 
     }
 
