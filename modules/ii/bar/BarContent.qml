@@ -219,8 +219,10 @@ Item {
                     anchors.centerIn: parent
                     spacing: 3
 
+                    // Only the layout on screen builds its widgets: the hidden copy used to run every binding, timer
+                    // and window of each widget too (two Dynamic Islands, two fullscreen hairlines)
                     Repeater {
-                        model: root.effectiveLeftLayout
+                        model: root.isMaterial ? root.effectiveLeftLayout : []
                         delegate: leftMaterialGroupDelegate
                     }
 
@@ -256,7 +258,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveLeftLayout
+                    model: root.isMaterial ? [] : root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
                 }
 
@@ -337,7 +339,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: root.effectiveMiddleLayout
+                        model: root.isMaterial ? root.effectiveMiddleLayout : []
                         delegate: middleMaterialGroupDelegate
                     }
 
@@ -374,7 +376,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveMiddleLayout
+                    model: root.isMaterial ? [] : root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
                 }
 
@@ -442,7 +444,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: root.effectiveRightLayout
+                        model: root.isMaterial ? root.effectiveRightLayout : []
                         delegate: rightMaterialGroupDelegate
                     }
 
@@ -481,7 +483,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveRightLayout
+                    model: root.isMaterial ? [] : root.effectiveRightLayout
                     delegate: rightBarGroupDelegate
                 }
 
