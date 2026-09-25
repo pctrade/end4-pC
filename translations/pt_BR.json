@@ -1305,5 +1305,17 @@
   "Until tomorrow": "Até amanhã",
   "Battery low": "Bateria fraca",
   "Games start quiet": "Jogos começam em silêncio",
-  "Game windows (class, comma separated)": "Janelas de jogo (classe, separadas por vírgula)"
+  "Game windows (class, comma separated)": "Janelas de jogo (classe, separadas por vírgula)",
+  "A cava process while music plays": "Um processo cava enquanto a música toca",
+  "Live timing script, only during sessions": "Script de timing ao vivo, só durante as sessões",
+  "Traffic every 5 s, every second while downloading": "Tráfego a cada 5 s, a cada segundo durante downloads",
+  "Fetches and follows the lyrics of each song": "Busca e acompanha a letra de cada música",
+  "checkupdates every %1 min (network + pacman)": "checkupdates a cada %1 min (rede + pacman)",
+  "Reuses the bar's samples; processes only during alerts": "Reaproveita as amostras da barra; processos só em alertas",
+  "udev and UPower events, nothing in between": "Eventos do udev e do UPower, nada entre eles",
+  "Reads each cover once, when the song changes": "Lê cada capa uma vez, quando a música muda",
+  "Coding agents in the terminal": "Agentes de código no terminal",
+  "Reuses what PipeWire already reports": "Reaproveita o que o PipeWire já informa",
+  "High": "Alto",
+  "Low": "Baixo"
 }

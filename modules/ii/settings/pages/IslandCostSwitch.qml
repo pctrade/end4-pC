@@ -5,26 +5,28 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 
-// A Dynamic Island feature with what it actually costs: what runs, when, and a weight tag (heavy / medium /
-// light). Turning it off stops that work, not just the drawing (each one was audited to be passive).
+// A Dynamic Island feature with what it actually costs: what runs, when, and how heavy it is (a three-bar meter,
+// like signal strength). Turning it off stops that work, not just the drawing (each one was audited to be passive).
 RippleButton {
     id: row
     property string buttonIcon: ""
     property string title: ""
     property string detail: ""
-    property string cost: "light"
+    property string cost: "light"   // heavy | medium | light
     colBackgroundHover: "transparent"
 
     Layout.fillWidth: true
     Layout.bottomMargin: 6
-    implicitHeight: content.implicitHeight + 12
+    implicitHeight: content.implicitHeight + 8
+    font.pixelSize: Appearance.font.pixelSize.small
 
     onClicked: row.checked = !row.checked
 
-    readonly property color costColor: row.cost === "heavy" ? Appearance.colors.colError
-        : row.cost === "medium" ? "#E3A33B" : Appearance.m3colors.m3success
-    readonly property string costLabel: row.cost === "heavy" ? Translation.tr("Heavy")
-        : row.cost === "medium" ? Translation.tr("Medium") : Translation.tr("Light")
+    readonly property int level: row.cost === "heavy" ? 3 : row.cost === "medium" ? 2 : 1
+    readonly property color levelColor: row.cost === "heavy" ? Appearance.colors.colError
+        : row.cost === "medium" ? Appearance.colors.colTertiary : Appearance.colors.colPrimary
+    readonly property string levelLabel: row.cost === "heavy" ? Translation.tr("High")
+        : row.cost === "medium" ? Translation.tr("Medium") : Translation.tr("Low")
 
     contentItem: RowLayout {
         id: content
@@ -33,44 +35,60 @@ RippleButton {
         OptionalMaterialSymbol {
             icon: row.buttonIcon
             iconSize: Appearance.font.pixelSize.larger
-            opacity: row.checked ? 1 : 0.5
+            opacity: row.checked ? 1 : 0.45
         }
 
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 1
+            Layout.minimumWidth: 0
+            spacing: 0
 
-            RowLayout {
-                spacing: 6
-                StyledText {
-                    text: row.title
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: Appearance.colors.colOnSecondaryContainer
-                }
-                Rectangle {
-                    implicitWidth: costText.implicitWidth + 12
-                    implicitHeight: 17
-                    radius: 8.5
-                    color: ColorUtils.transparentize(row.costColor, row.checked ? 0.78 : 0.9)
-                    StyledText {
-                        id: costText
-                        anchors.centerIn: parent
-                        text: row.costLabel
-                        font.pixelSize: Appearance.font.pixelSize.smallest
-                        font.weight: Font.DemiBold
-                        color: row.costColor
-                        opacity: row.checked ? 1 : 0.6
+            StyledText {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                text: row.title
+                font: row.font
+                color: Appearance.colors.colOnSecondaryContainer
+                elide: Text.ElideRight
+            }
+            StyledText {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                visible: row.detail !== ""
+                text: row.detail
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                color: Appearance.colors.colSubtext
+                elide: Text.ElideRight
+            }
+        }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 6
+            opacity: row.checked ? 1 : 0.45
+
+            Row {
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 2
+                Repeater {
+                    model: 3
+                    Rectangle {
+                        required property int index
+                        anchors.bottom: parent.bottom
+                        width: 4
+                        height: 6 + index * 4
+                        radius: 2
+                        color: index < row.level ? row.levelColor
+                            : ColorUtils.transparentize(Appearance.colors.colOnSecondaryContainer, 0.82)
                     }
                 }
             }
             StyledText {
-                Layout.fillWidth: true
-                visible: row.detail !== ""
-                text: row.detail
-                wrapMode: Text.WordWrap
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: 52
+                text: row.levelLabel
                 font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colOnSecondaryContainer
-                opacity: 0.6
+                color: Appearance.colors.colSubtext
             }
         }
 
