@@ -1009,39 +1009,24 @@ ContentPage {
                         settingsVisualizer.entry.enable = checked;
                     }
                 }
-                ConfigSelectionArray {
+                // A dropdown rather than a row of chips: the styles no longer fit on
+                // one line, and the list keeps growing.
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "style"
                     text: Translation.tr("Style")
-                    icon: "style"
+                    fieldWidth: 220
                     currentValue: settingsVisualizer.entry.style
                     onSelected: newValue => {
                         settingsVisualizer.entry.style = newValue;
                     }
-                    options: [
-                        {
-                            displayName: Translation.tr("Classic"),
-                            icon: "bar_chart",
-                            value: "bars"
-                        },
-                        {
-                            displayName: Translation.tr("Mirror"),
-                            icon: "equalizer",
-                            value: "mirror"
-                        },
-                        {
-                            displayName: Translation.tr("Aurora"),
-                            icon: "waves",
-                            value: "aurora"
-                        },
-                        {
-                            displayName: Translation.tr("Ring"),
-                            icon: "album",
-                            value: "ring"
-                        },
-                        {
-                            displayName: Translation.tr("Dots"),
-                            icon: "grid_on",
-                            value: "dots"
-                        }
+                    model: [
+                        { displayName: Translation.tr("Classic"), value: "bars" },
+                        { displayName: Translation.tr("Mirror"),  value: "mirror" },
+                        { displayName: Translation.tr("Aurora"),  value: "aurora" },
+                        { displayName: Translation.tr("Ring"),    value: "ring" },
+                        { displayName: Translation.tr("Dots"),    value: "dots" },
+                        { displayName: Translation.tr("Halo"),    value: "halo" }
                     ]
                 }
 

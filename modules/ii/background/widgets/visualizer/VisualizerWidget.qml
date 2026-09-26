@@ -16,8 +16,10 @@ AbstractBackgroundWidget {
 
     // "bars" is the original Rectangle visualizer, the others are shaders/<style>.frag.qsb
     readonly property string style: configEntry.style ?? "bars"
-    readonly property bool shaderStyle: ["aurora", "ring", "dots", "mirror"].includes(style)
+    readonly property bool shaderStyle: ["aurora", "ring", "dots", "mirror", "halo"].includes(style)
     readonly property bool isRing: style === "ring"
+    // The halo frames the whole screen instead of sitting in a band at the bottom
+    readonly property bool isHalo: style === "halo"
     readonly property bool useCoverColors: shaderStyle && (configEntry.colorSource ?? "theme") === "cover"
 
     // Live size while the ring is being resized, written to the config on release
@@ -27,15 +29,18 @@ AbstractBackgroundWidget {
     readonly property real barsHeight: 240
 
     implicitWidth: isRing ? ringSize : screenWidth
-    implicitHeight: isRing ? ringSize : shaderStyle ? bandHeight : barsHeight
+    implicitHeight: isRing ? ringSize : isHalo ? screenHeight : shaderStyle ? bandHeight : barsHeight
     x: isRing ? targetX : 0
-    y: isRing ? targetY : screenHeight - implicitHeight
+    y: isRing ? targetY : isHalo ? 0 : screenHeight - implicitHeight
     draggable: isRing && placementStrategy === "free" && !Config.options.background.widgetsLocked
     hoverEnabled: isRing
+    // The halo covers the whole screen and is purely decorative: it must never take
+    // the pointer, otherwise it swallows every desktop click, right click menu included.
+    acceptedButtons: isHalo ? Qt.NoButton : (Qt.LeftButton | Qt.RightButton)
 
     function restoreXYBinding() {
         root.x = Qt.binding(() => root.isRing ? root.targetX : 0);
-        root.y = Qt.binding(() => root.isRing ? root.targetY : root.screenHeight - root.implicitHeight);
+        root.y = Qt.binding(() => root.isRing ? root.targetY : root.isHalo ? 0 : root.screenHeight - root.implicitHeight);
         root.z = Qt.binding(() => root.targetZ);
     }
 
@@ -46,6 +51,7 @@ AbstractBackgroundWidget {
             case "aurora": return [c.m3primary, c.m3tertiary, c.m3secondary];
             case "ring": return [c.m3primary, c.m3tertiary, c.m3primaryContainer];
             case "dots": return [c.m3onBackground, c.m3primary, c.m3error];
+            case "halo": return [c.m3primary, c.m3tertiary, c.m3secondary];
             default: return [c.m3primary, c.m3primaryContainer, c.m3tertiary];
         }
     }
