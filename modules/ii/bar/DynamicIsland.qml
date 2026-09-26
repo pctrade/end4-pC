@@ -651,7 +651,7 @@ Item {
         return (root.cfg.fullscreenGameClasses ?? []).some(c => String(c) !== "" && cls.includes(String(c).toLowerCase()))
     }
 
-    readonly property var fsIgnoredIds: ["clipboard", "shelfDrop", "watchRating", "fsDigest"]
+    readonly property var fsIgnoredIds: ["clipboard", "shelfDrop", "fsDigest"]
 
     function fullscreenTier(id) {
         if (id === "approval") return "attention"
@@ -730,6 +730,22 @@ Item {
 
     function fsImportantLine(id) {
         switch (id) {
+            // The episode's own IMDb rating: fullscreen used to drop it outright, but a fullscreen video is
+            // how it's watched most of the time
+            case "watchRating": {
+                const now = WatchRating.now
+                if (!now) return null
+                const next = IslandEvents.watchRating.payload?.next ?? null
+                const isFilm = !next && (now.season ?? 0) <= 0
+                const rating = next ? next.rating : isFilm ? WatchRating.seriesRating : WatchRating.episodeRating
+                const tier = next ? next.tier : isFilm ? "" : WatchRating.tier
+                const badge = tier === "top3" ? Translation.tr("Top 3 of the show")
+                    : tier === "top10" ? Translation.tr("Top 10 of the show")
+                    : tier === "best" ? Translation.tr("Best of the season") : ""
+                const body = `${rating >= 0 ? rating.toFixed(1) : "–"} IMDb${badge !== "" ? " · " + badge : ""}`
+                return { icon: "movie", title: now.series, body: body,
+                    color: rating >= 8.5 ? "#F5C518" : Appearance.colors.colPrimary }
+            }
             case "battery":
                 if (root.batteryAlertKind !== "low") return null
                 return { icon: root.batteryIcon(), title: Translation.tr("Battery low"), body: `${Math.round(Battery.percentage * 100)}%`, color: Appearance.colors.colError }

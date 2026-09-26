@@ -216,16 +216,50 @@ Singleton {
         xhr.send()
     }
 
+    // Netflix/Disney+ show their own language's title ("O Mentalista"); OMDb's exact-title search only knows
+    // it in English and fails outright. IMDb's own search-as-you-type resolves almost any language or spelling.
+    function resolveByName(name, done) {
+        const letter = /[a-z0-9]/i.test(name.trim()[0] ?? "") ? name.trim()[0].toLowerCase() : "a"
+        const xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            let id = null
+            try { id = JSON.parse(xhr.responseText).d?.find(e => (e.id ?? "").startsWith("tt"))?.id ?? null } catch (e) {}
+            done(id)
+        }
+        xhr.open("GET", `https://v2.sg.media-imdb.com/suggestion/${letter}/${encodeURIComponent(name.trim())}.json`)
+        xhr.send()
+    }
+
     function lookup() {
         if (!root.enabled || !root.now) return
-        const key = root.now.series.toLowerCase()
+        // Captured once: root.now can turn null while these requests are in flight, and every step below only
+        // needs the name it started with
+        const seriesName = root.now.series
+        const key = seriesName.toLowerCase()
         const base = `https://www.omdbapi.com/?apikey=${encodeURIComponent(root.apiKey)}`
         const cached = root.titleCache[key]
         if (cached === undefined) {
-            root.request(`${base}&t=${encodeURIComponent(root.now.series)}`, data => {
-                root.titleCache[key] = data ?? false
-                root.revision++
-                root.lookup()
+            root.request(`${base}&t=${encodeURIComponent(seriesName)}`, data => {
+                if (data) {
+                    root.titleCache[key] = data
+                    root.revision++
+                    root.lookup()
+                    return
+                }
+                root.resolveByName(seriesName, id => {
+                    if (!id) {
+                        root.titleCache[key] = false
+                        root.revision++
+                        root.lookup()
+                        return
+                    }
+                    root.request(`${base}&i=${id}`, byId => {
+                        root.titleCache[key] = byId ?? false
+                        root.revision++
+                        root.lookup()
+                    })
+                })
             })
             return
         }
