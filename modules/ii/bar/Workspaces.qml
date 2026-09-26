@@ -248,7 +248,7 @@ ButtonMouseArea {
                             implicitWidth: appIcon.implicitWidth
                             implicitHeight: appIcon.implicitHeight
                             colorizationColor: Appearance.m3colors.darkmode ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
-                            colorization: Config.options.bar.workspaces.monochromeIcons ? 0.8 : 0.5
+                            colorization: Config.options.bar.workspaces.monochromeIcons ? 0.8 : 0
                             brightness: 0
                             source: appIcon
 
