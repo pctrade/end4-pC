@@ -7,7 +7,6 @@
 import "modules/common"
 import "services"
 import "panelFamilies"
-import QtQuick
 import QtQuick.Window
 import Quickshell
 import Quickshell.Io
