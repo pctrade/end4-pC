@@ -49,6 +49,7 @@ ShellRoot {
         Wallpapers.load()
         Updates.load()
         LyricsService.restartLyrics()
+        Spun.load()
     }
     
     PanelFamilyLoader {
