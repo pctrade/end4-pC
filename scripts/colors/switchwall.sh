@@ -29,7 +29,41 @@ handle_kde_material_you_colors() {
             kde_scheme_variant="scheme-tonal-spot"
             ;;
     esac
+
+    # Konsole lock: the kde-material-you-colors wrapper also rewrites the
+    # Konsole profiles' [Appearance] ColorScheme/Font to the generated
+    # MaterialYou values. Snapshot the profiles first and restore them after
+    # the wrapper runs so Konsole keeps the user's own color scheme while
+    # every other app is still themed.
+    KONSOLE_DIR="$HOME/.local/share/konsole"
+    konsole_backup_dir="$STATE_DIR/user/generated/konsole-lock-backup"
+    lock_konsole="true"
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        lock_konsole=$(jq -r '.appearance.wallpaperTheming.lockKonsoleColors // "true"' "$SHELL_CONFIG_FILE")
+    fi
+
+    konsole_lock_backup() {
+        [ ! -d "$konsole_backup_dir" ] && mkdir -p "$konsole_backup_dir"
+        find "$KONSOLE_DIR" -maxdepth 1 -name "*.profile" -type f -exec cp -f {} "$konsole_backup_dir/" \;
+    }
+
+    konsole_lock_restore() {
+        if [ -d "$konsole_backup_dir" ] && compgen -G "$konsole_backup_dir/*.profile" > /dev/null; then
+            for f in "$konsole_backup_dir"/*.profile; do
+                cp -f "$f" "$KONSOLE_DIR/$(basename "$f")" 2>/dev/null || true
+            done
+        fi
+    }
+
+    if [[ "$lock_konsole" == "true" && -d "$KONSOLE_DIR" ]]; then
+        konsole_lock_backup
+    fi
+
     "$XDG_CONFIG_HOME"/matugen/templates/kde/kde-material-you-colors-wrapper.sh --scheme-variant "$kde_scheme_variant"
+
+    if [[ "$lock_konsole" == "true" ]]; then
+        konsole_lock_restore
+    fi
 }
 
 pre_process() {
