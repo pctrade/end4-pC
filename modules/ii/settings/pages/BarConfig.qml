@@ -372,6 +372,404 @@ ContentPage {
 
             ContentSubsection {
                 Layout.topMargin: 10
+                title: Translation.tr("How it behaves")
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "open_in_full"
+                        text: Translation.tr("Expand on hover")
+                        checked: Config.options.bar.dynamicIsland.expandOnHover
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.expandOnHover = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "notifications_active"
+                        text: Translation.tr("Expand automatically for important events")
+                        checked: Config.options.bar.dynamicIsland.autoExpand
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.autoExpand = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "bubble_chart"
+                        text: Translation.tr("Split into bubbles when several things are active")
+                        checked: Config.options.bar.dynamicIsland.splitMode
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.splitMode = checked; }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Anchor")
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "schedule"
+                        text: Translation.tr("Keep the time (or what is more urgent) pinned to the island")
+                        checked: Config.options.bar.dynamicIsland.anchor
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.anchor = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "nest_clock_farsight_analog"
+                        text: Translation.tr("Always show the time (urgent things become its icon)")
+                        checked: Config.options.bar.dynamicIsland.anchorAlwaysTime
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.anchorAlwaysTime = checked; }
+                    }
+                    ConfigSelectionArray {
+                        text: Translation.tr("Anchor typeface")
+                        icon: "text_fields"
+                        currentValue: Config.options.bar.dynamicIsland.anchorFont
+                        onSelected: newValue => { Config.options.bar.dynamicIsland.anchorFont = newValue; }
+                        options: [
+                            { displayName: Translation.tr("Display"),   icon: "brand_family", value: "expressive" },
+                            { displayName: Translation.tr("Interface"), icon: "match_case",   value: "main" },
+                            { displayName: Translation.tr("Numbers"),   icon: "123",          value: "numbers" },
+                            { displayName: Translation.tr("Mono"),      icon: "code",         value: "monospace" }
+                        ]
+                    }
+                }
+            }
+
+            // What each feature costs while it's on, heaviest first — so it's clear which ones are worth turning
+            // off. Every switch here stops the work itself (process, timer, network), not just the drawing.
+            ContentSubsection {
+                title: Translation.tr("Background work · heaviest first")
+                GroupedList {
+                    IslandCostSwitch {
+                        buttonIcon: "graphic_eq"
+                        title: Translation.tr("Music visualizer")
+                        detail: Translation.tr("A cava process while music plays")
+                        cost: "heavy"
+                        checked: Config.options.bar.dynamicIsland.visualizerStyle !== "none"
+                        onCheckedChanged: {
+                            if (checked === (Config.options.bar.dynamicIsland.visualizerStyle !== "none")) return
+                            Config.options.bar.dynamicIsland.visualizerStyle = checked ? "dots" : "none"
+                        }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "sports_motorsports"
+                        title: Translation.tr("Formula 1 live timing")
+                        detail: Translation.tr("Live timing script, only during sessions")
+                        cost: "heavy"
+                        checked: Config.options.bar.dynamicIsland.f1.enable
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.f1.enable = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "wifi"
+                        title: Translation.tr("Network and downloads")
+                        detail: Translation.tr("Traffic every 5 s, every second while downloading")
+                        cost: "medium"
+                        checked: Config.options.bar.dynamicIsland.network
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.network = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "lyrics"
+                        title: Translation.tr("Synced lyrics")
+                        detail: Translation.tr("Fetches and follows the lyrics of each song")
+                        cost: "medium"
+                        checked: Config.options.bar.dynamicIsland.lyrics
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.lyrics = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "system_update_alt"
+                        title: Translation.tr("Check for updates")
+                        detail: Translation.tr("checkupdates every %1 min (network + pacman)").arg(Config.options.updates.checkInterval)
+                        cost: "medium"
+                        checked: Config.options.updates.enableCheck
+                        onCheckedChanged: { Config.options.updates.enableCheck = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "memory"
+                        title: Translation.tr("CPU, memory and GPU pressure")
+                        detail: Translation.tr("Reuses the bar's samples; processes only during alerts")
+                        cost: "light"
+                        checked: Config.options.bar.dynamicIsland.systemLoad
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.systemLoad = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "cable"
+                        title: Translation.tr("Hardware (monitors, drives, dock, heat, disk)")
+                        detail: Translation.tr("udev and UPower events, nothing in between")
+                        cost: "light"
+                        checked: Config.options.bar.dynamicIsland.hardware
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.hardware = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "palette"
+                        title: Translation.tr("Album colors")
+                        detail: Translation.tr("Reads each cover once, when the song changes")
+                        cost: "light"
+                        checked: Config.options.bar.dynamicIsland.albumColors
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.albumColors = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "smart_toy"
+                        title: Translation.tr("Coding agents in the terminal")
+                        detail: Translation.tr("Only the agents' own hooks; nothing is polled")
+                        cost: "light"
+                        checked: Config.options.bar.dynamicIsland.claudeCode
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.claudeCode = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "movie"
+                        title: Translation.tr("IMDb episode ratings")
+                        detail: Translation.tr("One lookup per show, when an episode starts in the browser")
+                        cost: "light"
+                        checked: Config.options.bar.dynamicIsland.watchRatings
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.watchRatings = checked; }
+                    }
+                    IslandCostSwitch {
+                        buttonIcon: "call"
+                        title: Translation.tr("Call controls")
+                        detail: Translation.tr("Reuses what PipeWire already reports")
+                        cost: "light"
+                        checked: Config.options.bar.dynamicIsland.callActivity
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.callActivity = checked; }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Pinned islands")
+                // Declared one by one on purpose: GroupedList counts each declared child as a row, and a
+                // Repeater would arrive as a single zero-height entry whose rows then overlap the next section.
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "partly_cloudy_day"
+                        text: Translation.tr("Weather")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("weather")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("weather")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "weather"]
+                                : pinned.filter(p => p !== "weather")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "inventory_2"
+                        text: Translation.tr("Drawer")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("shelf")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("shelf")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "shelf"]
+                                : pinned.filter(p => p !== "shelf")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "content_paste"
+                        text: Translation.tr("Clipboard")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("clipboard")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("clipboard")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "clipboard"]
+                                : pinned.filter(p => p !== "clipboard")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "monitoring"
+                        text: Translation.tr("System")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("system")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("system")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "system"]
+                                : pinned.filter(p => p !== "system")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "music_note"
+                        text: Translation.tr("Media")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("media")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("media")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "media"]
+                                : pinned.filter(p => p !== "media")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "sports_motorsports"
+                        text: "F1"
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("f1")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("f1")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "f1"]
+                                : pinned.filter(p => p !== "f1")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "smart_toy"
+                        text: Translation.tr("AI agents")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("agents")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("agents")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "agents"]
+                                : pinned.filter(p => p !== "agents")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "download"
+                        text: Translation.tr("Download")
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("download")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("download")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "download"]
+                                : pinned.filter(p => p !== "download")
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "vpn_lock"
+                        text: "ZeroTier"
+                        checked: (Config.options.bar.dynamicIsland.pinned ?? []).includes("zerotier")
+                        onCheckedChanged: {
+                            const pinned = Array.from(Config.options.bar.dynamicIsland.pinned ?? [])
+                            if (checked === pinned.includes("zerotier")) return
+                            Config.options.bar.dynamicIsland.pinned = checked
+                                ? [...pinned, "zerotier"]
+                                : pinned.filter(p => p !== "zerotier")
+                        }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("What shows up")
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "privacy_tip"
+                        text: Translation.tr("Privacy indicators")
+                        checked: Config.options.bar.dynamicIsland.privacyIndicators
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.privacyIndicators = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "content_paste"
+                        text: Translation.tr("Clipboard")
+                        checked: Config.options.bar.dynamicIsland.clipboard
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.clipboard = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "screenshot_monitor"
+                        text: Translation.tr("Screenshots")
+                        checked: Config.options.bar.dynamicIsland.screenshots
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.screenshots = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "bluetooth"
+                        text: Translation.tr("Bluetooth devices")
+                        checked: Config.options.bar.dynamicIsland.bluetooth
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.bluetooth = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "speaker"
+                        text: Translation.tr("Audio output")
+                        checked: Config.options.bar.dynamicIsland.audioOutput
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.audioOutput = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "rainy"
+                        text: Translation.tr("Weather changes")
+                        checked: Config.options.bar.dynamicIsland.weatherAlerts
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.weatherAlerts = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "system_update_alt"
+                        text: Translation.tr("Updates indicator")
+                        checked: Config.options.bar.dynamicIsland.updatesIndicator
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.updatesIndicator = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "bolt"
+                        text: Translation.tr("Live activities")
+                        checked: Config.options.bar.dynamicIsland.liveActivities
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.liveActivities = checked; }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Integrations")
+                GroupedList {
+                    ConfigSelectionArray {
+                        text: Translation.tr("What counts as a download")
+                        icon: "download"
+                        currentValue: Config.options.bar.dynamicIsland.downloadDetection
+                        onSelected: newValue => { Config.options.bar.dynamicIsland.downloadDetection = newValue; }
+                        options: [
+                            { displayName: Translation.tr("A file arriving"), icon: "draft", value: "files" },
+                            { displayName: Translation.tr("Any heavy traffic"), icon: "network_check", value: "traffic" }
+                        ]
+                    }
+                }
+            }
+
+            // Fullscreen: critical still breaks through; everything else waits behind the hairline
+            ContentSubsection {
+                title: Translation.tr("Fullscreen")
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "horizontal_rule"
+                        text: Translation.tr("Hairline when something waits")
+                        checked: Config.options.bar.dynamicIsland.fullscreenPeek
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenPeek = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "volume_up"
+                        text: Translation.tr("Volume and screenshots still show")
+                        checked: Config.options.bar.dynamicIsland.fullscreenFeedback
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenFeedback = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "chat"
+                        text: Translation.tr("Discreet messages (priority apps)")
+                        checked: Config.options.bar.dynamicIsland.fullscreenMessages
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenMessages = checked; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "fullscreen_exit"
+                        text: Translation.tr("Summary when leaving fullscreen")
+                        checked: Config.options.bar.dynamicIsland.fullscreenCatchUp
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenCatchUp = checked; }
+                    }
+                    ConfigSpinBox {
+                        icon: "timer"
+                        text: Translation.tr("Wait before opening the hairline (ms)")
+                        value: Config.options.bar.dynamicIsland.fullscreenHoverDelay
+                        from: 0
+                        to: 1500
+                        stepSize: 50
+                        onValueChanged: { Config.options.bar.dynamicIsland.fullscreenHoverDelay = value; }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "sports_esports"
+                        text: Translation.tr("Games start quiet")
+                        checked: Config.options.bar.dynamicIsland.fullscreenGameQuiet
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.fullscreenGameQuiet = checked; }
+                    }
+                }
+
+                // Loaded once and written back parsed, never bound: a binding would rewrite the text (and move the
+                // cursor) on every keystroke
+                MaterialTextArea {
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Game windows (class, comma separated)")
+                    wrapMode: TextEdit.Wrap
+                    Component.onCompleted: text = (Config.options.bar.dynamicIsland.fullscreenGameClasses ?? []).join(", ")
+                    onTextChanged: {
+                        const classes = text.split(",").map(c => c.trim()).filter(c => c !== "")
+                        Qt.callLater(() => { Config.options.bar.dynamicIsland.fullscreenGameClasses = classes; })
+                    }
+                }
+            }
+
+            ContentSubsection {
                 title: Translation.tr("Media")
                 GroupedList {
                     ConfigSelectionArray {
@@ -390,6 +788,60 @@ ContentPage {
                         text: Translation.tr("Show media controls")
                         checked: Config.options.bar.dynamicIsland.showMediaControls
                         onCheckedChanged: { Config.options.bar.dynamicIsland.showMediaControls = checked; }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("When to warn")
+                GroupedList {
+                    ConfigSpinBox {
+                        icon: "electric_bolt"
+                        text: Translation.tr("Warn about a slow charger below (W)")
+                        value: Config.options.bar.dynamicIsland.slowChargerWatts
+                        from: 5
+                        to: 100
+                        stepSize: 5
+                        onValueChanged: { Config.options.bar.dynamicIsland.slowChargerWatts = value; }
+                    }
+                    ConfigSpinBox {
+                        icon: "device_thermostat"
+                        text: Translation.tr("Warn about heat above (°C)")
+                        value: Config.options.bar.dynamicIsland.hotTemperature
+                        from: 60
+                        to: 105
+                        stepSize: 1
+                        onValueChanged: { Config.options.bar.dynamicIsland.hotTemperature = value; }
+                    }
+                    ConfigSpinBox {
+                        icon: "timer"
+                        text: Translation.tr("Only announce an agent turn longer than (s)")
+                        value: Config.options.bar.dynamicIsland.claudeDoneMinSeconds
+                        from: 0
+                        to: 300
+                        stepSize: 5
+                        onValueChanged: { Config.options.bar.dynamicIsland.claudeDoneMinSeconds = value; }
+                    }
+                    ConfigSpinBox {
+                        icon: "auto_delete"
+                        text: Translation.tr("Drawer keeps files for (days)")
+                        value: Config.options.bar.dynamicIsland.shelfExpireDays
+                        from: 0
+                        to: 90
+                        stepSize: 1
+                        onValueChanged: { Config.options.bar.dynamicIsland.shelfExpireDays = value; }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: "Formula 1"
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "flag"
+                        text: Translation.tr("Expand on flags and Safety Car")
+                        checked: Config.options.bar.dynamicIsland.f1.autoExpandFlags
+                        onCheckedChanged: { Config.options.bar.dynamicIsland.f1.autoExpandFlags = checked; }
                     }
                 }
             }

@@ -71,8 +71,11 @@ Scope {
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
                 property var thisMonitorData: HyprlandData.monitors.find(m => m.name === barRoot.screen?.name)
-                property bool monitorHasFullscreen: HyprlandData.workspaceById[thisMonitorData?.activeWorkspace?.id]?.hasfullscreen ?? false
+                property int activeWorkspaceId: Hyprland.monitorFor(barRoot.screen)?.activeWorkspace?.id ?? thisMonitorData?.activeWorkspace?.id ?? -1
+                property bool monitorHasFullscreen: HyprlandData.workspaceById[activeWorkspaceId]?.hasfullscreen ?? false
                 property bool monitorHasSpecialOpen: (thisMonitorData?.specialWorkspace?.name ?? "") !== ""
+                property bool hiddenByFullscreen: !monitorHasSpecialOpen
+                    && HyprlandData.windowList.some(w => w.workspace?.id === barRoot.activeWorkspaceId && w.fullscreen === 2)
                 exclusionMode: ExclusionMode.Ignore
                 property int normalExclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
                     ? 0
@@ -84,8 +87,6 @@ Scope {
                     ? Config.options.bar.frameThickness
                     : Config.options.bar.cornerStyle === 4 ? normalExclusiveZone + 4 : normalExclusiveZone
                 WlrLayershell.namespace: "quickshell:bar"
-                // Overlay layer only while special workspace sits on top of a fullscreen window on this monitor,
-                // else Top layer so fullscreen apps cover the bar as normal (Hyprland buries Top layer under fullscreen+special).
                 WlrLayershell.layer: (monitorHasFullscreen && monitorHasSpecialOpen) ? WlrLayer.Overlay : WlrLayer.Top
                 implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
@@ -96,7 +97,7 @@ Scope {
                 property int cornerOpenCutWidth: cutOutCornerOpenZones ? Config.options.sidebar.cornerOpen.cornerRegionWidth : 0
                 property int cornerOpenCutHeight: cutOutCornerOpenZones ? Config.options.sidebar.cornerOpen.cornerRegionHeight : 0
                 mask: Region {
-                    item: hoverMaskRegion
+                    item: barRoot.hiddenByFullscreen ? noInputRegion : hoverMaskRegion
                     Region {
                         intersection: Intersection.Subtract
                         x: 0
@@ -136,9 +137,17 @@ Scope {
                     GlobalFocusGrab.removePersistent(barRoot);
                 }
 
+                Item {
+                    id: noInputRegion
+                    width: 0
+                    height: 0
+                }
+
                 MouseArea  {
                     id: hoverRegion
                     hoverEnabled: true
+                    enabled: !barRoot.hiddenByFullscreen
+                    opacity: barRoot.hiddenByFullscreen ? 0 : 1
                     anchors {
                         fill: parent
                         rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * 1

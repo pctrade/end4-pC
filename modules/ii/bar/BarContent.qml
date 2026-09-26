@@ -70,7 +70,6 @@ Item {
     property var screen: root.QsWindow.window?.screen
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
 
-
     Rectangle {
         id: barBackground
         anchors.fill: parent
@@ -183,13 +182,24 @@ Item {
         anchors.fill: barBackground
         anchors.margins: root.barPadding
 
+        readonly property real sideRoom: Math.max(0, contentContainer.width / 2 - absoluteCenter.width / 2 - 14)
+        readonly property real leftPush: Math.max(0, leftSection.width - contentContainer.sideRoom)
+        readonly property real rightPush: Math.max(0, rightSection.width - contentContainer.sideRoom)
+
         // Left
         Item {
+            id: leftSection
             anchors.left: parent.left
             anchors.leftMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 4 ? 4 : 8
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.isMaterial ? leftMaterialPill.implicitWidth : leftRow.implicitWidth
+            opacity: contentContainer.leftPush > 0 ? Math.max(0.25, 1 - contentContainer.leftPush / 120) : 1
+            transform: Translate { x: -contentContainer.leftPush }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            }
 
             // Material pill wrapper
             Rectangle {
@@ -207,7 +217,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: root.effectiveLeftLayout
+                        model: root.isMaterial ? root.effectiveLeftLayout : []
                         delegate: leftMaterialGroupDelegate
                     }
 
@@ -243,7 +253,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveLeftLayout
+                    model: root.isMaterial ? [] : root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
                 }
 
@@ -310,6 +320,7 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
+                objectName: "dynamicIslandSurface"
                 visible: root.isMaterial
                 anchors.centerIn: parent
                 implicitWidth: centerMaterialRow.implicitWidth + 10
@@ -323,7 +334,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: root.effectiveMiddleLayout
+                        model: root.isMaterial ? root.effectiveMiddleLayout : []
                         delegate: middleMaterialGroupDelegate
                     }
 
@@ -360,7 +371,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveMiddleLayout
+                    model: root.isMaterial ? [] : root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
                 }
 
@@ -399,11 +410,18 @@ Item {
 
         // Right
         Item {
+            id: rightSection
             anchors.right: parent.right
             anchors.rightMargin: root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 4 ? 4 : 8
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.isMaterial ? rightMaterialPill.implicitWidth : rightRow.implicitWidth
+            opacity: contentContainer.rightPush > 0 ? Math.max(0.25, 1 - contentContainer.rightPush / 120) : 1
+            transform: Translate { x: contentContainer.rightPush }
+
+            Behavior on opacity {
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            }
 
             // Material pill wrapper
             Rectangle {
@@ -421,7 +439,7 @@ Item {
                     spacing: 3
 
                     Repeater {
-                        model: root.effectiveRightLayout
+                        model: root.isMaterial ? root.effectiveRightLayout : []
                         delegate: rightMaterialGroupDelegate
                     }
 
@@ -460,7 +478,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveRightLayout
+                    model: root.isMaterial ? [] : root.effectiveRightLayout
                     delegate: rightBarGroupDelegate
                 }
 

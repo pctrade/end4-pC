@@ -12,6 +12,12 @@ Singleton {
     id: root
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
+    property int viewers: 0
+    readonly property bool wanted: root.viewers > 0 || (Config.options?.bar?.dynamicIsland?.lyrics ?? true)
+    readonly property bool playing: root.activePlayer?.isPlaying ?? false
+    property string fetchedFor: ""
+    readonly property string trackKey: `${root.activePlayer?.trackTitle ?? ""}|${root.activePlayer?.trackArtist ?? ""}`
+    onWantedChanged: if (root.wanted && root.fetchedFor !== root.trackKey) root.restartLyrics()
 
     property var lyricsLines: []
     property int activeIndex: -1
@@ -36,9 +42,9 @@ Singleton {
 
     Timer {
         id: syncTimer
-        interval: 300
+        interval: 150
         repeat: true
-        running: root.status === "ok" && root.lyricsLines.length > 0
+        running: root.status === "ok" && root.lyricsLines.length > 0 && root.wanted && root.playing
         onTriggered: {
             const pos = root.activePlayer?.position ?? 0
             let idx = -1
@@ -89,6 +95,12 @@ Singleton {
         root.activeIndex = -1
         root.slots = ["", "", "", "", "", "", ""]
         root.status = "loading"
+        if (!root.wanted) {
+            root.status = "off"
+            root.fetchedFor = ""
+            return
+        }
+        root.fetchedFor = root.trackKey
 
         const title    = root.activePlayer?.trackTitle  ?? ""
         const artist   = root.activePlayer?.trackArtist ?? ""

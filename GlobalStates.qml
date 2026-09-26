@@ -48,6 +48,7 @@ Singleton {
     property string osdIndicatorType: "volume"
     property bool barCenterOnly: false
     property bool diSessionOpen: false
+    property var islandBuriedByScreen: ({})
     property bool startupLockPending: true
 
     Timer {

@@ -21,6 +21,11 @@ Item {
     Connections {
         target: GlobalStates
         function onSettingsPageChanged() {
+            root.applyRequestedPage()
+        }
+    }
+
+    function applyRequestedPage() {
             if (GlobalStates.settingsPage === "") return
             
             let parts = GlobalStates.settingsPage.split(":");
@@ -47,7 +52,6 @@ Item {
                 }
             }
             GlobalStates.settingsPage = "";
-        }
     }
 
     onCurrentPageChanged: {
@@ -85,6 +89,7 @@ Item {
                 if (loader) loader.active = true
             }
             if (profileLoader) profileLoader.active = true
+            root.applyRequestedPage()
         })
     }
 
