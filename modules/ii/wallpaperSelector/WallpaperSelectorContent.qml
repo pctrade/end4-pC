@@ -37,6 +37,19 @@ MouseArea {
         }
     ]
 
+    // Wallhaven 9-color filter groups — surfaced in the header array like blapples' picker.
+    readonly property var wallhavenColorGroups: [
+        { hex: "cc0000", name: Translation.tr("Red"),       q: "660000,990000,cc0000,cc3333" },
+        { hex: "ff6600", name: Translation.tr("Orange"),    q: "ffcc33,ff9900,ff6600" },
+        { hex: "cccc33", name: Translation.tr("Yellow"),    q: "666600,999900,cccc33,ffff00" },
+        { hex: "669900", name: Translation.tr("Green"),     q: "77cc33,669900,336600" },
+        { hex: "66cccc", name: Translation.tr("Cyan"),      q: "66cccc,0099cc" },
+        { hex: "0066cc", name: Translation.tr("Blue"),      q: "0066cc,0099cc,333399" },
+        { hex: "663399", name: Translation.tr("Purple"),    q: "ea4c88,993399,663399,333399" },
+        { hex: "996633", name: Translation.tr("Brown"),     q: "cc6633,996633,663300" },
+        { hex: "999999", name: Translation.tr("Grayscale"), q: "000000,999999,cccccc,ffffff,424153" }
+    ]
+
     function updateThumbnails() {
         const item = gridLoader.item;
         const totalImageMargin = (Appearance.sizes.wallpaperSelectorItemMargins + Appearance.sizes.wallpaperSelectorItemPadding) * 2;
@@ -258,7 +271,7 @@ MouseArea {
 
                     Toolbar {
                         anchors.centerIn: parent
-                        visible: root.source !== "blapples" && root.source !== "naive"
+                        visible: root.source !== "blapples" && root.source !== "naive" && root.source !== "wallhaven"
 
                         Loader {
                             active: root.source === "local"
@@ -300,7 +313,7 @@ MouseArea {
                         }
 
                         Loader {
-                            active: root.source !== "local" && root.source !== "blapples" && root.source !== "naive"
+                            active: root.source !== "local" && root.source !== "blapples" && root.source !== "naive" && root.source !== "wallhaven"
                             visible: active
                             sourceComponent: RowLayout {
                                 spacing: 4
@@ -329,21 +342,33 @@ MouseArea {
                     }
 
                     Loader {
-                        active: root.source === "naive" || root.source === "blapples"
+                        active: root.source === "naive" || root.source === "blapples" || root.source === "wallhaven"
                         visible: active
                         anchors.centerIn: parent
                         sourceComponent: CustomColorSelectionArray {
-                            currentValue: root.selectedColorGroup
-                            options: [
+                            currentValue: root.source === "wallhaven" ? WallhavenSearch.colors : root.selectedColorGroup
+                            options: root.source === "wallhaven"
+                                ? [{ value: "", displayName: Translation.tr("All colors"), color: "transparent", rainbow: true }]
+                                    .concat(root.wallhavenColorGroups.map(g => ({ value: g.q, displayName: g.name, color: "#" + g.hex })))
+                                : [
                                     { value: "",       displayName: Translation.tr("All colors"), color: "transparent", rainbow: true },
-                                { value: "red",    displayName: Translation.tr("Red"),        color: "#E0483E" },
-                                { value: "orange", displayName: Translation.tr("Orange"),     color: "#E08A3E" },
-                                { value: "yellow", displayName: Translation.tr("Yellow"),     color: "#E0C93E" },
-                                { value: "green",  displayName: Translation.tr("Green"),      color: "#6CBF5C" },
-                                { value: "blue",   displayName: Translation.tr("Blue"),       color: "#4C7FE0" },
-                                { value: "purple", displayName: Translation.tr("Purple"),     color: "#8A5CE0" },
-                            ]
-                            onSelected: newValue => root.selectedColorGroup = newValue
+                                    { value: "red",    displayName: Translation.tr("Red"),        color: "#E0483E" },
+                                    { value: "orange", displayName: Translation.tr("Orange"),     color: "#E08A3E" },
+                                    { value: "yellow", displayName: Translation.tr("Yellow"),     color: "#E0C93E" },
+                                    { value: "green",  displayName: Translation.tr("Green"),      color: "#6CBF5C" },
+                                    { value: "blue",   displayName: Translation.tr("Blue"),       color: "#4C7FE0" },
+                                    { value: "purple", displayName: Translation.tr("Purple"),     color: "#8A5CE0" },
+                                ]
+                            onSelected: newValue => {
+                                if (root.source === "wallhaven") {
+                                    // setColor toggles: picking the active color clears it.
+                                    // Skip only the no-op "All colors" while already clear.
+                                    if (newValue === "" && WallhavenSearch.colors === "") return
+                                    WallhavenSearch.setColor(newValue)
+                                } else {
+                                    root.selectedColorGroup = newValue
+                                }
+                            }
                         }
                     }
 
@@ -410,7 +435,9 @@ MouseArea {
                     Loader {
                         id: gridLoader
                         anchors.fill: parent
-                        sourceComponent: root.source === "local" ? localGridComponent : onlineGridComponent
+                        sourceComponent: root.source === "local" ? localGridComponent
+                            : root.source === "wallhaven" ? wallhavenGridComponent
+                            : onlineGridComponent
                     }
 
                     Component {
@@ -419,6 +446,19 @@ MouseArea {
                             columns: root.columns
                             previewCellAspectRatio: root.previewCellAspectRatio
                             onWallpaperSelected: path => root.selectWallpaperPath(path)
+                        }
+                    }
+
+                    Component {
+                        id: wallhavenGridComponent
+                        WallhavenSearchGrid {
+                            columns: root.columns
+                            previewCellAspectRatio: root.previewCellAspectRatio
+                            useDarkMode: root.useDarkMode
+                            onWallpaperApplied: {
+                                if (Config.options.wallpaperSelector.closeAfterSelection)
+                                    GlobalStates.wallpaperSelectorOpen = false;
+                            }
                         }
                     }
 
@@ -643,7 +683,7 @@ MouseArea {
                         }
 
                         Loader {
-                            active: root.source !== "local"
+                            active: root.source !== "local" && root.source !== "wallhaven"
                             visible: active
                             sourceComponent: Toolbar {
                                 ToolbarTextField {
@@ -672,6 +712,123 @@ MouseArea {
                                     implicitWidth: height
                                     text: "refresh"
                                     onClicked: OnlineWallpapers.fetch()
+                                }
+                            }
+                        }
+
+                        Loader {
+                            active: root.source === "wallhaven"
+                            visible: active
+                            sourceComponent: Toolbar {
+                                id: wallhavenToolbar
+
+                                property bool _searchFieldReady: false
+
+                                Timer {
+                                    id: searchDebounce
+                                    interval: 500
+                                    onTriggered: WallhavenSearch.search(wallhavenSearchField.text, 1)
+                                }
+
+                                ToolbarTextField {
+                                    id: wallhavenSearchField
+                                    text: WallhavenSearch.currentQuery
+                                    placeholderText: Translation.tr("Search Wallhaven...")
+                                    Layout.preferredWidth: 220
+                                    onTextChanged: {
+                                        if (wallhavenToolbar._searchFieldReady)
+                                            searchDebounce.restart()
+                                    }
+                                    onAccepted: {
+                                        searchDebounce.stop()
+                                        WallhavenSearch.search(text, 1)
+                                    }
+                                    onActiveFocusChanged: root.filterFieldFocused = activeFocus
+                                    Keys.onPressed: event => {
+                                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            event.accepted = true
+                                            return
+                                        }
+                                        event.accepted = false
+                                    }
+                                    Component.onCompleted: Qt.callLater(() => wallhavenToolbar._searchFieldReady = true)
+                                }
+
+                                RowLayout {
+                                    visible: WallhavenSearch.currentResults.length > 0
+                                    spacing: 4
+
+                                    IconToolbarButton {
+                                        implicitWidth: height
+                                        enabled: !WallhavenSearch.fetching && WallhavenSearch.currentPage > 1
+                                        text: "chevron_left"
+                                        onClicked: WallhavenSearch.previousPage()
+                                    }
+
+                                    ToolbarTextField {
+                                        id: wallhavenPageField
+                                        implicitWidth: Math.max(40, wallhavenPageField.contentWidth + 24)
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: WallhavenSearch.currentPage.toString()
+                                        font.pixelSize: Appearance.font.pixelSize.small
+                                        inputMethodHints: Qt.ImhDigitsOnly
+                                        validator: IntValidator { bottom: 1; top: WallhavenSearch.lastPage }
+                                        onAccepted: {
+                                            const p = parseInt(text);
+                                            if (p > 0 && p <= WallhavenSearch.lastPage) {
+                                                WallhavenSearch.search(WallhavenSearch.currentQuery, p);
+                                            } else {
+                                                text = WallhavenSearch.currentPage.toString();
+                                            }
+                                        }
+                                        Connections {
+                                            target: WallhavenSearch
+                                            function onSearchCompleted() {
+                                                wallhavenPageField.text = WallhavenSearch.currentPage.toString();
+                                            }
+                                        }
+                                    }
+
+                                    StyledText {
+                                        text: "/ " + WallhavenSearch.lastPage
+                                        font.pixelSize: Appearance.font.pixelSize.small
+                                        color: Appearance.colors.colSubtext
+                                    }
+
+                                    IconToolbarButton {
+                                        implicitWidth: height
+                                        enabled: !WallhavenSearch.fetching && WallhavenSearch.currentPage < WallhavenSearch.lastPage
+                                        text: "chevron_right"
+                                        onClicked: WallhavenSearch.nextPage()
+                                    }
+                                }
+
+                                IconToolbarButton {
+                                    implicitWidth: height
+                                    text: "tune"
+                                    toggled: gridLoader.item?.showSettings
+                                    onClicked: { if (gridLoader.item) gridLoader.item.toggleSettings() }
+                                    StyledToolTip {
+                                        text: Translation.tr("Wallhaven search settings")
+                                    }
+                                }
+
+                                IconToolbarButton {
+                                    implicitWidth: height
+                                    text: root.useDarkMode ? "dark_mode" : "light_mode"
+                                    onClicked: root.useDarkMode = !root.useDarkMode
+                                    StyledToolTip {
+                                        text: Translation.tr("Toggle light/dark mode for applied wallpaper")
+                                    }
+                                }
+
+                                IconToolbarButton {
+                                    implicitWidth: height
+                                    text: "refresh"
+                                    onClicked: WallhavenSearch.search(WallhavenSearch.currentQuery, 1)
+                                    StyledToolTip {
+                                        text: Translation.tr("Refresh search results")
+                                    }
                                 }
                             }
                         }
