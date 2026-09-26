@@ -37,6 +37,26 @@ NestableObject {
         onTriggered: fetchProc.running = true
     }
 
+    // Hyprland quantises the scale to 1/120 and then needs the logical size to
+    // land on whole pixels; every other value is refused, with "using suggested
+    // scale" in its log. So only these scales can actually be applied.
+    function validScales(width: int, height: int): var {
+        if (!width || !height) return [1.0];
+        const out = [];
+        for (let n = 60; n <= 360; n++) { // 0.5x to 3x, in 1/120 steps
+            if ((width * 120) % n !== 0) continue;
+            if ((height * 120) % n !== 0) continue;
+            out.push(n / 120);
+        }
+        return out.length > 0 ? out : [1.0];
+    }
+
+    // The scale reported by hyprctl is a float, so pick the entry it matches.
+    function nearestValidScale(width: int, height: int, scale: real): real {
+        const scales = root.validScales(width, height);
+        return scales.reduce((best, s) => Math.abs(s - scale) < Math.abs(best - scale) ? s : best, scales[0]);
+    }
+
     function updateMonitor(index, changes) {
         let m = root.monitors.slice()
         m[index] = Object.assign({}, m[index], changes)

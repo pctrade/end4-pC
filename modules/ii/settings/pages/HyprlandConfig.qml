@@ -143,15 +143,29 @@ ContentPage {
                         ]
                     }
     
-                    ConfigSpinBox {
-                        icon: "zoom_in"
+                    ConfigComboBox {
+                        Layout.fillWidth: true
+                        buttonIcon: "zoom_in"
                         text: Translation.tr("Scale")
-                        value: Math.round((monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0) * 100)
-                        from: 50; to: 300; stepSize: 25
-                        onValueChanged: {
-                            const newVal = value / 100.0
-                            if (newVal === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0)) return
-                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { scale: newVal })
+                        fieldWidth: 240
+                        // Only the scales this monitor can actually take, with the
+                        // desktop size each one gives.
+                        model: {
+                            const m = monitorConfig.monitors[monitorCanvas.selectedIndex]
+                            if (!m) return []
+                            return monitorConfig.validScales(m.width, m.height).map(s => ({
+                                displayName: `${Math.round(s * 10000) / 100}%  ·  ${Math.round(m.width / s)}×${Math.round(m.height / s)}`,
+                                value: s
+                            }))
+                        }
+                        currentValue: {
+                            const m = monitorConfig.monitors[monitorCanvas.selectedIndex]
+                            if (!m) return 1.0
+                            return monitorConfig.nearestValidScale(m.width, m.height, m.scale ?? 1.0)
+                        }
+                        onSelected: newValue => {
+                            if (newValue === (monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0)) return
+                            monitorConfig.updateMonitor(monitorCanvas.selectedIndex, { scale: newValue })
                             monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
                         }
                     }
@@ -179,6 +193,15 @@ ContentPage {
                             monitorConfig.applyAndSave(monitorCanvas.selectedIndex)
                         }
                     }
+                }
+
+                NoticeBox {
+                    Layout.fillWidth: true
+                    visible: {
+                        const s = monitorConfig.monitors[monitorCanvas.selectedIndex]?.scale ?? 1.0
+                        return Math.abs(s - Math.round(s)) > 0.001
+                    }
+                    text: Translation.tr("On a fractional scale, apps that don't support wp_fractional_scale_v1 (XWayland, GTK3, some Electron builds) are drawn at a whole scale and resized by the compositor, so they come out softer. Whole scales like 100% or 200% are unaffected.")
                 }
             }
 
