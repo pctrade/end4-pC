@@ -302,7 +302,7 @@ ContentPage {
 
         ContentSection {
             icon: "deployed_code_update"
-            title: Translation.tr("System updates (Arch only)")
+            title: Translation.tr("System updates")
 
             GroupedList {
                 ConfigSwitch {
