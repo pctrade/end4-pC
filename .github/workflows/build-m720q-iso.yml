@@ -1,0 +1,122 @@
+name: Build M720q One-Shot USB ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      disk:
+        description: 'Target disk di M720q (nvme0n1 / sda)'
+        required: false
+        default: '/dev/nvme0n1'
+      hostname:
+        description: 'Hostname'
+        required: false
+        default: 'm720q'
+      username:
+        description: 'Username'
+        required: false
+        default: 'pctrade'
+      password:
+        description: 'Password (akan di-hash, tidak tampil di log)'
+        required: true
+      timezone:
+        description: 'Timezone'
+        required: false
+        default: 'Asia/Jakarta'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install archiso deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xorriso squashfs-tools dosfstools mtools 2>&1 | tail -20
+          # archiso dari AUR — pakai container Arch biar gampang
+          docker --version 2>&1 | head -1
+
+      - name: Build ISO in Arch container
+        run: |
+          cat > /tmp/build.sh <<'EOS'
+          set -e
+          pacman -Sy --noconfirm archiso xorriso squashfs-tools wget curl git dosfstools 2>&1 | tail -20
+          # Copy releng
+          cp -r /usr/share/archiso/configs/releng /tmp/archlive
+          # Inject autoinstall ke live FS (airootfs)
+          mkdir -p /tmp/archlive/airootfs/root
+          cp /github/workspace/arch-m720q/autoinstall-unattended.sh /tmp/archlive/airootfs/root/
+          cp /github/workspace/arch-m720q/install.sh /tmp/archlive/airootfs/root/ 2>/dev/null || true
+          chmod +x /tmp/archlive/airootfs/root/*.sh 2>/dev/null || true
+
+          # Inject jawaban unattended (hash password)
+          DISK="${DISK_INPUT}"
+          HOSTN="${HOSTN_INPUT}"
+          USERNAME="${USERNAME_INPUT}"
+          PASSWORD_PLAIN="${PASSWORD_INPUT}"
+          TIMEZONE="${TIMEZONE_INPUT}"
+          # hash password SHA512
+          PASSHASH=$(openssl passwd -6 "$PASSWORD_PLAIN")
+          cat > /tmp/archlive/airootfs/root/m720q-unattended.conf <<CONF
+          DISK="$DISK"
+          HOSTN="$HOSTN"
+          USERNAME="$USERNAME"
+          PASSHASH="$PASSHASH"
+          TIMEZONE="$TIMEZONE"
+          CONF
+          # patch autoinstall buat baca conf + auto-run
+          # bikin systemd service auto-run pas live boot (oneshot)
+          mkdir -p /tmp/archlive/airootfs/etc/systemd/system
+          cat > /tmp/archlive/airootfs/etc/systemd/system/m720q-autoinstall.service <<SVC
+          [Unit]
+          Description=M720q One-Shot Arch+ii+end4-pC Autoinstall
+          After=network-online.target
+          Wants=network-online.target
+          ConditionPathExists=/root/autoinstall-unattended.sh
+
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/bash -c 'echo "=== M720q autoinstall akan jalan dalam 10 detik — tekan Ctrl+C untuk batal ==="; sleep 10; bash /root/autoinstall-unattended.sh'
+          RemainAfterExit=yes
+          StandardOutput=journal+console
+          StandardError=journal+console
+
+          [Install]
+          WantedBy=multi-user.target
+          SVC
+          mkdir -p /tmp/archlive/airootfs/etc/systemd/system/multi-user.target.wants
+          ln -sf /etc/systemd/system/m720q-autoinstall.service /tmp/archlive/airootfs/etc/systemd/system/multi-user.target.wants/m720q-autoinstall.service
+
+          # Also add manual trigger: di live cukup bash /root/autoinstall-unattended.sh
+          echo "Build archiso..."
+          cd /tmp/archlive
+          mkarchiso -v -w /tmp/archiso-tmp -o /tmp/out . 2>&1 | tail -50
+          ls -lh /tmp/out/*.iso 2>&1 | head -5
+          cp /tmp/out/*.iso /github/workspace/m720q-oneshot.iso 2>&1 | head -5
+          ls -lh /github/workspace/m720q-*.iso
+          EOS
+          chmod +x /tmp/build.sh
+          docker run --privileged -v "$GITHUB_WORKSPACE:/github/workspace" \
+            -e DISK_INPUT="${{ inputs.disk }}" \
+            -e HOSTN_INPUT="${{ inputs.hostname }}" \
+            -e USERNAME_INPUT="${{ inputs.username }}" \
+            -e PASSWORD_INPUT="${{ inputs.password }}" \
+            -e TIMEZONE_INPUT="${{ inputs.timezone }}" \
+            archlinux:latest bash /tmp/build.sh
+
+      - name: Check ISO
+        run: ls -lh m720q-*.iso 2>&1 | head -5; sha256sum m720q-*.iso 2>&1 | head -5
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: m720q-oneshot-iso
+          path: m720q-*.iso
+          retention-days: 7
+
+      - name: Create Release (optional)
+        if: false
+        uses: softprops/action-gh-release@v1
+        with:
+          files: m720q-*.iso
