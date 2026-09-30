@@ -39,7 +39,7 @@ jobs:
 
       - name: Build ISO in Arch container
         run: |
-          cat > /tmp/build.sh <<'EOS'
+          cat > $GITHUB_WORKSPACE/build.sh <<'EOS'
           set -e
           pacman -Sy --noconfirm archiso xorriso squashfs-tools wget curl git dosfstools 2>&1 | tail -20
           # Copy releng
