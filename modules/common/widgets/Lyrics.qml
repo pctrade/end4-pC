@@ -19,6 +19,16 @@ Item {
     implicitWidth: 200
     implicitHeight: 200
 
+    property bool registered: false
+    function syncViewer() {
+        if (root.visible === root.registered) return
+        root.registered = root.visible
+        LyricsService.viewers += root.visible ? 1 : -1
+    }
+    onVisibleChanged: root.syncViewer()
+    Component.onCompleted: root.syncViewer()
+    Component.onDestruction: if (root.registered) LyricsService.viewers--
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 4

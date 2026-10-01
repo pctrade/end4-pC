@@ -15,6 +15,9 @@ Item { // Window
     property var windowData
     property var monitorData
     property var scale
+    // Only needed for tiledCount below
+    property var windowAddresses: []
+    property var windowByAddress: ({})
     property bool restrictToWorkspace: true
     property real widthRatio: {
         const widgetWidth = widgetMonitor.transform & 1 ? widgetMonitor.height : widgetMonitor.width;

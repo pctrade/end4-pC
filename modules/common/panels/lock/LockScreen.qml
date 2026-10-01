@@ -112,6 +112,10 @@ Scope {
         function focus(): void {
             lockContext.shouldReFocus();
         }
+        // "yes" while the session is locked. A hot reload while locked destroys the lock surface, so file-editing scripts check it.
+        function isLocked(): string {
+            return GlobalStates.screenLocked ? "yes" : "no";
+        }
     }
 
     CompositorGlobalShortcut {

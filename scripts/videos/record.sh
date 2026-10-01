@@ -11,6 +11,9 @@ fi
 
 set_recording_state() {
     local state=$1
+    local config_name
+    config_name="$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)")"
+    qs -c "$config_name" ipc call recorder setRecording "$state" >/dev/null 2>&1 && return
     local STATE_FILE="$HOME/.local/state/quickshell/states.json"
     local tmp=$(mktemp)
     jq ".record.enable = $state" "$STATE_FILE" > "$tmp" && mv "$tmp" "$STATE_FILE"

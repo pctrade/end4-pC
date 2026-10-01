@@ -18,6 +18,9 @@ Item {
     implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : (resourceRowLayout.x < 0 ? 0 : resourceRowLayout.implicitWidth)
     implicitHeight: vertical ? resourceProgress.implicitHeight : Appearance.sizes.barHeight
     property bool warning: percentage * 100 >= warningThreshold
+    readonly property bool nearing: !root.warning && root.warningThreshold < 100 && root.percentage * 100 >= root.warningThreshold - 15
+    readonly property color toneColor: root.warning ? Appearance.colors.colError
+        : root.nearing ? Appearance.colors.colTertiary : root.contentColor
 
     Component {
         id: outlineStyle
@@ -25,7 +28,7 @@ Item {
             lineWidth: Appearance.rounding.unsharpen
             value: root.percentage
             implicitSize: vertical ? 20 : 20
-            colPrimary: root.warning ? Appearance.colors.colError : root.contentColor
+            colPrimary: root.toneColor
             enableAnimation: false
             Item {
                 anchors.centerIn: parent
@@ -49,7 +52,7 @@ Item {
             lineWidth: Appearance.rounding.unsharpen
             value: root.percentage
             implicitSize: 20
-            colPrimary: root.warning ? Appearance.colors.colError : Appearance.colors.colOnSecondaryContainer
+            colPrimary: root.toneColor
             accountForLightBleeding: !root.warning
             enableAnimation: false
             Item {
@@ -105,9 +108,11 @@ Item {
             StyledText {
                 id: percentageText
                 anchors.centerIn: parent
-                color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
+                color: root.warning ? Appearance.colors.colError : root.nearing ? Appearance.colors.colTertiary
+                    : root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
                 font.pixelSize: Appearance.font.pixelSize.small
                 text: `${Math.round(root.percentage * 100).toString()}`
+                Behavior on color { ColorAnimation { duration: 400 } }
             }
         }
 

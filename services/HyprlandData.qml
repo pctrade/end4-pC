@@ -139,7 +139,9 @@ Singleton {
             const name = event.name;
             if (["openlayer", "closelayer", "screencast", "submap", "activelayout"].includes(name)) return;
 
-            if (name.startsWith("workspace") || name.startsWith("createworkspace") || name.startsWith("destroyworkspace") || name.startsWith("moveworkspace") || name === "renameworkspace") {
+            if (name.startsWith("workspace") || name.startsWith("moveworkspace")) {
+                root.queueUpdate(false, true, true, false);
+            } else if (name.startsWith("createworkspace") || name.startsWith("destroyworkspace") || name === "renameworkspace") {
                 root.queueUpdate(false, true, false, false);
             } else if (name.startsWith("activespecial")) {
                 root.queueUpdate(false, true, true, false);

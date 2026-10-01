@@ -425,6 +425,8 @@ Item {
 
                                 toplevel: root.getToplevelForWindow(winContainer.win)
                                 windowData: winContainer.win
+                                windowAddresses: HyprlandData.addresses
+                                windowByAddress: HyprlandData.windowByAddress
                                 monitorData: winContainer.winMonData
                                 widgetMonitor: winContainer.winMonData
                                 scale: root.scale * rowItem.wsFitScale

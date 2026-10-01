@@ -25,7 +25,7 @@ Singleton {
     property string imageSearchEngineBaseUrl: Config.options.search.imageSearch.imageSearchEngineBaseUrl
     property string fileUploadApiEndpoint: "https://uguu.se/upload"
 
-    function getCommand(x, y, width, height, screenshotPath, action, saveDir = "") {
+    function getCommand(x, y, width, height, screenshotPath, action, saveDir = "", recordGeometry = "") {
         // Set command for action
         const rx = Math.round(x);
         const ry = Math.round(y);
@@ -36,7 +36,8 @@ Singleton {
         const cropToStdout = `${cropBase} -`
         const cropInPlace = `${cropBase} '${StringUtils.shellSingleQuoteEscape(screenshotPath)}'`
         const cleanup = `rm '${StringUtils.shellSingleQuoteEscape(screenshotPath)}'`
-        const slurpRegion = `${rx},${ry} ${rw}x${rh}`
+        // wf-recorder wants global layout coordinates, not the screen-relative ones the crop uses
+        const slurpRegion = recordGeometry !== "" ? recordGeometry : `${rx},${ry} ${rw}x${rh}`
         const uploadAndGetUrl = (filePath) => {
             return `curl -sF files[]=@'${StringUtils.shellSingleQuoteEscape(filePath)}' ${root.fileUploadApiEndpoint} | jq -r '.files[0].url'`
         }

@@ -511,6 +511,76 @@ Singleton {
                 property JsonObject dynamicIsland: JsonObject {
                     property string visualizerStyle: "dots" // "dots", "wave", "none"
                     property bool showMediaControls: false
+                    property bool expandOnHover: true
+                    property int hoverExpandDelay: 250
+                    property bool autoExpand: true
+                    property int autoExpandDuration: 4500
+                    property bool splitMode: false
+                    property bool secondIsland: true
+                    property list<string> secondIslandKinds: ["call", "recording", "f1", "timer", "download", "agents", "media"]
+                    property list<string> pinned: ["weather", "shelf"]
+                    property bool lyrics: true
+                    property bool lyricsPill: true
+                    property bool lyricsCard: true
+                    property bool albumTint: true
+                    property bool uniformHeight: false
+                    property bool albumColors: true
+                    property bool privacyIndicators: true
+                    property bool privacyIndicatorAnimated: false
+                    property bool displayActivity: true
+                    property list<string> privacyIgnoredApps: ["easyeffects", "quickshell", "cava", "songrec"]
+                    property bool clipboard: true
+                    property bool screenshots: true
+                    property bool bluetooth: true
+                    property bool audioOutput: true
+                    property bool weatherAlerts: true
+                    property bool systemLoad: true
+                    property int systemLoadThreshold: 90
+                    property bool updatesIndicator: true
+                    property bool liveActivities: true
+                    property bool network: true
+                    property bool anchor: true
+                    property bool anchorDate: true
+                    property string anchorFont: "expressive" // expressive | numbers | monospace | main
+                    property bool anchorAlwaysTime: false
+                    property bool watchRatings: true  // OMDb key in ~/.config/illogical-impulse/omdb.key
+                    property bool callActivity: true
+                    property string callLeaveShortcut: "" // Discord keybind for "Disconnect", e.g. "CTRL SHIFT, E"
+                    property int memoryThreshold: 90
+                    property int gpuThreshold: 90
+                    property real volumeMax: 1.5
+                    property bool hoverExpandsMessages: true
+                    property bool fullscreenPeek: true
+                    property bool fullscreenFeedback: true
+                    property bool fullscreenCatchUp: true
+                    property bool fullscreenMessages: true
+                    property int fullscreenHoverDelay: 350  // ms
+                    // Fullscreen windows treated as games (class substring): the top edge takes no input at all
+                    property list<string> fullscreenGameClasses: ["steam_app_", "gamescope", "minecraft", "retroarch"]
+                    property bool fullscreenGameQuiet: true
+                    // "files": only a file landing in the downloads folder counts; "traffic": any sustained burst
+                    property string downloadDetection: "files"
+                    property int shelfExpireDays: 14 // 0 keeps files in the drawer forever
+                    property list<string> mutedConversations: []
+                    property list<string> mutedConversationsUntil: [] // "<epoch ms>|App|Title": muted for a while (1 h, until tomorrow)
+                    property list<string> priorityNotificationApps: ["whatsapp"]
+                    property list<string> caseArtDevices: [] // Bluetooth names (substring) shown as the animated earbuds case
+                    property bool pauseOnHeadphonesDisconnect: true
+                    property bool followHeadphones: true
+                    property bool claudeCode: true
+                    property int claudeDoneMinSeconds: 20
+                    property bool hardware: true
+                    property int slowChargerWatts: 25
+                    property int hotTemperature: 90
+                    property JsonObject f1: JsonObject {
+                        property bool enable: true
+                        property string favoriteDriver: "" // Driver TLA, e.g. "NOR"; empty follows the leader
+                        property bool autoExpandFlags: true
+                        property int countdownMinutes: 15
+                        property bool teamRadio: true
+                        property bool autoPlayRadio: false
+                        property bool pinPosition: true
+                    }
                     property string leftWidget: "none"
                     property string rightWidget: "none"
                 }

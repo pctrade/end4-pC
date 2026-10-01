@@ -1,4 +1,3 @@
-
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
@@ -193,6 +192,10 @@ BarWidgetSwitcher {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: !Config.options.bar.tooltips.clickToShow
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+        onClicked: mouse => {
+            if (mouse.button === Qt.MiddleButton) GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen
+        }
         ClockWidgetPopup {
             hoverTarget: mouseArea
             today: root.today

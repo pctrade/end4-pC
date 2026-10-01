@@ -196,6 +196,8 @@ Item {
                     scale: root.scale
                     widgetMonitor: HyprlandData.monitors.find(m => m.id == root.monitor.id)
                     windowData: windowByAddress[address]
+                    windowAddresses: root.windowAddresses
+                    windowByAddress: root.windowByAddress
                     workspaceWidth: root.workspaceImplicitWidth
                     workspaceHeight: root.workspaceImplicitHeight
 

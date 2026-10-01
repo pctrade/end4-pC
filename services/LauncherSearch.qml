@@ -211,6 +211,209 @@ Singleton {
         }
     }
 
+    function normalize(text) {
+        return (text ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    }
+
+    function startsWithKeyword(query, keywords) {
+        return keywords.some(k => (query.length >= 3 && k.startsWith(query)) || query === k || query.startsWith(k + " "));
+    }
+
+    // Seconds in "5 min", "1h30", "90s", "2,5 h"; a bare number counts as minutes (or seconds right after minutes)
+    function parseDuration(text) {
+        const re = /(\d+(?:[.,]\d+)?)\s*(horas?|hours?|hrs?|h|minutos?|minutes?|mins?|m|segundos?|seconds?|secs?|seg|s)?(?![a-z])/g;
+        let total = 0;
+        let lastUnit = "";
+        let match;
+        while ((match = re.exec(text)) !== null) {
+            const value = parseFloat(match[1].replace(",", "."));
+            let unit = match[2] ?? "";
+            if (unit === "") unit = lastUnit === "h" ? "m" : lastUnit === "m" ? "s" : "m";
+            else unit = unit[0] === "h" ? "h" : unit[0] === "m" ? "m" : "s";
+            total += value * (unit === "h" ? 3600 : unit === "m" ? 60 : 1);
+            lastUnit = unit;
+        }
+        return Math.round(total);
+    }
+
+    // "7:30", "7h30", "19h" -> seconds until the next time the clock shows it
+    function parseClock(text) {
+        const match = /(?:^|\s)(\d{1,2})\s*(?::|h)\s*(\d{2})?(?![\d])/.exec(text);
+        if (!match) return -1;
+        const hours = parseInt(match[1]);
+        const minutes = parseInt(match[2] ?? "0");
+        if (hours > 23 || minutes > 59) return -1;
+        const now = new Date();
+        const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+        if (target <= now) target.setDate(target.getDate() + 1);
+        return Math.round((target - now) / 1000);
+    }
+
+    function formatDuration(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return [h > 0 ? `${h} h` : "", m > 0 ? `${m} min` : "", s > 0 && h === 0 ? `${s} s` : ""].filter(Boolean).join(" ") || "0 s";
+    }
+
+    function startCountdown(seconds) {
+        TimerService.resetCountdown();
+        TimerService.addCountdownMinutes(seconds / 60);
+        TimerService.toggleCountdown();
+    }
+
+    function quickResult(props) {
+        return resultComp.createObject(null, Object.assign({
+            iconType: LauncherSearchResult.IconType.Material,
+            verb: Translation.tr("Run")
+        }, props));
+    }
+
+    function quickToolResults(rawQuery) {
+        const query = root.normalize(rawQuery);
+        const results = [];
+        if (query === "") return results;
+        const words = query.replace(/^(\S+)\s*/, "");
+        const durationOnly = /^\d+(?:[.,]\d+)?\s*(?:horas?|hours?|hrs?|h|minutos?|minutes?|mins?|m|segundos?|seconds?|secs?|seg|s)(?:\s*\d+\s*(?:minutos?|mins?|m|segundos?|secs?|seg|s)?)*$/.test(query);
+
+        if (durationOnly || root.startsWithKeyword(query, ["timer", "temporizador", "contagem", "countdown"])) {
+            const seconds = root.parseDuration(durationOnly ? query : words);
+            if (seconds > 0) {
+                results.push(root.quickResult({
+                    name: Translation.tr("Start a %1 timer").arg(root.formatDuration(seconds)),
+                    type: Translation.tr("Timer"), iconName: "timer", verb: Translation.tr("Start"),
+                    execute: () => root.startCountdown(seconds)
+                }));
+            }
+            if (TimerService.countdownRunning || TimerService.countdownDuration > 0) {
+                results.push(root.quickResult({
+                    name: TimerService.countdownRunning ? Translation.tr("Pause timer") : Translation.tr("Resume timer"),
+                    type: Translation.tr("Timer"), iconName: TimerService.countdownRunning ? "pause" : "play_arrow",
+                    execute: () => TimerService.toggleCountdown()
+                }));
+                results.push(root.quickResult({
+                    name: Translation.tr("Add %1 to the timer").arg("1 min"),
+                    type: Translation.tr("Timer"), iconName: "more_time",
+                    execute: () => TimerService.addCountdownMinutes(1)
+                }));
+                results.push(root.quickResult({
+                    name: Translation.tr("Cancel timer"),
+                    type: Translation.tr("Timer"), iconName: "timer_off",
+                    execute: () => TimerService.resetCountdown()
+                }));
+            } else if (seconds <= 0) {
+                for (const minutes of [1, 5, 10, 25]) {
+                    results.push(root.quickResult({
+                        name: Translation.tr("Start a %1 timer").arg(`${minutes} min`),
+                        type: Translation.tr("Timer"), iconName: "timer", verb: Translation.tr("Start"),
+                        comment: Translation.tr("Tip: type \"timer 7 min\" or just \"7m\""),
+                        execute: () => root.startCountdown(minutes * 60)
+                    }));
+                }
+            }
+        }
+
+        // Stopwatch (reads the ticking time only while paused, so the list is not rebuilt every 10 ms)
+        if (root.startsWithKeyword(query, ["cronometro", "stopwatch"])) {
+            const running = TimerService.stopwatchRunning;
+            const hasTime = !running && TimerService.stopwatchTime > 0;
+            results.push(root.quickResult({
+                name: running ? Translation.tr("Pause stopwatch") : hasTime ? Translation.tr("Resume stopwatch") : Translation.tr("Start stopwatch"),
+                type: Translation.tr("Stopwatch"), iconName: running ? "pause" : "avg_pace",
+                execute: () => TimerService.toggleStopwatch()
+            }));
+            if (running) {
+                results.push(root.quickResult({
+                    name: Translation.tr("Record lap"),
+                    type: Translation.tr("Stopwatch"), iconName: "flag",
+                    execute: () => TimerService.stopwatchRecordLap()
+                }));
+            }
+            if (running || hasTime) {
+                results.push(root.quickResult({
+                    name: Translation.tr("Reset stopwatch"),
+                    type: Translation.tr("Stopwatch"), iconName: "restart_alt",
+                    execute: () => TimerService.stopwatchReset()
+                }));
+            }
+        }
+
+        if (root.startsWithKeyword(query, ["pomodoro", "foco", "focus"])) {
+            results.push(root.quickResult({
+                name: TimerService.pomodoroRunning ? Translation.tr("Pause pomodoro") : Translation.tr("Start pomodoro"),
+                comment: Translation.tr("%1 focus · %2 break").arg(root.formatDuration(TimerService.focusTime)).arg(root.formatDuration(TimerService.breakTime)),
+                type: Translation.tr("Pomodoro"), iconName: TimerService.pomodoroRunning ? "pause" : "self_improvement",
+                execute: () => TimerService.togglePomodoro()
+            }));
+            results.push(root.quickResult({
+                name: Translation.tr("Reset pomodoro"),
+                type: Translation.tr("Pomodoro"), iconName: "restart_alt",
+                execute: () => TimerService.resetPomodoro()
+            }));
+        }
+
+        if (root.startsWithKeyword(query, ["alarme", "despertador", "alarm", "acordar"])) {
+            const clockSeconds = root.parseClock(words);
+            const seconds = clockSeconds >= 0 ? clockSeconds : root.parseDuration(words.replace(/^(em|in|daqui a)\s+/, ""));
+            if (seconds > 0) {
+                const at = new Date(Date.now() + seconds * 1000);
+                results.push(root.quickResult({
+                    name: Translation.tr("Alarm at %1").arg(Qt.formatTime(at, "hh:mm")),
+                    comment: Translation.tr("Rings in %1").arg(root.formatDuration(seconds - seconds % 60 || seconds)),
+                    type: Translation.tr("Alarm"), iconName: "alarm", verb: Translation.tr("Set"),
+                    execute: () => root.startCountdown(seconds)
+                }));
+            } else {
+                results.push(root.quickResult({
+                    name: Translation.tr("Type a time, e.g. \"alarm 7:30\""),
+                    type: Translation.tr("Alarm"), iconName: "alarm", verb: "",
+                    execute: () => {}
+                }));
+            }
+        }
+
+        // Reminder: a notification later, scheduled with systemd so it survives closing the shell
+        if (root.startsWithKeyword(query, ["lembrar", "lembrete", "lembre", "remind", "reminder"])) {
+            const atClock = /(?:^|\s)(as|at)\s+\d/.test(words);
+            const seconds = atClock ? root.parseClock(words) : root.parseDuration((/(?:em|in|daqui a)\s+([\d.,]+\s*[a-z]*(?:\s*\d+\s*[a-z]*)?)/.exec(words) ?? [, ""])[1]);
+            const text = rawQuery.replace(/^\s*\S+\s*/, "")
+                .replace(/(?:^|\s)(?:em|in|daqui a)\s+[\d.,]+\s*[a-zA-Z]*(?:\s*\d+\s*[a-zA-Z]*)?/i, " ")
+                .replace(/(?:^|\s)(?:às|as|at)\s+\d{1,2}\s*(?::|h)\s*\d{0,2}/i, " ")
+                .replace(/^\s*(de|to|que)\s+/i, "").replace(/\s+/g, " ").trim();
+            if (seconds > 0) {
+                const message = text || Translation.tr("Reminder");
+                results.push(root.quickResult({
+                    name: Translation.tr("Remind \"%1\" in %2").arg(message).arg(root.formatDuration(seconds)),
+                    comment: Translation.tr("At %1").arg(Qt.formatTime(new Date(Date.now() + seconds * 1000), "hh:mm")),
+                    type: Translation.tr("Reminder"), iconName: "notifications_active", verb: Translation.tr("Schedule"),
+                    execute: () => {
+                        Quickshell.execDetached(["systemd-run", "--user", "--collect", `--on-active=${seconds}s`, "--timer-property=AccuracySec=1s",
+                            "sh", "-c", 'notify-send -a Shell -u critical -i alarm "$0" "$1"; pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga',
+                            Translation.tr("Reminder"), message]);
+                        Quickshell.execDetached(["notify-send", "-a", "Shell", "-i", "alarm", Translation.tr("Reminder scheduled"),
+                            `${message} · ${Qt.formatTime(new Date(Date.now() + seconds * 1000), "hh:mm")}`]);
+                    }
+                }));
+            } else {
+                results.push(root.quickResult({
+                    name: Translation.tr("Type when, e.g. \"remind in 10 min take out the cake\""),
+                    type: Translation.tr("Reminder"), iconName: "notifications_active", verb: "",
+                    execute: () => {}
+                }));
+            }
+        }
+
+        if (root.startsWithKeyword(query, ["nao perturbe", "dnd", "do not disturb", "silenciar notificacoes"])) {
+            results.push(root.quickResult({
+                name: Notifications.silent ? Translation.tr("Turn off Do Not Disturb") : Translation.tr("Turn on Do Not Disturb"),
+                type: Translation.tr("Notifications"), iconName: Notifications.silent ? "notifications" : "do_not_disturb_on",
+                execute: () => Notifications.silent = !Notifications.silent
+            }));
+        }
+
+        return results;
+    }
+
     property list<var> results: {
         // Search results are handled here
         ////////////////// Skip? //////////////////
@@ -439,8 +642,10 @@ Singleton {
         }).filter(Boolean);
 
         //////// Prioritized by prefix /////////
-        let result = [];
-        const startsWithNumber = /^\d/.test(root.query);
+        let result = root.quickToolResults(root.query);
+        const quickCount = result.length;
+        // "7m" or "timer 5 min" is a timer, not a unit conversion
+        const startsWithNumber = /^\d/.test(root.query) && quickCount === 0;
         const startsWithMathPrefix = root.query.startsWith(Config.options.search.prefix.math);
         const startsWithShellCommandPrefix = root.query.startsWith(Config.options.search.prefix.shellCommand);
         const startsWithWebSearchPrefix = root.query.startsWith(Config.options.search.prefix.webSearch);
@@ -463,7 +668,7 @@ Singleton {
         if (Config.options.search.prefix.showDefaultActionsWithoutPrefix) {
             if (!startsWithShellCommandPrefix)
                 result.push(commandResultObject);
-            if (!startsWithNumber && !startsWithMathPrefix)
+            if (!startsWithNumber && !startsWithMathPrefix && quickCount === 0)
                 result.push(mathResultObject);
             if (!startsWithWebSearchPrefix)
                 result.push(webSearchResultObject);

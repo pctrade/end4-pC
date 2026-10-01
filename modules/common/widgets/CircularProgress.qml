@@ -8,6 +8,7 @@ import qs.modules.common
 Item {
     id: root
 
+    property bool spinning: false
     property int implicitSize: 30
     property int lineWidth: 2
     property real value: 0
@@ -50,9 +51,10 @@ Item {
 
     Shape {
         anchors.fill: parent
-        layer.enabled: true
-        layer.smooth: true
+        layer.enabled: root.spinning
+        layer.smooth: root.spinning
         preferredRendererType: Shape.CurveRenderer
+        asynchronous: true
         ShapePath {
             id: secondaryPath
             strokeColor: root.colSecondary
