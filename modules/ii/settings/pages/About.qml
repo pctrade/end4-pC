@@ -27,24 +27,66 @@ ContentPage {
         const updateScript = `
             set -e
             DIR="$HOME/.config/quickshell"
+            REPO="$DIR/end4-pC"
+            URL="https://github.com/pctrade/end4-pC.git"
 
-            # Download to temp first
-            rm -rf "$DIR/end4-pC-tmp"
-            git clone https://github.com/pctrade/end4-pC.git "$DIR/end4-pC-tmp"
+            restart_shell() {
+                killall qs 2>/dev/null || true
+                sleep 0.5
+                setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
+                disown
+            }
 
-            # Apply update
-            rm -rf "$DIR/end4-pC-old"
-            [ -d "$DIR/end4-pC" ] && mv "$DIR/end4-pC" "$DIR/end4-pC-old"
-            mv "$DIR/end4-pC-tmp" "$DIR/end4-pC"
+            if [ -d "$REPO/.git" ]; then
+                cd "$REPO"
 
-            # Reload
-            killall qs 2>/dev/null || true
-            sleep 0.5
-            setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
-            disown
+                # Work in progress goes on the stash, it is never thrown away.
+                stashed=""
+                if [ -n "$(git status --porcelain)" ]; then
+                    if git stash push --include-untracked \
+                            --message "before dots update $(date +%Y-%m-%d_%H-%M-%S)"; then
+                        stashed=1
+                    fi
+                fi
 
-            # Cleanup
-            rm -rf "$DIR/end4-pC-old"
+                branch="$(git rev-parse --abbrev-ref HEAD)"
+                git fetch origin
+
+                if [ "$branch" = "main" ]; then
+                    if git merge --ff-only origin/main; then
+                        echo "Updated to $(git rev-parse --short HEAD)."
+                    else
+                        echo "main carries local commits and cannot fast-forward."
+                        echo "Nothing was lost. Merge or rebase by hand in $REPO."
+                    fi
+                else
+                    echo "You are on branch $branch, so it was left alone."
+                    if git fetch origin main:main; then
+                        echo "Local main was updated. Switch with: git -C $REPO switch main"
+                    else
+                        echo "Local main could not be fast-forwarded either."
+                    fi
+                fi
+
+                if [ -n "$stashed" ]; then
+                    echo
+                    echo "Your uncommitted changes were stashed. Restore them with:"
+                    echo "    git -C $REPO stash pop"
+                fi
+            else
+                # No checkout to preserve: first install, or a folder that is not
+                # a repo. Keep whatever was there rather than deleting it.
+                rm -rf "$DIR/end4-pC-tmp"
+                git clone "$URL" "$DIR/end4-pC-tmp"
+                if [ -d "$REPO" ]; then
+                    BACKUP="$DIR/end4-pC-backup-$(date +%Y%m%d-%H%M%S)"
+                    mv "$REPO" "$BACKUP"
+                    echo "Previous folder kept at $BACKUP"
+                fi
+                mv "$DIR/end4-pC-tmp" "$REPO"
+            fi
+
+            restart_shell
         `
 
         Quickshell.execDetached(["kitty", "--hold", "bash", "-c", updateScript])
