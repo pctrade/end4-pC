@@ -17,6 +17,7 @@ Item {
         { key: "weather",     icon: "partly_cloudy_day",  name: Translation.tr("Weather") },
         { key: "clock",       icon: "schedule",           name: Translation.tr("Clock") },
         { key: "media",       icon: "music_note",         name: Translation.tr("Media") },
+        { key: "spun",        icon: "album",              name: Translation.tr("Spun") },
         { key: "images",      icon: "photo_library",      name: Translation.tr("Image Converter") },
         { key: "resources",   icon: "monitor_heart",      name: Translation.tr("Resources") },
         { key: "calendar",    icon: "calendar_month",     name: Translation.tr("Calendar") },
