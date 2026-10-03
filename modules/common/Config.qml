@@ -820,6 +820,7 @@ Singleton {
                 property bool mediaPlayer: false
                 property string bannerImage: ""
                 property bool keepRightSidebarLoaded: true
+                property list<string> panelOrder: ["quickToggles", "sliders", "media"]
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.

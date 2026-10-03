@@ -32,9 +32,24 @@ Item {
     property bool showWifiDialog: false
     property bool editMode: false
     property bool showIconPickerDialog: false
+    property string draggingType: ""
+    property int hoverPos: -1
+    property point dragPosition
 
     readonly property bool animatedEntrance: WM.compositor !== "hyprland"
     readonly property bool sidebarOpen: GlobalStates.sidebarRightOpen
+
+    // ponytail: 3 panels + calendar expand → limit quick rows to 2
+    readonly property int activePanelCount: {
+        let c = 1
+        const sl = Config.options.sidebar.quickSliders
+        if (sl && sl.enable && (sl.showMic || sl.showVolume || sl.showBrightness)) c++
+        if (Config.options.sidebar.mediaPlayer && (root.activePlayer !== null || root.editMode)) c++
+        return c
+    }
+    readonly property bool threePanelsActive: root.activePanelCount >= 3
+    readonly property bool calendarExpanded: Config.options.sidebar.bottomGroup && !Persistent.states.sidebar.bottomGroup.collapsed
+    readonly property bool shouldLimitRows: root.threePanelsActive && root.calendarExpanded && !root.editMode
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property var realPlayers: MprisController.players
@@ -93,6 +108,7 @@ Item {
                 root.showBluetoothDialog = false;
                 root.showAudioOutputDialog = false;
                 root.showAudioInputDialog = false;
+                root.editMode = false;
             }
         }
     }
@@ -291,51 +307,100 @@ Item {
                 }
             }
 
-            LoaderedQuickPanelImplementation {
-                styleName: "classic"
-                sourceComponent: ClassicQuickPanel {}
-            }
-
-            LoaderedQuickPanelImplementation {
-                styleName: "android"
-                sourceComponent: AndroidQuickPanel {
-                    editMode: root.editMode
-                }
-            }
-
-            Loader {
-                id: slidersLoader
+            // ponytail: 3 reorderable panels — hold one, the others make room live
+            Item {
+                id: panelArea
                 Layout.fillWidth: true
-                visible: active
-                active: {
-                    const configQuickSliders = Config.options.sidebar.quickSliders
-                    if (!configQuickSliders.enable) return false
-                    if (!configQuickSliders.showMic && !configQuickSliders.showVolume && !configQuickSliders.showBrightness) return false;
-                    return true;
-                }
-                sourceComponent: QuickSliders {}
-            }
+                implicitHeight: panelArea.totalHeight
 
-            Loader {
-                active: root.activePlayer !== null && GlobalStates.sidebarRightOpen && Config.options.sidebar.mediaPlayer
-                visible: active
-                Layout.fillWidth: true
-                Layout.topMargin: -10
-                Layout.bottomMargin: -10
-                Layout.leftMargin: -10
-                Layout.rightMargin: -10
-                sourceComponent: Player {
-                    player: root.activePlayer
-                    visualizerPoints: GlobalStates.visualizerPoints
-                    implicitHeight: 160
-                    radius: Appearance.rounding.normal
+                readonly property int gap: root.editMode ? 8 : sidebarPadding
+                readonly property var baseOrder: {
+                    const o = Config.options.sidebar.panelOrder
+                    return (o && o.length === 3) ? o.map(String) : ["quickToggles", "sliders", "media"]
                 }
+                // urutan tampil selama drag: panel yang dipegang ditempatkan di posisi hover
+                readonly property var displayOrder: {
+                    const b = panelArea.baseOrder
+                    const d = root.draggingType
+                    if (d === "" || root.hoverPos < 0 || b.indexOf(d) === root.hoverPos) return b
+                    const a = [...b]
+                    a.splice(a.indexOf(d), 1)
+                    a.splice(root.hoverPos, 0, d)
+                    return a
+                }
+                readonly property real totalHeight: {
+                    let h = 0
+                    let n = 0
+                    for (const t of panelArea.displayOrder) {
+                        const hs = panelArea.hostOf(t)
+                        if (!hs || !hs.visible) continue
+                        h += hs.stackHeight + (n > 0 ? panelArea.gap : 0)
+                        n++
+                    }
+                    return h
+                }
+
+                function panelSource(type) {
+                    if (type === "quickToggles") return quickTogglesPanel
+                    if (type === "sliders") return slidersPanel
+                    if (type === "media") return mediaPanel
+                    return null
+                }
+                function panelVisible(type) {
+                    if (type === "quickToggles") return true
+                    if (type === "sliders") {
+                        const c = Config.options.sidebar.quickSliders
+                        return c.enable && (c.showMic || c.showVolume || c.showBrightness)
+                    }
+                    if (type === "media") return Config.options.sidebar.mediaPlayer && (root.activePlayer !== null || root.editMode)
+                    return false
+                }
+                function hostOf(type) {
+                    if (type === "quickToggles") return qtPanel
+                    if (type === "sliders") return slPanel
+                    return mdPanel
+                }
+                function yFor(type) {
+                    let y = 0
+                    for (const t of panelArea.displayOrder) {
+                        if (t === type) break
+                        const hs = panelArea.hostOf(t)
+                        if (!hs || !hs.visible) continue
+                        y += hs.stackHeight + panelArea.gap
+                    }
+                    return y
+                }
+                // indeks jatuh dari kursor: berapa panel lain yang tengahnya sudah di atas kursor
+                function hoverAt(scenePos) {
+                    const local = panelArea.mapFromItem(null, scenePos.x, scenePos.y)
+                    const seq = panelArea.displayOrder.filter(t => t !== root.draggingType)
+                    let above = 0
+                    for (const t of seq) {
+                        const hs = panelArea.hostOf(t)
+                        if (!hs || !hs.visible) continue
+                        if (hs.y + hs.height / 2 <= local.y) above++
+                    }
+                    // sisip tepat setelah `above` panel terlihat (panel tersembunyi dihitung nol tinggi)
+                    let seen = 0
+                    for (let i = 0; i < seq.length; i++) {
+                        const hs = panelArea.hostOf(seq[i])
+                        if (!hs || !hs.visible) continue
+                        if (seen === above) return i
+                        seen++
+                    }
+                    return seq.length
+                }
+
+                PanelHost { id: qtPanel; panelType: "quickToggles" }
+                PanelHost { id: slPanel; panelType: "sliders" }
+                PanelHost { id: mdPanel; panelType: "media" }
             }
 
             CenterWidgetGroup {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                Layout.minimumHeight: 47 // ponytail: bottom bar (ring/count/clean) height, not shrink through
             }
 
             BottomWidgetGroup {
@@ -395,6 +460,208 @@ Item {
     ToggleDialog {
         shownPropertyString: "showIconPickerDialog"
         dialog: IconPickerDialog {}
+    }
+
+    // Drag ghost — panel yang dipegang terangkat di atas panel lain
+    Item {
+        id: dragGhost
+        visible: root.draggingType !== ""
+        z: 999
+        width: sidebarWidth + 30
+        height: dragGhostContent.implicitHeight + 16
+        x: root.dragPosition.x - width / 2
+        y: root.dragPosition.y - 40
+
+        // ponytail: no Behavior on x/y — ghost harus nempel 1:1 di kursor,
+        // animasi di sini yang bikin "fling" dari posisi lama ke kursor
+        Behavior on opacity { animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this) }
+
+        layer.enabled: true
+        layer.effect: DropShadow {
+            horizontalOffset: 0
+            verticalOffset: 8
+            radius: 24
+            color: Qt.rgba(0, 0, 0, 0.35)
+            samples: 33
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Appearance.rounding.normal
+            color: Appearance.colors.colLayer1
+            border.width: 1
+            border.color: Appearance.colors.colLayer0Border
+        }
+
+        ColumnLayout {
+            id: dragGhostContent
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 0
+            Loader {
+                id: dragGhostLoader
+                Layout.fillWidth: true
+                active: root.draggingType !== ""
+                property string panelType: root.draggingType
+                sourceComponent: panelArea.panelSource(panelType)
+            }
+        }
+    }
+
+    // ponytail: satu item stabil per panel — urutan datang dari panelArea.displayOrder
+    component PanelHost: Item {
+        id: host
+        property string panelType: ""
+        readonly property bool bleed: panelType === "media"
+        readonly property real stackHeight: height - (bleed ? 20 : 0)
+
+        x: bleed ? -10 : 0
+        width: panelArea.width + (bleed ? 20 : 0)
+        y: panelArea.yFor(panelType) + (bleed ? -10 : 0)
+        height: hostColumn.implicitHeight
+        visible: panelArea.panelVisible(panelType)
+        opacity: root.draggingType === panelType ? 0
+            : (root.editMode && !panelArea.panelVisible(panelType) ? 0.4 : 1)
+
+        Behavior on y {
+            enabled: root.draggingType !== ""
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(host)
+        }
+
+        ColumnLayout {
+            id: hostColumn
+            width: parent.width
+            spacing: 0
+            ReorderDragHandle { panelType: host.panelType }
+            Loader {
+                Layout.fillWidth: true
+                active: panelArea.panelVisible(host.panelType)
+                asynchronous: true
+                sourceComponent: panelArea.panelSource(host.panelType)
+            }
+        }
+    }
+
+    // ponytail: reorder drag handle for panel slots
+    component ReorderDragHandle: Rectangle {
+        id: reorderHandle
+        visible: root.editMode && !(reorderHandle.panelType === "media" && !Config.options.sidebar.mediaPlayer)
+        Layout.fillWidth: true
+        implicitHeight: 28
+        radius: Appearance.rounding.small
+        color: reorderDragHandler.active ? Appearance.colors.colLayer1Active : Appearance.colors.colLayer1
+        border.width: 1
+        border.color: Appearance.colors.colLayer0Border
+        property string panelType: ""
+        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
+            spacing: 8
+            MaterialSymbol { text: "drag_indicator"; iconSize: 18; color: Appearance.colors.colSubtext }
+            StyledText {
+                Layout.fillWidth: true
+                text: reorderHandle.panelType === "quickToggles" ? Translation.tr("Quick toggles")
+                    : reorderHandle.panelType === "sliders" ? Translation.tr("Sliders")
+                    : reorderHandle.panelType === "media" ? Translation.tr("Media")
+                    : reorderHandle.panelType
+                font.pixelSize: Appearance.font.pixelSize.small
+                color: Appearance.colors.colOnLayer1
+            }
+            MaterialSymbol { text: "drag_indicator"; iconSize: 18; color: Appearance.colors.colSubtext }
+        }
+
+        DragHandler {
+            id: reorderDragHandler
+            target: null
+            onActiveChanged: {
+                if (active) {
+                    // seed dulu: centroid cuma dihitung ulang pada gerakan pertama,
+                    // kalau tidak ghost muncul dari posisi drag sebelumnya (atau 0,0)
+                    const sc = centroid.scenePosition
+                    const lp = root.mapFromItem(null, sc.x, sc.y)
+                    root.dragPosition = Qt.point(lp.x, lp.y)
+                    root.draggingType = reorderHandle.panelType
+                    root.hoverPos = panelArea.baseOrder.indexOf(reorderHandle.panelType)
+                } else {
+                    // preview sudah sesuai: tulis jadi urutan baru
+                    const cur = Config.options.sidebar.panelOrder
+                    const next = panelArea.displayOrder
+                    if (cur && cur.length === 3 && next.some((t, i) => String(cur[i]) !== t))
+                        Config.options.sidebar.panelOrder = next
+                    root.draggingType = ""
+                    root.hoverPos = -1
+                }
+            }
+            onCentroidChanged: {
+                if (!active) return
+                const sc = centroid.scenePosition
+                const localPos = root.mapFromItem(null, sc.x, sc.y)
+                root.dragPosition = Qt.point(localPos.x, localPos.y)
+                root.hoverPos = panelArea.hoverAt(sc)
+            }
+        }
+        HoverHandler { cursorShape: reorderDragHandler.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
+    }
+
+    Component {
+        id: quickTogglesPanel
+        ColumnLayout {
+            spacing: 0
+            Loader {
+                Layout.fillWidth: true
+                active: Config.options.sidebar.quickToggles.style === "classic"
+                visible: active
+                sourceComponent: ClassicQuickPanel {}
+            }
+            Loader {
+                Layout.fillWidth: true
+                active: Config.options.sidebar.quickToggles.style === "android"
+                visible: active
+                sourceComponent: AndroidQuickPanel { editMode: root.editMode; limitRows: root.shouldLimitRows }
+            }
+        }
+    }
+    Component {
+        id: slidersPanel
+        QuickSliders {}
+    }
+    Component {
+        id: mediaPanel
+        Item {
+            implicitHeight: root.activePlayer !== null ? 160 : 80
+            Loader {
+                anchors.fill: parent
+                active: root.activePlayer !== null
+                sourceComponent: Player {
+                    player: root.activePlayer
+                    visualizerPoints: GlobalStates.visualizerPoints
+                    implicitHeight: 160
+                    radius: Appearance.rounding.normal
+                }
+            }
+            ColumnLayout {
+                anchors.fill: parent
+                visible: root.activePlayer === null
+                spacing: 8
+                Item { Layout.fillHeight: true }
+                MaterialSymbol {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "music_note"
+                    iconSize: 32
+                    color: Appearance.colors.colSubtext
+                }
+                StyledText {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: Translation.tr("No media playing")
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: Appearance.colors.colSubtext
+                }
+                Item { Layout.fillHeight: true }
+            }
+        }
     }
 
     component ToggleDialog: Loader {

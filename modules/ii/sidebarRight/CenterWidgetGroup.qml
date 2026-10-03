@@ -11,6 +11,7 @@ Rectangle {
     id: root
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
+    clip: true
 
     NotificationList {
         anchors.fill: parent

@@ -12,11 +12,14 @@ import qs.modules.ii.sidebarRight.quickToggles.androidStyle
 AbstractQuickPanel {
     id: root
     property bool editMode: false
+    property bool limitRows: false
     Layout.fillWidth: true
 
     visible: root.editMode || root.toggles.length > 0
 
-    implicitHeight: (editMode ? contentItem.implicitHeight : usedRows.implicitHeight) + root.padding * 2
+    readonly property int maxRows: root.limitRows ? 2 : 99
+    implicitHeight: (editMode ? contentItem.implicitHeight : Math.min(usedRows.implicitHeight, root.maxRows * (root.baseCellHeight + root.spacing))) + root.padding * 2
+    clip: root.limitRows
     Behavior on implicitHeight {
         animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
     }
@@ -80,7 +83,7 @@ AbstractQuickPanel {
             Repeater {
                 id: usedRowsRepeater
                 model: ScriptModel {
-                    values: Array(root.toggleRows.length)
+                    values: Array(Math.min(root.toggleRows.length, root.maxRows))
                 }
                 delegate: ButtonGroup {
                     id: toggleRow

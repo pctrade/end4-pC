@@ -8,6 +8,7 @@ import QtQuick.Layouts
 
 Item {
     id: root
+    clip: true
 
     NotificationListView { // Scrollable window
         id: listview
@@ -30,9 +31,14 @@ Item {
         popup: false
     }
 
-    // Placeholder when list is empty
+    // Placeholder when list is empty — ponytail: hide when panel collapsed to minimum (peek fix image 1)
     PagePlaceholder {
-        shown: Notifications.list.length === 0
+        anchors.top: parent.top
+        anchors.bottom: statusRow.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottomMargin: 5
+        shown: Notifications.list.length === 0 && root.height > 90
         icon: "notifications_active"
         description: Translation.tr("Nothing")
         shape: MaterialShape.Shape.Ghostish
