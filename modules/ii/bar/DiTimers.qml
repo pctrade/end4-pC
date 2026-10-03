@@ -56,8 +56,6 @@ RowLayout {
         }
     }
 
-    Item { Layout.fillWidth: true }
-
     StyledText {
         Layout.alignment: Qt.AlignVCenter
         text: root.timerValueText()

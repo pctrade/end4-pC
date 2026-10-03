@@ -10,7 +10,15 @@ BarWidgetSwitcher {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool borderless: Config.options.bar.borderless
-    property bool showDate: Config.options.time.showDate
+    property bool islandMode: false
+    property bool islandExpanded: false
+    property bool showDate: islandMode ? islandExpanded : Config.options.time.showDate
+    property real dateReveal: showDate ? 1 : 0
+    horizontalExtraPadding: islandMode ? 0 : 12
+    Behavior on dateReveal {
+        enabled: root.islandMode
+        NumberAnimation { duration: 350; easing.type: Easing.OutCubic }
+    }
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
     readonly property bool hasAmPm: dateTimeString.toLowerCase().includes("am") || dateTimeString.toLowerCase().includes("pm")
@@ -110,18 +118,32 @@ BarWidgetSwitcher {
 
     rowDefault: Component {
         RowLayout {
-            spacing: 4
-            StyledText {
-                visible: root.showDate
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: root.contentColor
-                text: DateTime.longDate
+            spacing: 4 * root.dateReveal
+            Item {
+                visible: root.dateReveal > 0
+                implicitWidth: dateLabel.implicitWidth * root.dateReveal
+                implicitHeight: dateLabel.implicitHeight
+                opacity: root.dateReveal
+                clip: true
+                StyledText {
+                    id: dateLabel
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: root.contentColor
+                    text: DateTime.longDate
+                }
             }
-            StyledText {
-                visible: root.showDate
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: root.contentColor
-                text: "•"
+            Item {
+                visible: root.dateReveal > 0
+                implicitWidth: dateSeparator.implicitWidth * root.dateReveal
+                implicitHeight: dateSeparator.implicitHeight
+                opacity: root.dateReveal
+                clip: true
+                StyledText {
+                    id: dateSeparator
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: root.contentColor
+                    text: "•"
+                }
             }
             StyledText {
                 font.pixelSize: Appearance.font.pixelSize.small
@@ -142,13 +164,20 @@ BarWidgetSwitcher {
             property string ampm: timeParts.find(part => /^(am|pm)$/i.test(part)) ?? ""
             property string time: timeParts.filter(part => !/^(am|pm)$/i.test(part)).join(":")
 
-            StyledText {
-                visible: root.showDate
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnPrimaryContainer
-                text: DateTime.longDate
+            Item {
+                visible: root.dateReveal > 0
+                implicitWidth: materialDate.implicitWidth * root.dateReveal
+                implicitHeight: materialDate.implicitHeight
                 Layout.alignment: Qt.AlignVCenter
-                leftPadding: 5
+                opacity: root.dateReveal
+                clip: true
+                StyledText {
+                    id: materialDate
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: Appearance.colors.colOnPrimaryContainer
+                    text: DateTime.longDate
+                    leftPadding: 5
+                }
             }
 
             Rectangle {

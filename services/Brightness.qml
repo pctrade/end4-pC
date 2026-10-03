@@ -249,11 +249,11 @@ Singleton {
         target: "brightness"
 
         function increment() {
-            onPressed: root.increaseBrightness()
+            root.increaseBrightness()
         }
 
         function decrement() {
-            onPressed: root.decreaseBrightness()
+            root.decreaseBrightness()
         }
     }
 

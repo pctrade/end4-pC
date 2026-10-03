@@ -68,7 +68,50 @@ Singleton {
         blockWrites: root.blockWrites
         onFileChanged: fileReloadTimer.restart()
         onAdapterUpdated: fileWriteTimer.restart()
-        onLoaded: root.ready = true
+        onLoaded: {
+            const island = root.options.bar.dynamicIsland;
+            if (!island.widgetListsMigrated) {
+                if (island.leftWidgets.length === 0 && island.leftWidget !== "none")
+                    island.leftWidgets = [island.leftWidget];
+                if (island.rightWidgets.length === 0 && island.rightWidget !== "none")
+                    island.rightWidgets = [island.rightWidget];
+                island.widgetListsMigrated = true;
+            }
+            if (!island.mediaWidgetMigrated) {
+                if (!island.leftWidgets.includes("media") && !island.rightWidgets.includes("media"))
+                    island.leftWidgets = island.leftWidgets.concat(["media"]);
+                island.mediaWidgetMigrated = true;
+            }
+            if (!island.mediaHoverModeMigrated) {
+                if (island.widgetModes.media === "dynamic")
+                    island.widgetModes.media = "dynamicHover";
+                island.mediaHoverModeMigrated = true;
+            }
+            if (!island.osdWidgetMigrated) {
+                if (!island.leftWidgets.includes("osd") && !island.rightWidgets.includes("osd"))
+                    island.leftWidgets = island.leftWidgets.concat(["osd"]);
+                island.osdWidgetMigrated = true;
+            }
+            if (!island.activityWidgetMigrated) {
+                const migrateActivity = list => {
+                    const migrated = list.map(name => name === "osd" ? "activity" : name);
+                    return migrated.filter((name, index) => migrated.indexOf(name) === index);
+                }
+                island.leftWidgets = migrateActivity(island.leftWidgets);
+                island.rightWidgets = migrateActivity(island.rightWidgets);
+                island.leftRightAnchoredWidgets = migrateActivity(island.leftRightAnchoredWidgets);
+                island.rightRightAnchoredWidgets = migrateActivity(island.rightRightAnchoredWidgets);
+                if (!island.leftWidgets.includes("activity")
+                    && !island.rightWidgets.includes("activity"))
+                    island.leftWidgets = island.leftWidgets.concat(["activity"]);
+                island.activityWidgetMigrated = true;
+            }
+            if (!island.centerWidgetMigrated) {
+                island.centerEnabled = island.centerWorkspaces;
+                island.centerWidgetMigrated = true;
+            }
+            root.ready = true;
+        }
         onLoadFailed: error => {
             if (error == FileViewError.FileNotFound) {
                 writeAdapter();
@@ -523,8 +566,33 @@ Singleton {
                 }
 
                 property JsonObject dynamicIsland: JsonObject {
+                    property bool centerEnabled: false
+                    property string centerWidget: "workspaces"
+                    property bool centerWidgetMigrated: false
+                    // Retained only to migrate the workspace-specific center setting.
+                    property bool centerWorkspaces: false
+                    property string sessionMenuMode: "exclusive" // "replaceWorkspaces" (replaces the selected center) or "exclusive"
                     property string visualizerStyle: "dots" // "dots", "wave", "none"
                     property bool showMediaControls: false
+                    property string animationStyle: "staged" // "staged" or "simultaneous"
+                    property JsonObject widgetModes: JsonObject {
+                        property string clockWidget: "dynamic"
+                        property string resources: "dynamic"
+                        property string media: "dynamicHover"
+                        property string visualizer: "expanded"
+                    }
+                    // Widgets listed here keep their right edge fixed while resizing.
+                    // Every other widget keeps its left edge fixed.
+                    property list<string> leftRightAnchoredWidgets: ["media"]
+                    property list<string> rightRightAnchoredWidgets: []
+                    property list<string> leftWidgets: []
+                    property list<string> rightWidgets: []
+                    property bool widgetListsMigrated: false
+                    property bool mediaWidgetMigrated: false
+                    property bool mediaHoverModeMigrated: false
+                    property bool osdWidgetMigrated: false
+                    property bool activityWidgetMigrated: false
+                    // Retained only to migrate settings from the single-widget layout.
                     property string leftWidget: "none"
                     property string rightWidget: "none"
                 }

@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import qs
 import qs.services
 
 /**
@@ -18,6 +19,8 @@ Singleton {
 
     property list<var> persistent: []
     property list<var> dismissable: []
+    property list<var> barWindows: []
+    property bool sessionGrabReady: false
 
     function dismiss() {
         root.dismissable = [];
@@ -41,6 +44,17 @@ Singleton {
         }
     }
 
+    function addBarWindow(window) {
+        if (root.barWindows.indexOf(window) === -1)
+            root.barWindows.push(window);
+    }
+
+    function removeBarWindow(window) {
+        const index = root.barWindows.indexOf(window);
+        if (index !== -1)
+            root.barWindows.splice(index, 1);
+    }
+
     function addDismissable(window) {
         if (root.dismissable.indexOf(window) === -1) {
             root.dismissable.push(window);
@@ -62,11 +76,36 @@ Singleton {
         );
     }
 
+    Connections {
+        target: GlobalStates
+        function onDiSessionOpenChanged() {
+            if (GlobalStates.diSessionOpen) {
+                sessionGrabDelay.restart()
+            } else {
+                sessionGrabDelay.stop()
+                root.sessionGrabReady = false
+            }
+        }
+    }
+
+    Timer {
+        id: sessionGrabDelay
+        interval: 50
+        onTriggered: root.sessionGrabReady = GlobalStates.diSessionOpen
+    }
+
     HyprlandFocusGrab {
         id: grab
-        windows: root.dismissable.every(w => !w?.focusable) || root.dismissable.some(w => root.hasActive(w?.contentItem)) ? [...root.dismissable, ...root.persistent] : [...root.dismissable]
-        active: WM.compositor === "hyprland" && root.dismissable.length > 0
+        windows: root.sessionGrabReady
+            ? [...root.barWindows]
+            : (root.dismissable.every(w => !w?.focusable)
+                || root.dismissable.some(w => root.hasActive(w?.contentItem))
+                ? [...root.dismissable, ...root.persistent] : [...root.dismissable])
+        active: WM.compositor === "hyprland"
+            && (root.sessionGrabReady || root.dismissable.length > 0)
         onCleared: () => {
+            if (root.sessionGrabReady)
+                GlobalStates.diSessionOpen = false;
             root.dismiss();
         }
     }

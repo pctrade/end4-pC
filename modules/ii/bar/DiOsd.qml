@@ -21,6 +21,15 @@ RowLayout {
         ? Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name)
         : Quickshell.screens.find(s => s.name === WM.focusedMonitor?.name)
     readonly property var brightnessMonitor: Brightness.getMonitorForScreen(focusedScreen)
+    readonly property real indicatorValue: {
+        let value = 0
+        switch (GlobalStates.osdIndicatorType) {
+            case "brightness": value = brightnessMonitor?.brightness ?? 0.5; break
+            case "gamma": value = (Hyprsunset.gamma ?? 50) / 100; break
+            default: value = Audio.sink?.audio?.volume ?? 0; break
+        }
+        return Math.max(0, Math.min(1, value))
+    }
 
     MaterialShapeWrappedMaterialSymbol {
         Layout.alignment: Qt.AlignVCenter
@@ -33,10 +42,21 @@ RowLayout {
         padding: 4
     }
 
-    Item { Layout.fillWidth: true }
+    StyledProgressBar {
+        Layout.fillWidth: true
+        Layout.minimumWidth: 30
+        Layout.alignment: Qt.AlignVCenter
+        value: diOsdRoot.indicatorValue
+        valueBarHeight: 4
+        valueBarGap: 3
+        highlightColor: Appearance.colors.colPrimary
+        trackColor: Appearance.colors.colSecondaryContainer
+    }
 
     StyledText {
         Layout.alignment: Qt.AlignVCenter
+        Layout.preferredWidth: 24
+        horizontalAlignment: Text.AlignRight
         text: {
             switch (GlobalStates.osdIndicatorType) {
                 case "brightness": return `${Math.round((brightnessMonitor?.brightness ?? 0.5) * 100)}`

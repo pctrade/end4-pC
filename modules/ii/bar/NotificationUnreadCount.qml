@@ -9,7 +9,8 @@ MaterialSymbol {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     readonly property bool showUnreadCount: Config.options.bar.indicators.notifications.showUnreadCount
-    readonly property bool isDi: GlobalStates.dynamicIslandEnabled && Config.options.bar.dynamicIsland.rightWidget === "systemIcons"
+    readonly property bool isDi: GlobalStates.dynamicIslandEnabled && (Config.options.bar.dynamicIsland.leftWidgets.includes("systemIcons")
+        || Config.options.bar.dynamicIsland.rightWidgets.includes("systemIcons"))
 
     text: Notifications.silent ? "notifications_paused" : "notifications"
     iconSize: Appearance.font.pixelSize.larger

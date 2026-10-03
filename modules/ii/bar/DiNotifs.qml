@@ -50,8 +50,8 @@ Item {
             left: notifIcon.right
             leftMargin: root.isMaterial ? 14 : 2
             verticalCenter: parent.verticalCenter
-            right: nowLabel.left
-            rightMargin: 8
+            right: parent.right
+            rightMargin: 10
         }
         spacing: root.isMaterial ? -2 : -4
 
@@ -75,19 +75,5 @@ Item {
             wrapMode: Text.NoWrap
             maximumLineCount: 1
         }
-    }
-
-    StyledText {
-        id: nowLabel
-        anchors {
-            right: parent.right
-            top: parent.top
-            rightMargin: 10
-            topMargin: 8
-        }
-        text: DateTime.time
-        font.pixelSize: Appearance.font.pixelSize.small - 2
-        color: Appearance.colors.colOnLayer0
-        opacity: 0.8
     }
 }

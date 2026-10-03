@@ -13,6 +13,7 @@ Item {
     property bool vertical: false
     property int warningThreshold: 100
     property bool shown: true
+    property real valueReveal: Config.options.bar.resources.showValue ? 1 : 0
     clip: !vertical
     visible: vertical ? true : width > 0 && height > 0
     implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : (resourceRowLayout.x < 0 ? 0 : resourceRowLayout.implicitWidth)
@@ -81,7 +82,7 @@ Item {
     RowLayout {
         id: resourceRowLayout
         visible: !root.vertical
-        spacing: 2
+        spacing: 2 * root.valueReveal
         x: shown ? 0 : -resourceRowLayout.width
         anchors.verticalCenter: parent.verticalCenter
 
@@ -94,8 +95,10 @@ Item {
 
         Item {
             Layout.alignment: Qt.AlignVCenter
-            visible: Config.options.bar.resources.showValue
-            implicitWidth: visible ? fullPercentageTextMetrics.width : 0
+            visible: root.valueReveal > 0
+            opacity: root.valueReveal
+            clip: true
+            implicitWidth: fullPercentageTextMetrics.width * root.valueReveal
             implicitHeight: percentageText.implicitHeight
             TextMetrics {
                 id: fullPercentageTextMetrics
