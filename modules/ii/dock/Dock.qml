@@ -16,6 +16,14 @@ Scope {
     id: root
     property bool pinned: Config.options?.dock.pinnedOnStartup ?? false
 
+    // "hug": the dock rests on the screen edge, with concave fillets tying it to
+    // the sides, instead of floating above the edge with a gap under it.
+    readonly property bool isHug: Config.options?.dock.style === "hug"
+
+    // Which edge the dock lives on. Mostly useful to get it out of the bar's way
+    // when the bar itself sits at the bottom.
+    readonly property bool isTop: Config.options?.dock.position === "top" 
+
     Variants {
         model: Quickshell.screens
 
@@ -39,18 +47,17 @@ Scope {
             }
 
             exclusiveZone: (root.pinned && !fullscreenOnThisMonitor)
-                ? implicitHeight - Appearance.sizes.hyprlandGapsOut
-                  - (Appearance.sizes.elevationMargin - Appearance.sizes.hyprlandGapsOut)
+                ? implicitHeight - Appearance.sizes.elevationMargin
                 : 0
 
-            anchors { bottom: true; left: true; right: true }
+            anchors { top: root.isTop; bottom: !root.isTop; left: true; right: true }
             implicitWidth: dockBackground.implicitWidth
             WlrLayershell.namespace: "quickshell:dock"
             color: "transparent"
 
             implicitHeight: (Config.options?.dock.height ?? 70)
                 + Appearance.sizes.elevationMargin
-                + Appearance.sizes.hyprlandGapsOut
+                + (root.isHug ? 0 : Appearance.sizes.hyprlandGapsOut)
 
             mask: Region { item: dockMouseArea }
 
@@ -59,11 +66,13 @@ Scope {
                 height: parent.height
                 anchors {
                     top: parent.top
-                    topMargin: dockRoot.reveal
+                    // The hidden dock slides out through its own edge, so the sign
+                    // of the offset follows the position.
+                    topMargin: (dockRoot.reveal
                         ? 0
                         : Config.options?.dock.hoverToReveal
                             ? (dockRoot.implicitHeight - Config.options.dock.hoverRegionHeight)
-                            : (dockRoot.implicitHeight + 1)
+                            : (dockRoot.implicitHeight + 1)) * (root.isTop ? -1 : 1)
                     horizontalCenter: parent.horizontalCenter
                 }
                 implicitWidth: dockHoverRegion.implicitWidth + Appearance.sizes.elevationMargin * 2
@@ -88,7 +97,7 @@ Scope {
                         implicitWidth: dockRow.implicitWidth + 5 * 2
                         height: parent.height
                             - Appearance.sizes.elevationMargin
-                            - Appearance.sizes.hyprlandGapsOut
+                            - (root.isHug ? 0 : Appearance.sizes.hyprlandGapsOut)
 
                         StyledRectangularShadow {
                             target: dockVisualBackground
@@ -99,13 +108,83 @@ Scope {
                             id: dockVisualBackground
                             property real margin: Appearance.sizes.elevationMargin
                             anchors.fill: parent
-                            anchors.topMargin:    Appearance.sizes.elevationMargin
-                            anchors.bottomMargin: Appearance.sizes.hyprlandGapsOut
+                            // "hug" sits on the screen edge instead of floating above it;
+                            // the elevation margin stays on the side the shadow falls.
+                            anchors.topMargin:    root.isTop
+                                ? (root.isHug ? 0 : Appearance.sizes.hyprlandGapsOut)
+                                : Appearance.sizes.elevationMargin
+                            anchors.bottomMargin: root.isTop
+                                ? Appearance.sizes.elevationMargin
+                                : (root.isHug ? 0 : Appearance.sizes.hyprlandGapsOut)
                             color: Config.options.dock.showBackground
                                    ? Appearance.colors.colLayer0 : "transparent"
-                            border.width: Config.options.dock.showBackground ? 1 : 0
+                            border.width: (Config.options.dock.showBackground && !root.isHug) ? 1 : 0
                             border.color: Appearance.colors.colLayer0Border
                             radius: Appearance.rounding.normal + 6
+
+                            // Square where it meets the edge, so the fillets below can
+                            // carry the shape outwards without a seam.
+                            bottomLeftRadius:  !root.isHug ? radius : root.isTop ? Appearance.rounding.screenRounding : 0
+                            bottomRightRadius: !root.isHug ? radius : root.isTop ? Appearance.rounding.screenRounding : 0
+                            topLeftRadius:     !root.isHug ? radius : root.isTop ? 0 : Appearance.rounding.screenRounding
+                            topRightRadius:    !root.isHug ? radius : root.isTop ? 0 : Appearance.rounding.screenRounding
+
+                            Behavior on anchors.bottomMargin {
+                                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                            }
+                        }
+
+                        // The concave corners that tie the dock to the screen edge, the
+                        // same pieces the bar uses for its own hug styles.
+                        // Anchors are swapped through states rather than ternaries: an
+                        // anchor set back to undefined is not reliably dropped, so the
+                        // fillet kept its old edge after a position change. Same pattern
+                        // the bar uses for its own corners.
+                        RoundCorner {
+                            id: leftFillet
+                            visible: root.isHug && Config.options.dock.showBackground
+                            x: -implicitSize
+                            implicitSize: Appearance.rounding.screenRounding
+                            color: Appearance.colors.colLayer0
+                            corner: RoundCorner.CornerEnum.BottomRight
+
+                            anchors.bottom: dockVisualBackground.bottom
+                            states: State {
+                                name: "top"
+                                when: root.isTop
+                                AnchorChanges {
+                                    target: leftFillet
+                                    anchors.bottom: undefined
+                                    anchors.top: dockVisualBackground.top
+                                }
+                                PropertyChanges {
+                                    target: leftFillet
+                                    corner: RoundCorner.CornerEnum.TopRight
+                                }
+                            }
+                        }
+                        RoundCorner {
+                            id: rightFillet
+                            visible: root.isHug && Config.options.dock.showBackground
+                            x: dockVisualBackground.width
+                            implicitSize: Appearance.rounding.screenRounding
+                            color: Appearance.colors.colLayer0
+                            corner: RoundCorner.CornerEnum.BottomLeft
+
+                            anchors.bottom: dockVisualBackground.bottom
+                            states: State {
+                                name: "top"
+                                when: root.isTop
+                                AnchorChanges {
+                                    target: rightFillet
+                                    anchors.bottom: undefined
+                                    anchors.top: dockVisualBackground.top
+                                }
+                                PropertyChanges {
+                                    target: rightFillet
+                                    corner: RoundCorner.CornerEnum.TopLeft
+                                }
+                            }
                         }
 
                         RowLayout {
@@ -114,6 +193,7 @@ Scope {
                             anchors.bottom: parent.bottom
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: 3
+                            // "hug": every group carries its own pill, like the bar's M3 Hug
                             property real padding: 5
                             property bool hasPinnedApps: (Config.options?.dock.pinnedApps?.length ?? 0) > 0
 

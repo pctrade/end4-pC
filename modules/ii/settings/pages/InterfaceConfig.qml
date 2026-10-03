@@ -741,6 +741,32 @@ ContentPage {
                     checked: Config.options.dock.showBackground
                     onCheckedChanged: { Config.options.dock.showBackground = checked }
                 }
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "style"
+                    text: Translation.tr("Style")
+                    textRole: "displayName"
+                    fieldWidth: 160
+                    currentValue: Config.options.dock.style
+                    onSelected: newValue => { Config.options.dock.style = newValue }
+                    model: [
+                        {displayName: Translation.tr("Floating"), value: "classic"},
+                        {displayName: Translation.tr("Hug"), value: "hug"},
+                    ]
+                }
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "align_vertical_bottom"
+                    text: Translation.tr("Position")
+                    textRole: "displayName"
+                    fieldWidth: 160
+                    currentValue: Config.options.dock.position
+                    onSelected: newValue => { Config.options.dock.position = newValue }
+                    model: [
+                        {displayName: Translation.tr("Bottom"), value: "bottom"},
+                        {displayName: Translation.tr("Top"), value: "top"},
+                    ]
+                }
                 ConfigSwitch {
                     buttonIcon: "highlight_mouse_cursor"
                     text: Translation.tr("Hover to reveal")
