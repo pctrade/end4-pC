@@ -128,7 +128,8 @@ Item {
 
         Loader {
             Layout.alignment: Qt.AlignVCenter
-            sourceComponent: Config.options.bar.dynamicIsland.leftWidget === "clockWidget" ? weatherComponent : clockComponent
+            sourceComponent: (Config.options.bar.dynamicIsland.leftWidgets.includes("clockWidget")
+                || Config.options.bar.dynamicIsland.rightWidgets.includes("clockWidget")) ? weatherComponent : clockComponent
 
             Component {
                 id: clockComponent

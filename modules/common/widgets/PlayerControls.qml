@@ -22,6 +22,8 @@ Item {
     signal toggleLyrics()
 
     component TrackChangeButton: RippleButton {
+        id: trackChangeButton
+        HoverHandler { cursorShape: trackChangeButton.pointingHandCursor ? Qt.PointingHandCursor : undefined }
         implicitWidth: 24
         implicitHeight: 24
         property var iconName
@@ -247,13 +249,14 @@ Item {
 
                 RippleButton {
                     id: playPauseButton
+                    HoverHandler { cursorShape: Qt.PointingHandCursor }
                     anchors.right: parent.right
                     anchors.bottom: sliderRow.top
                     anchors.bottomMargin: 5
                     property real size: 44
                     implicitWidth: size
                     implicitHeight: size
-                    downAction: () => root.player.togglePlaying()
+                    downAction: () => root.player?.togglePlaying()
 
                     buttonRadius: root.player?.isPlaying ? Appearance?.rounding.normal : size / 2
                     colBackground: root.player?.isPlaying ? root.blendedColors.colPrimary : root.blendedColors.colSecondaryContainer

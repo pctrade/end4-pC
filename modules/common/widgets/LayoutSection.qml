@@ -4,6 +4,7 @@ import qs.services
 import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
 ContentSubsection {
     id: root
@@ -13,6 +14,14 @@ ContentSubsection {
     property var getWidgetName: (id) => id
     property var availableWidgets: []
     property var onUpdate: (list) => {}
+    property var modeWidgets: []
+    property var dynamicHoverModeWidgets: []
+    property var widgetModes: ({})
+    property var onModeChanged: (widget, mode) => {}
+    property bool centerItems: false
+    property bool anchorControls: false
+    property var rightAnchoredWidgets: []
+    property var onAnchorChanged: (widget, anchor) => {}
     signal widgetContextRequested(string widgetId)
 
     property bool liveReflow: false
@@ -70,23 +79,26 @@ ContentSubsection {
 
             Flow {
                 id: itemFlow
-                anchors.fill: parent
+                anchors.fill: root.centerItems ? undefined : parent
+                anchors.horizontalCenter: root.centerItems ? parent.horizontalCenter : undefined
+                width: root.centerItems ? implicitWidth : parent.width
                 spacing: 2
 
                 Repeater {
                     id: itemRepeater
                     model: root.layout
 
-                    delegate: SelectionGroupButton {
-                        id: chip
+                    delegate: Rectangle {
+                        id: widgetChip
                         required property var modelData
                         required property int index
-                        isDragging: dragHandler.active
-                        leftmost: true; rightmost: true
-                        buttonIcon: "close"
-                        buttonText: root.getWidgetName(modelData)
-                        toggled: !dragHandler.active
-                        altAction: () => root.widgetContextRequested(modelData)
+                        readonly property bool hasModes: root.modeWidgets.includes(modelData)
+                        readonly property bool hasDynamicHoverMode: root.dynamicHoverModeWidgets.includes(modelData)
+                        readonly property bool hasControls: hasModes || root.anchorControls
+                        implicitWidth: chipContent.implicitWidth + (hasControls ? 6 : 0)
+                        implicitHeight: chipContent.implicitHeight
+                        radius: height / 2
+                        color: hasControls ? Appearance.colors.colPrimary : "transparent"
 
                         property real dragOffsetX: 0
                         property real dragOffsetY: 0
@@ -104,37 +116,37 @@ ContentSubsection {
                         property bool settlePending: false
                         property point settleScenePos: Qt.point(0, 0)
 
-                        transform: Translate { x: chip.dragOffsetX + chip.displaceX; y: chip.dragOffsetY + chip.displaceY }
+                        transform: Translate { x: widgetChip.dragOffsetX + widgetChip.displaceX; y: widgetChip.dragOffsetY + widgetChip.displaceY }
                         z: (dragHandler.active || settleAnim.running) ? 100 : 0
 
                         ParallelAnimation {
                             id: settleAnim
-                            NumberAnimation { target: chip; property: "dragOffsetX"; to: 0; duration: 220; easing.type: Easing.OutCubic }
-                            NumberAnimation { target: chip; property: "dragOffsetY"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: widgetChip; property: "dragOffsetX"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: widgetChip; property: "dragOffsetY"; to: 0; duration: 220; easing.type: Easing.OutCubic }
                         }
 
                         function startSettle(scenePos) {
-                            chip.settleScenePos = scenePos
-                            chip.settlePending = true
+                            widgetChip.settleScenePos = scenePos
+                            widgetChip.settlePending = true
                             settleFallback.restart()
                         }
 
                         function applySettle() {
-                            if (!chip.settlePending) return
-                            chip.settlePending = false
-                            const nowScene = chip.mapToItem(null, 0, 0)
-                            chip.dragOffsetX = chip.settleScenePos.x - (nowScene.x - chip.dragOffsetX)
-                            chip.dragOffsetY = chip.settleScenePos.y - (nowScene.y - chip.dragOffsetY)
+                            if (!widgetChip.settlePending) return
+                            widgetChip.settlePending = false
+                            const nowScene = widgetChip.mapToItem(null, 0, 0)
+                            widgetChip.dragOffsetX = widgetChip.settleScenePos.x - (nowScene.x - widgetChip.dragOffsetX)
+                            widgetChip.dragOffsetY = widgetChip.settleScenePos.y - (nowScene.y - widgetChip.dragOffsetY)
                             settleAnim.restart()
                         }
 
-                        onXChanged: chip.applySettle()
-                        onYChanged: chip.applySettle()
+                        onXChanged: widgetChip.applySettle()
+                        onYChanged: widgetChip.applySettle()
 
                         Timer {
                             id: settleFallback
                             interval: 60
-                            onTriggered: chip.applySettle()
+                            onTriggered: widgetChip.applySettle()
                         }
 
                         Rectangle {
@@ -142,7 +154,7 @@ ContentSubsection {
                             anchors.fill: parent
                             anchors.margins: -3
                             z: 5
-                            radius: chip.height / 2 + 3
+                            radius: widgetChip.height / 2 + 3
                             color: "transparent"
                             border.width: 2
                             border.color: Appearance.colors.colPrimary
@@ -175,7 +187,7 @@ ContentSubsection {
                             onActiveChanged: {
                                 if (active) {
                                     settleAnim.stop()
-                                    chip.settlePending = false
+                                    widgetChip.settlePending = false
                                     root.reflowTarget = index
                                     root.slotOffsets = []
                                     root.draggedSlot = null
@@ -196,9 +208,9 @@ ContentSubsection {
                                     return
                                 }
 
-                                const sceneBefore = chip.mapToItem(null, 0, 0)
-                                chip.dragOffsetX = 0
-                                chip.dragOffsetY = 0
+                                const sceneBefore = widgetChip.mapToItem(null, 0, 0)
+                                widgetChip.dragOffsetX = 0
+                                widgetChip.dragOffsetY = 0
                                 let list = root.layout.slice()
                                 const item = list.splice(index, 1)[0]
                                 list.splice(newIndex, 0, item)
@@ -208,8 +220,8 @@ ContentSubsection {
 
                             onCentroidChanged: {
                                 if (!active) return
-                                chip.dragOffsetX = centroid.scenePosition.x - centroid.scenePressPosition.x
-                                chip.dragOffsetY = centroid.scenePosition.y - centroid.scenePressPosition.y
+                                widgetChip.dragOffsetX = centroid.scenePosition.x - centroid.scenePressPosition.x
+                                widgetChip.dragOffsetY = centroid.scenePosition.y - centroid.scenePressPosition.y
 
                                 const newIndex = findNewIndex(centroid.scenePosition.x, centroid.scenePosition.y)
                                 if (newIndex !== root.reflowTarget || !root.draggedSlot) {
@@ -218,8 +230,8 @@ ContentSubsection {
                                 }
                                 const slot = root.draggedSlot
                                 if (slot) {
-                                    dropIndicator.width = chip.width
-                                    dropIndicator.height = chip.height
+                                    dropIndicator.width = widgetChip.width
+                                    dropIndicator.height = widgetChip.height
                                     dropIndicator.x = slot.x
                                     dropIndicator.y = slot.y
                                     dropIndicator.visible = true
@@ -231,10 +243,143 @@ ContentSubsection {
                             }
                         }
 
-                        onClicked: {
-                            let list = root.layout.slice()
-                            list.splice(index, 1)
-                            root.onUpdate(list)
+                        RowLayout {
+                            id: chipContent
+                            anchors.fill: parent
+                            anchors.rightMargin: widgetChip.hasControls ? 6 : 0
+                            spacing: 0
+
+                            SelectionGroupButton {
+                                isDragging: dragHandler.active
+                                colBackgroundToggled: widgetChip.hasControls ? "transparent" : Appearance.colors.colPrimary
+                                leftmost: true; rightmost: true
+                                buttonIcon: "close"
+                                buttonText: root.getWidgetName(modelData)
+                                altAction: () => root.widgetContextRequested(modelData)
+                                toggled: !dragHandler.active
+
+
+                                onClicked: {
+                                    let list = root.layout.slice()
+                                    list.splice(index, 1)
+                                    root.onUpdate(list)
+                                }
+                            }
+                            RowLayout {
+                                visible: widgetChip.hasModes
+                                spacing: 1
+                                Repeater {
+                                    model: widgetChip.hasDynamicHoverMode ? [
+                                        { label: "D", mode: "dynamic", title: Translation.tr("Dynamic: expand with Dynamic Island") },
+                                        { label: "DH", mode: "dynamicHover", title: Translation.tr("Dynamic hover: expand when hovering the component") },
+                                        { label: "C", mode: "compact", title: Translation.tr("Always compact") },
+                                        { label: "E", mode: "expanded", title: Translation.tr("Always expanded") }
+                                    ] : [
+                                        { label: "D", mode: "dynamic", title: Translation.tr("Dynamic: expand on hover") },
+                                        { label: "C", mode: "compact", title: Translation.tr("Always compact") },
+                                        { label: "E", mode: "expanded", title: Translation.tr("Always expanded") }
+                                    ]
+                                    delegate: SelectionGroupButton {
+                                        required property var modelData
+                                        buttonText: modelData.label
+                                        contentItem: StyledText {
+                                            text: parent.buttonText
+                                            color: parent.colText
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        horizontalPadding: 0
+                                        verticalPadding: 0
+                                        implicitWidth: 26
+                                        implicitHeight: 26
+                                        Layout.minimumWidth: 26
+                                        Layout.maximumWidth: 26
+                                        Layout.minimumHeight: 26
+                                        Layout.maximumHeight: 26
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.fillWidth: false
+                                        Layout.fillHeight: false
+                                        leftRadius: 13
+                                        rightRadius: 13
+                                        colBackground: "transparent"
+                                        colBackgroundHover: Appearance.colors.colPrimaryHover
+                                        colBackgroundActive: Appearance.colors.colPrimaryActive
+                                        colBackgroundToggled: Appearance.colors.colOnPrimary
+                                        colBackgroundToggledHover: Appearance.colors.colOnPrimary
+                                        colBackgroundToggledActive: Appearance.colors.colOnPrimary
+                                        colText: toggled ? Appearance.colors.colPrimary : Appearance.colors.colOnPrimary
+                                        leftmost: true
+                                        rightmost: true
+                                        toggled: (root.widgetModes[widgetChip.modelData] ?? "dynamic") === modelData.mode
+                                        onClicked: root.onModeChanged(widgetChip.modelData, modelData.mode)
+                                        StyledToolTip {
+                                            text: parent.modelData.title
+                                            delay: 400
+                                        }
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                visible: root.anchorControls
+                                Layout.leftMargin: 3
+                                Layout.rightMargin: 3
+                                Layout.alignment: Qt.AlignVCenter
+                                implicitWidth: 1
+                                implicitHeight: 16
+                                radius: 1
+                                color: Appearance.colors.colOnPrimary
+                                opacity: 0.35
+                            }
+                            RowLayout {
+                                visible: root.anchorControls
+                                spacing: 1
+                                Repeater {
+                                    model: [
+                                        { label: "L", anchor: "left", title: Translation.tr("Anchor to the left edge") },
+                                        { label: "R", anchor: "right", title: Translation.tr("Anchor to the right edge") }
+                                    ]
+                                    delegate: SelectionGroupButton {
+                                        required property var modelData
+                                        buttonText: modelData.label
+                                        contentItem: StyledText {
+                                            text: parent.buttonText
+                                            color: parent.colText
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        horizontalPadding: 0
+                                        verticalPadding: 0
+                                        implicitWidth: 26
+                                        implicitHeight: 26
+                                        Layout.minimumWidth: 26
+                                        Layout.maximumWidth: 26
+                                        Layout.minimumHeight: 26
+                                        Layout.maximumHeight: 26
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.fillWidth: false
+                                        Layout.fillHeight: false
+                                        leftRadius: 13
+                                        rightRadius: 13
+                                        colBackground: "transparent"
+                                        colBackgroundHover: Appearance.colors.colPrimaryHover
+                                        colBackgroundActive: Appearance.colors.colPrimaryActive
+                                        colBackgroundToggled: Appearance.colors.colOnPrimary
+                                        colBackgroundToggledHover: Appearance.colors.colOnPrimary
+                                        colBackgroundToggledActive: Appearance.colors.colOnPrimary
+                                        colText: toggled ? Appearance.colors.colPrimary : Appearance.colors.colOnPrimary
+                                        leftmost: true
+                                        rightmost: true
+                                        toggled: modelData.anchor === "right"
+                                            ? root.rightAnchoredWidgets.includes(widgetChip.modelData)
+                                            : !root.rightAnchoredWidgets.includes(widgetChip.modelData)
+                                        onClicked: root.onAnchorChanged(widgetChip.modelData, modelData.anchor)
+                                        StyledToolTip {
+                                            text: parent.modelData.title
+                                            delay: 400
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -256,6 +401,7 @@ ContentSubsection {
         }
 
         ToolbarPairedFab {
+            visible: !root.centerItems || root.layout.length === 0
             Layout.rightMargin: 8
             Layout.topMargin: -20
             Layout.alignment: Qt.AlignVCenter

@@ -8,6 +8,7 @@ import QtQml.Models
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import Quickshell.Services.Mpris
 import qs.modules.common
 
@@ -37,6 +38,31 @@ Singleton {
 	property bool __reverse: false;
 
 	property var activeTrack;
+
+	function raiseActivePlayer() {
+		const desktopEntry = String(root.activePlayer?.desktopEntry ?? "").replace(/\.desktop$/i, "").toLowerCase();
+		const windows = ToplevelManager.toplevels.values.filter(window => desktopEntry.length > 0
+			&& String(window.appId ?? "").toLowerCase() === desktopEntry);
+		const title = root.activePlayer?.trackTitle ?? "";
+		const window = windows.find(window => title.length > 0 && window.title.includes(title))
+			?? windows.find(window => window.activated) ?? windows[0];
+		window?.activate();
+		const busName = root.activePlayer?.dbusName ?? "";
+		if (busName.length === 0 || raisePlayerProcess.running)
+			return;
+		raisePlayerProcess.command = [
+			"gdbus", "call", "--session",
+			"--dest", busName,
+			"--object-path", "/org/mpris/MediaPlayer2",
+			"--method", "org.mpris.MediaPlayer2.Raise"
+		];
+		raisePlayerProcess.running = true;
+	}
+
+	Process {
+		id: raisePlayerProcess
+		running: false
+	}
 
 	readonly property bool hasActivePlasmaIntegration: Mpris.players.values.some(
 		p => p.dbusName?.startsWith('org.mpris.MediaPlayer2.plasma-browser-integration')

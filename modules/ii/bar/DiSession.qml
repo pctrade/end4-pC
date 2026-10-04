@@ -29,6 +29,13 @@ Item {
         GlobalStates.diSessionOpen = false
     }
 
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Escape) {
+            diSessionRoot.close()
+            event.accepted = true
+        }
+    }
+
     onVisibleChanged: if (visible) diSessionRoot.forceActiveFocus()
     Component.onCompleted: if (diSessionRoot.visible) diSessionRoot.forceActiveFocus()
 

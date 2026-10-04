@@ -14,22 +14,46 @@ Item {
     implicitHeight: Appearance.sizes.barHeight
     width: parent.width
     readonly property real barPadding: 0
+    // Extra layer-shell area above a top Material bar. Bar.qml sets this so
+    // the island hover target can cover the gap up to the screen edge.
+    property real islandTopInset: 0
     readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    readonly property real centerPillX: centerPill.x
+    readonly property real centerPillWidth: centerPill.width
+    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    readonly property real dynamicIslandCollisionGap: 8
+    readonly property real dynamicIslandMaxLeftExtent: Math.max(0,
+        width / 2 - (leftSection.x + leftSection.width) - dynamicIslandCollisionGap)
+    readonly property real dynamicIslandMaxRightExtent: Math.max(0,
+        rightSection.x - width / 2 - dynamicIslandCollisionGap)
+    property real dynamicIslandHorizontalOffset: 0
+
+    // A focus grab handles clicks in other windows while this catches clicks
+    // on the bar but outside its Dynamic Island.
+    TapHandler {
+        enabled: GlobalStates.diSessionOpen
+        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        onTapped: eventPoint => {
+            const point = absoluteCenter.mapFromItem(root, eventPoint.position.x, eventPoint.position.y)
+            if (!absoluteCenter.contains(point))
+                GlobalStates.diSessionOpen = false
+        }
+    }
     readonly property bool isMaterialHug: Config.options.bar.cornerStyle === 4
     readonly property color materialPillBgColor: (Config.options.bar.followFrameColor && Config.options.bar.frameColor)
         ? Appearance.getColorFromName(Config.options.bar.frameColor)
         : Appearance.colors.colLayer0
-    readonly property real centerPillX: centerPill.x
-    readonly property real centerPillWidth: centerPill.width
-    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
-    readonly property var diLeftWidgets:  filterLayout(Config.options.bar.dynamicIsland.leftWidgets ?? [])
-    readonly property var diRightWidgets: filterLayout(Config.options.bar.dynamicIsland.rightWidgets ?? [])
 
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
 
     function filterLayout(layout) {
-        if (trayHasItems) return layout
-        return layout.filter(name => name !== "sysTray")
+        return layout.filter(name => {
+            if (name === "sysTray" && !root.trayHasItems) return false;
+            // The island supplies the selected centered widget in this mode.
+            if (name === Config.options.bar.dynamicIsland.centerWidget && GlobalStates.dynamicIslandEnabled
+                && Config.options.bar.dynamicIsland.centerEnabled && !Config.options.bar.vertical) return false;
+            return true;
+        });
     }
 
     readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.layouts.leftLayout)
@@ -65,7 +89,7 @@ Item {
             case "resources":
                 return Appearance.colors.colTertiaryContainer;
             case "systemIcons":
-                return Appearance.colors.colPrimary; 
+                return Appearance.colors.colPrimary;
             default:
                 return Appearance.colors.colPrimaryContainer;
         }
@@ -86,7 +110,7 @@ Item {
             : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
-        border.color: Config.options.bar.cornerStyle === 1 && !Config.options.bar.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8) 
+        border.color: Config.options.bar.cornerStyle === 1 && !Config.options.bar.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8)
     }
 
     // center-only
@@ -102,7 +126,7 @@ Item {
 
     RoundCorner {
         id: leftPillCorner
-        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0 
+        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle === 0
         x: barContent.centerPillX - implicitSize
         implicitSize: Appearance.rounding.screenRounding
         color: Config.options.bar.followFrameColor
@@ -132,14 +156,14 @@ Item {
 
     Rectangle {
         id: centerPill
-        visible: centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 
+        visible: centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
         width: GlobalStates.dynamicIslandEnabled
             ? (Config.options.bar.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4)
             : middleRow.implicitWidth + 10
         height: GlobalStates.dynamicIslandEnabled ? parent.height : parent.height - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
-        color: root.isMaterial ? "transparent" : Config.options.bar.followFrameColor 
+        color: root.isMaterial ? "transparent" : Config.options.bar.followFrameColor
             ? Appearance.getColorFromName(Config.options.bar.frameColor)
             : Appearance.colors.colLayer0
         radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
@@ -189,6 +213,7 @@ Item {
 
         // Left
         Item {
+            id: leftSection
             anchors.left: parent.left
             anchors.leftMargin: root.isMaterialHug ? 0 : (root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
             anchors.top: parent.top
@@ -309,27 +334,17 @@ Item {
         Item {
             id: absoluteCenter
             anchors.centerIn: parent
+            anchors.horizontalCenterOffset: root.dynamicIslandHorizontalOffset
             width: root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug && root.effectiveMiddleLayout.length > 0 ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
             height: parent.height
 
-            // Dynamic Island — left
-            Loader {
-                id: diLeftWidget
-                anchors.right: absoluteCenter.left
-                anchors.rightMargin: 8
-                anchors.verticalCenter: absoluteCenter.verticalCenter
-                active: Config.options.bar.dynamicIsland.leftWidget !== "none" && GlobalStates.dynamicIslandEnabled
-                source: active ? root.getWidgetUrl(Config.options.bar.dynamicIsland.leftWidget) : ""
-            }
-
-            // Dynamic Island — right
-            Loader {
-                id: diRightWidget
-                anchors.left: absoluteCenter.right
-                anchors.leftMargin: 8
-                anchors.verticalCenter: absoluteCenter.verticalCenter
-                active: Config.options.bar.dynamicIsland.rightWidget !== "none" && GlobalStates.dynamicIslandEnabled
-                source: active ? root.getWidgetUrl(Config.options.bar.dynamicIsland.rightWidget) : ""
+            // Attach the handler to the container itself instead of placing an
+            // item over the widgets. The margin reaches the top screen edge,
+            // while child widgets keep receiving their own hover events.
+            HoverHandler {
+                id: islandCenterHover
+                enabled: GlobalStates.dynamicIslandEnabled
+                margin: root.islandTopInset
             }
 
             RoundCorner {
@@ -349,7 +364,7 @@ Item {
                 visible: root.isMaterial && root.effectiveMiddleLayout.length > 0
                 anchors.centerIn: parent
                 width: centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
-                height: root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight 
+                height: root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
@@ -379,8 +394,33 @@ Item {
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
+                                id: middleMaterialWidgetLoader
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
+                                Binding {
+                                    target: modelData === "dynamicIsland" ? middleMaterialWidgetLoader.item : null
+                                    property: "barHovered"
+                                    value: islandCenterHover.hovered
+                                    when: modelData === "dynamicIsland" && middleMaterialWidgetLoader.status === Loader.Ready
+                                }
+                                Binding {
+                                    target: modelData === "dynamicIsland" ? middleMaterialWidgetLoader.item : null
+                                    property: "maxLeftExtent"
+                                    value: root.dynamicIslandMaxLeftExtent
+                                    when: modelData === "dynamicIsland" && middleMaterialWidgetLoader.status === Loader.Ready
+                                }
+                                Binding {
+                                    target: modelData === "dynamicIsland" ? middleMaterialWidgetLoader.item : null
+                                    property: "maxRightExtent"
+                                    value: root.dynamicIslandMaxRightExtent
+                                    when: modelData === "dynamicIsland" && middleMaterialWidgetLoader.status === Loader.Ready
+                                }
+                                Binding {
+                                    target: root
+                                    property: "dynamicIslandHorizontalOffset"
+                                    value: middleMaterialWidgetLoader.item?.barCenterOffset ?? 0
+                                    when: modelData === "dynamicIsland" && middleMaterialWidgetLoader.status === Loader.Ready
+                                }
                                 onLoaded: {
                                     if (item && item.hasOwnProperty("mirrored"))
                                         item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
@@ -426,8 +466,33 @@ Item {
                         paintBackground: modelData !== "dynamicIsland"
                         totalCount: root.effectiveMiddleLayout.length
                         Loader {
+                            id: middleWidgetLoader
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
+                            Binding {
+                                target: modelData === "dynamicIsland" ? middleWidgetLoader.item : null
+                                property: "barHovered"
+                                value: islandCenterHover.hovered
+                                when: modelData === "dynamicIsland" && middleWidgetLoader.status === Loader.Ready
+                            }
+                            Binding {
+                                target: modelData === "dynamicIsland" ? middleWidgetLoader.item : null
+                                property: "maxLeftExtent"
+                                value: root.dynamicIslandMaxLeftExtent
+                                when: modelData === "dynamicIsland" && middleWidgetLoader.status === Loader.Ready
+                            }
+                            Binding {
+                                target: modelData === "dynamicIsland" ? middleWidgetLoader.item : null
+                                property: "maxRightExtent"
+                                value: root.dynamicIslandMaxRightExtent
+                                when: modelData === "dynamicIsland" && middleWidgetLoader.status === Loader.Ready
+                            }
+                            Binding {
+                                target: root
+                                property: "dynamicIslandHorizontalOffset"
+                                value: middleWidgetLoader.item?.barCenterOffset ?? 0
+                                when: modelData === "dynamicIsland" && middleWidgetLoader.status === Loader.Ready
+                            }
                             onLoaded: {
                                 if (item && item.hasOwnProperty("mirrored"))
                                     item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
@@ -453,6 +518,7 @@ Item {
 
         // Right
         Item {
+            id: rightSection
             anchors.right: parent.right
             anchors.rightMargin: root.isMaterialHug ? 0 : (root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
             anchors.top: parent.top
@@ -479,7 +545,7 @@ Item {
                 anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
                 anchors.centerIn: root.isMaterialHug ? undefined : parent
                 width: rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
-                height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight 
+                height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 

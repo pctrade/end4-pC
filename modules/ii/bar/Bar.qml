@@ -81,14 +81,25 @@ Scope {
                         + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
                         + (Config.options.bar.cornerStyle === 2 ? -6 : 0)
 
-                exclusiveZone: (barContent.centerOnly && Config.options.bar.centerOnlyReserveFrame)
+                readonly property int contentExclusiveZone: (barContent.centerOnly && Config.options.bar.centerOnlyReserveFrame)
                     ? Config.options.bar.frameThickness
                     : (Config.options.bar.cornerStyle === 4 || Config.options.bar.cornerStyle === 5) ? normalExclusiveZone + 4 : normalExclusiveZone
+                // The former top layer-shell margin contributed to the reserved area.
+                // Preserve that space now that the hover strip lives inside the window.
+                exclusiveZone: contentExclusiveZone > 0
+                    ? contentExclusiveZone + islandTopInset : contentExclusiveZone
                 WlrLayershell.namespace: "quickshell:bar"
+                WlrLayershell.keyboardFocus: GlobalStates.diSessionOpen
+                    && barRoot.screen?.name === Hyprland.focusedMonitor?.name
+                    ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
                 // Overlay layer only while special workspace sits on top of a fullscreen window on this monitor,
                 // else Top layer so fullscreen apps cover the bar as normal (Hyprland buries Top layer under fullscreen+special).
                 WlrLayershell.layer: (monitorHasFullscreen && monitorHasSpecialOpen) ? WlrLayer.Overlay : WlrLayer.Top
-                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
+                // Keep the Material bar's visual gap, but include it in the window
+                // so hovering above the island can reach its pointer handler.
+                readonly property int islandTopInset: GlobalStates.dynamicIslandEnabled
+                    && Config.options.bar.cornerStyle === 3 && !Config.options.bar.bottom ? 5 : 0
+                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding + islandTopInset
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                 // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
                 // swallowing the tiny corner-open hit rects. Carve them out of the bar's own mask so clicks
@@ -124,7 +135,7 @@ Scope {
                 }
 
                 margins {
-                    top: Config.options.bar.cornerStyle === 3 ? 5 : 0
+                    top: (Config.options.bar.cornerStyle === 3 ? 5 : 0) - barRoot.islandTopInset
                     right: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
                     bottom: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1 || Config.options.bar.cornerStyle === 3 ? 5 : 0
                 }
@@ -132,9 +143,11 @@ Scope {
                 // Include in focus grab
                 Component.onCompleted: {
                     GlobalFocusGrab.addPersistent(barRoot);
+                    GlobalFocusGrab.addBarWindow(barRoot);
                 }
                 Component.onDestruction: {
                     GlobalFocusGrab.removePersistent(barRoot);
+                    GlobalFocusGrab.removeBarWindow(barRoot);
                 }
 
                 MouseArea  {
@@ -142,6 +155,7 @@ Scope {
                     hoverEnabled: true
                     anchors {
                         fill: parent
+                        topMargin: barRoot.islandTopInset
                         rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * 1
                         bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * 1
                     }
@@ -150,13 +164,14 @@ Scope {
                         id: hoverMaskRegion
                         anchors {
                             fill: barContent
-                            topMargin: -Config.options.bar.autoHide.hoverRegionWidth
+                            topMargin: -Config.options.bar.autoHide.hoverRegionWidth - barRoot.islandTopInset
                             bottomMargin: -Config.options.bar.autoHide.hoverRegionWidth
                         }
                     }
 
                     BarContent {
                         id: barContent
+                        islandTopInset: barRoot.islandTopInset
                         
                         implicitHeight: Appearance.sizes.barHeight
                         anchors {

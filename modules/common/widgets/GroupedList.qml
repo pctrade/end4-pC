@@ -21,10 +21,14 @@ Item {
             model: root.items.length
             delegate: Rectangle {
                 required property int index
+                readonly property bool collapsed: root.items[index]?.groupedListCollapsed ?? false
                 readonly property bool isFirst: index === 0
                 readonly property bool isLast: index === root.items.length - 1
+                visible: !collapsed
                 Layout.fillWidth: true
-                implicitHeight: (root.items[index]?.implicitHeight ?? 0) + root.itemVerticalPadding
+                implicitHeight: collapsed
+                    ? 0
+                    : (root.items[index]?.implicitHeight ?? 0) + root.itemVerticalPadding
                 color: root.bgcolor
                 topLeftRadius:     isFirst ? root.bigRadius : root.smallRadius
                 topRightRadius:    isFirst ? root.bigRadius : root.smallRadius
