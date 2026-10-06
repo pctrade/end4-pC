@@ -38,10 +38,10 @@ Item {
         // Binary search to find the correct font size
         var lower = 0
         var upper = maxFontPixelSize
+        var iterations = 0
         root.searching = true;
-        while (upper - lower > 0.00001) {
+        while (upper - lower > 0.05 && iterations++ < 25) {
             var mid = (lower + upper) / 2;
-            // print("bin searching", mid, "target", targetWidth, targetHeight, "actual", textWidget.contentWidth, textWidget.contentHeight);
             root.searchPixelSize = mid
             if (textWidget.contentHeight > targetHeight) {
                 upper = mid
