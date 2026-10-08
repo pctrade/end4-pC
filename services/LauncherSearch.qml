@@ -211,6 +211,66 @@ Singleton {
         }
     }
 
+    function modMaskToString(modMask: int): string {
+        var list = [];
+        // Funny mathematical order but we wanna have this natural user-facing order
+        if (modMask & (1 << 2)) { list.push("Ctrl"); }
+        if (modMask & (1 << 6)) { list.push("Super"); }
+        if (modMask & (1 << 0)) { list.push("Shift"); }
+        if (modMask & (1 << 3)) { list.push("Alt"); }
+        if (modMask & (1 << 1)) { list.push("Caps"); }
+        if (modMask & (1 << 4)) { list.push("Mod2"); }
+        if (modMask & (1 << 5)) { list.push("Mod3"); }
+        if (modMask & (1 << 7)) { list.push("Mod5"); }
+        return list.join(" + ");
+    }
+
+    function containsNonFirstRepetitive(key: string): bool {
+         if (key.includes("mouse") || key.includes("page")) return false;
+         // Contains non-1 number
+         if (/\d/.test(key) && !key.includes("1")) return true;
+         // Contains non-left direction
+         for (const dir of ["right", "up", "down"]) {
+           if (key.toLowerCase() === dir) return true;
+         }
+
+         return false;
+     }
+
+    function containsFirstRepetitive(key: string): bool {
+        return key.includes("1") || key.toLowerCase() === "left";
+    }
+
+    // Some symbols for the keys
+    property var keySubstitutions: {
+        "mouse_up": "Scroll ↓",    // ikr, weird
+        "mouse_down": "Scroll ↑",  // trust me bro
+        "mouse:272": "LMB",
+        "mouse:273": "RMB",
+        "mouse:275": "MouseBack",
+        "slash": "/",
+        "hash": "#",
+        "return": "Enter",
+        "period": ".",
+        "bracketleft": "[",
+        "bracketright": "]",
+        // "shift": "",
+     }
+
+    // Transforms keys with numbers / directions
+    function transformKey(key: string): string {
+        const denumbered = key.replace("1", "[Number]");
+        const dedirectioned = denumbered.replace(/left/i, "[Direction]");
+        return dedirectioned;
+    } 
+
+    // Transforms descriptions with numbers / directions
+    function transformDescription(description: string): string {
+        const denumbered = description.replace(" 1", " [Number]");
+        const dedirectioned = denumbered.replace(/left/i, " [Direction]");
+        return dedirectioned;
+    }
+
     property list<var> results: {
         // Search results are handled here
         ////////////////// Skip? //////////////////
@@ -278,24 +338,31 @@ Singleton {
         } else if (root.query.startsWith(Config.options.search.prefix.keybinds ?? "<")) {
             // Keybinds
             const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.keybinds ?? "<");
-            const flatBinds = (function flatten(node) {
-                let result = [...(node.keybinds ?? [])];
-                for (const child of (node.children ?? [])) {
-                    result = result.concat(flatten(child));
-                }
-                return result;
-            })(HyprlandKeybinds.keybinds);
+            const flatBinds = HyprlandKeybinds.keybinds;
 
             return flatBinds.filter(bind => {
-                if (!bind.comment) return false;
+                if (!bind.description) return false;
+                if (containsNonFirstRepetitive(bind.key)) return false;
                 if (searchString.length === 0) return true;
-                return bind.comment.toLowerCase().includes(searchString.toLowerCase())
+                return bind.description.toLowerCase().includes(searchString.toLowerCase())
                     || bind.key.toLowerCase().includes(searchString.toLowerCase());
             }).map(bind => {
-                const modsStr = bind.mods.join(" + ");
-                const keyStr  = modsStr.length > 0 ? `${modsStr} + ${bind.key}` : bind.key;
+                let bindDescription = bind.description;
+                let bindKey = bind.key;
+
+                // Symbols for keys instead of raw text whenever possible
+                bindKey = root.keySubstitutions[bindKey.toLowerCase()] || bindKey;
+
+                // Modifies repetitive keybinds with numbers and directions
+                if (containsFirstRepetitive(bindKey)) {
+                    bindDescription = transformDescription(bindDescription);
+                    bindKey = transformKey(bindKey);
+                } 
+
+                const modsStr = modMaskToString(bind.modmask); 
+                const keyStr  = modsStr.length > 0 ? `${modsStr} + ${bindKey}` : bindKey;
                 return resultComp.createObject(null, {
-                    name: bind.comment,
+                    name: bindDescription,
                     iconName: "keyboard",
                     iconType: LauncherSearchResult.IconType.Material,
                     verb: keyStr,
@@ -305,7 +372,7 @@ Singleton {
                         Quickshell.clipboardText = keyStr;
                     }
                 });
-            }).filter(Boolean);
+            }).filter(Boolean); // shows everythings
         } else if (root.query.startsWith(Config.options.search.prefix.symbols)) {
             // Material Symbols
             const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.symbols);
