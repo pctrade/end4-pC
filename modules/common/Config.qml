@@ -853,6 +853,9 @@ Singleton {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
                 }
+                property JsonObject pinboard: JsonObject {
+                    property bool enable: true
+                }
                 property JsonObject media: JsonObject {
                     property bool enable: true
                     property bool artColors: false
@@ -893,6 +896,7 @@ Singleton {
                         property int columns: 5
                         property list<var> toggles: [
                             { "size": 2, "type": "network" },
+                            { "size": 2, "type": "vpn" },
                             { "size": 2, "type": "bluetooth"  },
                             { "size": 1, "type": "idleInhibitor" },
                             { "size": 1, "type": "mic" },

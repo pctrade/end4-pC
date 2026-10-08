@@ -19,6 +19,7 @@ import qs.modules.ii.sidebarRight.bluetoothDevices
 import qs.modules.ii.sidebarRight.nightLight
 import qs.modules.ii.sidebarRight.volumeMixer
 import qs.modules.ii.sidebarRight.wifiNetworks
+import qs.modules.ii.sidebarRight.vpnConnections
 import qs.modules.ii.sidebarRight.vpn
 import qs.modules.ii.sidebarRight.iconPicker
 
@@ -587,6 +588,10 @@ Item {
     ToggleDialog {
         shownPropertyString: "showVpnDialog"
         dialog: VpnDialog {}
+        onShownChanged: {
+            if (!shown) return;
+            Vpn.update();
+        }
         onShownChanged: if (shown) Vpn.refresh()
     }
 
@@ -620,6 +625,24 @@ Item {
                 if (toggleDialogLoader.item && !toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString])
                     toggleDialogLoader.active = false;
             }
+        }
+    }
+
+    component LoaderedQuickPanelImplementation: Loader {
+        id: quickPanelImplLoader
+        required property string styleName
+        Layout.alignment: item?.Layout.alignment ?? Qt.AlignHCenter
+        Layout.fillWidth: item?.Layout.fillWidth ?? false
+        visible: active
+        active: Config.options.sidebar.quickToggles.style === styleName
+        Connections {
+            target: quickPanelImplLoader.item
+            function onOpenAudioOutputDialog() { root.showAudioOutputDialog = true; }
+            function onOpenAudioInputDialog() { root.showAudioInputDialog = true; }
+            function onOpenBluetoothDialog() { root.showBluetoothDialog = true; }
+            function onOpenNightLightDialog() { root.showNightLightDialog = true; }
+            function onOpenWifiDialog() { root.showWifiDialog = true; }
+            function onOpenVpnDialog() { root.showVpnDialog = true; }
         }
     }
 
