@@ -226,9 +226,8 @@ Singleton {
     }
 
     function containsNonFirstRepetitive(key: string): bool {
-         if (key.includes("mouse") || key.includes("page")) return false;
-         // Contains non-1 number
-         if (/\d/.test(key) && !key.includes("1")) return true;
+         // Number key
+         if (key.length == 1 && /\d/.test(key) && key !== "1") return true;
          // Contains non-left direction
          for (const dir of ["right", "up", "down"]) {
            if (key.toLowerCase() === dir) return true;
@@ -238,7 +237,7 @@ Singleton {
      }
 
     function containsFirstRepetitive(key: string): bool {
-        return key.includes("1") || key.toLowerCase() === "left";
+        return key === "1" || key.toLowerCase() === "left";
     }
 
     // Some symbols for the keys
