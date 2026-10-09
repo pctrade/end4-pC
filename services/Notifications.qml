@@ -74,6 +74,13 @@ Singleton {
     }
 
     property bool silent: false
+    onSilentChanged: {
+        // When entering silent (DND) mode, close any currently shown popups
+        if (silent) {
+            const shown = root.list.filter((notif) => notif.popup);
+            shown.forEach((notif) => { notif.popup = false; });
+        }
+    }
     property int unread: 0
     property var filePath: Directories.notificationsPath
     property list<Notif> list: []
@@ -147,6 +154,14 @@ Singleton {
     signal discardAll();
     signal timeout(id: var);
 
+	// IPC: toggle silent/DND from CLI or keybind
+	IpcHandler {
+        target: "notifications"
+        function toggleSilent(): void { root.silent = !root.silent; }
+        function setSilent(value: bool): void { root.silent = value; }
+        function getSilent(): bool { return root.silent; }
+    }
+
 	NotificationServer {
         id: notifServer
         // actionIconsSupported: true
@@ -160,6 +175,15 @@ Singleton {
         persistenceSupported: true
 
         onNotification: (notification) => {
+            // Silent (DND) mode: reject the notification immediately.
+            // Closing it signals the sender that the notification was suppressed,
+            // so spec-compliant apps skip their client-side notification sound.
+            // (Apps that play sounds unconditionally, e.g. via in-app popups,
+            // need to be muted separately - e.g. via the System Sounds volume.)
+            if (root.silent) {
+                notifServer.closeNotification(notification.id);
+                return;
+            }
             notification.tracked = true
             const newNotifObject = notifComponent.createObject(root, {
                 "notificationId": notification.id + root.idOffset,
