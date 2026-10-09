@@ -8,6 +8,8 @@ Switch {
     property real scale: 0.75
     implicitHeight: 30 * root.scale
     implicitWidth: 52 * root.scale
+    // Disabled reads as "not yours to touch", same dimming as RippleButton.
+    opacity: root.enabled ? 1 : 0.4
 
     property color activeColor: Appearance?.colors.colPrimaryContainer ?? "#cbc4cb"
     property color inactiveColor: Appearance?.m3colors.m3surfaceBright ?? "#3a3939"

@@ -570,6 +570,11 @@ QtObject {
             ]
         },
         {
+            page: Translation.tr("Hyprland"), title: Translation.tr("Displays"), icon: "monitor", when: "hyprland", cards: [
+                { type: "displays", key: "hyprland:Displays", title: Translation.tr("Displays"), icon: "monitor" }
+            ]
+        },
+        {
             page: Translation.tr("Hyprland"), title: Translation.tr("Layout"), icon: "dashboard_customize", when: "hyprland", cards: [
                 { type: "select", key: "hyprland:Tiling Layout", title: Translation.tr("Tiling layout"), icon: "browse" },
                 { type: "spin", key: "hyprland:Gaps In", title: Translation.tr("Gaps in"), icon: "fit_screen" },

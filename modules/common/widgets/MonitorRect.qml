@@ -19,20 +19,35 @@ Rectangle {
 
     signal positionCommitted(int index, int x, int y)
     signal monitorClicked(int index)
-    signal positionDragging(int index, int x, int y)
+    // Landing (snapped) and hand (raw) positions of the drag.
+    signal positionDragging(int index, int x, int y, int rawX, int rawY)
 
     property bool isDragging: false
-    property real dragX: 0
-    property real dragY: 0
     property int snappedX: 0
     property int snappedY: 0
     property real snapThreshold: 12
+    // Manual grab, no drag.target: drag.target would write x/y directly and
+    // destroy the bindings below, after which the rectangle stops following
+    // the model and stays wherever the mouse let go.
+    property real pressSceneX: 0
+    property real pressSceneY: 0
+    // Logical position at press — same expression as the x/y binding. The
+    // cursor delta converts with pressScale, the fit frozen at press time,
+    // so the live view can zoom without feeding back into the drag.
+    property real pressLogX: 0
+    property real pressLogY: 0
+    property real pressScale: 1
+    readonly property real dragThresholdPx: 4
 
     property int logW: monitorConfig?.logicalWidth(monitor) ?? 0
     property int logH: monitorConfig?.logicalHeight(monitor) ?? 0
 
-    x: isDragging ? dragX : (previewPositions[monitor.name]?.x ?? monitor.x) * scaleFactor + canvasOffset.x
-    y: isDragging ? dragY : (previewPositions[monitor.name]?.y ?? monitor.y) * scaleFactor + canvasOffset.y
+    // One expression for resting and for dragging: during a drag
+    // previewPositions holds the raw hand position, everything on the canvas
+    // goes through this one live fit, and the ghost border below previews the
+    // landing spot the overlap test and the commit will use.
+    x: (previewPositions[monitor.name]?.x ?? monitor.x) * scaleFactor + canvasOffset.x
+    y: (previewPositions[monitor.name]?.y ?? monitor.y) * scaleFactor + canvasOffset.y
     width:  logW * scaleFactor
     height: logH * scaleFactor
 
@@ -57,6 +72,8 @@ Rectangle {
     Behavior on y { enabled: !isDragging; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
     Behavior on color { ColorAnimation { duration: 150 } }
 
+    // Landing preview: where the drop will go (snapped, normalized) when it
+    // is allowed. Coincides with the hand when nothing snaps.
     Rectangle {
         visible: root.isDragging && !root.hasOverlap
         x: root.snappedX * root.scaleFactor + root.canvasOffset.x - root.x
@@ -107,7 +124,9 @@ Rectangle {
 
     function snapPosition(px, py) {
         let sx = px, sy = py
-        const thresh = snapThreshold / scaleFactor
+        // Frozen press fit: how far a snap reaches must not depend on the
+        // zoom, or the landing would depend on the view instead of the cursor.
+        const thresh = snapThreshold / pressScale
         for (let i = 0; i < allMonitors.length; i++) {
             if (i === monitorIndex) continue
             const other = allMonitors[i]
@@ -133,28 +152,40 @@ Rectangle {
         enabled: !monitor.disabled
         cursorShape: monitor.disabled ? Qt.ArrowCursor
             : (root.isDragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor)
-        drag.target: root
-        drag.axis: Drag.XAndYAxis
-        drag.threshold: 4
+        preventStealing: true
 
-        onPressed: {
-            root.dragX = monitor.x * root.scaleFactor + root.canvasOffset.x
-            root.dragY = monitor.y * root.scaleFactor + root.canvasOffset.y
+        onPressed: (mouse) => {
+            root.pressSceneX = root.x + mouse.x
+            root.pressSceneY = root.y + mouse.y
+            root.pressLogX = root.previewPositions[monitor.name]?.x ?? monitor.x
+            root.pressLogY = root.previewPositions[monitor.name]?.y ?? monitor.y
+            root.pressScale = root.scaleFactor
             root.snappedX = monitor.x
             root.snappedY = monitor.y
-            root.isDragging = true
+            root.isDragging = false
         }
 
-        onPositionChanged: {
-            if (!root.isDragging) return
-            root.dragX = root.x
-            root.dragY = root.y
-            const realX = Math.round((root.x - root.canvasOffset.x) / root.scaleFactor)
-            const realY = Math.round((root.y - root.canvasOffset.y) / root.scaleFactor)
+        onPositionChanged: (mouse) => {
+            if (!hoverArea.pressed) return
+            // Cursor in canvas space, taken off the rectangle itself, so it is
+            // right whatever the fit is doing.
+            const sceneX = root.x + mouse.x
+            const sceneY = root.y + mouse.y
+            const moved = Math.abs(sceneX - root.pressSceneX) >= root.dragThresholdPx
+                || Math.abs(sceneY - root.pressSceneY) >= root.dragThresholdPx
+            if (!root.isDragging && !moved) return
+            // Delta from the grab point, converted with the fit frozen at
+            // press: the live view zooms, the position being previewed does
+            // not move under the cursor.
+            const realX = Math.round(root.pressLogX + (sceneX - root.pressSceneX) / root.pressScale)
+            const realY = Math.round(root.pressLogY + (sceneY - root.pressSceneY) / root.pressScale)
             const snapped = root.snapPosition(realX, realY)
             root.snappedX = snapped.x
             root.snappedY = snapped.y
-            root.positionDragging(root.monitorIndex, root.snappedX, root.snappedY)
+            // isDragging first, so the position Behaviour is already off when
+            // previewPositions moves the rectangle.
+            root.isDragging = true
+            root.positionDragging(root.monitorIndex, root.snappedX, root.snappedY, realX, realY)
         }
 
         onReleased: {
@@ -165,5 +196,7 @@ Rectangle {
             }
             root.positionCommitted(root.monitorIndex, root.snappedX, root.snappedY)
         }
+
+        onCanceled: root.isDragging = false
     }
 }
