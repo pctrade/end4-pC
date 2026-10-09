@@ -19,6 +19,7 @@ import qs.modules.ii.sidebarRight.bluetoothDevices
 import qs.modules.ii.sidebarRight.nightLight
 import qs.modules.ii.sidebarRight.volumeMixer
 import qs.modules.ii.sidebarRight.wifiNetworks
+import qs.modules.ii.sidebarRight.vpnConnections
 import qs.modules.ii.sidebarRight.vpn
 import qs.modules.ii.sidebarRight.iconPicker
 
@@ -47,6 +48,29 @@ Item {
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property var realPlayers: MprisController.players
+
+    function filterDuplicatePlayers(players) {
+        let filtered = [];
+        let used = new Set();
+        for (let i = 0; i < players.length; ++i) {
+            if (used.has(i)) continue;
+            let p1 = players[i];
+            let group = [i];
+            for (let j = i + 1; j < players.length; ++j) {
+                let p2 = players[j];
+                if ((p1.trackTitle && p2.trackTitle &&
+                    (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle))) ||
+                    (Math.abs(p1.position - p2.position) <= 2 && Math.abs(p1.length - p2.length) <= 2)) {
+                    group.push(j);
+                    used.add(j);
+                }
+            }
+            let chosenIdx = group.find(idx => players[idx].trackArtUrl && players[idx].trackArtUrl.length > 0);
+            filtered.push(players[chosenIdx !== undefined ? chosenIdx : group[0]]);
+        }
+        return filtered;
+    }
+
     readonly property var meaningfulPlayers: {
         const preferred = Config.options.bar.media.preferredPlayer.trim().toLowerCase()
         if (preferred.length === 0) return filterDuplicatePlayers(realPlayers)
@@ -295,6 +319,52 @@ Item {
                             }
                         }
 
+                            ButtonGroup {
+                                anchors {
+                                    right: parent.right
+                                    bottom: parent.bottom
+                                    margins: 4
+                                }
+                                color: "transparent"
+                                padding: 4
+
+                                QuickToggleButton {
+                                    toggled: root.editMode
+                                    buttonIcon: "edit"
+                                    onClicked: root.editMode = !root.editMode
+                                    StyledToolTip {
+                                        text: Translation.tr("Edit quick toggles") + (root.editMode ? (Config.options.sidebar.quickToggles.style === "android" ? Translation.tr("\nLMB to enable/disable\nRMB to toggle size\nScroll to swap position") : Translation.tr("\nDrag to reorder\nClick × to remove\nDrag from below to add")) : "")
+                                    }
+                                }
+                                QuickToggleButton {
+                                    toggled: false
+                                    buttonIcon: "restart_alt"
+                                    onClicked: {
+                                        Quickshell.execDetached(["hyprctl", "reload"])
+                                        Quickshell.reload(true);
+                                    }
+                                    StyledToolTip {
+                                        text: Translation.tr("Reload Hyprland & Quickshell")
+                                    }
+                                }
+                                QuickToggleButton {
+                                    toggled: GlobalStates.settingsOpen
+                                    buttonIcon: "settings"
+                                    onClicked: {
+                                        GlobalStates.sidebarRightOpen = false;
+                                        GlobalStates.settingsOpen = !GlobalStates.settingsOpen
+                                    }
+                                    StyledToolTip {
+                                        text: Translation.tr("Settings")
+                                    }
+                                }
+                                QuickToggleButton {
+                                    toggled: false
+                                    buttonIcon: "mode_off_on"
+                                    onClicked: GlobalStates.sessionOpen = true
+                                    StyledToolTip {
+                                        text: Translation.tr("Session")
+                                    }
                         MouseArea {
                             property real lastX: 0
                             property real lastY: 0
@@ -422,6 +492,11 @@ Item {
             }
         }
 
+            LoaderedQuickPanelImplementation {
+                styleName: "classic"
+                sourceComponent: ClassicQuickPanel {
+                    editMode: root.editMode
+                }
     Component {
         id: normalComponent
         SystemButtonRow {}
@@ -587,6 +662,10 @@ Item {
     ToggleDialog {
         shownPropertyString: "showVpnDialog"
         dialog: VpnDialog {}
+        onShownChanged: {
+            if (!shown) return;
+            Vpn.update();
+        }
         onShownChanged: if (shown) Vpn.refresh()
     }
 
@@ -620,6 +699,24 @@ Item {
                 if (toggleDialogLoader.item && !toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString])
                     toggleDialogLoader.active = false;
             }
+        }
+    }
+
+    component LoaderedQuickPanelImplementation: Loader {
+        id: quickPanelImplLoader
+        required property string styleName
+        Layout.alignment: item?.Layout.alignment ?? Qt.AlignHCenter
+        Layout.fillWidth: item?.Layout.fillWidth ?? false
+        visible: active
+        active: Config.options.sidebar.quickToggles.style === styleName
+        Connections {
+            target: quickPanelImplLoader.item
+            function onOpenAudioOutputDialog() { root.showAudioOutputDialog = true; }
+            function onOpenAudioInputDialog() { root.showAudioInputDialog = true; }
+            function onOpenBluetoothDialog() { root.showBluetoothDialog = true; }
+            function onOpenNightLightDialog() { root.showNightLightDialog = true; }
+            function onOpenWifiDialog() { root.showWifiDialog = true; }
+            function onOpenVpnDialog() { root.showVpnDialog = true; }
         }
     }
 
@@ -687,6 +784,7 @@ Item {
                 buttonIcon: "edit"
                 onClicked: root.editMode = !root.editMode
                 StyledToolTip {
+                    text: Translation.tr("Edit quick toggles") + (root.editMode ? (Config.options.sidebar.quickToggles.style === "android" ? Translation.tr("\nLMB to enable/disable\nRMB to toggle size\nScroll to swap position") : Translation.tr("\nClick to add\nClick × to remove")) : "")
                     text: Translation.tr("Edit sidebar")
                 }
             }

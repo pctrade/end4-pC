@@ -515,6 +515,10 @@ Item {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
                                 onLoaded: {
+                                    try {
+                                        if (item && item.hasOwnProperty("mirrored"))
+                                            item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                                    } catch (e) {}
                                     if (item && item.hasOwnProperty("mirrored")) {
                                         try {
                                             item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
@@ -553,6 +557,10 @@ Item {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
+                                try {
+                                    if (item && item.hasOwnProperty("mirrored"))
+                                        item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                                } catch (e) {}
                                 if (item && item.hasOwnProperty("mirrored")) {
                                     try {
                                         item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
@@ -570,6 +578,10 @@ Item {
                         Layout.topMargin: Config.options.bar.bottom ? -5 : 3
                         source: root.getWidgetUrl(modelData)
                         onLoaded: {
+                            try {
+                                if (item && item.hasOwnProperty("mirrored"))
+                                    item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index)
+                            } catch (e) {}
                             if (item && item.hasOwnProperty("mirrored")) {
                                 try {
                                     item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
