@@ -14,11 +14,13 @@ Item {
     anchors.fill: parent
     property bool aiChatEnabled: Config.options.policies.ai !== 0
     property bool translatorEnabled: Config.options.sidebar.translator.enable
+    property bool pinboardEnabled: Config.options.sidebar.pinboard.enable
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool mediaEnabled: Config.options.sidebar.media.enable
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
+        ...(root.pinboardEnabled ? [{"icon": "push_pin", "name": Translation.tr("Pinboard")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...(root.mediaEnabled ? [{"icon": "music_note", "name": Translation.tr("Media")}] : []),
         ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
@@ -73,7 +75,7 @@ Item {
                 id: swipeView
                 anchors.fill: parent
                 spacing: 10
-                currentIndex: tabBar.currentIndex
+                currentIndex: verticalTabBar.currentIndex
 
                 clip: true
                 layer.enabled: true
@@ -87,9 +89,10 @@ Item {
 
                 contentChildren: [
                     ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
+                    ...(root.pinboardEnabled ? [pinboard.createObject()] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
                     ...(root.mediaEnabled ? [media.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
+                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && !root.pinboardEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
                 ]
             }
@@ -98,6 +101,10 @@ Item {
         Component {
             id: aiChat
             AiChat {}
+        }
+        Component {
+            id: pinboard
+            PinboardWidget {}
         }
         Component {
             id: translator
