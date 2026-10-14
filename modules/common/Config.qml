@@ -43,6 +43,117 @@ Singleton {
         obj[keys[keys.length - 1]] = convertedValue;
     }
 
+    function cloneValue(value) {
+        return JSON.parse(JSON.stringify(value));
+    }
+
+    function barOverrideIndex(screenName) {
+        if (!screenName) return -1;
+        const overrides = root.options.bar.monitorOverrides ?? [];
+        return overrides.findIndex(entry => entry.screen === screenName);
+    }
+
+    function hasBarOverride(screenName) {
+        return barOverrideIndex(screenName) >= 0;
+    }
+
+    function globalBarSnapshot() {
+        const snapshot = cloneValue(root.options.bar);
+        delete snapshot.monitorOverrides;
+        return snapshot;
+    }
+
+    // Returns the global bar object when no override exists so its native QML
+    // property notifications remain intact. Monitor overrides are full snapshots;
+    // replacing their list entry makes all per-screen bindings update atomically.
+    function barForScreen(screenName) {
+        const index = barOverrideIndex(screenName);
+        if (index < 0) return root.options.bar;
+        const entry = root.options.bar.monitorOverrides[index];
+        const settings = Object.assign({}, entry.settings ?? {});
+        settings.enabled = entry.enabled ?? true;
+        return settings;
+    }
+
+    function barValueForScreen(screenName, nestedKey) {
+        const keys = nestedKey.split(".");
+        let value = barForScreen(screenName);
+        for (const key of keys) value = value?.[key];
+        return value;
+    }
+
+    function barHasWidget(screenName, widgetName) {
+        const layouts = barForScreen(screenName).layouts;
+        return (layouts?.leftLayout ?? []).includes(widgetName)
+            || (layouts?.middleLayout ?? []).includes(widgetName)
+            || (layouts?.rightLayout ?? []).includes(widgetName);
+    }
+
+    function setBarValueForScreen(screenName, nestedKey, value) {
+        if (!screenName) {
+            root.setNestedValue(`bar.${nestedKey}`, value);
+            return;
+        }
+
+        const overrides = cloneValue(root.options.bar.monitorOverrides ?? []);
+        let index = overrides.findIndex(entry => entry.screen === screenName);
+        if (index < 0) {
+            overrides.push({ screen: screenName, enabled: true, settings: globalBarSnapshot() });
+            index = overrides.length - 1;
+        }
+
+        const settings = overrides[index].settings ?? globalBarSnapshot();
+        const keys = nestedKey.split(".");
+        let node = settings;
+        for (let i = 0; i < keys.length - 1; ++i) {
+            if (!node[keys[i]] || typeof node[keys[i]] !== "object") node[keys[i]] = {};
+            node = node[keys[i]];
+        }
+        node[keys[keys.length - 1]] = cloneValue(value);
+        overrides[index].settings = settings;
+        root.options.bar.monitorOverrides = overrides;
+    }
+
+    function setBarEnabledForScreen(screenName, enabled) {
+        if (!screenName) return;
+        const overrides = cloneValue(root.options.bar.monitorOverrides ?? []);
+        let index = overrides.findIndex(entry => entry.screen === screenName);
+        if (index < 0) {
+            overrides.push({ screen: screenName, enabled: enabled, settings: globalBarSnapshot() });
+        } else {
+            overrides[index].enabled = enabled;
+        }
+        root.options.bar.monitorOverrides = overrides;
+    }
+
+    function createBarOverride(screenName) {
+        if (!screenName || hasBarOverride(screenName)) return;
+        const overrides = cloneValue(root.options.bar.monitorOverrides ?? []);
+        overrides.push({ screen: screenName, enabled: true, settings: globalBarSnapshot() });
+        root.options.bar.monitorOverrides = overrides;
+    }
+
+    function replaceBarSettingsForScreen(screenName, settings) {
+        if (!screenName) return;
+        const overrides = cloneValue(root.options.bar.monitorOverrides ?? []);
+        let index = overrides.findIndex(entry => entry.screen === screenName);
+        const snapshot = cloneValue(settings);
+        delete snapshot.enabled;
+        delete snapshot.monitorOverrides;
+        if (index < 0) {
+            overrides.push({ screen: screenName, enabled: true, settings: snapshot });
+        } else {
+            overrides[index].settings = snapshot;
+        }
+        root.options.bar.monitorOverrides = overrides;
+    }
+
+    function resetBarForScreen(screenName) {
+        if (!screenName) return;
+        root.options.bar.monitorOverrides = (root.options.bar.monitorOverrides ?? [])
+            .filter(entry => entry.screen !== screenName);
+    }
+
     Timer {
         id: fileReloadTimer
         interval: root.readWriteDelay
@@ -498,6 +609,9 @@ Singleton {
             }
 
             property JsonObject bar: JsonObject {
+                // Optional entries: { screen, enabled, settings }. Each settings
+                // object is a snapshot of the global bar configuration.
+                property list<var> monitorOverrides: []
                 property JsonObject autoHide: JsonObject {
                     property bool enable: false
                     property int hoverRegionWidth: 2

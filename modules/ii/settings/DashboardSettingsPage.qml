@@ -87,6 +87,7 @@ Item {
         if (type === "collagelayouts") return [4, 2];
         if (type === "timepreview") return [3, 2];
         if (type === "widgets") return [4, 3];
+        if (type === "monitorbars") return [4, 2];
         if (type === "shape") return [2, 2];
         if (type === "barlayout") return [4, 3];
         if (type === "palette") return [4, 1];
@@ -134,7 +135,7 @@ Item {
     }
 
     readonly property var usedWidgets: {
-        const layouts = Config.options.bar.layouts;
+        const layouts = Config.barForScreen(GlobalStates.dashboardBarScreen).layouts;
         return Array.from(layouts.leftLayout).concat(Array.from(layouts.middleLayout), Array.from(layouts.rightLayout));
     }
 
@@ -616,6 +617,7 @@ Item {
                             : modelData.type === "webapps" ? webappsComponent
                             : modelData.type === "batterystyle" ? batteryStyleComponent
                             : modelData.type === "widgets" ? widgetsComponent
+                            : modelData.type === "monitorbars" ? monitorBarsComponent
                             : selectComponent
 
                         Component {
@@ -814,6 +816,18 @@ Item {
                                 title: slot.modelData.title
                                 icon: slot.modelData.icon
                                 tileShape: slot.modelData.shape
+                                pager: root.pager
+                                staggerMs: root.staggerMs
+                                animIndex: slot.index % 6
+                                travelX: slot.modelData.travelX
+                                travelY: slot.modelData.travelY
+                            }
+                        }
+
+                        Component {
+                            id: monitorBarsComponent
+                            DashboardMonitorBarsCard {
+                                anchors.fill: parent
                                 pager: root.pager
                                 staggerMs: root.staggerMs
                                 animIndex: slot.index % 6

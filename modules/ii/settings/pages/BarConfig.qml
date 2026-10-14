@@ -8,8 +8,27 @@ import Quickshell.Hyprland
 
 ContentPage {
     id: page
-    readonly property bool defaultWorkspacesDesign: (Config.options.bar.workspaces.style ?? "default") === "default"
+    readonly property string selectedBarScreen: GlobalStates.dashboardBarScreen
+    property var barConfig: selectedBarScreen === ""
+        ? Config.options.bar
+        : Config.cloneValue(Config.barForScreen(selectedBarScreen))
+    readonly property bool defaultWorkspacesDesign: (page.barConfig.workspaces.style ?? "default") === "default"
     forceWidth: true
+
+    // Legacy settings controls assign directly into their configuration object.
+    // Flush a selected monitor's editable snapshot back through Config so the
+    // JsonAdapter is notified and every bar on that monitor refreshes.
+    Timer {
+        interval: 80
+        repeat: true
+        running: page.selectedBarScreen !== ""
+        onTriggered: {
+            const edited = Config.cloneValue(page.barConfig);
+            const current = Config.cloneValue(Config.barForScreen(page.selectedBarScreen));
+            if (JSON.stringify(edited) !== JSON.stringify(current))
+                Config.replaceBarSettingsForScreen(page.selectedBarScreen, edited);
+        }
+    }
 
     readonly property color leftIconColor: {
         const name = Config.options.custom.iconColor || "onLayer0"
@@ -45,31 +64,31 @@ ContentPage {
 
     function availableFor(section) {
         let used = [
-            ...Config.options.bar.layouts.leftLayout,
-            ...Config.options.bar.layouts.middleLayout,
-            ...Config.options.bar.layouts.rightLayout
+            ...page.barConfig.layouts.leftLayout,
+            ...page.barConfig.layouts.middleLayout,
+            ...page.barConfig.layouts.rightLayout
         ]
-        if (section === "middle" && Config.options.bar.layouts.middleLayout.length > 0) {
-            return Config.options.bar.layouts.middleLayout.includes("dynamicIsland") ? [] : allWidgets.filter(w => {
+        if (section === "middle" && page.barConfig.layouts.middleLayout.length > 0) {
+            return page.barConfig.layouts.middleLayout.includes("dynamicIsland") ? [] : allWidgets.filter(w => {
                 if (w.id === "dynamicIsland") return false
-                if (w.id === "divisor" && Config.options.bar.borderless !== "transparent") return false
+                if (w.id === "divisor" && page.barConfig.borderless !== "transparent") return false
                 const multipleAllowed = ["visualizer", "divisor"]
                 return !used.includes(w.id) || multipleAllowed.includes(w.id)
             })
         }
         const multipleAllowed = ["visualizer", "divisor"]
         return allWidgets.filter(w => {
-            if (w.id === "divisor" && Config.options.bar.borderless !== "transparent") return false
-            if (w.id === "dynamicIsland" && (Config.options.bar.vertical || section !== "middle")) return false
+            if (w.id === "divisor" && page.barConfig.borderless !== "transparent") return false
+            if (w.id === "dynamicIsland" && (page.barConfig.vertical || section !== "middle")) return false
             return !used.includes(w.id) || multipleAllowed.includes(w.id)
         })
     }
 
     readonly property var usedWidgets: {
-        const layouts = Config.options.bar.layouts
+        const layouts = page.barConfig.layouts
         const used = [...layouts.leftLayout, ...layouts.middleLayout, ...layouts.rightLayout]
         if (used.includes("dynamicIsland")) {
-            used.push(Config.options.bar.dynamicIsland.leftWidget, Config.options.bar.dynamicIsland.rightWidget)
+            used.push(page.barConfig.dynamicIsland.leftWidget, page.barConfig.dynamicIsland.rightWidget)
         }
         return used
     }
@@ -111,7 +130,50 @@ ContentPage {
             visible: Hyprland.monitors.values.length > 1
             title: Translation.tr("Screens")
             ContentSubsection {
-                title: Translation.tr("Show bar on")
+                title: Translation.tr("Edit bar settings for")
+
+                ConfigSelectionArray {
+                    text: Translation.tr("Settings target")
+                    icon: "tv_displays"
+                    currentValue: page.selectedBarScreen
+                    onSelected: newValue => { GlobalStates.dashboardBarScreen = newValue; }
+                    options: [{ displayName: Translation.tr("All displays"), icon: "select_all", value: "" }]
+                        .concat(Hyprland.monitors.values.map(monitor => ({
+                            displayName: monitor.name,
+                            icon: "monitor",
+                            value: monitor.name
+                        })))
+                }
+
+                ConfigSelectionArray {
+                    visible: page.selectedBarScreen !== ""
+                    text: Translation.tr("Monitor settings")
+                    icon: "tune"
+                    currentValue: Config.hasBarOverride(page.selectedBarScreen)
+                    onSelected: custom => {
+                        if (custom) Config.createBarOverride(page.selectedBarScreen);
+                        else Config.resetBarForScreen(page.selectedBarScreen);
+                    }
+                    options: [
+                        { displayName: Translation.tr("Use defaults"), icon: "restart_alt", value: false },
+                        { displayName: Translation.tr("Custom"), icon: "tune", value: true }
+                    ]
+                }
+
+                ConfigSelectionArray {
+                    visible: page.selectedBarScreen !== "" && Config.hasBarOverride(page.selectedBarScreen)
+                    text: Translation.tr("Show bar")
+                    icon: "visibility"
+                    currentValue: page.barConfig.enabled !== false
+                    onSelected: enabled => Config.setBarEnabledForScreen(page.selectedBarScreen, enabled)
+                    options: [
+                        { displayName: Translation.tr("Hidden"), icon: "visibility_off", value: false },
+                        { displayName: Translation.tr("Shown"), icon: "visibility", value: true }
+                    ]
+                }
+            }
+            ContentSubsection {
+                title: Translation.tr("Allow bars on")
 
                 ColumnLayout {
                     id: monitorsCol
@@ -200,29 +262,29 @@ ContentPage {
 
             GroupedList {
                 LayoutSection {
-                    sectionTitle: Config.options.bar.vertical ? Translation.tr("Top") : Translation.tr("Left")
-                    layout: Config.options.bar.layouts.leftLayout
+                    sectionTitle: page.barConfig.vertical ? Translation.tr("Top") : Translation.tr("Left")
+                    layout: page.barConfig.layouts.leftLayout
                     availableWidgets: page.availableFor("left")
                     getWidgetName: page.getWidgetName
-                    onUpdate: list => Config.options.bar.layouts.leftLayout = list
+                    onUpdate: list => page.barConfig.layouts.leftLayout = list
                     onWidgetContextRequested: id => page.openWidgetSettings(id)
                 }
 
                 LayoutSection {
                     sectionTitle: Translation.tr("Center")
-                    layout: Config.options.bar.layouts.middleLayout
+                    layout: page.barConfig.layouts.middleLayout
                     availableWidgets: page.availableFor("middle")
                     getWidgetName: page.getWidgetName
-                    onUpdate: list => Config.options.bar.layouts.middleLayout = list
+                    onUpdate: list => page.barConfig.layouts.middleLayout = list
                     onWidgetContextRequested: id => page.openWidgetSettings(id)
                 }
 
                 LayoutSection {
-                    sectionTitle: Config.options.bar.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
-                    layout: Config.options.bar.layouts.rightLayout
+                    sectionTitle: page.barConfig.vertical ? Translation.tr("Bottom") : Translation.tr("Right")
+                    layout: page.barConfig.layouts.rightLayout
                     availableWidgets: page.availableFor("right")
                     getWidgetName: page.getWidgetName
-                    onUpdate: list => Config.options.bar.layouts.rightLayout = list
+                    onUpdate: list => page.barConfig.layouts.rightLayout = list
                     onWidgetContextRequested: id => page.openWidgetSettings(id)
                 }
             }
@@ -236,10 +298,10 @@ ContentPage {
                 ConfigSelectionArray {
                     text: Translation.tr("Bar position")
                     icon: "swap_vert"
-                    currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
+                    currentValue: (page.barConfig.bottom ? 1 : 0) | (page.barConfig.vertical ? 2 : 0)
                     onSelected: newValue => {
-                        Config.options.bar.bottom = (newValue & 1) !== 0;
-                        Config.options.bar.vertical = (newValue & 2) !== 0;
+                        page.barConfig.bottom = (newValue & 1) !== 0;
+                        page.barConfig.vertical = (newValue & 2) !== 0;
                     }
                     options: [
                         { displayName: Translation.tr("Top"),    icon: "arrow_upward",   value: 0 },
@@ -252,8 +314,8 @@ ContentPage {
                     text: Translation.tr("Bar style")
                     icon: "style"
                     textOnlyWhenActive: true
-                    currentValue: Config.options.bar.cornerStyle
-                    onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
+                    currentValue: page.barConfig.cornerStyle
+                    onSelected: newValue => { page.barConfig.cornerStyle = newValue; }
                     options: [
                         { displayName: Translation.tr("Hug"),     icon: "line_curve", value: 0 },
                         { displayName: Translation.tr("Split Hug"), icon: "splitscreen", value: 6 },
@@ -267,8 +329,8 @@ ContentPage {
                 ConfigSelectionArray {
                     text: Translation.tr("Group style")
                     icon: "tab_group"
-                    currentValue: Config.options.bar.borderless
-                    onSelected: newValue => { Config.options.bar.borderless = newValue; }
+                    currentValue: page.barConfig.borderless
+                    onSelected: newValue => { page.barConfig.borderless = newValue; }
                     options: [
                         { displayName: Translation.tr(""),          icon: "block",          value: "transparent" },
                         { displayName: Translation.tr("Pills"),     icon: "pill",           value: "pills" },
@@ -280,9 +342,9 @@ ContentPage {
                     icon: "brush"
                     text: Translation.tr("Group Color")
                     options: ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0"]
-                    currentValue: Config.options.bar.groupColor
+                    currentValue: page.barConfig.groupColor
                     onSelected: newValue => {
-                        Config.options.bar.groupColor = newValue
+                        page.barConfig.groupColor = newValue
                     }
                 }
                 ConfigRow{
@@ -290,15 +352,15 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "variable_insert"
                         text: Translation.tr("Show Background")
-                        enabled: Config.options.bar.cornerStyle === 0 || Config.options.bar.cornerStyle === 1
-                        checked: Config.options.bar.showBackground
-                        onCheckedChanged: { Config.options.bar.showBackground = checked; }
+                        enabled: page.barConfig.cornerStyle === 0 || page.barConfig.cornerStyle === 1
+                        checked: page.barConfig.showBackground
+                        onCheckedChanged: { page.barConfig.showBackground = checked; }
                     }
                     ConfigSelectionArray {
                         text: Translation.tr("Autohide")
                         icon: "preview_off"
-                        currentValue: Config.options.bar.autoHide.enable
-                        onSelected: newValue => { Config.options.bar.autoHide.enable = newValue; }
+                        currentValue: page.barConfig.autoHide.enable
+                        onSelected: newValue => { page.barConfig.autoHide.enable = newValue; }
                         options: [
                             { displayName: Translation.tr("No"),  icon: "close", value: false },
                             { displayName: Translation.tr("Yes"), icon: "check", value: true }
@@ -307,16 +369,16 @@ ContentPage {
                 }
                 ConfigSwitch {
                     buttonIcon: "expand"
-                    enabled: Config.options.bar.showFrame
+                    enabled: page.barConfig.showFrame
                     text: Translation.tr("Overlap windows when center-only")
-                    checked: Config.options.bar.centerOnlyReserveFrame
-                    onCheckedChanged: { Config.options.bar.centerOnlyReserveFrame = checked; }
+                    checked: page.barConfig.centerOnlyReserveFrame
+                    onCheckedChanged: { page.barConfig.centerOnlyReserveFrame = checked; }
                 }
                 ConfigRow {
                     ConfigSwitch {
                         buttonIcon: "panorama_wide_angle"
                         text: Translation.tr("Show Frame")
-                        checked: Config.options.bar.showFrame
+                        checked: page.barConfig.showFrame
 
                         property bool switchReady: false
                         Component.onCompleted: Qt.callLater(() => switchReady = true)
@@ -325,35 +387,35 @@ ContentPage {
                             if (switchReady && checked) {
                                 GlobalStates.refreshBar();
                             }
-                            Config.options.bar.showFrame = checked;
+                            page.barConfig.showFrame = checked;
                         }
                     }
                     ConfigSwitch {
                         buttonIcon: "colors"
-                        enabled: Config.options.bar.showFrame
+                        enabled: page.barConfig.showFrame
                         text: Translation.tr("Follow Frame Color")
-                        checked: Config.options.bar.followFrameColor
-                        onCheckedChanged: { Config.options.bar.followFrameColor = checked; }
+                        checked: page.barConfig.followFrameColor
+                        onCheckedChanged: { page.barConfig.followFrameColor = checked; }
                     }
                 }
                 ConfigSpinBox {
                     icon: "eraser_size_1"
                     text: Translation.tr("Frame thickness")
-                    value: Config.options.bar.frameThickness
+                    value: page.barConfig.frameThickness
                     from: 2
                     to: 10
                     stepSize: 1
                     onValueChanged: {
-                        Config.options.bar.frameThickness = value;
+                        page.barConfig.frameThickness = value;
                     }
                 }
                 ColorSelectionArray {
                     icon: "imagesearch_roller"
                     text: Translation.tr("Frame Color")
                     options: ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0", "black"] // sorry only solid colors transparency looks bad
-                    currentValue: Config.options.bar.frameColor
+                    currentValue: page.barConfig.frameColor
                     onSelected: newValue => {
-                        Config.options.bar.frameColor = newValue
+                        page.barConfig.frameColor = newValue
                     }
                 }
             }
@@ -369,8 +431,8 @@ ContentPage {
                 ConfigSelectionArray {
                     text: Translation.tr("Left widget")
                     icon: "right_panel_open"
-                    currentValue: Config.options.bar.dynamicIsland.leftWidget
-                    onSelected: newValue => { Config.options.bar.dynamicIsland.leftWidget = newValue; }
+                    currentValue: page.barConfig.dynamicIsland.leftWidget
+                    onSelected: newValue => { page.barConfig.dynamicIsland.leftWidget = newValue; }
                     options: [
                         { displayName: Translation.tr(""),    icon: "block",        value: "none" },
                         { displayName: Translation.tr("Clock"),   icon: "schedule",     value: "clockWidget" },
@@ -381,8 +443,8 @@ ContentPage {
                 ConfigSelectionArray {
                     text: Translation.tr("Right widget")
                     icon: "left_panel_open"
-                    currentValue: Config.options.bar.dynamicIsland.rightWidget
-                    onSelected: newValue => { Config.options.bar.dynamicIsland.rightWidget = newValue; }
+                    currentValue: page.barConfig.dynamicIsland.rightWidget
+                    onSelected: newValue => { page.barConfig.dynamicIsland.rightWidget = newValue; }
                     options: [
                         { displayName: Translation.tr(""),         icon: "block",        value: "none" },
                         { displayName: Translation.tr("System icons"), icon: "settings",     value: "systemIcons" },
@@ -399,8 +461,8 @@ ContentPage {
                     ConfigSelectionArray {
                         text: Translation.tr("Visualizer style")
                         icon: "graphic_eq"
-                        currentValue: Config.options.bar.dynamicIsland.visualizerStyle
-                        onSelected: newValue => { Config.options.bar.dynamicIsland.visualizerStyle = newValue; }
+                        currentValue: page.barConfig.dynamicIsland.visualizerStyle
+                        onSelected: newValue => { page.barConfig.dynamicIsland.visualizerStyle = newValue; }
                         options: [
                             { displayName: Translation.tr(""),      icon: "block",       value: "none" },
                             { displayName: Translation.tr("Dots"),  icon: "steppers",     value: "dots" },
@@ -410,8 +472,8 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "play_circle"
                         text: Translation.tr("Show media controls")
-                        checked: Config.options.bar.dynamicIsland.showMediaControls
-                        onCheckedChanged: { Config.options.bar.dynamicIsland.showMediaControls = checked; }
+                        checked: page.barConfig.dynamicIsland.showMediaControls
+                        onCheckedChanged: { page.barConfig.dynamicIsland.showMediaControls = checked; }
                     }
                 }
             }
@@ -461,8 +523,8 @@ ContentPage {
                 ConfigSwitch {
                     buttonIcon: "counter_2"
                     text: Translation.tr("Unread indicator: show count")
-                    checked: Config.options.bar.indicators.notifications.showUnreadCount
-                    onCheckedChanged: { Config.options.bar.indicators.notifications.showUnreadCount = checked; }
+                    checked: page.barConfig.indicators.notifications.showUnreadCount
+                    onCheckedChanged: { page.barConfig.indicators.notifications.showUnreadCount = checked; }
                 }
                 ConfigSpinBox {
                     icon: "av_timer"
@@ -578,8 +640,8 @@ ContentPage {
                 ConfigSelectionArray {
                     text: Translation.tr("Style")
                     icon: "style"
-                    currentValue: Config.options.bar.divider.style
-                    onSelected: newValue => { Config.options.bar.divider.style = newValue; }
+                    currentValue: page.barConfig.divider.style
+                    onSelected: newValue => { page.barConfig.divider.style = newValue; }
                     options: [
                         { displayName: Translation.tr("Line"),  icon: "more_vert",       value: "rect" },
                         { displayName: Translation.tr("Dot"),   icon: "fiber_manual_record", value: "dot" },
@@ -588,14 +650,14 @@ ContentPage {
                 }
                 ConfigSpinBox {
                     icon: "width"
-                    enabled: Config.options.bar.divider.style === "space"
+                    enabled: page.barConfig.divider.style === "space"
                     text: Translation.tr("Space width (px)")
-                    value: Config.options.bar.divider.spacing
+                    value: page.barConfig.divider.spacing
                     from: 4
                     to: 400
                     stepSize: 2
                     onValueChanged: {
-                        Config.options.bar.divider.spacing = value;
+                        page.barConfig.divider.spacing = value;
                     }
                 }
             }
@@ -613,14 +675,14 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "screenshot_region"
                         text: Translation.tr("Screen snip")
-                        checked: Config.options.bar.utilButtons.showScreenSnip
-                        onCheckedChanged: { Config.options.bar.utilButtons.showScreenSnip = checked }
+                        checked: page.barConfig.utilButtons.showScreenSnip
+                        onCheckedChanged: { page.barConfig.utilButtons.showScreenSnip = checked }
                     }
                     ConfigSwitch {
                         buttonIcon: "colorize"
                         text: Translation.tr("Color picker")
-                        checked: Config.options.bar.utilButtons.showColorPicker
-                        onCheckedChanged: { Config.options.bar.utilButtons.showColorPicker = checked }
+                        checked: page.barConfig.utilButtons.showColorPicker
+                        onCheckedChanged: { page.barConfig.utilButtons.showColorPicker = checked }
                     }
                 }
                 ConfigRow {
@@ -628,14 +690,14 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "keyboard"
                         text: Translation.tr("Keyboard toggle")
-                        checked: Config.options.bar.utilButtons.showKeyboardToggle
-                        onCheckedChanged: { Config.options.bar.utilButtons.showKeyboardToggle = checked }
+                        checked: page.barConfig.utilButtons.showKeyboardToggle
+                        onCheckedChanged: { page.barConfig.utilButtons.showKeyboardToggle = checked }
                     }
                     ConfigSwitch {
                         buttonIcon: "mic"
                         text: Translation.tr("Mic toggle")
-                        checked: Config.options.bar.utilButtons.showMicToggle
-                        onCheckedChanged: { Config.options.bar.utilButtons.showMicToggle = checked }
+                        checked: page.barConfig.utilButtons.showMicToggle
+                        onCheckedChanged: { page.barConfig.utilButtons.showMicToggle = checked }
                     }
                 }
                 ConfigRow {
@@ -643,14 +705,14 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "dark_mode"
                         text: Translation.tr("Dark/Light toggle")
-                        checked: Config.options.bar.utilButtons.showDarkModeToggle
-                        onCheckedChanged: { Config.options.bar.utilButtons.showDarkModeToggle = checked }
+                        checked: page.barConfig.utilButtons.showDarkModeToggle
+                        onCheckedChanged: { page.barConfig.utilButtons.showDarkModeToggle = checked }
                     }
                     ConfigSwitch {
                         buttonIcon: "speed"
                         text: Translation.tr("Performance Profile")
-                        checked: Config.options.bar.utilButtons.showPerformanceProfileToggle
-                        onCheckedChanged: { Config.options.bar.utilButtons.showPerformanceProfileToggle = checked }
+                        checked: page.barConfig.utilButtons.showPerformanceProfileToggle
+                        onCheckedChanged: { page.barConfig.utilButtons.showPerformanceProfileToggle = checked }
                     }
                 }
                 ConfigRow {
@@ -658,14 +720,14 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "screen_record"
                         text: Translation.tr("Record Screen")
-                        checked: Config.options.bar.utilButtons.showScreenRecord
-                        onCheckedChanged: { Config.options.bar.utilButtons.showScreenRecord = checked }
+                        checked: page.barConfig.utilButtons.showScreenRecord
+                        onCheckedChanged: { page.barConfig.utilButtons.showScreenRecord = checked }
                     }
                     ConfigSwitch {
                         buttonIcon: "imagesmode"
                         text: Translation.tr("Wallpapers Toggle")
-                        checked: Config.options.bar.utilButtons.showWallpaperToggle
-                        onCheckedChanged: { Config.options.bar.utilButtons.showWallpaperToggle = checked }
+                        checked: page.barConfig.utilButtons.showWallpaperToggle
+                        onCheckedChanged: { page.barConfig.utilButtons.showWallpaperToggle = checked }
                     }
                 }
             }
@@ -679,9 +741,9 @@ ContentPage {
                 ConfigSelectionArray {
                     text: Translation.tr("Style")
                     icon: "style"
-                    currentValue: Config.options.bar.workspaces.style ?? "default"
+                    currentValue: page.barConfig.workspaces.style ?? "default"
                     onSelected: newValue => {
-                        Config.options.bar.workspaces.style = newValue
+                        page.barConfig.workspaces.style = newValue
                     }
                     options: [
                         { displayName: Translation.tr("Default"), icon: "view_carousel",         value: "default" },
@@ -692,24 +754,24 @@ ContentPage {
                 }
                 ConfigSpinBox {
                     icon: "view_column"; text: Translation.tr("Workspaces shown")
-                    value: Config.options.bar.workspaces.shown
+                    value: page.barConfig.workspaces.shown
                     from: 1; to: 30
-                    onValueChanged: { Config.options.bar.workspaces.shown = value; }
+                    onValueChanged: { page.barConfig.workspaces.shown = value; }
                 }
                 ConfigSwitch {
                     enabled: page.defaultWorkspacesDesign
                     buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
-                    checked: Config.options.bar.workspaces.alwaysShowNumbers
-                    onCheckedChanged: { Config.options.bar.workspaces.alwaysShowNumbers = checked; }
+                    checked: page.barConfig.workspaces.alwaysShowNumbers
+                    onCheckedChanged: { page.barConfig.workspaces.alwaysShowNumbers = checked; }
                 }
                 ConfigSelectionArray {
                     enabled: page.defaultWorkspacesDesign
                     opacity: page.defaultWorkspacesDesign ? 1 : 0.5
                     text: Translation.tr("Numbers style")
                     icon: "looks_3"
-                    currentValue: JSON.stringify(Config.options.bar.workspaces.numberMap)
+                    currentValue: JSON.stringify(page.barConfig.workspaces.numberMap)
                     onSelected: newValue => {
-                        Config.options.bar.workspaces.numberMap = JSON.parse(newValue)
+                        page.barConfig.workspaces.numberMap = JSON.parse(newValue)
                     }
                     options: [
                         { displayName: Translation.tr("Normal"),    icon: "timer_10",        value: '[]' },
@@ -720,17 +782,17 @@ ContentPage {
                 ConfigSwitch {
                     enabled: page.defaultWorkspacesDesign
                     buttonIcon: "award_star"; text: Translation.tr("Show app icons")
-                    checked: Config.options.bar.workspaces.showAppIcons
-                    onCheckedChanged: { Config.options.bar.workspaces.showAppIcons = checked; }
+                    checked: page.barConfig.workspaces.showAppIcons
+                    onCheckedChanged: { page.barConfig.workspaces.showAppIcons = checked; }
                 }
                 ConfigSelectionArray {
                     enabled: page.defaultWorkspacesDesign
                     opacity: page.defaultWorkspacesDesign ? 1 : 0.5
                     text: Translation.tr("Indicator style")
                     icon: "page_control"
-                    currentValue: Config.options.bar.workspaces.indicatorStyle ?? "icon"
+                    currentValue: page.barConfig.workspaces.indicatorStyle ?? "icon"
                     onSelected: newValue => {
-                        Config.options.bar.workspaces.indicatorStyle = newValue
+                        page.barConfig.workspaces.indicatorStyle = newValue
                     }
                     options: [
                         { displayName: Translation.tr("Dots"),  icon: "radio_button_checked",   value: "dot" },
@@ -752,8 +814,8 @@ ContentPage {
                     text: Translation.tr("Battery style")
                     fieldWidth: 220
                     fixedWidth: true
-                    currentValue: Config.options.bar.battery.style
-                    onSelected: newValue => { Config.options.bar.battery.style = newValue }
+                    currentValue: page.barConfig.battery.style
+                    onSelected: newValue => { page.barConfig.battery.style = newValue }
                     model: [
                         { displayName: "Android", value: "bar" },
                         { displayName: "iOS", value: "ios" },
@@ -767,14 +829,14 @@ ContentPage {
                 ConfigSwitch {
                     buttonIcon: "percent"
                     text: Translation.tr("Show percentage")
-                    checked: Config.options.bar.battery.showPercentage
-                    onCheckedChanged: { Config.options.bar.battery.showPercentage = checked }
+                    checked: page.barConfig.battery.showPercentage
+                    onCheckedChanged: { page.barConfig.battery.showPercentage = checked }
                 }
                 ConfigSwitch {
                     buttonIcon: "bolt"
                     text: Translation.tr("Charging bolt")
-                    checked: Config.options.bar.battery.showCharging
-                    onCheckedChanged: { Config.options.bar.battery.showCharging = checked }
+                    checked: page.barConfig.battery.showCharging
+                    onCheckedChanged: { page.barConfig.battery.showCharging = checked }
                 }
             }
         }
@@ -791,14 +853,14 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "planner_review"
                         text: Translation.tr("CPU")
-                        checked: Config.options.bar.resources.alwaysShowCpu
-                        onCheckedChanged: { Config.options.bar.resources.alwaysShowCpu = checked }
+                        checked: page.barConfig.resources.alwaysShowCpu
+                        onCheckedChanged: { page.barConfig.resources.alwaysShowCpu = checked }
                     }
                     ConfigSwitch {
                         buttonIcon: "thermostat"
                         text: Translation.tr("CPU Temperature")
-                        checked: Config.options.bar.resources.alwaysShowCpuTemp
-                        onCheckedChanged: { Config.options.bar.resources.alwaysShowCpuTemp = checked }
+                        checked: page.barConfig.resources.alwaysShowCpuTemp
+                        onCheckedChanged: { page.barConfig.resources.alwaysShowCpuTemp = checked }
                     }
                 }
                 ConfigRow {
@@ -806,14 +868,14 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "memory"
                         text: Translation.tr("RAM")
-                        checked: Config.options.bar.resources.alwaysShowRam
-                        onCheckedChanged: { Config.options.bar.resources.alwaysShowRam = checked }
+                        checked: page.barConfig.resources.alwaysShowRam
+                        onCheckedChanged: { page.barConfig.resources.alwaysShowRam = checked }
                     }
                     ConfigSwitch {
                         buttonIcon: "storage"
                         text: Translation.tr("Disk")
-                        checked: Config.options.bar.resources.alwaysShowDisk
-                        onCheckedChanged: { Config.options.bar.resources.alwaysShowDisk = checked }
+                        checked: page.barConfig.resources.alwaysShowDisk
+                        onCheckedChanged: { page.barConfig.resources.alwaysShowDisk = checked }
                     }
                 }
                 ConfigRow {
@@ -821,15 +883,15 @@ ContentPage {
                     ConfigSwitch {
                         buttonIcon: "swap_horiz"
                         text: Translation.tr("Swap")
-                        checked: Config.options.bar.resources.alwaysShowSwap
-                        onCheckedChanged: { Config.options.bar.resources.alwaysShowSwap = checked }
+                        checked: page.barConfig.resources.alwaysShowSwap
+                        onCheckedChanged: { page.barConfig.resources.alwaysShowSwap = checked }
                     }
                 }
                 ConfigSelectionArray {
                     text: Translation.tr("Style")
                     icon: "style"
-                    currentValue: Config.options.bar.resources.style
-                    onSelected: newValue => { Config.options.bar.resources.style = newValue; }
+                    currentValue: page.barConfig.resources.style
+                    onSelected: newValue => { page.barConfig.resources.style = newValue; }
                     options: [
                         { displayName: Translation.tr("Filled"),    icon: "incomplete_circle",  value: "filled" },
                         { displayName: Translation.tr("Outline"),   icon: "circles",            value: "outline" },
@@ -838,8 +900,8 @@ ContentPage {
                 }
                 ConfigSwitch {
                     buttonIcon: "decimal_increase"; text: Translation.tr("Show Percentage")
-                    checked: Config.options.bar.resources.showValue
-                    onCheckedChanged: { Config.options.bar.resources.showValue = checked; }
+                    checked: page.barConfig.resources.showValue
+                    onCheckedChanged: { page.barConfig.resources.showValue = checked; }
                 }
                 ConfigSpinBox {
                     icon: "av_timer"
@@ -868,7 +930,7 @@ ContentPage {
                     buttonIcon: "play_circle"
                     text: Translation.tr("Preferred Player")
                     placeholderText: Translation.tr("e.g. spotify, firefox")
-                    value: Config.options.bar.media.preferredPlayer
+                    value: page.barConfig.media.preferredPlayer
                     onValueChanged: {
                         mediaDebounceTimer.restart();
                     }
@@ -878,29 +940,29 @@ ContentPage {
                         interval: 600
                         repeat: false
                         onTriggered: {
-                            Config.options.bar.media.preferredPlayer = preferredPlayerField.value;
+                            page.barConfig.media.preferredPlayer = preferredPlayerField.value;
                         }
                     }
                 }
                 ConfigSwitch {
                     buttonIcon: "keep"; text: Translation.tr("Pin media controls")
-                    checked: Config.options.bar.media.alwaysVisible
-                    onCheckedChanged: { Config.options.bar.media.alwaysVisible = checked; }
+                    checked: page.barConfig.media.alwaysVisible
+                    onCheckedChanged: { page.barConfig.media.alwaysVisible = checked; }
                 }
                 ConfigSwitch {
                     buttonIcon: "titlecase"; text: Translation.tr("Show only title")
-                    checked: Config.options.bar.media.onlyTitle
-                    onCheckedChanged: { Config.options.bar.media.onlyTitle = checked; }
+                    checked: page.barConfig.media.onlyTitle
+                    onCheckedChanged: { page.barConfig.media.onlyTitle = checked; }
                 }
                 ConfigSpinBox {
                     icon: "width"
                     text: Translation.tr("Max media width")
-                    value: Config.options.bar.media.maxWidth
+                    value: page.barConfig.media.maxWidth
                     from: 100
                     to: 500
                     stepSize: 10
                     onValueChanged: {
-                        Config.options.bar.media.maxWidth = value;
+                        page.barConfig.media.maxWidth = value;
                     }
                 }
             }
@@ -912,21 +974,21 @@ ContentPage {
             GroupedList {
                 ConfigSwitch {
                     buttonIcon: "visibility"; text: Translation.tr("Enable")
-                    checked: Config.options.bar.tooltips.enable
-                    onCheckedChanged: { Config.options.bar.tooltips.enable = checked; }
+                    checked: page.barConfig.tooltips.enable
+                    onCheckedChanged: { page.barConfig.tooltips.enable = checked; }
                 }
                 ConfigSwitch {
                     buttonIcon: "ads_click"; text: Translation.tr("Click to show")
-                    checked: Config.options.bar.tooltips.clickToShow
-                    onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
-                    enabled: Config.options.bar.tooltips.enable
+                    checked: page.barConfig.tooltips.clickToShow
+                    onCheckedChanged: { page.barConfig.tooltips.clickToShow = checked; }
+                    enabled: page.barConfig.tooltips.enable
                 }
                 ConfigSelectionArray {
                     text: Translation.tr("Style")
                     icon: "tooltip"
-                    enabled: Config.options.bar.tooltips.enable
-                    currentValue: Config.options.bar.tooltips.style
-                    onSelected: newValue => { Config.options.bar.tooltips.style = newValue }
+                    enabled: page.barConfig.tooltips.enable
+                    currentValue: page.barConfig.tooltips.style
+                    onSelected: newValue => { page.barConfig.tooltips.style = newValue }
                     options: [
                         { displayName: Translation.tr("Default"), icon: "tooltip", value: "default" },
                         { displayName: Translation.tr("Morph"), icon: "join_inner", value: "morph" }
