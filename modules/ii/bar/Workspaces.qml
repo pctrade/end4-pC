@@ -56,12 +56,21 @@ ButtonMouseArea {
     hoverEnabled: true
     property int hoverIndex: {
         const position = root.vertical ? mouseY : mouseX;
-        if (root.altStyle && altLoader.item) return altLoader.item.indexAt(position);
-        return Math.floor(position / root.slotLength);
+        const index = root.altStyle && altLoader.item
+            ? altLoader.item.indexAt(position)
+            : Math.floor(position / root.slotLength);
+        return Math.max(0, Math.min(wsModel.shownCount - 1, index));
     }
 
     function switchWorkspaceToHovered() {
         WM.switchWorkspace(wsModel.getWorkspaceIdAt(hoverIndex));
+    }
+    function switchWorkspaceRelativeToBar(offset) {
+        const count = wsModel.shownCount;
+        if (count <= 0)
+            return;
+        const index = (root.workspaceIndexInGroup + offset + count) % count;
+        WM.switchWorkspace(wsModel.getWorkspaceIdAt(index));
     }
     onPressed: mouse => {
         if (mouse.button == Qt.LeftButton)
@@ -77,9 +86,9 @@ ButtonMouseArea {
     }
     onWheel: event => {
         if (event.angleDelta.y < 0)
-            WM.switchWorkspaceRelative("next");
+            root.switchWorkspaceRelativeToBar(1);
         else if (event.angleDelta.y > 0)
-            WM.switchWorkspaceRelative("prev");
+            root.switchWorkspaceRelativeToBar(-1);
     }
 
     Loader {
@@ -382,6 +391,8 @@ ButtonMouseArea {
         rowSpacing: 0
         columnSpacing: 0
         vertical: root.vertical
+        columns: root.vertical ? 1 : wsModel.shownCount
+        rows: root.vertical ? wsModel.shownCount : 1
     }
 
     component WorkspaceItem: Item {
