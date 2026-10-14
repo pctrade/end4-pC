@@ -127,6 +127,7 @@ Singleton {
                 property JsonObject wallpaperTheming: JsonObject {
                     property bool enableAppsAndShell: true
                     property bool enableQtApps: true
+                    property bool lockKonsoleColors: true
                     property bool enableTerminal: true
                     property JsonObject terminalGenerationProps: JsonObject {
                         property real harmony: 0.6
