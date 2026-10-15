@@ -13,6 +13,7 @@ Singleton {
         { key: "calendar",    icon: "calendar_month",    name: Translation.tr("Calendar") },
         { key: "worldClock",  icon: "public",            name: Translation.tr("World Clock") },
         { key: "media",       icon: "music_note",        name: Translation.tr("Media") },
+        { key: "spun",        icon: "album",             name: Translation.tr("Spun") },
         { key: "visualizer",  icon: "graphic_eq",        name: Translation.tr("Visualizer") },
         { key: "resources",   icon: "monitor_heart",     name: Translation.tr("Resources") },
         { key: "userCard",    icon: "person",            name: Translation.tr("User Card") },
