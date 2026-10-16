@@ -114,6 +114,7 @@ Singleton {
                 const trimmed = data.trim()
                 if (trimmed === "not_found") { root.status = "not_found"; return }
                 if (trimmed === "no_info")   { root.status = "no_info";   return }
+                if (trimmed === "error")     { root.status = "error"; root.scheduleRetry(); return }
 
                 const parts = trimmed.split("§")
                 if (parts.length < 3) return
@@ -137,7 +138,26 @@ Singleton {
         }
     }
 
-    function restartLyrics() {
+    // lrclib is often overloaded for a moment: try the same track again later
+    readonly property list<int> retryDelays: [20000, 60000, 180000]
+    property int retryCount: 0
+
+    function scheduleRetry() {
+        if (root.retryCount >= root.retryDelays.length) return
+        retryTimer.interval = root.retryDelays[root.retryCount]
+        root.retryCount++
+        retryTimer.restart()
+    }
+
+    Timer {
+        id: retryTimer
+        onTriggered: root.restartLyrics(true)
+    }
+
+    // A new track or a manual refresh starts a new round of retries
+    function restartLyrics(isRetry) {
+        if (!isRetry) root.retryCount = 0
+        retryTimer.stop()
         lyricsProc.running = false
         boundaryTimer.stop()
         root.lyricsLines = []
@@ -149,7 +169,8 @@ Singleton {
         const artist   = root.activePlayer?.trackArtist ?? ""
         const duration = root.activePlayer?.length       ?? 0
 
-        if (!title || !artist) { root.status = "no_info"; return }
+        // Browsers may leave the artist empty and put it in the title: the script splits it
+        if (!title) { root.status = "no_info"; return }
 
         lyricsProc.command = [
             "python3",
