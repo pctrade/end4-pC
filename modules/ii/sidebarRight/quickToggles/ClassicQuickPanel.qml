@@ -31,6 +31,7 @@ AbstractQuickPanel {
             }
         }
         NightLight {}
+        LiveWallpaperToggle {}
         GameMode {}
         IdleInhibitor {}
         EasyEffectsToggle {}

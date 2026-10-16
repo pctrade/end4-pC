@@ -299,7 +299,6 @@ Singleton {
                     maxId = Math.max(maxId, notif.notificationId)
                 })
 
-                console.log("[Notifications] File loaded")
                 root.idOffset = maxId
                 root.initDone()
             } catch (e) {

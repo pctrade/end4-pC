@@ -6,6 +6,7 @@ import qs.modules.common.widgets
 
 TextField {
     id: filterField
+    ContextMenu.menu: StyledTextEditMenu { editor: filterField }
 
     property alias colBackground: background.color
 

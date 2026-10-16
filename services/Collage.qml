@@ -214,6 +214,119 @@ Singleton {
             Wallpapers.select(leaf.img)
     }
 
+    function leaf() {
+        return { t: "leaf" }
+    }
+
+    function split(d, r, a, b) {
+        return { t: "split", d: d, r: r, a: a, b: b }
+    }
+
+    readonly property var presets: {
+        const L = root.leaf
+        const S = root.split
+        return [
+            { name: "duo", tree: S("v", 0.5, L(), L()) },
+            { name: "stack", tree: S("h", 0.5, L(), L()) },
+            { name: "heroLeft", tree: S("v", 0.62, L(), S("h", 0.5, L(), L())) },
+            { name: "heroRight", tree: S("v", 0.38, S("h", 0.5, L(), L()), L()) },
+            { name: "heroTop", tree: S("h", 0.6, L(), S("v", 0.5, L(), L())) },
+            { name: "columns", tree: S("v", 0.333, L(), S("v", 0.5, L(), L())) },
+            { name: "grid", tree: S("v", 0.5, S("h", 0.5, L(), L()), S("h", 0.5, L(), L())) },
+            { name: "heroThree", tree: S("v", 0.6, L(), S("h", 0.333, L(), S("h", 0.5, L(), L()))) },
+            { name: "mosaic", tree: S("v", 0.5, S("h", 0.5, L(), S("v", 0.5, L(), L())), S("h", 0.5, S("v", 0.5, L(), L()), L())) },
+            { name: "sixGrid", tree: S("v", 0.333, S("h", 0.5, L(), L()), S("v", 0.5, S("h", 0.5, L(), L()), S("h", 0.5, L(), L()))) },
+            { name: "triptychRows", tree: S("h", 0.333, L(), S("h", 0.5, L(), L())) },
+            { name: "pillar", tree: S("v", 0.25, L(), S("v", 0.667, L(), L())) },
+            { name: "heroBottom", tree: S("h", 0.62, S("v", 0.5, L(), L()), L()) },
+            { name: "sidebarStack", tree: S("v", 0.3, S("h", 0.333, L(), S("h", 0.5, L(), L())), L()) },
+            { name: "filmstrip", tree: S("h", 0.7, L(), S("v", 0.333, L(), S("v", 0.5, L(), L()))) },
+            { name: "twinRail", tree: S("v", 0.7, S("h", 0.5, L(), L()), S("h", 0.25, L(), S("h", 0.333, L(), S("h", 0.5, L(), L())))) },
+            { name: "topThree", tree: S("h", 0.5, S("v", 0.333, L(), S("v", 0.5, L(), L())), S("v", 0.5, L(), L())) },
+            { name: "bigPlusFour", tree: S("v", 0.5, L(), S("h", 0.5, S("v", 0.5, L(), L()), S("v", 0.5, L(), L()))) },
+            { name: "heroFive", tree: S("v", 0.5, L(), S("h", 0.5, S("v", 0.5, L(), L()), S("v", 0.333, L(), S("v", 0.5, L(), L())))) },
+            { name: "cornerFour", tree: S("v", 0.5, L(), S("h", 0.5, L(), S("v", 0.5, L(), L()))) },
+            { name: "wideBanner", tree: S("h", 0.3, L(), S("v", 0.5, L(), L())) },
+            { name: "unevenRight", tree: S("v", 0.5, L(), S("h", 0.7, L(), L())) },
+            { name: "unevenLeft", tree: S("v", 0.5, S("h", 0.35, L(), L()), L()) },
+            { name: "railThree", tree: S("v", 0.35, L(), S("h", 0.333, L(), S("h", 0.5, L(), L()))) },
+            { name: "fourColumns", tree: S("v", 0.5, S("v", 0.5, L(), L()), S("v", 0.5, L(), L())) },
+            { name: "fourRows", tree: S("h", 0.5, S("h", 0.5, L(), L()), S("h", 0.5, L(), L())) },
+            { name: "centerHero", tree: S("v", 0.25, S("h", 0.5, L(), L()), S("v", 0.667, L(), S("h", 0.5, L(), L()))) },
+            { name: "heroTwoRows", tree: S("h", 0.55, L(), S("h", 0.5, S("v", 0.5, L(), L()), S("v", 0.5, L(), L()))) },
+            { name: "cornerSix", tree: S("v", 0.6, S("h", 0.6, L(), S("v", 0.5, L(), L())), S("h", 0.333, L(), S("h", 0.5, L(), L()))) },
+            { name: "staggered", tree: S("v", 0.5, S("h", 0.333, L(), S("h", 0.5, L(), L())), S("h", 0.5, L(), L())) }
+        ]
+    }
+
+    function presetLabel(name) {
+        const words = name.replace(/([A-Z])/g, " $1").toLowerCase()
+        return words.charAt(0).toUpperCase() + words.slice(1)
+    }
+
+    readonly property var presetOptions: [{ displayName: Translation.tr("Custom"), value: "" }].concat(
+        root.presets.map(preset => ({
+            displayName: root.presetLabel(preset.name) + " (" + root.countLeaves(preset.tree) + ")",
+            value: preset.name
+        }))
+    )
+
+    readonly property string currentPreset: {
+        const current = root.signature(root.tree)
+        const match = root.presets.find(preset => root.signature(preset.tree) === current)
+        return match ? match.name : ""
+    }
+
+    function applyPresetByName(name) {
+        const match = root.presets.find(preset => preset.name === name)
+        if (match) root.applyPreset(match.tree)
+    }
+
+    function signature(node) {
+        if (node.t === "leaf") return "L"
+        return node.d + Math.round(node.r * 100) + "(" + root.signature(node.a) + "," + root.signature(node.b) + ")"
+    }
+
+    function collectLeaves(node, out) {
+        if (node.t === "leaf") out.push(node)
+        else {
+            root.collectLeaves(node.a, out)
+            root.collectLeaves(node.b, out)
+        }
+        return out
+    }
+
+    function rects(node, x, y, w, h, out) {
+        if (node.t === "leaf") {
+            out.push({ x: x, y: y, w: w, h: h })
+        } else if (node.d === "v") {
+            root.rects(node.a, x, y, w * node.r, h, out)
+            root.rects(node.b, x + w * node.r, y, w * (1 - node.r), h, out)
+        } else {
+            root.rects(node.a, x, y, w, h * node.r, out)
+            root.rects(node.b, x, y + h * node.r, w, h * (1 - node.r), out)
+        }
+        return out
+    }
+
+    function applyPreset(spec) {
+        const current = root.collectLeaves(root.tree, [])
+        const primary = root.findLeaf(root.tree, root.primaryId) ?? current[0]
+        const images = [root.imageForLeaf(primary)].concat(current.filter(l => l !== primary).map(l => root.imageForLeaf(l)))
+        let nextId = 1
+        function assign(node) {
+            if (node.t === "leaf") {
+                const id = nextId++
+                return { t: "leaf", id: id, img: images[(id - 1) % images.length] }
+            }
+            return { t: "split", d: node.d, r: node.r, a: assign(node.a), b: assign(node.b) }
+        }
+        const next = assign(spec)
+        root.settings.nextId = nextId
+        root.settings.primaryId = 1
+        root.save(next)
+    }
+
     function reset() {
         root.settings.nextId = 2
         root.settings.primaryId = 1

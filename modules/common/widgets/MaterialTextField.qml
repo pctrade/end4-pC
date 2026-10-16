@@ -17,6 +17,7 @@ TextField {
     Material.foreground: Appearance.m3colors.m3onSurface
     Material.containerStyle: Material.Outlined
     renderType: Text.QtRendering
+    ContextMenu.menu: StyledTextEditMenu { editor: root }
 
     selectedTextColor: Appearance.m3colors.m3onSecondaryContainer
     selectionColor: Appearance.colors.colSecondaryContainer

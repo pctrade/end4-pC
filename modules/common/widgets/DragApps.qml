@@ -16,9 +16,9 @@ import Quickshell.Wayland
 Item {
     id: root
 
-    property real btnSize: 46
-    property real btnSpacing: 2
-    property real buttonPadding: 5
+    property real btnSize: DockStyle.buttonSize
+    property real btnSpacing: DockStyle.buttonSpacing + DockStyle.iconSpacing
+    property real buttonPadding: DockStyle.padding
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
     property real maxWindowPreviewHeight: 200
     property real maxWindowPreviewWidth: 300
@@ -26,6 +26,7 @@ Item {
     property Item lastHoveredButton: null
     property bool buttonHovered: false
     property bool requestDockShow: previewPopup.show
+    property var contextMenu: null
     signal orderChanged(var newOrder)
     property var  _workOrder: pinnedApps.slice()
     property int  activeDragVisualIndex: -1
@@ -37,12 +38,17 @@ Item {
         }
     }
 
-    implicitWidth:  _workOrder.length * btnSize + Math.max(0, _workOrder.length - 1) * btnSpacing
-    implicitHeight: parent?.height ?? btnSize
+    readonly property real trackLength: _workOrder.length * btnSize + Math.max(0, _workOrder.length - 1) * btnSpacing
 
-    function popupCenterXForButton(button) {
+    Layout.fillHeight: false
+    Layout.fillWidth: false
+    implicitWidth:  DockStyle.vertical ? (parent?.width ?? btnSize) : trackLength
+    implicitHeight: DockStyle.vertical ? trackLength : (parent?.height ?? btnSize)
+
+    function popupCenterForButton(button) {
         if (!button || !root.QsWindow) return 0
-        return root.QsWindow.mapFromItem(button, button.width / 2, 0).x
+        const point = root.QsWindow.mapFromItem(button, button.width / 2, button.height / 2)
+        return DockStyle.vertical ? point.y : point.x
     }
 
     function swapSlots(fromPos, toPos) {
@@ -83,11 +89,17 @@ Item {
                 }
             }
 
-            width:  root.btnSize
-            height: root.implicitHeight
-            x:      index * (root.btnSize + root.btnSpacing)
+            width:  DockStyle.vertical ? root.implicitWidth : root.btnSize
+            height: DockStyle.vertical ? root.btnSize : root.implicitHeight
+            x:      DockStyle.vertical ? 0 : index * (root.btnSize + root.btnSpacing)
+            y:      DockStyle.vertical ? index * (root.btnSize + root.btnSpacing) : 0
 
             Behavior on x {
+                enabled: root.activeDragVisualIndex !== slotItem.index
+                animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+            }
+
+            Behavior on y {
                 enabled: root.activeDragVisualIndex !== slotItem.index
                 animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
             }
@@ -102,15 +114,14 @@ Item {
                 z: 1000
                 width:  root.btnSize
                 height: root.btnSize
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.verticalCenter: DockStyle.vertical ? undefined : parent.verticalCenter
+                anchors.horizontalCenter: DockStyle.vertical ? parent.horizontalCenter : undefined
 
-                x: {
-                    if (!dragHandler.active) return 0
-                    var lp = slotItem.mapFromItem(null,
-                        dragHandler.centroid.scenePosition.x,
-                        dragHandler.centroid.scenePosition.y)
-                    return lp.x - width / 2
-                }
+                readonly property point dragPoint: dragHandler.active
+                    ? slotItem.mapFromItem(null, dragHandler.centroid.scenePosition.x, dragHandler.centroid.scenePosition.y)
+                    : Qt.point(0, 0)
+                x: DockStyle.vertical ? 0 : dragPoint.x - width / 2
+                y: DockStyle.vertical ? dragPoint.y - height / 2 : 0
 
                 scale: dragHandler.active ? 1.15 : 0.9
                 Behavior on scale {
@@ -144,11 +155,12 @@ Item {
                 anchors.fill: parent
 
                 property var appToplevel: slotItem.appEntry
+                magnifiable: true
 
-                topInset:    Appearance.sizes.hyprlandGapsOut + 8
-                bottomInset: Appearance.sizes.hyprlandGapsOut + 8
-
-                implicitWidth: implicitHeight - topInset - bottomInset
+                innerInset: DockStyle.iconInset
+                outerInset: DockStyle.iconInset
+                Layout.topMargin: 0
+                Layout.leftMargin: 0
 
                 hoverEnabled: true
                 onHoveredChanged: {
@@ -172,60 +184,13 @@ Item {
                 }
 
                 middleClickAction: () => { slotItem.deskEntry?.execute() }
-                altAction:         () => { TaskbarApps.togglePin(slotItem.appId) }
+                altAction:         () => { root.contextMenu?.open(dockBtn, slotItem.appId) }
 
-                contentItem: Item {
+                contentItem: DockAppIcon {
                     anchors.centerIn: parent
-
-                    IconImage {
-                        id: appIcon
-                        anchors.centerIn: parent
-                        source: SystemAppearance.iconPath(
-                            AppSearch.guessIcon(slotItem.appId),
-                            "image-missing")
-                        implicitSize: 33
-                    }
-
-                    Loader {
-                        active: Config.options.dock.monochromeIcons
-                        anchors.fill: appIcon
-                        sourceComponent: Item {
-                            Desaturate {
-                                id: desaturatedIcon
-                                visible: false
-                                anchors.fill: parent
-                                source: appIcon
-                                desaturation: 0.8
-                            }
-                            ColorOverlay {
-                                anchors.fill: desaturatedIcon
-                                source: desaturatedIcon
-                                color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.9)
-                            }
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 3
-                        anchors {
-                            top: appIcon.bottom
-                            topMargin: 2
-                            horizontalCenter: parent.horizontalCenter
-                        }
-                        Repeater {
-                            model: Math.min(slotItem.appEntry?.toplevels?.length ?? 0, 3)
-                            delegate: Rectangle {
-                                required property int index
-                                radius:         Appearance.rounding.full
-                                implicitWidth:  (slotItem.appEntry?.toplevels?.length ?? 0) <= 3
-                                                ? 10 : 4
-                                implicitHeight: 4
-                                color: slotItem.appActive
-                                       ? Appearance.colors.colPrimary
-                                       : ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.4)
-                            }
-                        }
-                    }
+                    iconSource: SystemAppearance.iconPath(AppSearch.guessIcon(slotItem.appId), "image-missing")
+                    windowCount: slotItem.appEntry?.toplevels?.length ?? 0
+                    active: slotItem.appActive
                 }
             }
 
@@ -251,7 +216,7 @@ Item {
                     const currentVisualIdx = root.activeDragVisualIndex
                     if (currentVisualIdx < 0) return
 
-                    const dragX = dragHandler.centroid.scenePosition.x
+                    const dragX = DockStyle.vertical ? dragHandler.centroid.scenePosition.y : dragHandler.centroid.scenePosition.x
                     let minDist    = Infinity
                     let nearestIdx = currentVisualIdx
 
@@ -260,7 +225,7 @@ Item {
                         const child = slotRepeater.itemAt(i)
                         if (!child) continue
                         const cc   = child.mapToItem(null, child.width / 2, child.height / 2)
-                        const dist = Math.abs(dragX - cc.x)
+                        const dist = Math.abs(dragX - (DockStyle.vertical ? cc.y : cc.x))
                         if (dist < minDist) { minDist = dist; nearestIdx = i }
                     }
 
@@ -268,9 +233,10 @@ Item {
                         const neighbor = slotRepeater.itemAt(nearestIdx)
                         if (!neighbor) return
                         const nc = neighbor.mapToItem(null, neighbor.width / 2, neighbor.height / 2)
+                        const ncAxis = DockStyle.vertical ? nc.y : nc.x
                         const shouldSwap = (nearestIdx > currentVisualIdx)
-                            ? (dragX >= nc.x)
-                            : (dragX <= nc.x)
+                            ? (dragX >= ncAxis)
+                            : (dragX <= ncAxis)
 
                         if (shouldSwap) {
                             root.swapSlots(currentVisualIdx, nearestIdx)
@@ -289,22 +255,26 @@ Item {
         property bool shouldShow: WM.compositor === "hyprland"
                                   && (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
+                                  && !(root.contextMenu?.isOpen ?? false)
+                                  && Config.options.dock.showPreviews
                                   && appTopLevel
                                   && appTopLevel.toplevels
                                   && appTopLevel.toplevels.length > 0
 
         property bool show: false
-        property real cachedCenterX: 0
+        property real cachedCenter: 0
+        readonly property real shiftX: DockStyle.position === "left" ? -12 : DockStyle.position === "right" ? 12 : 0
+        readonly property real shiftY: DockStyle.vertical ? 0 : 12
 
         Connections {
             target: root
             function onLastHoveredButtonChanged() {
                 if (root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenterX = root.popupCenterXForButton(root.lastHoveredButton)
+                    previewPopup.cachedCenter = root.popupCenterForButton(root.lastHoveredButton)
             }
             function onButtonHoveredChanged() {
                 if (root.buttonHovered && root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenterX = root.popupCenterXForButton(root.lastHoveredButton)
+                    previewPopup.cachedCenter = root.popupCenterForButton(root.lastHoveredButton)
                 updateTimer.restart()
             }
         }
@@ -313,9 +283,94 @@ Item {
             updateTimer.restart()
         }
 
+        onShowChanged: {
+            if (show) {
+                closeAnim.stop()
+                openAnim.restart()
+            } else {
+                openAnim.stop()
+                closeAnim.restart()
+            }
+        }
+
+        ParallelAnimation {
+            id: openAnim
+            NumberAnimation {
+                target: bodyScale
+                properties: "xScale,yScale"
+                from: 0.85
+                to: 1
+                duration: 220
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.expressiveFastSpatial
+            }
+            NumberAnimation {
+                target: bodyShift
+                property: "x"
+                from: previewPopup.shiftX
+                to: 0
+                duration: 220
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.expressiveFastSpatial
+            }
+            NumberAnimation {
+                target: bodyShift
+                property: "y"
+                from: previewPopup.shiftY
+                to: 0
+                duration: 220
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.expressiveFastSpatial
+            }
+            NumberAnimation {
+                target: body
+                property: "opacity"
+                to: 1
+                duration: 130
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.expressiveEffects
+            }
+        }
+
+        ParallelAnimation {
+            id: closeAnim
+            NumberAnimation {
+                target: bodyScale
+                properties: "xScale,yScale"
+                to: 0.9
+                duration: 110
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.emphasizedAccel
+            }
+            NumberAnimation {
+                target: bodyShift
+                property: "x"
+                to: previewPopup.shiftX * 0.6
+                duration: 110
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.emphasizedAccel
+            }
+            NumberAnimation {
+                target: bodyShift
+                property: "y"
+                to: previewPopup.shiftY * 0.6
+                duration: 110
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.emphasizedAccel
+            }
+            NumberAnimation {
+                target: body
+                property: "opacity"
+                to: 0
+                duration: 90
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.emphasizedAccel
+            }
+        }
+
         Timer {
             id: updateTimer
-            interval: 100
+            interval: previewPopup.shouldShow ? 100 : 30
             onTriggered: {
                 previewPopup.show = previewPopup.shouldShow
             }
@@ -324,132 +379,160 @@ Item {
         anchor {
             window: root.QsWindow.window
             adjustment: PopupAdjustment.None
-            gravity: Edges.Top | Edges.Right
+            gravity: DockStyle.position === "left" ? (Edges.Bottom | Edges.Right)
+                : DockStyle.position === "right" ? (Edges.Bottom | Edges.Left)
+                : (Edges.Top | Edges.Right)
             edges: Edges.Top | Edges.Left
+            rect.x: DockStyle.position === "left"
+                ? DockStyle.zone + Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
+                : DockStyle.position === "right"
+                    ? (root.QsWindow.window?.width ?? 0) - DockStyle.zone - Appearance.sizes.hyprlandGapsOut + Appearance.sizes.elevationMargin
+                    : 0
         }
 
-        visible: popupBackground.opacity > 0
+        visible: body.opacity > 0
         color: "transparent"
-        implicitWidth: root.QsWindow.window?.width ?? 1
-        implicitHeight: popupMouseArea.implicitHeight
-                        + root.windowControlsHeight
-                        + Appearance.sizes.elevationMargin * 2
+        implicitWidth: DockStyle.vertical ? popupMouseArea.implicitWidth : (root.QsWindow.window?.width ?? 1)
+        implicitHeight: DockStyle.vertical
+            ? (root.QsWindow.window?.height ?? 1)
+            : popupMouseArea.implicitHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
 
         MouseArea {
             id: popupMouseArea
-            anchors.bottom: parent.bottom
+            anchors.bottom: DockStyle.vertical ? undefined : parent.bottom
+            anchors.left: DockStyle.position === "left" ? parent.left : undefined
+            anchors.right: DockStyle.position === "right" ? parent.right : undefined
             implicitWidth:  popupBackground.implicitWidth + Appearance.sizes.elevationMargin * 2
-            implicitHeight: root.maxWindowPreviewHeight
-                            + root.windowControlsHeight
-                            + Appearance.sizes.elevationMargin * 2
+            implicitHeight: DockStyle.vertical
+                ? popupBackground.implicitHeight + Appearance.sizes.elevationMargin * 2
+                : root.maxWindowPreviewHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
             hoverEnabled: true
-            x: previewPopup.cachedCenterX - width / 2
+            x: DockStyle.vertical ? 0 : previewPopup.cachedCenter - width / 2
+            y: DockStyle.vertical
+                ? Math.max(0, Math.min((root.QsWindow.window?.height ?? 0) - height, previewPopup.cachedCenter - height / 2))
+                : 0
 
-            StyledRectangularShadow {
-                target: popupBackground
-                opacity: previewPopup.show ? 1 : 0
+            Item {
+                id: body
+                anchors.fill: parent
+                opacity: 0
                 visible: opacity > 0
-                Behavior on opacity {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                }
-            }
+                transform: [
+                    Scale {
+                        id: bodyScale
+                        origin.x: DockStyle.position === "left" ? Appearance.sizes.elevationMargin
+                            : DockStyle.position === "right" ? body.width - Appearance.sizes.elevationMargin
+                            : body.width / 2
+                        origin.y: DockStyle.vertical ? body.height / 2 : body.height - Appearance.sizes.elevationMargin
+                        xScale: 0.85
+                        yScale: 0.85
+                    },
+                    Translate {
+                        id: bodyShift
+                    }
+                ]
 
-            Rectangle {
-                id: popupBackground
-                property real padding: 5
-                opacity: previewPopup.show ? 1 : 0
-                visible: opacity > 0
-                Behavior on opacity {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                }
-                clip: true
-                color: Appearance.m3colors.m3surfaceContainer
-                radius: Appearance.rounding.normal
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: Appearance.sizes.elevationMargin
-                anchors.horizontalCenter: parent.horizontalCenter
-                implicitHeight: previewRowLayout.implicitHeight + padding * 2
-                implicitWidth:  previewRowLayout.implicitWidth  + padding * 2
-                Behavior on implicitWidth {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                }
-                Behavior on implicitHeight {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                StyledRectangularShadow {
+                    target: popupBackground
                 }
 
-                RowLayout {
-                    id: previewRowLayout
-                    anchors.centerIn: parent
+                Rectangle {
+                    id: popupBackground
+                    property real padding: 5
+                    clip: true
+                    color: Config.options.appearance.uiBackground === "oled" ? "#000000" : Appearance.m3colors.m3surfaceContainer
+                    radius: Appearance.rounding.normal
+                    anchors.bottom: DockStyle.vertical ? undefined : parent.bottom
+                    anchors.bottomMargin: Appearance.sizes.elevationMargin
+                    anchors.horizontalCenter: DockStyle.vertical ? undefined : parent.horizontalCenter
+                    anchors.verticalCenter: DockStyle.vertical ? parent.verticalCenter : undefined
+                    anchors.left: DockStyle.position === "left" ? parent.left : undefined
+                    anchors.right: DockStyle.position === "right" ? parent.right : undefined
+                    anchors.leftMargin: Appearance.sizes.elevationMargin
+                    anchors.rightMargin: Appearance.sizes.elevationMargin
+                    implicitHeight: previewRowLayout.implicitHeight + padding * 2
+                    implicitWidth:  previewRowLayout.implicitWidth  + padding * 2
+                    Behavior on implicitWidth {
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
+                    Behavior on implicitHeight {
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
 
-                    Repeater {
-                        model: ScriptModel {
-                            values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
-                        }
+                    RowLayout {
+                        id: previewRowLayout
+                        anchors.centerIn: parent
 
-                        RippleButton {
-                            id: windowButton
-                            Layout.fillHeight: true
-                            required property var modelData
-                            padding: 0
+                        Repeater {
+                            model: ScriptModel {
+                                values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
+                            }
 
-                            middleClickAction: () => { windowButton.modelData?.close() }
-                            onClicked: { windowButton.modelData?.activate() }
+                            RippleButton {
+                                id: windowButton
+                                Layout.fillHeight: true
+                                required property var modelData
+                                padding: 0
 
-                            contentItem: ColumnLayout {
-                                implicitWidth:  screencopyView.implicitWidth
-                                implicitHeight: screencopyView.implicitHeight
+                                middleClickAction: () => { windowButton.modelData?.close() }
+                                onClicked: { windowButton.modelData?.activate() }
 
-                                ButtonGroup {
-                                    contentWidth: parent.width - anchors.margins * 2
+                                contentItem: ColumnLayout {
+                                    implicitWidth:  screencopyView.implicitWidth
+                                    implicitHeight: screencopyView.implicitHeight
 
-                                    StyledText {
-                                        Layout.margins: 5
-                                        Layout.fillWidth: true
-                                        font.pixelSize: Appearance.font.pixelSize.small
-                                        text: windowButton.modelData?.title
-                                        elide: Text.ElideRight
-                                        color: Appearance.m3colors.m3onSurface
-                                    }
+                                    ButtonGroup {
+                                        contentWidth: parent.width - anchors.margins * 2
 
-                                    GroupButton {
-                                        id: closeButton
-                                        colBackground: ColorUtils.transparentize(
-                                            Appearance.colors.colSurfaceContainer)
-                                        baseWidth:    root.windowControlsHeight
-                                        baseHeight:   root.windowControlsHeight
-                                        buttonRadius: Appearance.rounding.full
-                                        contentItem: MaterialSymbol {
-                                            anchors.centerIn: parent
-                                            horizontalAlignment: Text.AlignHCenter
-                                            text: "close"
-                                            iconSize: Appearance.font.pixelSize.normal
+                                        StyledText {
+                                            Layout.margins: 5
+                                            Layout.fillWidth: true
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            text: windowButton.modelData?.title
+                                            elide: Text.ElideRight
                                             color: Appearance.m3colors.m3onSurface
                                         }
-                                        onClicked: { windowButton.modelData?.close() }
+
+                                        GroupButton {
+                                            id: closeButton
+                                            colBackground: ColorUtils.transparentize(
+                                                Appearance.colors.colSurfaceContainer)
+                                            baseWidth:    root.windowControlsHeight
+                                            baseHeight:   root.windowControlsHeight
+                                            buttonRadius: Appearance.rounding.full
+                                            contentItem: MaterialSymbol {
+                                                anchors.centerIn: parent
+                                                horizontalAlignment: Text.AlignHCenter
+                                                text: "close"
+                                                iconSize: Appearance.font.pixelSize.normal
+                                                color: Appearance.m3colors.m3onSurface
+                                            }
+                                            onClicked: { windowButton.modelData?.close() }
+                                        }
                                     }
-                                }
 
-                                Item {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    implicitHeight: screencopyView.height
-                                    implicitWidth:  screencopyView.width
+                                    Item {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        implicitHeight: screencopyView.height
+                                        implicitWidth:  screencopyView.width
 
-                                    ScreencopyView {
-                                        id: screencopyView
-                                        anchors.centerIn: parent
-                                        captureSource: windowButton.modelData
-                                        live: true
-                                        paintCursor: true
-                                        constraintSize: Qt.size(
-                                            root.maxWindowPreviewWidth,
-                                            root.maxWindowPreviewHeight)
-                                        layer.enabled: true
-                                        layer.effect: OpacityMask {
-                                            maskSource: Rectangle {
-                                                width:  screencopyView.width
-                                                height: screencopyView.height
-                                                radius: Appearance.rounding.small
+                                        ScreencopyView {
+                                            id: screencopyView
+                                            anchors.centerIn: parent
+                                            captureSource: windowButton.modelData
+                                            live: true
+                                            paintCursor: true
+                                            constraintSize: Qt.size(
+                                                root.maxWindowPreviewWidth,
+                                                root.maxWindowPreviewHeight)
+                                            layer.enabled: true
+                                            layer.effect: OpacityMask {
+                                                maskSource: Rectangle {
+                                                    width:  screencopyView.width
+                                                    height: screencopyView.height
+                                                    radius: Appearance.rounding.small
+                                                }
                                             }
                                         }
                                     }
@@ -459,6 +542,7 @@ Item {
                     }
                 }
             }
+
         }
     }
 }

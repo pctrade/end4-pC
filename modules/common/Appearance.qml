@@ -125,10 +125,16 @@ Singleton {
     }
 
     colors: QtObject {
+        function softenForOled(color) {
+            return Config?.options.appearance.uiBackground === "oled" ? ColorUtils.transparentize(ColorUtils.mix(color, "#000000", 0.85), 0.2) : color
+        }
         property color colSubtext: m3colors.m3outline
         // Layer 0
         property color colLayer0Base: ColorUtils.mix(m3colors.m3background, m3colors.m3primary, Config.options.appearance.extraBackgroundTint ? 0.99 : 1)
         property color colLayer0: ColorUtils.transparentize(colLayer0Base, root.backgroundTransparency)
+        property color colUiBackground: Config?.options.appearance.uiBackground === "oled" ? ColorUtils.transparentize("#000000", root.backgroundTransparency) : colLayer0
+        property color colUiPopupBackground: Config?.options.appearance.uiBackground === "oled" ? "#000000" : colLayer1Base
+        property color colUiSurfaceContainer: Config?.options.appearance.uiBackground === "oled" ? ColorUtils.transparentize("#000000", root.backgroundTransparency) : colBackgroundSurfaceContainer
         property color colOnLayer0: m3colors.m3onBackground
         property color colLayer0Hover: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.9, root.contentTransparency))
         property color colLayer0Active: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.8, root.contentTransparency))
@@ -165,7 +171,7 @@ Singleton {
         property color colOnPrimary: m3colors.m3onPrimary
         property color colPrimaryHover: ColorUtils.mix(colors.colPrimary, colLayer1Hover, 0.87)
         property color colPrimaryActive: ColorUtils.mix(colors.colPrimary, colLayer1Active, 0.7)
-        property color colPrimaryContainer: m3colors.m3primaryContainer
+        property color colPrimaryContainer: softenForOled(m3colors.m3primaryContainer)
         property color colPrimaryContainerHover: ColorUtils.mix(colors.colPrimaryContainer, colors.colOnPrimaryContainer, 0.9)
         property color colPrimaryContainerActive: ColorUtils.mix(colors.colPrimaryContainer, colors.colOnPrimaryContainer, 0.8)
         property color colOnPrimaryContainer: m3colors.m3onPrimaryContainer
@@ -174,17 +180,17 @@ Singleton {
         property color colSecondaryHover: ColorUtils.mix(m3colors.m3secondary, colLayer1Hover, 0.85)
         property color colSecondaryActive: ColorUtils.mix(m3colors.m3secondary, colLayer1Active, 0.4)
         property color colOnSecondary: m3colors.m3onSecondary
-        property color colSecondaryContainer: m3colors.m3secondaryContainer
-        property color colSecondaryContainerHover: ColorUtils.mix(m3colors.m3secondaryContainer, m3colors.m3onSecondaryContainer, 0.90)
-        property color colSecondaryContainerActive: ColorUtils.mix(m3colors.m3secondaryContainer, m3colors.m3onSecondaryContainer, 0.54)
+        property color colSecondaryContainer: softenForOled(m3colors.m3secondaryContainer)
+        property color colSecondaryContainerHover: ColorUtils.mix(colors.colSecondaryContainer, m3colors.m3onSecondaryContainer, 0.90)
+        property color colSecondaryContainerActive: ColorUtils.mix(colors.colSecondaryContainer, m3colors.m3onSecondaryContainer, 0.54)
         property color colOnSecondaryContainer: m3colors.m3onSecondaryContainer
         // Tertiary
         property color colTertiary: m3colors.m3tertiary
         property color colTertiaryHover: ColorUtils.mix(m3colors.m3tertiary, colLayer1Hover, 0.85)
         property color colTertiaryActive: ColorUtils.mix(m3colors.m3tertiary, colLayer1Active, 0.4)
-        property color colTertiaryContainer: m3colors.m3tertiaryContainer
-        property color colTertiaryContainerHover: ColorUtils.mix(m3colors.m3tertiaryContainer, m3colors.m3onTertiaryContainer, 0.90)
-        property color colTertiaryContainerActive: ColorUtils.mix(m3colors.m3tertiaryContainer, colLayer1Active, 0.54)
+        property color colTertiaryContainer: softenForOled(m3colors.m3tertiaryContainer)
+        property color colTertiaryContainerHover: ColorUtils.mix(colors.colTertiaryContainer, m3colors.m3onTertiaryContainer, 0.90)
+        property color colTertiaryContainerActive: ColorUtils.mix(colors.colTertiaryContainer, colLayer1Active, 0.54)
         property color colOnTertiary: m3colors.m3onTertiary
         property color colOnTertiaryContainer: m3colors.m3onTertiaryContainer
         // Surface
@@ -232,7 +238,7 @@ Singleton {
             property string main: Config.options.appearance.fonts.main
             property string numbers: Config.options.appearance.fonts.numbers
             property string title: Config.options.appearance.fonts.title
-            property string iconMaterial: "Material Symbols Rounded"
+            property string iconMaterial: "Material Symbols Lite"
             property string iconNerd: Config.options.appearance.fonts.iconNerd
             property string monospace: Config.options.appearance.fonts.monospace
             property string reading: Config.options.appearance.fonts.reading
@@ -435,7 +441,7 @@ Singleton {
     sizes: QtObject {
         property real baseBarHeight: 40
         property real barHeight: Config.options.bar.cornerStyle === 1 ? 
-            (baseBarHeight + root.sizes.hyprlandGapsOut * 2) : (Config.options.bar.cornerStyle === 4 || Config.options.bar.cornerStyle === 5) ? baseBarHeight + 4 : baseBarHeight
+            (baseBarHeight + root.sizes.hyprlandGapsOut * 2) : (Config.options.bar.cornerStyle === 4 || Config.options.bar.cornerStyle === 5 || Config.options.bar.cornerStyle === 6) ? baseBarHeight + 4 : baseBarHeight
         property real barCenterSideModuleWidth: Config.options?.bar.verbose ? 360 : 140
         property real barCenterSideModuleWidthShortened: 280
         property real barCenterSideModuleWidthHellaShortened: 190

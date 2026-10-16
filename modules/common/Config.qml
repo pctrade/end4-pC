@@ -106,6 +106,7 @@ Singleton {
             }
 
             property JsonObject appearance: JsonObject {
+                property string uiBackground: "themed"
                 property bool extraBackgroundTint: true
                 property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen
                 property JsonObject fonts: JsonObject {
@@ -159,6 +160,7 @@ Singleton {
                 property string descriptionText: "::distro::"
                 property string displayName: ""
                 property bool onlinePresets: false
+                property bool uploadGuideSeen: false
 
             }
 
@@ -239,6 +241,7 @@ Singleton {
             property JsonObject settings: JsonObject {
                 property string style: "default" // default - minimal - dashboard
                 property real borderSize: 1
+                property real animationSpeed: 1
                 property string borderColor: "layer0Border"
                 property list<string> collapsedSections: []
             }
@@ -265,6 +268,7 @@ Singleton {
                     property bool blurWidgets: false
                     property real blurRadius: 32
                     property bool shadow: true
+                    property list<string> menuHidden: []
                     property JsonObject clock: JsonObject {
                         property bool enable: true
                         property bool showOnlyWhenLocked: false
@@ -272,9 +276,9 @@ Singleton {
                         property real x: 100
                         property real y: 100
                         property real z: 0
-                        property string style: "cookie"        // Options: "cookie", "digital"
+                        property string style: "cookie"        // Options: "cookie", "digital", "daily", "pixel"
                         property string color: ""
-                        property string styleLocked: "cookie"  // Options: "cookie", "digital"
+                        property string styleLocked: "cookie"  // Options: "cookie", "digital", "daily", "pixel"
                         property JsonObject cookie: JsonObject {
                             property bool aiStyling: false
                             property int sides: 14
@@ -301,6 +305,9 @@ Singleton {
                                 property real size: 90
                                 property real roundness: 0
                             }
+                        }
+                        property JsonObject daily: JsonObject {
+                            property string variant: "badge" // Options: "badge", "morning", "script", "bold"
                         }
                         property JsonObject pixel: JsonObject {
                             property string orientation: "vertical"
@@ -398,6 +405,16 @@ Singleton {
                         property real size: 200
                     }
 
+                    property JsonObject imageCard: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real z: 0
+                        property string path: ""
+                        property string sizeMode: "1x2"
+                    }
+
                     property JsonObject sticker: JsonObject {
                         property bool enable: false
                         property list<var> items: [] // if someone sees this and wants to add more stickers, make a PR too lazy 
@@ -457,6 +474,10 @@ Singleton {
                         property bool shadow: true
                     }
                 }
+                property JsonObject liveWallpaper: JsonObject {
+                    property bool pauseOnBattery: false // Pause as soon as the charger is out
+                    property real pauseBelowPercent: 0 // Or only under this charge, 0 to ignore
+                }
                 property list<string> screenList: [] 
                 property string wallpaperPath: ""
                 property bool centeredWallpaper: false
@@ -495,7 +516,7 @@ Singleton {
                 property bool followFrameColor: false
                 property bool centerOnlyReserveFrame: false
                 property bool bottom: false // Instead of top
-                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle | 3: M3 | 4: M3 Hug | 5: Panel
+                property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle | 3: M3 | 4: M3 Hug | 5: Panel | 6: Split Hug
                 property string groupColor: "layer1"
                 property bool floatStyleShadow: true // Show shadow behind bar when cornerStyle == 1 (Float)
                 property string borderless: "pills"
@@ -540,6 +561,11 @@ Singleton {
                 }
                 
                 property list<string> screenList: [] // List of names, like "eDP-1", find out with 'hyprctl monitors' command
+                property JsonObject battery: JsonObject {
+                    property string style: "bar"
+                    property bool showPercentage: true
+                    property bool showCharging: true
+                }
                 property JsonObject utilButtons: JsonObject {
                     property bool showScreenSnip: true
                     property bool showColorPicker: true
@@ -578,6 +604,7 @@ Singleton {
                 property JsonObject tooltips: JsonObject {
                     property bool enable: true
                     property bool clickToShow: false
+                    property string style: "default"
                 }
                 property JsonObject media: JsonObject {
                     property string preferredPlayer: ""
@@ -617,11 +644,24 @@ Singleton {
             property JsonObject dock: JsonObject {
                 property bool enable: false
                 property bool showBackground: true
+                property string style: "float" // float | hug
+                property string position: "bottom" // bottom | left | right
+                property bool showBorder: true
+                property real borderWidth: 1
+                property string borderColor: "layer0Border"
+                property string backgroundColor: "layer0"
+                property real radius: 23
+                property bool followFrameColor: false
+                property bool showPreviews: true
+                property real iconSize: 33
+                property real iconSpacing: 0
                 property bool showPinButton: true
                 property bool showAppsButton: true
                 property bool showMedia: true
                 property bool monochromeIcons: true
                 property real height: 60
+                property real magnification: 1.2
+                property bool magnify: false
                 property real hoverRegionHeight: 2
                 property bool pinnedOnStartup: false
                 property bool hoverToReveal: true // When false, only reveals on empty workspace
@@ -815,14 +855,30 @@ Singleton {
             }
 
             property JsonObject sidebar: JsonObject {
+                property list<string> sectionOrder: ["banner", "quickToggles", "sliders", "media", "notifications", "bottom"]
                 property bool banner: true
                 property bool bottomGroup: true
                 property bool mediaPlayer: false
                 property string bannerImage: ""
+                property real bannerFocusX: 0.5
+                property real bannerFocusY: 0.5
                 property bool keepRightSidebarLoaded: true
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
+                }
+                property JsonObject football: JsonObject {
+                    property bool enable: false
+                    property int legs: 4
+                    property list<string> markets: ["result", "goals", "corners"]
+                    property bool alerts: false
+                    property string alertsScope: "parlay"
+                    property bool goalSound: false
+                    property string goalSoundPath: ""
+                    property bool cornerSound: false
+                    property string cornerSoundPath: ""
+                    property int soundVolume: 100
+                    property bool notify: true
                 }
                 property JsonObject media: JsonObject {
                     property bool enable: true

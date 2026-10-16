@@ -12,6 +12,14 @@ Item {
     property bool paintBackground: true
     property color bgColor: Appearance.colors.colPrimaryContainer
     property string widgetName: ""
+    property string morphEdge: ""
+    property bool morphStartFlat: false
+    property bool morphEndFlat: false
+    readonly property alias box: background
+    readonly property bool flatTL: (morphEdge === "top" || morphEdge === "left") && morphStartFlat
+    readonly property bool flatTR: (morphEdge === "top" && morphEndFlat) || (morphEdge === "right" && morphStartFlat)
+    readonly property bool flatBL: (morphEdge === "bottom" && morphStartFlat) || (morphEdge === "left" && morphEndFlat)
+    readonly property bool flatBR: (morphEdge === "bottom" || morphEdge === "right") && morphEndFlat
 
     readonly property string borderlessMode: Config.options?.bar.borderless ?? "pills"
     readonly property bool styleEditable: !root.isMaterial && root.paintBackground && root.widgetName !== ""
@@ -141,7 +149,9 @@ Item {
             leftMargin: root.vertical ? 4 : 0
             rightMargin: root.vertical ? 4 : 0
         }
-        color: !root.paintBackground
+        color: root.morphEdge !== ""
+            ? Appearance.colors.colUiPopupBackground
+            : !root.paintBackground
             ? "transparent"
             : root.resolveColorName(root.style.color) !== undefined
                 ? root.resolveColorName(root.style.color)
@@ -152,18 +162,19 @@ Item {
                     : (Config.options?.bar.borderless === "transparent"
                         ? "transparent"
                         : Config.options.bar.cornerStyle === 2 || (Config.options?.bar.borderless === "segmented" && !Config.options.bar.showBackground)
-                            ? Appearance.colors.colLayer0
+                            ? Appearance.colors.colUiBackground
                             : root.resolvedGroupColor)
 
-        border.width: root.style.borderWidth ?? (root.paintBackground && root.isSegmented && !root.isMaterial ? 1 : 0)
+        border.width: root.morphEdge !== "" ? 0 : root.style.borderWidth ?? (root.paintBackground && root.isSegmented && !root.isMaterial ? 1 : 0)
         border.color: root.resolveColorName(root.style.borderColor) ?? Appearance.colors.colLayer0Border
 
-        topLeftRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.startRadius))
-        bottomLeftRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
-        topRightRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
-        bottomRightRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.endRadius))
+        topLeftRadius: root.flatTL ? 0 : root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.startRadius))
+        bottomLeftRadius: root.flatBL ? 0 : root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
+        topRightRadius: root.flatTR ? 0 : root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
+        bottomRightRadius: root.flatBR ? 0 : root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.endRadius))
 
         Behavior on color {
+            enabled: root.morphEdge === ""
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
     }

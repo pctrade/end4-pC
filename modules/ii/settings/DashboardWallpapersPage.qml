@@ -13,6 +13,7 @@ Item {
     required property Item pager
     property int staggerMs: 45
     property int selectedIndex: 0
+    property string target: "desktop"
     DashboardSettingsCatalog {
         id: catalog
     }
@@ -26,8 +27,6 @@ Item {
         grid.positionViewAtIndex(selectedIndex, GridView.Contain);
         applyTo(path);
     }
-
-    readonly property var bothControl: ({ type: "switch", get: () => root.synced, set: v => root.setSynced(v) })
 
     readonly property string query: pager.searchQuery ?? ""
     readonly property var paths: Wallpapers.wallpapers.filter(p => Images.isValidImageByName(p))
@@ -52,6 +51,7 @@ Item {
 
     function applyTo(path) {
         if (synced) applyBoth(path);
+        else if (target === "lock") applyLock(path);
         else applyDesktop(path);
     }
 
@@ -77,7 +77,7 @@ Item {
     }
 
     readonly property int tileWidth: Math.max(1, Math.floor(width / columns) - 12)
-    readonly property int tileHeight: Math.max(1, Math.round(Math.floor(width / columns) * 0.64) - 12)
+    readonly property int tileHeight: Math.max(1, Math.round(Math.floor(width / columns) * 0.76) - 12)
 
     property bool ready: false
 
@@ -124,20 +124,21 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 136
-            Layout.minimumHeight: 136
-            Layout.maximumHeight: 136
+            Layout.preferredHeight: 290
+            Layout.minimumHeight: 290
+            Layout.maximumHeight: 290
             spacing: 12
 
-            DashboardToggleCard {
+            DashboardWallpaperPreviewCard {
                 Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.horizontalStretchFactor: 10
+                Layout.preferredWidth: 5
                 Layout.fillHeight: true
-                override: root.bothControl
-                title: Translation.tr("Use for both")
-                icon: "sync"
-                tileShape: MaterialShape.Shape.Cookie6Sided
+                desktopPath: root.desktopPath
+                lockPath: root.synced ? root.desktopPath : root.lockPath
+                synced: root.synced
+                target: root.target
+                onTargetSelected: value => root.target = value
+                onSyncToggled: value => root.setSynced(value)
                 pager: root.pager
                 staggerMs: root.staggerMs
                 animIndex: 0
@@ -145,52 +146,59 @@ Item {
                 travelY: 0
             }
 
-            DashboardWallpaperToolsCard {
+            GridLayout {
                 Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.horizontalStretchFactor: 16
+                Layout.preferredWidth: 6
                 Layout.fillHeight: true
-                title: Translation.tr("Wallpaper tools")
-                pager: root.pager
-                staggerMs: root.staggerMs
-                animIndex: 1
-                travelX: 0
-                travelY: -120
-                onRandomRequested: root.randomWallpaper()
-                onFoldersRequested: GlobalStates.wallpaperSelectorOpen = true
-            }
+                columns: 2
+                rowSpacing: 12
+                columnSpacing: 12
 
-            DashboardSpinCard {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.horizontalStretchFactor: 10
-                Layout.fillHeight: true
-                controlKey: "desktop:Wallpaper change interval (min)"
-                title: Translation.tr("Change every (min)")
-                icon: "timer"
-                tileShape: MaterialShape.Shape.Gem
-                pager: root.pager
-                staggerMs: root.staggerMs
-                animIndex: 2
-                travelX: 0
-                travelY: -120
-            }
+                DashboardWallpaperToolsCard {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: 1
+                    title: Translation.tr("Wallpaper tools")
+                    pager: root.pager
+                    staggerMs: root.staggerMs
+                    animIndex: 1
+                    travelX: 0
+                    travelY: -120
+                    onRandomRequested: root.randomWallpaper()
+                    onFoldersRequested: GlobalStates.wallpaperSelectorOpen = true
+                }
 
-            DashboardComboCard {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.horizontalStretchFactor: 16
-                Layout.fillHeight: true
-                controlKey: "desktop:Transitions"
-                override: catalog.controlFor("desktop:Transitions")
-                title: Translation.tr("Transition")
-                icon: "animation"
-                tileShape: MaterialShape.Shape.Puffy
-                pager: root.pager
-                staggerMs: root.staggerMs
-                animIndex: 3
-                travelX: 200
-                travelY: 0
+                DashboardSpinCard {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: 1
+                    controlKey: "desktop:Wallpaper change interval (min)"
+                    title: Translation.tr("Change every (min)")
+                    icon: "timer"
+                    tileShape: MaterialShape.Shape.Gem
+                    pager: root.pager
+                    staggerMs: root.staggerMs
+                    animIndex: 2
+                    travelX: 0
+                    travelY: -120
+                }
+
+                DashboardComboCard {
+                    Layout.fillWidth: true
+                    Layout.columnSpan: 2
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: 1
+                    controlKey: "desktop:Transitions"
+                    override: catalog.controlFor("desktop:Transitions")
+                    title: Translation.tr("Transition")
+                    icon: "animation"
+                    tileShape: MaterialShape.Shape.Puffy
+                    pager: root.pager
+                    staggerMs: root.staggerMs
+                    animIndex: 3
+                    travelX: 200
+                    travelY: 0
+                }
             }
         }
 
@@ -201,7 +209,7 @@ Item {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             cellWidth: Math.floor(width / root.columns)
-            cellHeight: Math.round(cellWidth * 0.64)
+            cellHeight: Math.round(cellWidth * 0.76)
             model: root.ready ? root.paths : []
             cacheBuffer: 0
 
@@ -318,60 +326,6 @@ Item {
                                 root.selectedIndex = cell.index;
                                 root.pager.forceActiveFocus();
                                 root.applyTo(cell.modelData);
-                            }
-                        }
-
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 10
-                            spacing: 6
-                            visible: !root.synced && opacity > 0.01
-                            opacity: hover.containsMouse || cell.selected ? 1 : 0
-
-                            Behavior on opacity {
-                                NumberAnimation { duration: 150 }
-                            }
-
-                            Repeater {
-                                model: [
-                                    { mode: "desktop", icon: "desktop_windows", label: Translation.tr("Desktop") },
-                                    { mode: "lock", icon: "lock", label: Translation.tr("Lock screen") }
-                                ]
-
-                                delegate: RippleButton {
-                                    id: action
-                                    required property var modelData
-
-                                    implicitHeight: 34
-                                    horizontalPadding: 14
-                                    buttonRadius: 17
-                                    colBackground: Qt.rgba(0, 0, 0, 0.55)
-                                    colBackgroundHover: Appearance.colors.colPrimary
-                                    colRipple: Qt.rgba(1, 1, 1, 0.3)
-                                    downAction: () => {
-                                        const path = cell.modelData;
-                                        const mode = modelData.mode;
-                                        root.selectedIndex = cell.index;
-                                        Qt.callLater(() => {
-                                            if (mode === "lock") root.applyLock(path);
-                                            else root.applyDesktop(path);
-                                        });
-                                    }
-                                    contentItem: RowLayout {
-                                        spacing: 6
-                                        MaterialSymbol {
-                                            text: action.modelData.icon
-                                            iconSize: 16
-                                            color: action.hovered ? Appearance.colors.colOnPrimary : "white"
-                                        }
-                                        StyledText {
-                                            text: action.modelData.label
-                                            font.pixelSize: Appearance.font.pixelSize.smaller
-                                            color: action.hovered ? Appearance.colors.colOnPrimary : "white"
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

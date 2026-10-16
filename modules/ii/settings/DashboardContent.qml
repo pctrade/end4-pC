@@ -13,10 +13,10 @@ Item {
 
     signal pageExitRequested()
 
-    property int currentPage: 0
-    property int pendingPage: 0
-    property int staggerMs: 45
-    property var pageBoxes: buildPage(0)
+    property int currentPage: GlobalStates.dashboardPage
+    property int pendingPage: GlobalStates.dashboardPage
+    property int staggerMs: 45 / Math.max(0.5, Config.options.settings.animationSpeed ?? 1)
+    property var pageBoxes: buildPage(GlobalStates.dashboardPage)
     property int selectedIndex: 0
     property bool searchOpen: false
     property var thumbsRequested: ({})
@@ -29,6 +29,24 @@ Item {
     readonly property int mediaPage: 3
     readonly property bool mediaVisible: currentPage === mediaPage && mediaState.displayedArtFilePath !== ""
     readonly property var mediaColors: mediaVisible ? mediaState.blendedColors : Appearance.colors
+
+    QtObject {
+        id: ui
+
+        readonly property var blended: mediaState.blendedColors
+        readonly property bool media: root.mediaVisible && root.pendingPage === root.mediaPage
+
+        readonly property color surface: media ? blended.colLayer1 : Appearance.colors.colLayer1
+        readonly property color fgSurface: media ? blended.colOnLayer1 : Appearance.colors.colOnLayer1
+        readonly property color subtext: media ? blended.colSubtext : Appearance.colors.colSubtext
+        readonly property color hover: media ? blended.colSecondaryContainerHover : Appearance.colors.colLayer1Hover
+        readonly property color accent: media ? blended.colPrimary : Appearance.colors.colPrimary
+        readonly property color accentHover: media ? blended.colPrimaryHover : Appearance.colors.colPrimaryHover
+        readonly property color accentActive: media ? blended.colPrimaryActive : Appearance.colors.colPrimaryActive
+        readonly property color fgAccent: media ? blended.colOnPrimary : Appearance.colors.colOnPrimary
+        readonly property color container: media ? blended.colSecondaryContainer : Appearance.colors.colPrimaryContainer
+        readonly property color fgContainer: media ? blended.colOnSecondaryContainer : Appearance.colors.colOnPrimaryContainer
+    }
     focus: true
 
     DashboardMediaState {
@@ -79,7 +97,13 @@ Item {
             Wallpapers.apply(box.wallpaper);
     }
 
+    property bool editingText: false
+
     Keys.onPressed: event => {
+        if (editingText) {
+            event.accepted = true;
+            return;
+        }
         if (event.key === Qt.Key_Escape) {
             if (currentPage === presetsPage && presetsLoader.item?.selected) presetsLoader.item.back();
             else GlobalStates.settingsOpen = false;
@@ -100,8 +124,8 @@ Item {
             wallpapersLoader.item?.moveSelection(dx, dy);
         } else if (currentPage === wallpapersPage && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)) {
             wallpapersLoader.item?.activate();
-        } else if (currentPage === wallpapersPage && event.key === Qt.Key_L) {
-            wallpapersLoader.item?.activateLock();
+        } else if (currentPage === wallpapersPage && event.key === Qt.Key_L && wallpapersLoader.item && !wallpapersLoader.item.synced) {
+            wallpapersLoader.item.activateLock();
         } else if (currentPage === settingsPage && (event.key === Qt.Key_Up || event.key === Qt.Key_Down)) {
             settingsLoader.item?.scrollBy(event.key === Qt.Key_Down ? 120 : -120);
         } else if (currentPage === settingsPage && (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown)) {
@@ -120,6 +144,11 @@ Item {
             goToPage((pendingPage + 1) % pageNames.length);
         } else if (event.key === Qt.Key_Backtab) {
             goToPage((pendingPage - 1 + pageNames.length) % pageNames.length);
+        } else if (currentPage === homePage && homeLoader.item?.typing) {
+            return;
+        } else if ((isSearchablePage || currentPage === homePage) && typedCharacter(event)) {
+            typeIntoSearch(event.text);
+            if (currentPage === homePage) goToPage(settingsPage);
         } else {
             return;
         }
@@ -186,6 +215,21 @@ Item {
         settingsLoader.item?.scrollBy(delta);
     }
 
+    readonly property bool isSearchablePage: currentPage === settingsPage || currentPage === wallpapersPage || currentPage === presetsPage
+
+    function typedCharacter(event) {
+        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return false;
+        return event.text.length === 1 && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127;
+    }
+
+    function typeIntoSearch(character) {
+        const previous = searchOpen ? searchInput.text : "";
+        searchOpen = true;
+        searchInput.text = previous + character;
+        searchInput.cursorPosition = searchInput.text.length;
+        Qt.callLater(() => searchInput.forceActiveFocus());
+    }
+
     function openSearch() {
         searchOpen = true;
         if (pendingPage !== settingsPage && pendingPage !== wallpapersPage && pendingPage !== presetsPage) goToPage(settingsPage);
@@ -200,6 +244,7 @@ Item {
 
     function goToPage(index) {
         if (index === currentPage || switchTimer.running) return;
+        if (currentPage !== homePage && searchInput.text !== "") searchInput.text = "";
         pendingPage = index;
         pageExitRequested();
         forceActiveFocus();
@@ -208,9 +253,10 @@ Item {
 
     Timer {
         id: switchTimer
-        interval: 320 + Math.max(root.pageBoxes.length, 6) * (root.staggerMs - 4)
+        interval: (320 / Math.max(0.5, Config.options.settings.animationSpeed ?? 1)) + Math.max(root.pageBoxes.length, 6) * (root.staggerMs - 4)
         onTriggered: {
             root.currentPage = root.pendingPage;
+            GlobalStates.dashboardPage = root.currentPage;
             root.selectedIndex = 0;
             root.pageBoxes = root.buildPage(root.currentPage);
         }
@@ -239,8 +285,8 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "black"
-        opacity: root.mediaVisible ? 0.5 : 0
+        color: mediaState.blendedColors.colLayer0
+        opacity: root.mediaVisible ? 0.6 : 0
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
     }
 
@@ -250,6 +296,7 @@ Item {
         spacing: 12
 
         Item {
+            id: headerBar
             Layout.fillWidth: true
             implicitHeight: 56
 
@@ -257,9 +304,9 @@ Item {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 radius: height / 2
-                color: Appearance.colors.colLayer1
+                color: ui.surface
                 border.width: 2
-                border.color: Appearance.colors.colPrimary
+                border.color: ui.accent
                 implicitHeight: 44
                 implicitWidth: distroPillRow.implicitWidth + 28
 
@@ -277,13 +324,16 @@ Item {
                         text: SystemInfo.distroName
                         font.pixelSize: Appearance.font.pixelSize.normal
                         font.weight: Font.Medium
-                        color: Appearance.colors.colOnLayer1
+                        color: ui.fgSurface
                     }
                 }
             }
 
             Toolbar {
+                id: navToolbar
                 anchors.centerIn: parent
+                colBackground: ui.surface
+                outerShadow: true
 
                 Repeater {
                     model: root.pageNames
@@ -298,9 +348,10 @@ Item {
                         buttonRadius: height / 2
                         toggled: root.pendingPage === index
                         onClicked: root.goToPage(index)
-                        colBackgroundToggled: Appearance.colors.colPrimary
-                        colBackgroundToggledHover: Appearance.colors.colPrimaryHover
-                        colRippleToggled: Appearance.colors.colPrimaryActive
+                        colBackgroundToggled: ui.accent
+                        colBackgroundToggledHover: ui.accentHover
+                        colRippleToggled: ui.accentActive
+                        colBackgroundHover: ui.hover
 
                         contentItem: RowLayout {
                             id: navContentRow
@@ -310,13 +361,13 @@ Item {
                             MaterialSymbol {
                                 text: navBtn.modelData.icon
                                 iconSize: Appearance.font.pixelSize.larger
-                                color: navBtn.toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                color: navBtn.toggled ? ui.fgAccent : ui.fgSurface
                                 fill: navBtn.toggled ? 1 : 0
                             }
 
                             StyledText {
                                 text: navBtn.modelData.name
-                                color: navBtn.toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                color: navBtn.toggled ? ui.fgAccent : ui.fgSurface
                                 visible: navBtn.toggled
                             }
                         }
@@ -332,11 +383,11 @@ Item {
                 Rectangle {
                     id: searchPill
                     implicitHeight: 44
-                    implicitWidth: root.searchOpen ? 280 : 44
+                    implicitWidth: root.searchOpen ? Math.max(120, Math.min(220, (headerBar.width - navToolbar.width) / 2 - 12 - 108)) : 44
                     radius: height / 2
-                    color: Appearance.colors.colLayer1
+                    color: ui.surface
                     border.width: searchInput.activeFocus ? 2 : 0
-                    border.color: Appearance.colors.colPrimary
+                    border.color: ui.accent
                     clip: true
 
                     Behavior on implicitWidth {
@@ -357,7 +408,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "search"
                                 iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
+                                color: ui.fgSurface
                             }
                         }
                     }
@@ -372,8 +423,8 @@ Item {
                         clip: true
                         font.pixelSize: Appearance.font.pixelSize.normal
                         font.family: Appearance.font.family.main
-                        color: Appearance.colors.colOnLayer1
-                        selectionColor: Appearance.colors.colPrimary
+                        color: ui.fgSurface
+                        selectionColor: ui.accent
                         onTextChanged: root.searchQuery = text
                         Keys.onEscapePressed: {
                             if (text !== "") text = "";
@@ -391,7 +442,7 @@ Item {
                             visible: searchInput.text === ""
                             text: root.pendingPage === root.presetsPage ? Translation.tr("Search presets") : root.pendingPage === root.wallpapersPage ? Translation.tr("Search wallpapers") : Translation.tr("Search settings")
                             font.pixelSize: Appearance.font.pixelSize.normal
-                            color: Appearance.colors.colSubtext
+                            color: ui.subtext
                         }
                     }
                 }
@@ -405,7 +456,8 @@ Item {
                         implicitWidth: 44
                         implicitHeight: 44
                         buttonRadius: height / 2
-                        colBackground: Appearance.colors.colLayer1
+                        colBackground: ui.surface
+                        colBackgroundHover: ui.hover
                         onClicked: {
                             if (modelData === "notifications")
                                 GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen;
@@ -415,7 +467,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: modelData
                                 iconSize: Appearance.font.pixelSize.larger
-                                color: Appearance.colors.colOnLayer1
+                                color: ui.fgSurface
                             }
 
                             Rectangle {
@@ -447,7 +499,7 @@ Item {
                     width: 44
                     height: 44
                     radius: width / 2
-                    color: Appearance.colors.colPrimaryContainer
+                    color: ui.container
 
                     Image {
                         id: avatarImage
@@ -472,8 +524,34 @@ Item {
                         anchors.centerIn: parent
                         text: "account_circle"
                         iconSize: 30
-                        color: Appearance.colors.colOnPrimaryContainer
+                        color: ui.fgContainer
                         visible: avatarImage.status !== Image.Ready
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: avatarRect.radius
+                        color: Qt.rgba(0, 0, 0, 0.55)
+                        opacity: avatarArea.containsMouse ? 1 : 0
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+                        }
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "close"
+                            iconSize: 24
+                            color: "white"
+                        }
+                    }
+
+                    MouseArea {
+                        id: avatarArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: GlobalStates.settingsOpen = false
                     }
                 }
             }
@@ -613,6 +691,7 @@ Item {
         }
 
         Loader {
+            id: homeLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: active

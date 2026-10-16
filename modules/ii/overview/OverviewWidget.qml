@@ -81,7 +81,7 @@ Item {
         implicitWidth: workspaceColumnLayout.implicitWidth + padding * 2
         implicitHeight: workspaceColumnLayout.implicitHeight + padding * 2
         radius: root.largeWorkspaceRadius + padding
-        color: Appearance.colors.colBackgroundSurfaceContainer
+        color: Appearance.colors.colUiSurfaceContainer
 
         Column { // Workspaces
             id: workspaceColumnLayout

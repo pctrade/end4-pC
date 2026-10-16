@@ -119,11 +119,9 @@ ContentPage {
         onExited: (code) => {
             page.onlinePresetsLoading = false
             const raw = onlinePresetsListCollector.text
-            console.log("[onlinePresets] curl exit code:", code)
             const statusMatch = raw.match(/HTTP_STATUS:(\d+)\s*$/)
             const httpStatus = statusMatch ? parseInt(statusMatch[1]) : -1
             const body = statusMatch ? raw.slice(0, statusMatch.index) : raw
-            console.log("[onlinePresets] http status:", httpStatus)
             try {
                 const data = JSON.parse(body)
                 if (!Array.isArray(data.tree)) throw new Error("unexpected response: " + JSON.stringify(data))

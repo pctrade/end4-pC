@@ -28,7 +28,7 @@ Item {
             0.8
           )
         : Appearance.colors.colPrimaryContainer
-    property bool downloaded: false
+    property bool downloaded: Boolean(root.artUrl && (root.artUrl.startsWith("data:") || root.artUrl.startsWith("file:/") || root.artUrl.startsWith("/")))
     property list<real> visualizerPoints: []
     property real maxVisualizerValue: 1000
     property int visualizerSmoothing: 2
@@ -38,7 +38,14 @@ Item {
     property bool shapeArt: Config.options.sidebar.media.shapeArt ?? false
     readonly property var artShapeOptions: ["Circle", "Square", "Pill", "Bun", "Cookie12Sided", "Clover4Leaf", "Heart", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Triangle", "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny", "Cookie4Sided", "Cookie6Sided", "Cookie7Sided", "Cookie9Sided", "Ghostish", "Clover8Leaf", "Burst", "SoftBurst", "Boom", "SoftBoom", "Flower", "Puffy", "PuffyDiamond"]
 
-    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    property string displayedArtFilePath: {
+        if (!root.artUrl || root.artUrl.length === 0) return ""
+        if (root.artUrl.startsWith("data:")) return root.artUrl
+        if (root.artUrl.startsWith("file:/")) return root.artUrl
+        if (root.artUrl.startsWith("/")) return "file://" + root.artUrl
+        if (!root.downloaded) return ""
+        return Qt.resolvedUrl(artFilePath)
+    }
 
     Timer {
         running: root.player?.playbackState == MprisPlaybackState.Playing
@@ -50,12 +57,21 @@ Item {
     onArtFilePathChanged: {
         if (!root.artUrl || root.artUrl.length == 0) {
             root.artDominantColor = Appearance.m3colors.m3secondaryContainer
+            root.downloaded = false
             return
         }
-        coverArtDownloader.targetFile = root.artUrl
-        coverArtDownloader.artFilePath = root.artFilePath
-        root.downloaded = false
-        coverArtDownloader.running = true
+        if (root.artUrl.startsWith("data:") || root.artUrl.startsWith("file:/") || root.artUrl.startsWith("/")) {
+            root.downloaded = true
+            return
+        }
+        if (root.artUrl.startsWith("http://") || root.artUrl.startsWith("https://")) {
+            coverArtDownloader.targetFile = root.artUrl
+            coverArtDownloader.artFilePath = root.artFilePath
+            root.downloaded = false
+            coverArtDownloader.running = true
+        } else {
+            root.downloaded = true
+        }
     }
 
     Process {

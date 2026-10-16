@@ -49,6 +49,7 @@ Scope {
                 }
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
+                    || (Config.options.bar.autoHide.enable && GlobalStates.isFrameHovered(barRoot.screen?.name, Config.options.bar.bottom ? "right" : "left"))
                 exclusionMode: ExclusionMode.Ignore
                 property int normalExclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows))
                     ? 0
@@ -95,7 +96,7 @@ Scope {
                         implicitSize: Appearance.rounding.screenRounding
                         color: Config.options.bar.followFrameColor
                             ? Appearance.getColorFromName(Config.options.bar.frameColor)
-                            : Appearance.colors.colLayer0
+                            : Appearance.colors.colUiBackground
                         corner: RoundCorner.CornerEnum.BottomLeft
 
                         states: State {
@@ -125,7 +126,7 @@ Scope {
                         implicitSize: Appearance.rounding.screenRounding
                         color: Config.options.bar.followFrameColor
                             ? Appearance.getColorFromName(Config.options.bar.frameColor)
-                            : Appearance.colors.colLayer0
+                            : Appearance.colors.colUiBackground
                         corner: RoundCorner.CornerEnum.TopLeft
 
                         states: State {
@@ -201,7 +202,7 @@ Scope {
                         }
                         width: Appearance.rounding.screenRounding
                         active: (showBarBackground && Config.options.bar.cornerStyle === 0 && !barContent.centerOnly)
-                             || (Config.options.bar.cornerStyle === 4)
+                             || (Config.options.bar.cornerStyle === 4 || Config.options.bar.cornerStyle === 6)
 
                         states: State {
                             name: "right"
@@ -220,10 +221,10 @@ Scope {
                         sourceComponent: Item {
                             implicitHeight: Appearance.rounding.screenRounding
 
-                            readonly property color decoratorColor: (Config.options.bar.cornerStyle === 4 || showBarBackground)
+                            readonly property color decoratorColor: (Config.options.bar.cornerStyle === 4 || Config.options.bar.cornerStyle === 6 || showBarBackground)
                                 ? (Config.options.bar.followFrameColor && Config.options.bar.frameColor
                                     ? Appearance.getColorFromName(Config.options.bar.frameColor)
-                                    : Appearance.colors.colLayer0)
+                                    : Appearance.colors.colUiBackground)
                                 : "transparent"
 
                             RoundCorner {

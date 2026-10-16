@@ -205,6 +205,7 @@ AbstractBackgroundWidget {
 
                     TextArea {
                         id: editTextArea
+                        ContextMenu.menu: StyledTextEditMenu { editor: editTextArea }
                         anchors.fill: parent
                         anchors.margins: 8
                         text: root.editingText

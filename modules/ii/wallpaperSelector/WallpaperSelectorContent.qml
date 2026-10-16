@@ -144,9 +144,6 @@ MouseArea {
                 root.activeFilterField?.forceActiveFocus();
             }
             event.accepted = true;
-        } else if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_L) {
-            addressBar.focusBreadcrumb();
-            event.accepted = true;
         } else if (event.key === Qt.Key_Slash) {
             root.activeFilterField?.forceActiveFocus();
             event.accepted = true;
@@ -177,7 +174,7 @@ MouseArea {
         focus: true
         border.width: 1
         border.color: Appearance.colors.colLayer0Border
-        color: ColorSchemes.current !== "" ? Qt.rgba(Appearance.colors.colLayer0.r, Appearance.colors.colLayer0.g, Appearance.colors.colLayer0.b, 1) : Appearance.colors.colLayer0
+        color: ColorSchemes.current !== "" ? Qt.rgba(Appearance.colors.colUiBackground.r, Appearance.colors.colUiBackground.g, Appearance.colors.colUiBackground.b, 1) : Appearance.colors.colUiBackground
         radius: Appearance.rounding.screenRounding + 5
 
         implicitWidth: gridColumnLayout.implicitWidth
@@ -274,6 +271,8 @@ MouseArea {
                     Toolbar {
                         anchors.centerIn: parent
                         visible: root.source !== "blapples" && root.source !== "naive" && root.source !== "wallhaven"
+                        colBackground: Appearance.colors.colLayer1
+                        outerShadow: true
 
                         Loader {
                             active: root.source === "local"

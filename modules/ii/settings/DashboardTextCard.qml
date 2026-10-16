@@ -61,6 +61,28 @@ DashboardCard {
                 maximumLineCount: 2
                 elide: Text.ElideRight
             }
+
+            MaterialSymbol {
+                text: field.activeFocus ? "check" : "edit"
+                iconSize: 22
+                fill: 1
+                color: Appearance.colors.colPrimary
+
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -8
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (field.activeFocus) {
+                            field.focus = false;
+                            root.pager.forceActiveFocus();
+                        } else {
+                            field.forceActiveFocus();
+                            field.selectAll();
+                        }
+                    }
+                }
+            }
         }
 
         Item { Layout.fillHeight: true }
@@ -72,6 +94,12 @@ DashboardCard {
             color: Qt.rgba(1, 1, 1, 0.12)
             border.width: field.activeFocus ? 2 : 0
             border.color: Appearance.colors.colSecondary
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.IBeamCursor
+                onClicked: field.forceActiveFocus()
+            }
 
             TextInput {
                 id: field
@@ -105,7 +133,5 @@ DashboardCard {
                 }
             }
         }
-
-        Item { Layout.fillHeight: true }
     }
 }

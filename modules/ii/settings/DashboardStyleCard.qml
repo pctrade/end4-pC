@@ -50,6 +50,57 @@ DashboardCard {
                     color: Appearance.colors.colSubtext
                 }
             }
+
+            Item { Layout.fillWidth: true }
+
+            ColumnLayout {
+                visible: Config.options.settings.style === "dashboard"
+                spacing: 2
+
+                StyledText {
+                    Layout.alignment: Qt.AlignRight
+                    text: Translation.tr("Animation speed")
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: Appearance.colors.colSubtext
+                }
+
+                Row {
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 4
+
+                    Repeater {
+                        model: [
+                            { value: 1, label: "1x" },
+                            { value: 1.5, label: "1.5x" },
+                            { value: 2, label: "2x" },
+                            { value: 3, label: "3x" }
+                        ]
+
+                        delegate: RippleButton {
+                            required property var modelData
+                            readonly property bool picked: (Config.options.settings.animationSpeed ?? 1) === modelData.value
+
+                            implicitWidth: 44
+                            implicitHeight: 28
+                            buttonRadius: 14
+                            colBackground: picked ? Appearance.colors.colPrimary : Appearance.colors.colSecondaryContainer
+                            colBackgroundHover: picked ? Appearance.colors.colPrimaryHover : Appearance.colors.colSecondaryContainerHover
+                            colRipple: picked ? Appearance.colors.colPrimaryActive : Appearance.colors.colSecondaryContainerActive
+                            downAction: () => {
+                                const value = modelData.value;
+                                Qt.callLater(() => { Config.options.settings.animationSpeed = value; });
+                            }
+                            contentItem: StyledText {
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                text: modelData.label
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: picked ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         RowLayout {

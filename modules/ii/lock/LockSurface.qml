@@ -32,6 +32,7 @@ MouseArea {
     }
 
     property var    artUrl:      activePlayer?.trackArtUrl ?? ""
+    readonly property color toolbarColor: Config.options.appearance.uiBackground === "oled" ? "#000000" : Appearance.m3colors.m3surfaceContainer
 
     // Force focus on entry
     function forceFieldFocus() {
@@ -168,6 +169,7 @@ MouseArea {
     // Main toolbar: password box
     Toolbar {
         id: mainIsland
+        colBackground: root.toolbarColor
         anchors {
             horizontalCenter: parent.horizontalCenter
             bottom: parent.bottom
@@ -300,6 +302,7 @@ MouseArea {
     // Left toolbar
     Toolbar {
         id: leftIsland
+        colBackground: root.toolbarColor
         visible: Config.options.lock.showToolbars
         anchors {
             right: mainIsland.left
@@ -367,7 +370,11 @@ MouseArea {
                             anchors.centerIn: parent
                             width: artRect.width
                             height: artRect.height
-                            source: root.artUrl
+                            source: {
+                                if (!root.artUrl || root.artUrl.length === 0) return ""
+                                if (root.artUrl.startsWith("/")) return "file://" + root.artUrl
+                                return root.artUrl
+                            }
                             fillMode: Image.PreserveAspectCrop
                             cache: false
                             antialiasing: true
@@ -487,6 +494,7 @@ MouseArea {
     // Right toolbar
     Toolbar {
         id: rightIsland
+        colBackground: root.toolbarColor
         visible: Config.options.lock.showToolbars
         anchors {
             left: mainIsland.right

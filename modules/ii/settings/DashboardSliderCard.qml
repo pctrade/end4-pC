@@ -76,7 +76,5 @@ DashboardCard {
                 if (root.control) root.control.set(value);
             }
         }
-
-        Item { Layout.fillHeight: true }
     }
 }

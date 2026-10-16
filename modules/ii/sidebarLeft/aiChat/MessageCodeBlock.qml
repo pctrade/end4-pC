@@ -209,6 +209,7 @@ ColumnLayout {
 
                     TextArea { // Code
                         id: codeTextArea
+                        ContextMenu.menu: StyledTextEditMenu { editor: codeTextArea }
                         Layout.fillWidth: true
                         readOnly: !editing
                         selectByMouse: enableMouseSelection || editing

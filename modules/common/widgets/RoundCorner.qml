@@ -7,10 +7,10 @@ Item {
 
     enum CornerEnum { TopLeft, TopRight, BottomLeft, BottomRight }
     property var corner: RoundCorner.CornerEnum.TopLeft
-    property alias leftVisualMargin: shape.anchors.leftMargin
-    property alias topVisualMargin: shape.anchors.topMargin
-    property alias rightVisualMargin: shape.anchors.rightMargin
-    property alias bottomVisualMargin: shape.anchors.bottomMargin
+    property real leftVisualMargin: 0
+    property real topVisualMargin: 0
+    property real rightVisualMargin: 0
+    property real bottomVisualMargin: 0
 
     property int implicitSize: 25
     property color color: "#000000"
@@ -29,12 +29,8 @@ Item {
 
     Shape {
         id: shape
-        anchors {
-            top: root.isTop ? parent.top : undefined
-            bottom: root.isBottom ? parent.bottom : undefined
-            left: root.isLeft ? parent.left : undefined
-            right: root.isRight ? parent.right : undefined
-        }
+        x: root.isLeft ? root.leftVisualMargin : root.width - shape.width - root.rightVisualMargin
+        y: root.isTop ? root.topVisualMargin : root.height - shape.height - root.bottomVisualMargin
         layer.enabled: true
         layer.smooth: true
         preferredRendererType: Shape.CurveRenderer

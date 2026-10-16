@@ -44,9 +44,8 @@ ContentPage {
 
                 IconImage {
                     anchors.centerIn: parent
-                    implicitWidth: 72
-                    implicitHeight: 72
-                    source: SystemAppearance.iconPath(SystemInfo.logo)
+                    implicitSize: 72
+                    source: Quickshell.iconPath(SystemInfo.logo)
                 }
             }
 

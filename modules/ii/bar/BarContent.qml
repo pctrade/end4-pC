@@ -16,9 +16,13 @@ Item {
     readonly property real barPadding: 0
     readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
     readonly property bool isMaterialHug: Config.options.bar.cornerStyle === 4
+    readonly property bool isSplitHug: Config.options.bar.cornerStyle === 6
+    readonly property bool hasTabs: root.isMaterialHug || root.isSplitHug
+    readonly property bool useTabWrapper: root.isMaterial || root.isSplitHug
+    readonly property real splitGroupSpacing: Config.options.bar.borderless === "transparent" ? -7 : Config.options.bar.borderless === "segmented" ? -1 : 2
     readonly property color materialPillBgColor: (Config.options.bar.followFrameColor && Config.options.bar.frameColor)
         ? Appearance.getColorFromName(Config.options.bar.frameColor)
-        : Appearance.colors.colLayer0
+        : Appearance.colors.colUiBackground
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
     readonly property bool isPanel: Config.options.bar.cornerStyle === 5
@@ -79,10 +83,10 @@ Item {
         id: barBackground
         anchors.fill: parent
         anchors.margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
-        color: (!centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial)
+        color: (!centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.useTabWrapper)
             ? (Config.options.bar.followFrameColor
                 ? Appearance.getColorFromName(Config.options.bar.frameColor)
-                : Appearance.colors.colLayer0)
+                : Appearance.colors.colUiBackground)
             : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
@@ -107,7 +111,7 @@ Item {
         implicitSize: Appearance.rounding.screenRounding
         color: Config.options.bar.followFrameColor
             ? Appearance.getColorFromName(Config.options.bar.frameColor)
-            : Appearance.colors.colLayer0
+            : Appearance.colors.colUiBackground
         corner: RoundCorner.CornerEnum.TopRight
 
         states: State {
@@ -139,10 +143,10 @@ Item {
             ? (Config.options.bar.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4)
             : middleRow.implicitWidth + 10
         height: GlobalStates.dynamicIslandEnabled ? parent.height : parent.height - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
-        color: root.isMaterial ? "transparent" : Config.options.bar.followFrameColor 
+        color: root.useTabWrapper ? "transparent" : Config.options.bar.followFrameColor 
             ? Appearance.getColorFromName(Config.options.bar.frameColor)
-            : Appearance.colors.colLayer0
-        radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
+            : Appearance.colors.colUiBackground
+        radius: Config.options.bar.cornerStyle === 1 || root.useTabWrapper ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
@@ -159,7 +163,7 @@ Item {
         implicitSize: Appearance.rounding.screenRounding
         color: Config.options.bar.followFrameColor
             ? Appearance.getColorFromName(Config.options.bar.frameColor)
-            : Appearance.colors.colLayer0
+            : Appearance.colors.colUiBackground
         corner: RoundCorner.CornerEnum.TopLeft
 
         states: State {
@@ -190,33 +194,33 @@ Item {
         // Left
         Item {
             anchors.left: parent.left
-            anchors.leftMargin: root.isMaterialHug ? 0 : (root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
+            anchors.leftMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug && root.effectiveLeftLayout.length > 0 ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
+            width: root.useTabWrapper ? (leftMaterialPill.width + (root.hasTabs && root.effectiveLeftLayout.length > 0 ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
 
             // Material pill wrapper
             Rectangle {
                 id: leftMaterialPill
-                visible: root.isMaterial && root.effectiveLeftLayout.length > 0
-                anchors.left: root.isMaterialHug ? parent.left : undefined
-                anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
-                anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
-                anchors.centerIn: root.isMaterialHug ? undefined : parent
-                width: leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
-                height: root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight
-                radius: root.isMaterialHug ? 0 : Appearance.rounding.full
+                visible: root.useTabWrapper && root.effectiveLeftLayout.length > 0
+                anchors.left: root.hasTabs ? parent.left : undefined
+                anchors.top: (root.hasTabs && !Config.options.bar.bottom) ? parent.top : undefined
+                anchors.bottom: (root.hasTabs && Config.options.bar.bottom) ? parent.bottom : undefined
+                anchors.centerIn: root.hasTabs ? undefined : parent
+                width: leftMaterialRow.implicitWidth + (root.hasTabs ? 16 : 10)
+                height: root.hasTabs ? parent.height : leftMaterialRow.implicitHeight
+                radius: root.hasTabs ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: root.isMaterialHug ? 0 : radius
-                bottomLeftRadius: root.isMaterialHug ? 0 : radius
-                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: root.hasTabs ? 0 : radius
+                bottomLeftRadius: root.hasTabs ? 0 : radius
+                topRightRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 RowLayout {
                     id: leftMaterialRow
                     anchors.centerIn: parent
-                    spacing: 3
+                    spacing: root.isSplitHug ? root.splitGroupSpacing : 3
 
                     Repeater {
                         model: root.effectiveLeftLayout
@@ -247,7 +251,7 @@ Item {
 
             RoundCorner {
                 id: leftRightOutwardCorner
-                visible: root.isMaterialHug && root.effectiveLeftLayout.length > 0
+                visible: root.hasTabs && root.effectiveLeftLayout.length > 0
                 anchors.left: leftMaterialPill.right
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -259,7 +263,7 @@ Item {
             // Non-material layout
             RowLayout {
                 id: leftRow
-                visible: !root.isMaterial
+                visible: !root.useTabWrapper
                 anchors.fill: parent
                 spacing: Config.options.bar.borderless === "transparent" ? -7
                     : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
@@ -309,7 +313,7 @@ Item {
         Item {
             id: absoluteCenter
             anchors.centerIn: parent
-            width: root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug && root.effectiveMiddleLayout.length > 0 ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
+            width: root.useTabWrapper ? (centerMaterialPill.width + (root.hasTabs && root.effectiveMiddleLayout.length > 0 ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
             height: parent.height
 
             // Dynamic Island — left
@@ -334,7 +338,7 @@ Item {
 
             RoundCorner {
                 id: centerLeftOutwardCorner
-                visible: root.isMaterialHug && root.effectiveMiddleLayout.length > 0
+                visible: root.hasTabs && root.effectiveMiddleLayout.length > 0
                 anchors.right: centerMaterialPill.left
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -346,22 +350,22 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
-                visible: root.isMaterial && root.effectiveMiddleLayout.length > 0
+                visible: root.useTabWrapper && root.effectiveMiddleLayout.length > 0
                 anchors.centerIn: parent
-                width: centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
-                height: root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight 
-                radius: root.isMaterialHug ? 0 : Appearance.rounding.full
+                width: centerMaterialRow.implicitWidth + (root.hasTabs ? 16 : 10)
+                height: root.hasTabs ? parent.height : centerMaterialRow.implicitHeight 
+                radius: root.hasTabs ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topRightRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomLeftRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 RowLayout {
                     id: centerMaterialRow
                     anchors.centerIn: parent
-                    spacing: 3
+                    spacing: root.isSplitHug ? root.splitGroupSpacing : 3
 
                     Repeater {
                         model: root.effectiveMiddleLayout
@@ -393,7 +397,7 @@ Item {
 
             RoundCorner {
                 id: centerRightOutwardCorner
-                visible: root.isMaterialHug && root.effectiveMiddleLayout.length > 0
+                visible: root.hasTabs && root.effectiveMiddleLayout.length > 0
                 anchors.left: centerMaterialPill.right
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -405,7 +409,7 @@ Item {
             // Non-material layout
             RowLayout {
                 id: middleRow
-                visible: !root.isMaterial
+                visible: !root.useTabWrapper
                 anchors.fill: parent
                 spacing: Config.options.bar.borderless === "transparent" ? -7
                     : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
@@ -454,14 +458,14 @@ Item {
         // Right
         Item {
             anchors.right: parent.right
-            anchors.rightMargin: root.isMaterialHug ? 0 : (root.isMaterial ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
+            anchors.rightMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug && root.effectiveRightLayout.length > 0 ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
+            width: root.useTabWrapper ? (rightMaterialPill.width + (root.hasTabs && root.effectiveRightLayout.length > 0 ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
 
             RoundCorner {
                 id: rightLeftOutwardCorner
-                visible: root.isMaterialHug && root.effectiveRightLayout.length > 0
+                visible: root.hasTabs && root.effectiveRightLayout.length > 0
                 anchors.right: rightMaterialPill.left
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -473,25 +477,25 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: rightMaterialPill
-                visible: root.isMaterial && root.effectiveRightLayout.length > 0
-                anchors.right: root.isMaterialHug ? parent.right : undefined
-                anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
-                anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
-                anchors.centerIn: root.isMaterialHug ? undefined : parent
-                width: rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
-                height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight 
-                radius: root.isMaterialHug ? 0 : Appearance.rounding.full
+                visible: root.useTabWrapper && root.effectiveRightLayout.length > 0
+                anchors.right: root.hasTabs ? parent.right : undefined
+                anchors.top: (root.hasTabs && !Config.options.bar.bottom) ? parent.top : undefined
+                anchors.bottom: (root.hasTabs && Config.options.bar.bottom) ? parent.bottom : undefined
+                anchors.centerIn: root.hasTabs ? undefined : parent
+                width: rightMaterialRow.implicitWidth + (root.hasTabs ? 16 : 10)
+                height: root.hasTabs ? parent.height : rightMaterialRow.implicitHeight 
+                radius: root.hasTabs ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topRightRadius: root.isMaterialHug ? 0 : radius
-                bottomRightRadius: root.isMaterialHug ? 0 : radius
-                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: root.hasTabs ? 0 : radius
+                bottomRightRadius: root.hasTabs ? 0 : radius
+                topLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomLeftRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 RowLayout {
                     id: rightMaterialRow
                     anchors.centerIn: parent
-                    spacing: 3
+                    spacing: root.isSplitHug ? root.splitGroupSpacing : 3
 
                     Repeater {
                         model: root.effectiveRightLayout
@@ -526,7 +530,7 @@ Item {
             // Non-material layout
             RowLayout {
                 id: rightRow
-                visible: !root.isMaterial
+                visible: !root.useTabWrapper
                 anchors.fill: parent
                 spacing: Config.options.bar.borderless === "transparent" ? -7
                     : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3

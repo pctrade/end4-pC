@@ -55,7 +55,6 @@ Singleton {
     }
 
     onLanguageCodeChanged: {
-        print("[Translation] Language changed to", root.languageCode);
         translationFileView.languageCode = root.languageCode;
         generatedTranslationFileView.languageCode = root.languageCode;
         translationFileView.reread();

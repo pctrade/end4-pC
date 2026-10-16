@@ -16,7 +16,7 @@ DashboardCard {
     readonly property var control: override ?? SettingsQuickControls.controls[controlKey] ?? null
     readonly property var currentValue: control ? control.get() : null
 
-    tint: Appearance.colors.colTertiaryContainer
+    tint: Appearance.colors.colLayer1
 
     ColumnLayout {
         anchors.fill: parent
@@ -42,7 +42,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Appearance.font.pixelSize.larger
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnTertiaryContainer
+                color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
             }
         }
@@ -63,7 +63,7 @@ DashboardCard {
 
                     swatchColor: modelData.color
                     selected: root.currentValue === modelData.value
-                    ringColor: Appearance.colors.colOnTertiaryContainer
+                    ringColor: Appearance.colors.colOnLayer1
                     onClicked: {
                         const value = modelData.value;
                         Qt.callLater(() => root.control.set(value));
@@ -71,7 +71,5 @@ DashboardCard {
                 }
             }
         }
-
-        Item { Layout.fillHeight: true }
     }
 }

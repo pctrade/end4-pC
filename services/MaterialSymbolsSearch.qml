@@ -10,27 +10,42 @@ Singleton {
     id: root
 
     // Raw list loaded from JSON: [{name, tags, categories}]
+    // Loaded the first time a search needs it and released after a while,
+    // so the 1.7 MB JSON does not stay parsed in memory for the whole session.
     property var allSymbols: []
+    readonly property int idleReleaseMs: 120000
 
-    // ── Load JSON ─────────────────────────────────────────────────────────
+    function ensureLoaded() {
+        releaseTimer.restart();
+        if (root.allSymbols.length > 0) return;
+        symbolsFile.blockLoading = true;
+        symbolsFile.path = `${Directories.assetsPath}/material_symbols_rounded.json`;
+        try {
+            root.allSymbols = JSON.parse(symbolsFile.text());
+        } catch (e) {
+            console.warn("MaterialSymbolsSearch: failed to parse JSON –", e);
+            root.allSymbols = [];
+        }
+        symbolsFile.path = "";
+    }
+
+    Timer {
+        id: releaseTimer
+        interval: root.idleReleaseMs
+        onTriggered: root.allSymbols = []
+    }
+
     FileView {
         id: symbolsFile
-        path: `${Directories.assetsPath}/material_symbols_rounded.json`
+        path: ""
         watchChanges: false
-        onLoaded: {
-            try {
-                root.allSymbols = JSON.parse(symbolsFile.text());
-            } catch (e) {
-                console.warn("MaterialSymbolsSearch: failed to parse JSON –", e);
-                root.allSymbols = [];
-            }
-        }
     }
 
     // ── Fuzzy search ──────────────────────────────────────────────────────
     // Returns a list of plain strings formatted as:
     //   "<name>  <tag1>, <tag2>, ..."
     function fuzzyQuery(query) {
+        root.ensureLoaded();
         if (!query || query.length === 0)
             return root.allSymbols.slice(0, 30).map(sym => _format(sym));
 

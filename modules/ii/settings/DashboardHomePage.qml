@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import Qt.labs.folderlistmodel
 import Qt5Compat.GraphicalEffects
@@ -20,6 +21,7 @@ Item {
     readonly property string avatarPath: Config.options.profile.avatarPath !== "" && Config.options.profile.avatarPicture !== ""
         ? Config.options.profile.avatarPicture
         : `${FileUtils.trimFileProtocol(Directories.home)}/.face`
+    readonly property bool typing: flip.showBack || tasksCard.adding
     readonly property int pendingTasks: Todo.list.filter(t => !t.done).length
 
     readonly property string greeting: {
@@ -44,11 +46,24 @@ Item {
         onTriggered: root.now = new Date()
     }
 
+    function expandPath(raw) {
+        const path = String(raw ?? "").trim();
+        const home = FileUtils.trimFileProtocol(Directories.home).replace(/\/$/, "");
+        if (path === "") return "";
+        if (path === "~") return home;
+        if (path.startsWith("~/")) return home + path.slice(1);
+        if (path.startsWith("/")) return path;
+        if (path.startsWith("home/")) return "/" + path;
+        return home + "/" + path;
+    }
+
+    readonly property string avatarFolder: expandPath(Config.options.profile.avatarPath)
+
     FolderListModel {
         id: avatarFolderModel
-        folder: Config.options.profile.avatarPath !== "" ? Qt.resolvedUrl(Config.options.profile.avatarPath) : ""
+        folder: root.avatarFolder !== "" ? Qt.resolvedUrl(root.avatarFolder) : ""
         showDirs: false
-        nameFilters: ["*.png", "*.svg", "*.jpg", "*.jpeg", "*.webp"]
+        nameFilters: ["*.png", "*.svg", "*.jpg", "*.jpeg", "*.webp", "*.PNG", "*.JPG", "*.JPEG", "*.WEBP"]
     }
 
     function shiftMonth(delta) {
@@ -406,8 +421,12 @@ Item {
                                                         id: saveTimer
                                                         interval: 800
                                                         onTriggered: {
-                                                            if (fieldBox.modelData.id === "name") Config.options.profile.displayName = fieldInput.text;
-                                                            else Config.options.profile.avatarPath = fieldInput.text;
+                                                            if (fieldBox.modelData.id === "name") {
+                                                                Config.options.profile.displayName = fieldInput.text;
+                                                            } else {
+                                                                const expanded = root.expandPath(fieldInput.text);
+                                                                Config.options.profile.avatarPath = expanded;
+                                                            }
                                                         }
                                                     }
 
@@ -424,9 +443,12 @@ Item {
                                         }
                                     }
 
-                                    Flickable {
+                                    Item {
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
+
+                                    Flickable {
+                                        anchors.fill: parent
                                         clip: true
                                         contentWidth: width
                                         contentHeight: avatarFlow.implicitHeight
@@ -495,6 +517,7 @@ Item {
                                             }
                                         }
 
+                                    }
                                         StyledText {
                                             anchors.centerIn: parent
                                             visible: avatarFolderModel.count === 0
@@ -947,10 +970,10 @@ Item {
                             }
 
                             StyledText {
-                                text: DateTime.time
+                                text: DateTime.use12HourFormat ? DateTime.time.replace(/\s*[ap]\.?\s?m\.?\s*$/i, "") : DateTime.time
                                 color: Appearance.colors.colOnPrimaryContainer
                                 font {
-                                    pixelSize: Math.min(Config.options.background.widgets.clock.digital.font.size * 0.9, clockCard.width / 4.6)
+                                    pixelSize: 56
                                     weight: Config.options.background.widgets.clock.digital.font.weight
                                     family: Config.options.background.widgets.clock.digital.font.family
                                     variableAxes: ({
@@ -958,6 +981,15 @@ Item {
                                         "ROND": Config.options.background.widgets.clock.digital.font.roundness
                                     })
                                 }
+                            }
+
+                            StyledText {
+                                Layout.topMargin: -10
+                                visible: DateTime.use12HourFormat
+                                text: Qt.locale().toString(DateTime.clock.date, "AP")
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                font.weight: Font.Medium
+                                color: Appearance.colors.colPrimary
                             }
                         }
 
@@ -1003,8 +1035,9 @@ Item {
 
                 DashboardCard {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumHeight: tasksContent.implicitHeight + 28
+                    id: tasksCard
+                    property bool adding: false
+                    Layout.preferredHeight: tasksContent.implicitHeight + 28
                     tint: Appearance.colors.colSecondaryContainer
                     pager: root.pager
                     staggerMs: root.staggerMs
@@ -1059,6 +1092,24 @@ Item {
                                 font.weight: Font.Light
                                 color: Appearance.colors.colOnSecondaryContainer
                             }
+
+                            RippleButton {
+                                implicitWidth: 32
+                                implicitHeight: 32
+                                buttonRadius: 16
+                                colBackground: Appearance.colors.colPrimary
+                                colBackgroundHover: Appearance.colors.colPrimaryHover
+                                colRipple: Appearance.colors.colPrimaryActive
+                                downAction: () => Qt.callLater(() => tasksCard.adding = true)
+                                contentItem: Item {
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "add"
+                                        iconSize: 20
+                                        color: Appearance.colors.colOnPrimary
+                                    }
+                                }
+                            }
                         }
 
                         Rectangle {
@@ -1081,9 +1132,7 @@ Item {
 
                         ListView {
                             Layout.fillWidth: true
-                            Layout.fillHeight: true
                             Layout.preferredHeight: 3 * 40 + 2 * 6
-                            Layout.minimumHeight: 3 * 40 + 2 * 6
                             clip: true
                             spacing: 6
                             model: Todo.list.map((t, i) => ({ content: t.content, done: t.done, origIndex: i }))
@@ -1159,6 +1208,116 @@ Item {
                                                 opacity: 0.6
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Item {
+                        id: addOverlay
+                        anchors.fill: parent
+                        visible: opacity > 0
+                        opacity: tasksCard.adding ? 1 : 0
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        }
+
+                        onVisibleChanged: {
+                            if (visible) todoInput.forceActiveFocus();
+                            else todoInput.text = "";
+                        }
+
+                        function submit() {
+                            if (todoInput.text.length === 0) return;
+                            const text = todoInput.text;
+                            tasksCard.adding = false;
+                            Qt.callLater(() => Todo.addTask(text));
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: tasksCard.cardRadius
+                            color: Appearance.colors.colScrim
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: tasksCard.adding = false
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.margins: 14
+                            implicitHeight: addColumn.implicitHeight
+                            height: implicitHeight
+                            radius: Appearance.rounding.normal
+                            color: Appearance.m3colors.m3surfaceContainerHigh
+
+                            ColumnLayout {
+                                id: addColumn
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                StyledText {
+                                    Layout.topMargin: 16
+                                    Layout.leftMargin: 16
+                                    text: Translation.tr("Add task")
+                                    font.pixelSize: Appearance.font.pixelSize.larger
+                                    color: Appearance.m3colors.m3onSurface
+                                }
+
+                                TextField {
+                                    id: todoInput
+                                    ContextMenu.menu: StyledTextEditMenu { editor: todoInput }
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 16
+                                    Layout.rightMargin: 16
+                                    padding: 10
+                                    color: Appearance.m3colors.m3onSurface
+                                    renderType: Text.NativeRendering
+                                    selectedTextColor: Appearance.m3colors.m3onSecondaryContainer
+                                    selectionColor: Appearance.colors.colSecondaryContainer
+                                    placeholderText: Translation.tr("Task description")
+                                    placeholderTextColor: Appearance.m3colors.m3outline
+                                    onAccepted: addOverlay.submit()
+                                    Keys.onEscapePressed: event => {
+                                        tasksCard.adding = false;
+                                        event.accepted = true;
+                                    }
+
+                                    background: Rectangle {
+                                        radius: Appearance.rounding.verysmall
+                                        border.width: 2
+                                        border.color: todoInput.activeFocus ? Appearance.colors.colPrimary : Appearance.m3colors.m3outline
+                                        color: "transparent"
+                                    }
+
+                                    cursorDelegate: Rectangle {
+                                        width: 1
+                                        color: Appearance.colors.colPrimary
+                                        radius: 1
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.bottomMargin: 16
+                                    Layout.leftMargin: 16
+                                    Layout.rightMargin: 16
+                                    Layout.alignment: Qt.AlignRight
+                                    spacing: 5
+
+                                    DialogButton {
+                                        buttonText: Translation.tr("Cancel")
+                                        onClicked: tasksCard.adding = false
+                                    }
+                                    DialogButton {
+                                        buttonText: Translation.tr("Add")
+                                        enabled: todoInput.text.length > 0
+                                        onClicked: addOverlay.submit()
                                     }
                                 }
                             }

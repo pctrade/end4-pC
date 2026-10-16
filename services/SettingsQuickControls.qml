@@ -109,11 +109,13 @@ Singleton {
         "desktop:Clock style": root.optionSelect("background.widgets.clock.style", [
             { displayName: Translation.tr("Digital"), icon: "timer_10", value: "digital" },
             { displayName: Translation.tr("Cookie"), icon: "cookie", value: "cookie" },
+            { displayName: Translation.tr("Daily"), icon: "today", value: "daily" },
             { displayName: Translation.tr("Pixel"), icon: "grid_view", value: "pixel" }
         ]),
         "desktop:Clock style (locked)": root.optionSelect("background.widgets.clock.styleLocked", [
             { displayName: Translation.tr("Digital"), icon: "timer_10", value: "digital" },
             { displayName: Translation.tr("Cookie"), icon: "cookie", value: "cookie" },
+            { displayName: Translation.tr("Daily"), icon: "today", value: "daily" },
             { displayName: Translation.tr("Pixel"), icon: "grid_view", value: "pixel" }
         ]),
         "desktop:Vertical": root.optionSwitch("background.widgets.clock.digital.vertical"),
@@ -169,6 +171,7 @@ Singleton {
         "desktop:Clock/Quote/Enable": root.optionSwitch("background.widgets.clock.quote.enable"),
         "desktop:Follow Clock Font": root.optionSwitch("background.widgets.clock.quote.followClock"),
         "desktop:Custom Image/Enable": root.optionSwitch("background.widgets.customImage.enable"),
+        "desktop:Image card/Enable": root.optionSwitch("background.widgets.imageCard.enable"),
         "desktop:Show alignment grid while dragging": root.optionSwitch("background.showGrid"),
         "desktop:Show snap lines when dropping": root.optionSwitch("background.showSnapLines"),
 
@@ -184,6 +187,16 @@ Singleton {
         "interface:Left Sidebar/Enable": root.optionSwitch("sidebar.media.enable"),
         "interface:Follow Album Colors": root.optionSwitch("sidebar.media.artColors"),
         "interface:Enable Translator": root.optionSwitch("sidebar.translator.enable"),
+        "interface:Enable Football": root.optionSwitch("sidebar.football.enable"),
+        "interface:Football/Alerts": root.optionSwitch("sidebar.football.alerts"),
+        "interface:Football/Scope": root.optionSelect("sidebar.football.alertsScope", [
+            { displayName: Translation.tr("My parlay"), icon: "layers", value: "parlay" },
+            { displayName: Translation.tr("All matches"), icon: "public", value: "all" }
+        ]),
+        "interface:Football/Goal sound": root.optionSwitch("sidebar.football.goalSound"),
+        "interface:Football/Corner sound": root.optionSwitch("sidebar.football.cornerSound"),
+        "interface:Football/Notify": root.optionSwitch("sidebar.football.notify"),
+        "interface:Football/Volume": root.optionSpin("sidebar.football.soundVolume", 0, 100, 5),
         "interface:Banner": root.optionSwitch("sidebar.banner"),
         "interface:Bottom Group": root.optionSwitch("sidebar.bottomGroup"),
         "interface:Right Sidebar/Media Player": root.optionSwitch("sidebar.mediaPlayer"),
@@ -299,6 +312,10 @@ Singleton {
         "bar:Show only title": root.optionSwitch("bar.media.onlyTitle"),
         "bar:Tooltips/Enable": root.optionSwitch("bar.tooltips.enable"),
         "bar:Click to show": root.optionSwitch("bar.tooltips.clickToShow"),
+        "bar:Tooltips/Style": root.optionSelect("bar.tooltips.style", [
+            { displayName: Translation.tr("Default"), icon: "tooltip", value: "default" },
+            { displayName: Translation.tr("Morph"), icon: "join_inner", value: "morph" }
+        ]),
         "bar:Show Frame": root.toggle(
             () => Config.options.bar.showFrame,
             value => {
@@ -312,12 +329,15 @@ Singleton {
         "bar:Workspaces shown": root.optionSpin("bar.workspaces.shown", 1, 30, 1),
         "bar:Polling interval (ms)": root.optionSpin("resources.updateInterval", 100, 10000, 100),
         "bar:Max media width": root.optionSpin("bar.media.maxWidth", 100, 500, 10),
-        "bar:Group style": root.optionSelect("bar.borderless", [
+        "bar:Group style": Object.assign(root.optionSelect("bar.borderless", [
             { displayName: Translation.tr(""), icon: "block", value: "transparent" },
             { displayName: Translation.tr("Pills"), icon: "pill", value: "pills" },
             { displayName: Translation.tr("Separated"), icon: "view_column_2", value: "separated" },
             { displayName: Translation.tr("Segmented"), icon: "tablet", value: "segmented" }
-        ]),
+        ]), {
+            canReset: () => (Config.options.bar.widgetStyles ?? []).length > 0,
+            reset: () => { Config.options.bar.widgetStyles = []; }
+        }),
         "bar:Autohide": root.optionSelect("bar.autoHide.enable", [
             { displayName: Translation.tr("No"), icon: "close", value: false },
             { displayName: Translation.tr("Yes"), icon: "check", value: true }
@@ -348,9 +368,23 @@ Singleton {
             { displayName: Translation.tr("Dots"), icon: "radio_button_checked", value: "dot" },
             { displayName: Translation.tr("Icons"), icon: "interests", value: "icon" }
         ]),
+        "bar:Battery/Style": root.optionSelect("bar.battery.style", [
+            { displayName: "Android", icon: "battery_android_full", value: "bar" },
+            { displayName: Translation.tr("Ring"), icon: "donut_large", value: "ring" },
+            { displayName: Translation.tr("Icon"), icon: "battery_android_6", value: "icon" },
+            { displayName: Translation.tr("Number"), icon: "pin", value: "number" },
+            { displayName: "iOS", icon: "tablet_mac", value: "ios" },
+            { displayName: "macOS", icon: "laptop_mac", value: "macos" },
+            { displayName: "Windows", icon: "desktop_windows", value: "windows" }
+        ]),
+        "bar:Battery/Show percentage": root.optionSwitch("bar.battery.showPercentage"),
+        "bar:Battery/Show charging": root.optionSwitch("bar.battery.showCharging"),
+        "interface:Dock/Magnify": root.optionSwitch("dock.magnify"),
+        "interface:Dock/Magnification": root.optionScaledSpin("dock.magnification", 110, 220, 10, 100),
         "bar:Resources/Style": root.optionSelect("bar.resources.style", [
             { displayName: Translation.tr("Filled"), icon: "incomplete_circle", value: "filled" },
-            { displayName: Translation.tr("Outline"), icon: "circles", value: "outline" }
+            { displayName: Translation.tr("Outline"), icon: "circles", value: "outline" },
+            { displayName: Translation.tr("Text"), icon: "text_fields", value: "text" }
         ]),
         "bar:Bar position": root.select(
             () => (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0),

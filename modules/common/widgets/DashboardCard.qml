@@ -11,6 +11,7 @@ Rectangle {
 
     property Item pager: null
     property int animIndex: 0
+    readonly property real speed: Math.max(0.5, Config.options.settings.animationSpeed ?? 1)
     property int staggerMs: 45
     property real travelX: 0
     property real travelY: 0
@@ -50,10 +51,10 @@ Rectangle {
         id: enterAnim
         PauseAnimation { duration: root.animIndex * root.staggerMs }
         ParallelAnimation {
-            SpringAnimation { target: root; property: "animScale"; to: 1; spring: 2.6; damping: 0.32 }
-            SpringAnimation { target: root; property: "offsetX"; to: 0; spring: 2.6; damping: 0.32 }
-            SpringAnimation { target: root; property: "offsetY"; to: 0; spring: 2.6; damping: 0.32 }
-            NumberAnimation { target: root; property: "animOpacity"; to: 1; duration: 220; easing.type: Easing.OutQuad }
+            SpringAnimation { target: root; property: "animScale"; to: 1; spring: 2.6 * root.speed; damping: 0.32 }
+            SpringAnimation { target: root; property: "offsetX"; to: 0; spring: 2.6 * root.speed; damping: 0.32 }
+            SpringAnimation { target: root; property: "offsetY"; to: 0; spring: 2.6 * root.speed; damping: 0.32 }
+            NumberAnimation { target: root; property: "animOpacity"; to: 1; duration: 220 / root.speed; easing.type: Easing.OutQuad }
         }
     }
 
@@ -61,10 +62,10 @@ Rectangle {
         id: exitAnim
         PauseAnimation { duration: root.animIndex * (root.staggerMs - 4) }
         ParallelAnimation {
-            NumberAnimation { target: root; property: "animScale"; to: 0.25; duration: 260; easing.type: Easing.InBack }
-            NumberAnimation { target: root; property: "offsetX"; to: root.travelX; duration: 280; easing.type: Easing.InQuad }
-            NumberAnimation { target: root; property: "offsetY"; to: root.travelY; duration: 280; easing.type: Easing.InQuad }
-            NumberAnimation { target: root; property: "animOpacity"; to: 0; duration: 220; easing.type: Easing.InQuad }
+            NumberAnimation { target: root; property: "animScale"; to: 0.25; duration: 260 / root.speed; easing.type: Easing.InBack }
+            NumberAnimation { target: root; property: "offsetX"; to: root.travelX; duration: 280 / root.speed; easing.type: Easing.InQuad }
+            NumberAnimation { target: root; property: "offsetY"; to: root.travelY; duration: 280 / root.speed; easing.type: Easing.InQuad }
+            NumberAnimation { target: root; property: "animOpacity"; to: 0; duration: 220 / root.speed; easing.type: Easing.InQuad }
         }
     }
 

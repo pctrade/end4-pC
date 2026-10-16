@@ -7,6 +7,7 @@ Item {
     id: root
 
     property bool shown: true
+    property real minIconHeight: 0
     property alias icon: shapeWidget.text
     property alias title: widgetNameText.text
     property alias description: widgetDescriptionText.text
@@ -31,6 +32,7 @@ Item {
 
         MaterialShapeWrappedMaterialSymbol {
             id: shapeWidget
+            visible: root.height >= root.minIconHeight
             Layout.alignment: Qt.AlignHCenter
             padding: 12
             iconSize: 56

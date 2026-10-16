@@ -51,7 +51,7 @@ PanelWindow {
         id: shelfBg
         anchors.fill: parent
         radius: Appearance.rounding.large
-        color: Appearance.colors.colLayer0
+        color: Appearance.colors.colUiBackground
         border.width: 1
         border.color: Appearance.colors.colLayer0Border
 

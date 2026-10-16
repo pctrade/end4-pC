@@ -22,6 +22,20 @@ Singleton {
     property bool loading: false
     property string downloadingName: ""
     property int previewLimit: 3
+    property var activeEntry: null
+    property var collected: []
+    property var listed: []
+    property int sourceIndex: 0
+    property int failedSources: 0
+
+    readonly property int indexVersion: 4
+
+    readonly property var sources: [
+        { repo: "pctrade/end4-pCpresets", branch: "main", prefix: "pctrade--", sanitize: true, rootWallpapers: false, authorsBranch: "gallery-data" },
+        { repo: "Blapples/wallpapers", branch: "main", prefix: "", sanitize: false, rootWallpapers: true }
+    ]
+
+    readonly property string shareFilter: 'with_entries(select(.key as $k | ["appearance","background","bar","calendar","crosshair","dock","interactions","launcher","light","lock","media","notifications","osd","osk","overlay","overview","panelFamily","profile","regionSelector","resources","settings","sidebar","tray","wallpaperSelector","windows","hyprland"] | index($k))) | if (.hyprland | type) == "object" then .hyprland |= with_entries(select(.key as $k | ["decoration","gaps","animations","general"] | index($k))) else . end | '
 
     readonly property var thumbSet: {
         const names = new Set();
@@ -74,7 +88,7 @@ Singleton {
         onLoaded: {
             try {
                 const saved = JSON.parse(indexFile.text());
-                if (Array.isArray(saved.entries)) {
+                if (saved.version === root.indexVersion && Array.isArray(saved.entries)) {
                     root.entries = saved.entries;
                     root.lastFetched = saved.time ?? 0;
                 }
@@ -110,12 +124,93 @@ Singleton {
     function refresh() {
         root.loading = true;
         root.error = "";
+        root.collected = [];
+        root.failedSources = 0;
+        root.sourceIndex = 0;
         listProc.running = false;
+        root.listNext();
+    }
+
+    function listNext() {
+        const src = root.sources[root.sourceIndex];
+        listProc.source = src;
+        listProc.command = ["curl", "-sSL", "-w", "\nHTTP_STATUS:%{http_code}",
+            "-H", "Accept: application/vnd.github+json",
+            "-H", "User-Agent: end4-pC-quickshell",
+            `https://api.github.com/repos/${src.repo}/git/trees/${src.branch}?recursive=1`];
         listProc.running = true;
     }
 
-    function rawUrl(path) {
-        return `https://raw.githubusercontent.com/Blapples/wallpapers/main/${path.split("/").map(encodeURIComponent).join("/")}`;
+    function finishListing() {
+        root.loading = false;
+        if (root.collected.length === 0 && root.failedSources > 0) {
+            root.entries = [];
+            root.error = Translation.tr("Failed to load online presets");
+            return;
+        }
+        const presets = root.collected.slice();
+        presets.sort((a, b) => a.title.localeCompare(b.title));
+        root.listed = presets;
+        const src = root.sources.find(item => item.authorsBranch);
+        if (!src) {
+            root.publishListing({});
+            return;
+        }
+        authorsProc.source = src;
+        authorsProc.command = ["curl", "-sSL", "-m", "15", "-w", "\nHTTP_STATUS:%{http_code}",
+            `https://raw.githubusercontent.com/${src.repo}/${src.authorsBranch}/index.json`];
+        authorsProc.running = true;
+    }
+
+    function publishListing(authors) {
+        const presets = root.listed.map(entry => {
+            const known = authors[entry.name];
+            if (known) return Object.assign({}, entry, { author: known });
+            const hasIndex = root.sources.some(src => src.authorsBranch && src.repo === entry.repo);
+            return hasIndex ? Object.assign({}, entry, { author: "" }) : entry;
+        });
+        root.previewLimit = 3;
+        root.entries = presets;
+        root.lastFetched = Date.now();
+        indexFile.setText(JSON.stringify({ version: root.indexVersion, time: root.lastFetched, entries: presets }));
+        root.generateThumbs();
+    }
+
+    Process {
+        id: authorsProc
+        property var source: root.sources[0]
+        stdout: StdioCollector { id: authorsCollector }
+        onExited: code => {
+            const raw = authorsCollector.text;
+            const statusMatch = raw.match(/HTTP_STATUS:(\d+)\s*$/);
+            const body = statusMatch ? raw.slice(0, statusMatch.index) : raw;
+            const authors = {};
+            try {
+                if (statusMatch && statusMatch[1] === "200") {
+                    const data = JSON.parse(body);
+                    for (const folder in (data.presets ?? ({})))
+                        if (data.presets[folder].author) authors[authorsProc.source.prefix + folder] = data.presets[folder].author;
+                }
+            } catch (e) {}
+            root.publishListing(authors);
+        }
+    }
+
+    function originOf(name) {
+        for (const src of root.sources)
+            if (src.prefix !== "" && name.startsWith(src.prefix)) return src.repo;
+        const plain = root.sources.find(src => src.prefix === "");
+        return plain ? plain.repo : "gallery";
+    }
+
+    function displayName(name) {
+        for (const src of root.sources)
+            if (src.prefix !== "" && name.startsWith(src.prefix)) return name.slice(src.prefix.length);
+        return name;
+    }
+
+    function rawUrl(path, base) {
+        return `${base}${path.split("/").map(encodeURIComponent).join("/")}`;
     }
 
     function cacheDir() {
@@ -141,7 +236,8 @@ Singleton {
         assetsProc.stagingJsonPath = stagingJsonPath;
         assetsProc.assetCacheDirPath = dir;
 
-        const wallpaperAssets = wallpaperFiles.map(f => ({ filename: f.split("/").pop(), url: root.rawUrl(f) }));
+        const rootBase = root.activeEntry?.rootWallpapers ? root.activeEntry.rawBase : "";
+        const wallpaperAssets = rootBase === "" ? [] : wallpaperFiles.map(f => ({ filename: f.split("/").pop(), url: root.rawUrl(f, rootBase) }));
         const seen = new Set();
         const toDownload = [...wallpaperAssets, ...folderAssets].filter(a => {
             if (seen.has(a.filename)) return false;
@@ -160,6 +256,7 @@ Singleton {
     function download(entry) {
         if (root.downloadingName !== "") return;
         root.error = "";
+        root.activeEntry = entry;
         root.downloadingName = entry.name;
         const staging = `${root.cacheDir()}/.${entry.name}.online.json.tmp`;
         jsonProc.entryName = entry.name;
@@ -173,16 +270,14 @@ Singleton {
 
     Process {
         id: listProc
-        command: ["curl", "-sSL", "-w", "\nHTTP_STATUS:%{http_code}",
-            "-H", "Accept: application/vnd.github+json",
-            "-H", "User-Agent: end4-pC-quickshell",
-            "https://api.github.com/repos/Blapples/wallpapers/git/trees/main?recursive=1"]
+        property var source: root.sources[0]
         stdout: StdioCollector { id: listCollector }
         onExited: code => {
-            root.loading = false;
+            const src = listProc.source;
             const raw = listCollector.text;
             const statusMatch = raw.match(/HTTP_STATUS:(\d+)\s*$/);
             const body = statusMatch ? raw.slice(0, statusMatch.index) : raw;
+            const rawBase = `https://raw.githubusercontent.com/${src.repo}/${src.branch}/`;
             try {
                 const data = JSON.parse(body);
                 if (!Array.isArray(data.tree)) throw new Error("unexpected response");
@@ -226,24 +321,26 @@ Singleton {
                         || mainCandidates[0];
 
                     presets.push({
-                        name: folder,
+                        name: src.prefix + folder,
                         title: folder.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-                        jsonUrl: root.rawUrl(g.jsonPath),
-                        metaUrl: g.metaPath ? root.rawUrl(g.metaPath) : "",
-                        screenshot: root.rawUrl(main.path),
-                        assets: g.assets.map(a => ({ filename: a.filename, url: root.rawUrl(a.path) }))
+                        author: src.repo.split("/")[0],
+                        repo: src.repo,
+                        sanitize: src.sanitize,
+                        rootWallpapers: src.rootWallpapers,
+                        rawBase: rawBase,
+                        jsonUrl: root.rawUrl(g.jsonPath, rawBase),
+                        metaUrl: g.metaPath ? root.rawUrl(g.metaPath, rawBase) : "",
+                        screenshot: root.rawUrl(main.path, rawBase),
+                        assets: g.assets.map(a => ({ filename: a.filename, url: root.rawUrl(a.path, rawBase) }))
                     });
                 }
-                presets.sort((a, b) => a.title.localeCompare(b.title));
-                root.previewLimit = 3;
-                root.entries = presets;
-                root.lastFetched = Date.now();
-                indexFile.setText(JSON.stringify({ time: root.lastFetched, entries: presets }));
-                root.generateThumbs();
+                root.collected = root.collected.concat(presets);
             } catch (e) {
-                root.entries = [];
-                root.error = Translation.tr("Failed to load online presets");
+                root.failedSources++;
             }
+            root.sourceIndex++;
+            if (root.sourceIndex < root.sources.length) Qt.callLater(root.listNext);
+            else root.finishListing();
         }
     }
 
@@ -300,7 +397,8 @@ Singleton {
                 return;
             }
             const finalJsonPath = `${root.cacheDir()}/${assetsProc.entryName}.json`;
-            const jqFilter = '$files as $files | walk(if type == "string" then ((split("/") | last) as $base | if ($files | index($base)) then ($dir + "/" + $base) else . end) else . end) | if has("profile") then .profile.avatarPath = $dir else . end | ._presetMeta.source = "online"';
+            const sanitize = root.activeEntry?.sanitize ?? false;
+            const jqFilter = (sanitize ? root.shareFilter : "") + '$files as $files | def fix: walk(if type == "string" then ((split("/") | last) as $base | if ($files | index($base)) then ($dir + "/" + $base) else . end) else . end); fix | if (.background.collage.tree? // null) != null then .background.collage.tree |= (try (fromjson | fix | tojson) catch .) else . end | if has("profile") then .profile.avatarPath = $dir else . end | ._presetMeta.source = "online"';
             const filesJson = JSON.stringify(assetsProc.assetFilenames);
             const cmd = `jq --arg dir ${root.shQuote(assetsProc.assetCacheDirPath)} --argjson files ${root.shQuote(filesJson)} ${root.shQuote(jqFilter)} ${root.shQuote(assetsProc.stagingJsonPath)} > ${root.shQuote(finalJsonPath)} && rm -f ${root.shQuote(assetsProc.stagingJsonPath)}`;
             rewriteProc.command = ["bash", "-c", cmd];

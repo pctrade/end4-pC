@@ -27,6 +27,23 @@ Scope {
         return true
     }
 
+    function edgeNeedsInput(side) {
+        if (!frameVisibleFor(side)) return false
+        const dockWants = Config.options.dock.enable && Config.options.dock.hoverToReveal && Config.options.dock.position === side
+        const barWants = Config.options.bar.autoHide.enable && root.barPosition === side
+        return dockWants || barWants
+    }
+
+    component FrameHoverArea: MouseArea {
+        required property string side
+        required property string screenName
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        enabled: root.edgeNeedsInput(side)
+        onContainsMouseChanged: GlobalStates.setFrameHover(screenName, side, containsMouse)
+    }
+
     component FrameCornerWindow: PanelWindow {
         id: cornerPanelWindow
         property var corner
@@ -81,9 +98,11 @@ Scope {
                 color: "transparent"
                 implicitHeight: root.frameThickness
                 anchors { top: true; left: true; right: true }
-                mask: Region {}
+                mask: Region { item: root.edgeNeedsInput("top") ? topRect : null }
 
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("top") }
+                Rectangle { id: topRect; anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("top") }
+
+                FrameHoverArea { side: "top"; screenName: frameGroup.modelData.name }
             }
 
             PanelWindow { // bottom
@@ -96,9 +115,11 @@ Scope {
                 color: "transparent"
                 implicitHeight: root.frameThickness
                 anchors { bottom: true; left: true; right: true }
-                mask: Region {}
+                mask: Region { item: root.edgeNeedsInput("bottom") ? bottomRect : null }
 
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("bottom") }
+                Rectangle { id: bottomRect; anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("bottom") }
+
+                FrameHoverArea { side: "bottom"; screenName: frameGroup.modelData.name }
             }
 
             PanelWindow { // left
@@ -111,9 +132,11 @@ Scope {
                 color: "transparent"
                 implicitWidth: root.frameThickness
                 anchors { left: true; top: true; bottom: true }
-                mask: Region {}
+                mask: Region { item: root.edgeNeedsInput("left") ? leftRect : null }
 
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("left") }
+                Rectangle { id: leftRect; anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("left") }
+
+                FrameHoverArea { side: "left"; screenName: frameGroup.modelData.name }
             }
 
             PanelWindow { // right
@@ -126,9 +149,11 @@ Scope {
                 color: "transparent"
                 implicitWidth: root.frameThickness
                 anchors { right: true; top: true; bottom: true }
-                mask: Region {}
+                mask: Region { item: root.edgeNeedsInput("right") ? rightRect : null }
 
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("right") }
+                Rectangle { id: rightRect; anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("right") }
+
+                FrameHoverArea { side: "right"; screenName: frameGroup.modelData.name }
             }
 
             FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.TopLeft }

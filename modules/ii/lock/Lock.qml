@@ -13,8 +13,60 @@ LockScreen {
     id: root
 
     property var savedWorkspaces: ({})
+    property var pushedTargets: ({})
     property string lastProcessedLockWall: ""
     property bool lastProcessedDarkmode: Appearance.m3colors.darkmode
+
+    function occupiedWorkspaceIds() {
+        var ids = new Set()
+        var list = Hyprland.workspaces.values
+        for (var k = 0; k < list.length; ++k) {
+            if ((list[k].toplevels?.values?.length ?? 0) > 0) {
+                ids.add(list[k].id)
+            }
+        }
+        return ids
+    }
+
+    function nearestEmptyWorkspace(from, taken) {
+        var id = Math.max(from, 0) + 1
+        while (taken.has(id)) {
+            id++
+        }
+        return id
+    }
+
+    function pushWorkspaces() {
+        var currents = {}
+        var taken = root.occupiedWorkspaceIds()
+        for (var i = 0; i < Quickshell.screens.length; ++i) {
+            var current = Hyprland.monitorFor(Quickshell.screens[i])?.activeWorkspace?.id
+            if (current == undefined) {
+                return
+            }
+            currents[Quickshell.screens[i].name] = current
+            taken.add(current)
+        }
+
+        var saved = {}
+        var targets = {}
+        var batch = "keyword animation workspaces,1,7,menu_decel,slidevert; "
+        for (var name in currents) {
+            if (root.pushedTargets[name] === currents[name]) {
+                saved[name] = root.savedWorkspaces[name]
+                targets[name] = currents[name]
+                continue
+            }
+            var target = root.nearestEmptyWorkspace(currents[name], taken)
+            taken.add(target)
+            saved[name] = currents[name]
+            targets[name] = target
+            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${name}"})'; hyprctl dispatch 'hl.dsp.focus({workspace=${target}})';`
+        }
+        root.savedWorkspaces = saved
+        root.pushedTargets = targets
+        Quickshell.execDetached(["bash", "-c", batch])
+    }
 
     Timer {
         id: restoreTimer
@@ -29,6 +81,7 @@ LockScreen {
                     batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${monName}"})'; hyprctl dispatch 'hl.dsp.focus({workspace=${wsId}})';`
                 }
             }
+            root.pushedTargets = ({})
             if (batch.length > 0) {
                 Quickshell.execDetached(["bash", "-c", batch])
             }
@@ -68,20 +121,7 @@ LockScreen {
                     return;
                 }
 
-                var next = {}
-                var batch = "keyword animation workspaces,1,7,menu_decel,slidevert; "
-                for (var i = 0; i < Quickshell.screens.length; ++i) {
-                    var mon = Quickshell.screens[i].name
-                    var mData = HyprlandData.monitors.find(m => m.name === mon)
-                    if (mData?.activeWorkspace == undefined) {
-                        return;
-                    }
-                    var ws = (mData?.activeWorkspace?.id ?? 1)
-                    next[mon] = ws
-                    batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon}"})'; hyprctl dispatch 'hl.dsp.focus({workspace=${2147483647 - ws}})';`
-                }
-                root.savedWorkspaces = next
-                Quickshell.execDetached(["bash", "-c", batch])
+                root.pushWorkspaces()
             } else {
                 if (Config.options.background.lockWall !== "") {
                     MaterialThemeLoader.useLiveTheme()

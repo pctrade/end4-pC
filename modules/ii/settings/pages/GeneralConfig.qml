@@ -423,6 +423,89 @@ ContentPage {
                     }
                 }
             }
+
+            ContentSubsection {
+                title: Translation.tr("Football")
+                visible: Config.options.sidebar.football.enable
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "notifications_active"
+                        text: Translation.tr("Live alerts")
+                        checked: Config.options.sidebar.football.alerts
+                        onCheckedChanged: { Config.options.sidebar.football.alerts = checked }
+                    }
+                    ConfigSelectionArray {
+                        text: Translation.tr("Alerts for")
+                        icon: "filter_alt"
+                        currentValue: Config.options.sidebar.football.alertsScope
+                        onSelected: newValue => { Config.options.sidebar.football.alertsScope = newValue }
+                        options: [
+                            { displayName: Translation.tr("My parlay"), icon: "layers", value: "parlay" },
+                            { displayName: Translation.tr("All matches"), icon: "public", value: "all" }
+                        ]
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "campaign"
+                        text: Translation.tr("Goal sound")
+                        checked: Config.options.sidebar.football.goalSound
+                        onCheckedChanged: { Config.options.sidebar.football.goalSound = checked }
+                    }
+                    ConfigTextArea {
+                        id: goalFileField
+                        Layout.fillWidth: true
+                        fieldWidth: 320
+                        buttonIcon: "audio_file"
+                        text: Translation.tr("Goal sound file (empty = default)")
+                        placeholderText: "~/Music/goal.ogg"
+                        value: Config.options.sidebar.football.goalSoundPath
+                        onValueChanged: goalFileTimer.restart()
+
+                        Timer {
+                            id: goalFileTimer
+                            interval: 600
+                            onTriggered: Config.options.sidebar.football.goalSoundPath = goalFileField.value
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "flag"
+                        text: Translation.tr("Corner sound")
+                        checked: Config.options.sidebar.football.cornerSound
+                        onCheckedChanged: { Config.options.sidebar.football.cornerSound = checked }
+                    }
+                    ConfigTextArea {
+                        id: cornerFileField
+                        Layout.fillWidth: true
+                        fieldWidth: 320
+                        buttonIcon: "audio_file"
+                        text: Translation.tr("Corner sound file (empty = default)")
+                        placeholderText: "~/Music/corner.ogg"
+                        value: Config.options.sidebar.football.cornerSoundPath
+                        onValueChanged: cornerFileTimer.restart()
+
+                        Timer {
+                            id: cornerFileTimer
+                            interval: 600
+                            onTriggered: Config.options.sidebar.football.cornerSoundPath = cornerFileField.value
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "notifications"
+                        text: Translation.tr("Goal notifications")
+                        checked: Config.options.sidebar.football.notify
+                        onCheckedChanged: { Config.options.sidebar.football.notify = checked }
+                    }
+                    ConfigSpinBox {
+                        icon: "volume_up"
+                        text: Translation.tr("Sound volume")
+                        value: Config.options.sidebar.football.soundVolume
+                        from: 0
+                        to: 100
+                        stepSize: 5
+                        onValueChanged: { Config.options.sidebar.football.soundVolume = value }
+                    }
+                }
+            }
         }
 
         ContentSection {

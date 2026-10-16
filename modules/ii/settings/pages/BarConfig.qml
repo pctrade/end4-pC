@@ -20,6 +20,7 @@ ContentPage {
         { id: "leftSidebarButton", name: Translation.tr("Left Sidebar Button"),  icon: "left_panel_open" },
         { id: "workspaces",        name: Translation.tr("Workspaces"),           icon: "steppers" },
         { id: "weatherBar",        name: Translation.tr("Weather"),              icon: "flare" },
+        { id: "liveWallpaper",     name: Translation.tr("Live wallpaper"),        icon: "play_pause" },
         { id: "media",             name: Translation.tr("Media"),                icon: "music_note" },
         { id: "resources",         name: Translation.tr("Resources"),            icon: "empty_dashboard" },
         { id: "systemIcons",       name: Translation.tr("System Icons"),         icon: "info" },
@@ -255,6 +256,7 @@ ContentPage {
                     onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
                     options: [
                         { displayName: Translation.tr("Hug"),     icon: "line_curve", value: 0 },
+                        { displayName: Translation.tr("Split Hug"), icon: "splitscreen", value: 6 },
                         { displayName: Translation.tr("Float"),   icon: "view_day",   value: 1 },
                         { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
                         { displayName: Translation.tr("M3"), icon: "interests",   value: 3 },
@@ -739,6 +741,45 @@ ContentPage {
         }
 
         ContentSection {
+            icon: "battery_android_full"
+            title: Translation.tr("Battery")
+            visible: page.isUsed("batteryIndicator")
+
+            GroupedList {
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "style"
+                    text: Translation.tr("Battery style")
+                    fieldWidth: 220
+                    fixedWidth: true
+                    currentValue: Config.options.bar.battery.style
+                    onSelected: newValue => { Config.options.bar.battery.style = newValue }
+                    model: [
+                        { displayName: "Android", value: "bar" },
+                        { displayName: "iOS", value: "ios" },
+                        { displayName: "macOS", value: "macos" },
+                        { displayName: "Windows", value: "windows" },
+                        { displayName: Translation.tr("Ring"), value: "ring" },
+                        { displayName: Translation.tr("Icon"), value: "icon" },
+                        { displayName: Translation.tr("Number"), value: "number" }
+                    ]
+                }
+                ConfigSwitch {
+                    buttonIcon: "percent"
+                    text: Translation.tr("Show percentage")
+                    checked: Config.options.bar.battery.showPercentage
+                    onCheckedChanged: { Config.options.bar.battery.showPercentage = checked }
+                }
+                ConfigSwitch {
+                    buttonIcon: "bolt"
+                    text: Translation.tr("Charging bolt")
+                    checked: Config.options.bar.battery.showCharging
+                    onCheckedChanged: { Config.options.bar.battery.showCharging = checked }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "empty_dashboard"
             shape: MaterialShape.Shape.Burst
             title: Translation.tr("Resources")
@@ -791,7 +832,8 @@ ContentPage {
                     onSelected: newValue => { Config.options.bar.resources.style = newValue; }
                     options: [
                         { displayName: Translation.tr("Filled"),    icon: "incomplete_circle",  value: "filled" },
-                        { displayName: Translation.tr("Outline"),   icon: "circles",            value: "outline" }
+                        { displayName: Translation.tr("Outline"),   icon: "circles",            value: "outline" },
+                        { displayName: Translation.tr("Text"),      icon: "text_fields",        value: "text" }
                     ]
                 }
                 ConfigSwitch {
@@ -878,6 +920,17 @@ ContentPage {
                     checked: Config.options.bar.tooltips.clickToShow
                     onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
                     enabled: Config.options.bar.tooltips.enable
+                }
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "tooltip"
+                    enabled: Config.options.bar.tooltips.enable
+                    currentValue: Config.options.bar.tooltips.style
+                    onSelected: newValue => { Config.options.bar.tooltips.style = newValue }
+                    options: [
+                        { displayName: Translation.tr("Default"), icon: "tooltip", value: "default" },
+                        { displayName: Translation.tr("Morph"), icon: "join_inner", value: "morph" }
+                    ]
                 }
             }
         }

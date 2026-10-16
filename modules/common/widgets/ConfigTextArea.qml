@@ -92,6 +92,7 @@ RowLayout {
 
         TextArea {
             id: textArea
+            ContextMenu.menu: StyledTextEditMenu { editor: textArea }
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12

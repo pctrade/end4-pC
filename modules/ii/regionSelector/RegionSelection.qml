@@ -324,10 +324,12 @@ PanelWindow {
         }
     }
 
-    ScreencopyView { // For freezing
+    Image { // For freezing
         anchors.fill: parent
-        live: false
-        captureSource: root.screen
+        source: root.preparationDone ? `file://${root.screenshotPath}` : ""
+        cache: false
+        asynchronous: false
+        fillMode: Image.Stretch
         visible: root.phase === RegionSelection.Phase.Select
 
         focus: root.visible

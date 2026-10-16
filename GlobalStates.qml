@@ -55,6 +55,19 @@ Singleton {
     property real dropShelfY: 0
     property string osdIndicatorType: "volume"
     property bool barCenterOnly: false
+    property int dashboardPage: 0
+    property string dashboardGroup: ""
+    property var frameHover: ({})
+    function setFrameHover(screenName, side, hovered) {
+        const key = `${screenName}:${side}`;
+        if ((root.frameHover[key] ?? false) === hovered) return;
+        const next = Object.assign({}, root.frameHover);
+        next[key] = hovered;
+        root.frameHover = next;
+    }
+    function isFrameHovered(screenName, side) {
+        return root.frameHover[`${screenName}:${side}`] ?? false;
+    }
     property bool diSessionOpen: false
     property bool startupLockPending: true
 
