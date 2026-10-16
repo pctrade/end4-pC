@@ -31,9 +31,10 @@ Item {
 
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
 
+    // Widgets that hide themselves would still leave an empty group behind
     function filterLayout(layout) {
-        if (trayHasItems) return layout
-        return layout.filter(name => name !== "sysTray")
+        return layout.filter(name => (name !== "sysTray" || root.trayHasItems)
+            && (name !== "liveWallpaper" || LiveWallpaper.available))
     }
 
     readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.layouts.leftLayout)
