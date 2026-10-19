@@ -72,7 +72,14 @@ apply_anyterm() {
 
 apply_term() {
   apply_kitty
-  apply_anyterm
+  # Konsole honors Oscar palette escapes pushed into /dev/pts, which would
+  # recolor already-open windows and defeat the Konsole lock, so skip the live
+  # palette injection while it is enabled (kitty reloads from its own file).
+  local lock_konsole
+  lock_konsole=$(jq -r '.appearance.wallpaperTheming.lockKonsoleColors // "true"' "$CONFIG_FILE" 2>/dev/null)
+  if [ "$lock_konsole" != "true" ]; then
+    apply_anyterm
+  fi
 }
 
 apply_qt() {
