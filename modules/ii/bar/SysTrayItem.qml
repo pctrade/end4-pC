@@ -11,6 +11,8 @@ import qs.modules.common.functions
 
 MouseArea {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     required property SystemTrayItem item
     property bool targetMenuOpen: false
 
@@ -57,12 +59,12 @@ MouseArea {
             anchor {
                 window: root.QsWindow.window
                 item: root
-                gravity: Config.options.bar.vertical
-                    ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-                    : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-                edges: Config.options.bar.vertical
-                    ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-                    : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+                gravity: root.barConfig.vertical
+                    ? (root.barConfig.bottom ? Edges.Left : Edges.Right)
+                    : (root.barConfig.bottom ? Edges.Top : Edges.Bottom)
+                edges: root.barConfig.vertical
+                    ? (root.barConfig.bottom ? Edges.Left : Edges.Right)
+                    : (root.barConfig.bottom ? Edges.Top : Edges.Bottom)
             }
             onMenuOpened: (window) => root.menuOpened(window);
             onMenuClosed: {
@@ -104,7 +106,7 @@ MouseArea {
         id: tooltip
         extraVisibleCondition: root.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
-        anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top
+        anchorEdges: (!root.barConfig.bottom && !root.barConfig.vertical) ? Edges.Bottom : Edges.Top
     }
 
 }

@@ -13,30 +13,31 @@ import qs.modules.ii.bar as Bar
 
 Item {
     id: root
+    property var barConfig: Config.barForScreen(root.QsWindow.window?.screen?.name)
     implicitWidth: Appearance.sizes.verticalBarWidth
     height: parent.height
 
     readonly property real barPadding: 0
-    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
-    readonly property bool isMaterialHug: Config.options.bar.cornerStyle === 4
-    readonly property bool isSplitHug: Config.options.bar.cornerStyle === 6
+    readonly property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
+    readonly property bool isMaterialHug: root.barConfig.cornerStyle === 4
+    readonly property bool isSplitHug: root.barConfig.cornerStyle === 6
     readonly property bool hasTabs: root.isMaterialHug || root.isSplitHug
     readonly property bool useTabWrapper: root.isMaterial || root.isSplitHug
-    readonly property real splitGroupSpacing: Config.options.bar.borderless === "transparent" ? -4 : Config.options.bar.borderless === "segmented" ? -2 : 2
-    readonly property color materialPillBgColor: (Config.options.bar.followFrameColor && Config.options.bar.frameColor)
-        ? Appearance.getColorFromName(Config.options.bar.frameColor)
+    readonly property real splitGroupSpacing: root.barConfig.borderless === "transparent" ? -4 : root.barConfig.borderless === "segmented" ? -2 : 2
+    readonly property color materialPillBgColor: (root.barConfig.followFrameColor && root.barConfig.frameColor)
+        ? Appearance.getColorFromName(root.barConfig.frameColor)
         : Appearance.colors.colUiBackground
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
-    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    readonly property bool isPanel: root.barConfig.cornerStyle === 5
 
     function filterLayout(layout) {
         if (trayHasItems) return layout
         return layout.filter(name => name !== "sysTray")
     }
 
-    readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.layouts.leftLayout)
-    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.layouts.middleLayout)
-    readonly property var effectiveRightLayout:  filterLayout(Config.options.bar.layouts.rightLayout)
+    readonly property var effectiveLeftLayout:   filterLayout(root.barConfig.layouts.leftLayout)
+    readonly property var effectiveMiddleLayout: filterLayout(root.barConfig.layouts.middleLayout)
+    readonly property var effectiveRightLayout:  filterLayout(root.barConfig.layouts.rightLayout)
 
     readonly property bool centerOnly: !root.useTabWrapper
         && root.effectiveLeftLayout.length === 0
@@ -85,37 +86,37 @@ Item {
         id: barBackground
         anchors {
             fill: parent
-            margins: Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
+            margins: root.barConfig.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0
         }
-        color: (!centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2 && !root.useTabWrapper)
-            ? (Config.options.bar.followFrameColor
-                ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        color: (!centerOnly && root.barConfig.showBackground && root.barConfig.cornerStyle !== 2 && !root.useTabWrapper)
+            ? (root.barConfig.followFrameColor
+                ? Appearance.getColorFromName(root.barConfig.frameColor)
                 : Appearance.colors.colUiBackground)
             : "transparent"
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding + 6 : 0
-        border.width: (!root.centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
-        border.color: Config.options.bar.showBackground ? Appearance.colors.colLayer0Border : "transparent"
+        radius: root.barConfig.cornerStyle === 1 ? Appearance.rounding.windowRounding + 6 : 0
+        border.width: (!root.centerOnly && root.barConfig.cornerStyle === 1) ? 1 : 0
+        border.color: root.barConfig.showBackground ? Appearance.colors.colLayer0Border : "transparent"
     }
 
     // centerOnly
     Rectangle {
         id: centerPill
-        visible: root.centerOnly && Config.options.bar.showBackground && Config.options.bar.cornerStyle !== 2
+        visible: root.centerOnly && root.barConfig.showBackground && root.barConfig.cornerStyle !== 2
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         height: middleCol.implicitHeight + 7
-        width: parent.width - (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
-        color: Config.options.bar.followFrameColor
-            ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        width: parent.width - (root.barConfig.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : 0)
+        color: root.barConfig.followFrameColor
+            ? Appearance.getColorFromName(root.barConfig.frameColor)
             : Appearance.colors.colUiBackground
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        radius: root.barConfig.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: root.barConfig.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        topRightRadius:    Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        bottomLeftRadius:  Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
-        topLeftRadius:     Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
+        bottomRightRadius: root.barConfig.cornerStyle === 0 && !root.barConfig.bottom ? Appearance.rounding.screenRounding : radius
+        topRightRadius:    root.barConfig.cornerStyle === 0 && !root.barConfig.bottom ? Appearance.rounding.screenRounding : radius
+        bottomLeftRadius:  root.barConfig.cornerStyle === 0 && root.barConfig.bottom  ? Appearance.rounding.screenRounding : radius
+        topLeftRadius:     root.barConfig.cornerStyle === 0 && root.barConfig.bottom  ? Appearance.rounding.screenRounding : radius
     }
 
     Item {
@@ -127,7 +128,7 @@ Item {
         Item {
             id: topItem
             anchors.top: parent.top
-            anchors.topMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Appearance.sizes.hyprlandGapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 10))
+            anchors.topMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Appearance.sizes.hyprlandGapsOut || 5) : (root.barConfig.cornerStyle === 1 ? 4 : root.barConfig.cornerStyle === 5 ? 4 : 10))
             anchors.left: parent.left
             anchors.right: parent.right
             height: root.useTabWrapper
@@ -149,8 +150,8 @@ Item {
 
                 topLeftRadius: root.hasTabs ? 0 : radius
                 topRightRadius: root.hasTabs ? 0 : radius
-                bottomLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomLeftRadius: (root.hasTabs && root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomRightRadius: (root.hasTabs && !root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 ColumnLayout {
                     id: topMaterialCol
@@ -190,22 +191,22 @@ Item {
                 id: topBottomOutwardCorner
                 visible: root.hasTabs && root.effectiveLeftLayout.length > 0
                 anchors.top: topMaterialPill.bottom
-                anchors.left: !Config.options.bar.bottom ? parent.left : undefined
-                anchors.right: Config.options.bar.bottom ? parent.right : undefined
+                anchors.left: !root.barConfig.bottom ? parent.left : undefined
+                anchors.right: root.barConfig.bottom ? parent.right : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 width: implicitSize
                 height: implicitSize
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
+                corner: !root.barConfig.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
             }
 
             ColumnLayout {
                 id: topCol
                 anchors.fill: parent
                 visible: !root.useTabWrapper
-                spacing: Config.options.bar.borderless === "transparent" ? -4
-                    : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
-                    : Config.options?.bar.borderless === "segmented" ? -2
+                spacing: root.barConfig.borderless === "transparent" ? -4
+                    : (root.barConfig.borderless === "segmented" && root.isPanel) ? 3
+                    : root.barConfig.borderless === "segmented" ? -2
                     : root.isPanel ? 4 : 2
 
                 Repeater {
@@ -243,13 +244,13 @@ Item {
                 id: centerTopOutwardCorner
                 visible: root.hasTabs && root.effectiveMiddleLayout.length > 0
                 anchors.bottom: centerMaterialPill.top
-                anchors.left: !Config.options.bar.bottom ? parent.left : undefined
-                anchors.right: Config.options.bar.bottom ? parent.right : undefined
+                anchors.left: !root.barConfig.bottom ? parent.left : undefined
+                anchors.right: root.barConfig.bottom ? parent.right : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 width: implicitSize
                 height: implicitSize
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
+                corner: !root.barConfig.bottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
             }
 
             // Material pill wrapper
@@ -265,10 +266,10 @@ Item {
                 radius: root.hasTabs ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                topRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                bottomRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topLeftRadius: (root.hasTabs && root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomLeftRadius: (root.hasTabs && root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topRightRadius: (root.hasTabs && !root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                bottomRightRadius: (root.hasTabs && !root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 ColumnLayout {
                     id: centerMaterialCol
@@ -309,22 +310,22 @@ Item {
                 id: centerBottomOutwardCorner
                 visible: root.hasTabs && root.effectiveMiddleLayout.length > 0
                 anchors.top: centerMaterialPill.bottom
-                anchors.left: !Config.options.bar.bottom ? parent.left : undefined
-                anchors.right: Config.options.bar.bottom ? parent.right : undefined
+                anchors.left: !root.barConfig.bottom ? parent.left : undefined
+                anchors.right: root.barConfig.bottom ? parent.right : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 width: implicitSize
                 height: implicitSize
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
+                corner: !root.barConfig.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
             }
 
             ColumnLayout {
                 id: middleCol
                 anchors.fill: parent
                 visible: !root.useTabWrapper
-                spacing: Config.options.bar.borderless === "transparent" ? -4
-                    : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
-                    : Config.options?.bar.borderless === "segmented" ? -2
+                spacing: root.barConfig.borderless === "transparent" ? -4
+                    : (root.barConfig.borderless === "segmented" && root.isPanel) ? 3
+                    : root.barConfig.borderless === "segmented" ? -2
                     : root.isPanel ? 4 : 2
 
                 Repeater {
@@ -354,7 +355,7 @@ Item {
         Item {
             id: bottomItem
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Appearance.sizes.hyprlandGapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 10))
+            anchors.bottomMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Appearance.sizes.hyprlandGapsOut || 5) : (root.barConfig.cornerStyle === 1 ? 4 : root.barConfig.cornerStyle === 5 ? 4 : 10))
             anchors.left: parent.left
             anchors.right: parent.right
             height: root.useTabWrapper
@@ -365,13 +366,13 @@ Item {
                 id: bottomTopOutwardCorner
                 visible: root.hasTabs && root.effectiveRightLayout.length > 0
                 anchors.bottom: bottomMaterialPill.top
-                anchors.left: !Config.options.bar.bottom ? parent.left : undefined
-                anchors.right: Config.options.bar.bottom ? parent.right : undefined
+                anchors.left: !root.barConfig.bottom ? parent.left : undefined
+                anchors.right: root.barConfig.bottom ? parent.right : undefined
                 implicitSize: Appearance.rounding.screenRounding
                 width: implicitSize
                 height: implicitSize
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
+                corner: !root.barConfig.bottom ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
             }
 
             // Material pill wrapper
@@ -389,8 +390,8 @@ Item {
 
                 bottomLeftRadius: root.hasTabs ? 0 : radius
                 bottomRightRadius: root.hasTabs ? 0 : radius
-                topLeftRadius: (root.hasTabs && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
-                topRightRadius: (root.hasTabs && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topLeftRadius: (root.hasTabs && root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
+                topRightRadius: (root.hasTabs && !root.barConfig.bottom) ? Appearance.rounding.screenRounding : (root.hasTabs ? 0 : radius)
 
                 ColumnLayout {
                     id: bottomMaterialCol
@@ -430,9 +431,9 @@ Item {
                 id: bottomCol
                 anchors.fill: parent
                 visible: !root.useTabWrapper
-                spacing: Config.options.bar.borderless === "transparent" ? -4
-                    : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3
-                    : Config.options?.bar.borderless === "segmented" ? -2
+                spacing: root.barConfig.borderless === "transparent" ? -4
+                    : (root.barConfig.borderless === "segmented" && root.isPanel) ? 3
+                    : root.barConfig.borderless === "segmented" ? -2
                     : root.isPanel ? 4 : 2
 
                 Repeater {

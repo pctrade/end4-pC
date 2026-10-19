@@ -2,10 +2,13 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
 import QtQuick
+import Quickshell
 import QtQuick.Layouts
 
 MouseArea {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool vertical: false
@@ -13,7 +16,7 @@ MouseArea {
 
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : content.implicitWidth + 12
     implicitHeight: vertical ? content.implicitHeight + 10 : Appearance.sizes.barHeight
-    hoverEnabled: !Config.options.bar.tooltips.clickToShow
+    hoverEnabled: !root.barConfig.tooltips.clickToShow
 
     GridLayout {
         id: content

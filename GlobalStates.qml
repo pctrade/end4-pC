@@ -57,6 +57,12 @@ Singleton {
     property bool barCenterOnly: false
     property int dashboardPage: 0
     property string dashboardGroup: ""
+    // Empty means the global bar configuration. The dashboard uses this to
+    // route existing bar controls to a monitor override without duplicating UI.
+    property string dashboardBarScreen: ""
+    onSettingsOpenChanged: {
+        if (!settingsOpen) dashboardBarScreen = "";
+    }
     property var frameHover: ({})
     function setFrameHover(screenName, side, hovered) {
         const key = `${screenName}:${side}`;

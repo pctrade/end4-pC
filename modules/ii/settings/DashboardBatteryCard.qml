@@ -18,7 +18,9 @@ DashboardCard {
         { value: "icon", name: Translation.tr("Icon") },
         { value: "number", name: Translation.tr("Number") }
     ]
-    readonly property string current: Config.options.bar.battery.style
+    readonly property string screenName: GlobalStates.dashboardBarScreen
+    readonly property var batteryConfig: Config.barForScreen(root.screenName).battery
+    readonly property string current: root.batteryConfig.style
 
     tint: Appearance.colors.colLayer1
 
@@ -101,8 +103,8 @@ DashboardCard {
                                 style: tile.modelData.value
                                 percentage: 0.78
                                 isCharging: false
-                                showPercentage: Config.options.bar.battery.showPercentage
-                                showCharging: Config.options.bar.battery.showCharging
+                                showPercentage: root.batteryConfig.showPercentage
+                                showCharging: root.batteryConfig.showCharging
                                 contentColor: tile.selected ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnLayer2
                             }
                         }
@@ -119,7 +121,7 @@ DashboardCard {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Config.options.bar.battery.style = tile.modelData.value
+                        onClicked: Config.setBarValueForScreen(root.screenName, "battery.style", tile.modelData.value)
                     }
                 }
             }

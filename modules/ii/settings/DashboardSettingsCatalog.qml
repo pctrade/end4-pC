@@ -5,6 +5,14 @@ import qs.services
 import qs.modules.common
 
 QtObject {
+    function barGet(path) {
+        return Config.barValueForScreen(GlobalStates.dashboardBarScreen, path);
+    }
+
+    function barSet(path, value) {
+        Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, path, value);
+    }
+
     function hyprToggle(key) {
         return { type: "switch", get: () => Boolean(HyprlandOptions.get(key, false)), set: v => HyprlandOptions.apply(key, v) };
     }
@@ -82,18 +90,18 @@ QtObject {
     })
 
     readonly property var custom: ({
-        "bar:Bar style": { type: "select", get: () => Config.options.bar.cornerStyle, set: v => { Config.options.bar.cornerStyle = v; }, options: [{ displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 }, { displayName: Translation.tr("Split Hug"), icon: "splitscreen", value: 6 }, { displayName: Translation.tr("Float"), icon: "view_day", value: 1 }, { displayName: Translation.tr("Islands"), icon: "crop_3_2", value: 2 }, { displayName: Translation.tr("M3"), icon: "interests", value: 3 }, { displayName: Translation.tr("M3 Hug"), icon: "category", value: 4 }, { displayName: Translation.tr("Panel"), icon: "toolbar", value: 5 }] },
-        "bar:Group color": { type: "select", get: () => Config.options.bar.groupColor, set: v => { Config.options.bar.groupColor = v; }, get options() { return ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0"].map(name => ({ value: name, color: roleColor(name) })); } },
+        "bar:Bar style": { type: "select", get: () => barGet("cornerStyle"), set: v => barSet("cornerStyle", v), options: [{ displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 }, { displayName: Translation.tr("Split Hug"), icon: "splitscreen", value: 6 }, { displayName: Translation.tr("Float"), icon: "view_day", value: 1 }, { displayName: Translation.tr("Islands"), icon: "crop_3_2", value: 2 }, { displayName: Translation.tr("M3"), icon: "interests", value: 3 }, { displayName: Translation.tr("M3 Hug"), icon: "category", value: 4 }, { displayName: Translation.tr("Panel"), icon: "toolbar", value: 5 }] },
+        "bar:Group color": { type: "select", get: () => barGet("groupColor"), set: v => barSet("groupColor", v), get options() { return ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0"].map(name => ({ value: name, color: roleColor(name) })); } },
         "interface:Football/Goal file": { type: "text", get: () => Config.options.sidebar.football.goalSoundPath, set: v => { Config.options.sidebar.football.goalSoundPath = v; } },
         "interface:Football/Corner file": { type: "text", get: () => Config.options.sidebar.football.cornerSoundPath, set: v => { Config.options.sidebar.football.cornerSoundPath = v; } },
-        "bar:Frame color": { type: "select", get: () => Config.options.bar.frameColor, set: v => { Config.options.bar.frameColor = v; }, get options() { return ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0", "black"].map(name => ({ value: name, color: roleColor(name) })); } },
+        "bar:Frame color": { type: "select", get: () => barGet("frameColor"), set: v => barSet("frameColor", v), get options() { return ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0", "black"].map(name => ({ value: name, color: roleColor(name) })); } },
         "bar:Screen rounded corners": { type: "select", get: () => Config.options.appearance.fakeScreenRounding, set: v => { Config.options.appearance.fakeScreenRounding = v; }, options: [{ displayName: Translation.tr("No"), icon: "close", value: 0 }, { displayName: Translation.tr("Yes"), icon: "check", value: 1 }, { displayName: Translation.tr("When not fullscreen"), icon: "fullscreen_exit", value: 2 }] },
-        "bar:Workspaces style": { type: "select", get: () => Config.options.bar.workspaces.style, set: v => { Config.options.bar.workspaces.style = v; }, options: [{ displayName: Translation.tr("Default"), icon: "view_carousel", value: "default" }, { displayName: Translation.tr("GNOME"), icon: "more_horiz", value: "gnome" }, { displayName: Translation.tr("Dots"), icon: "hdr_weak", value: "dots" }, { displayName: Translation.tr("Ticks"), icon: "more_vert", value: "ticks" }] },
+        "bar:Workspaces style": { type: "select", get: () => barGet("workspaces.style"), set: v => barSet("workspaces.style", v), options: [{ displayName: Translation.tr("Default"), icon: "view_carousel", value: "default" }, { displayName: Translation.tr("GNOME"), icon: "more_horiz", value: "gnome" }, { displayName: Translation.tr("Dots"), icon: "hdr_weak", value: "dots" }, { displayName: Translation.tr("Ticks"), icon: "more_vert", value: "ticks" }] },
         "bar:Notification position": { type: "select", get: () => Config.options.notifications.position, set: v => { Config.options.notifications.position = v; }, options: [{ displayName: Translation.tr("Top left"), icon: "north_west", value: "top_left" }, { displayName: Translation.tr("Top center"), icon: "north", value: "top_center" }, { displayName: Translation.tr("Top right"), icon: "north_east", value: "top_right" }, { displayName: Translation.tr("Bottom left"), icon: "south_west", value: "bottom_left" }, { displayName: Translation.tr("Bottom center"), icon: "south", value: "bottom_center" }, { displayName: Translation.tr("Bottom right"), icon: "south_east", value: "bottom_right" }] },
         "bar:Colorize icon": { type: "switch", get: () => Config.options.custom.colorizeIcon, set: v => { Config.options.custom.colorizeIcon = v; } },
         "bar:Icon color": { type: "select", get: () => Config.options.custom.iconColor, set: v => { Config.options.custom.iconColor = v; }, get options() { return ["onLayer0", "primary", "secondary", "tertiary", "onPrimaryContainer", "onSecondaryContainer", "onTertiaryContainer"].map(name => ({ value: name, color: roleColor(name) })); } },
         "bar:Icons folder": { type: "text", get: () => Config.options.custom.iconsPath, set: v => { Config.options.custom.iconsPath = v; } },
-        "bar:Preferred player": { type: "text", get: () => Config.options.bar.media.preferredPlayer, set: v => { Config.options.bar.media.preferredPlayer = v; } },
+        "bar:Preferred player": { type: "text", get: () => barGet("media.preferredPlayer"), set: v => barSet("media.preferredPlayer", v) },
         "hyprland:Active border color": { type: "select", get: () => Config.options.hyprland.general.borderColor.activeRole, set: v => { Config.options.hyprland.general.borderColor.activeRole = v; HyprlandConfig.applyBorderColors(); }, get options() { return ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0Border"].map(name => ({ value: name, color: roleColor(name) })); } },
         "hyprland:Active border opacity": { type: "spin", get: () => Math.round(Config.options.hyprland.general.borderColor.activeOpacity * 100), set: v => { Config.options.hyprland.general.borderColor.activeOpacity = v / 100.0; HyprlandConfig.applyBorderColors(); }, from: 0, to: 100, stepSize: 5 },
         "hyprland:Inactive border color": { type: "select", get: () => Config.options.hyprland.general.borderColor.inactiveRole, set: v => { Config.options.hyprland.general.borderColor.inactiveRole = v; HyprlandConfig.applyBorderColors(); }, get options() { return ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0Border"].map(name => ({ value: name, color: roleColor(name) })); } },
@@ -179,6 +187,11 @@ QtObject {
     })
 
     readonly property var sections: [
+        {
+            page: Translation.tr("Bar"), title: Translation.tr("Per-monitor bars"), icon: "tv_displays", cards: [
+                { type: "monitorbars", key: "bar:Per-monitor bars", title: Translation.tr("Bars per monitor"), icon: "tv_displays", kw: "display screen monitor separate override multi monitor" }
+            ]
+        },
         {
             page: Translation.tr("Bar"), title: Translation.tr("Bar layout"), icon: "view_week", cards: [
                 { type: "barlayout", key: "bar:Layout editor", title: Translation.tr("Bar layout"), icon: "view_week" }

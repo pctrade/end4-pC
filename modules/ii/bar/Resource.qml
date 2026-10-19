@@ -2,10 +2,13 @@ import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.widgets
 import QtQuick
+import Quickshell
 import QtQuick.Layouts
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnSecondaryContainer
     property bool contentColorOverridden: false
     required property string iconName
@@ -27,7 +30,7 @@ Item {
         return ColorUtils.mix(Appearance.colors.colTertiary, Appearance.colors.colPrimary, blend)
     }
     readonly property Component styleComponent: {
-        switch (Config.options.bar.resources.style) {
+        switch (root.barConfig.resources.style) {
         case "filled": return filledStyle
         case "text": return textStyle
         default: return outlineStyle
@@ -138,7 +141,7 @@ Item {
 
         Item {
             Layout.alignment: Qt.AlignVCenter
-            visible: Config.options.bar.resources.showValue
+            visible: root.barConfig.resources.showValue
             implicitWidth: visible ? fullPercentageTextMetrics.width : 0
             implicitHeight: percentageText.implicitHeight
             TextMetrics {

@@ -44,6 +44,13 @@ Singleton {
     }
 
     function optionAccessors(path) {
+        if (path.startsWith("bar.")) {
+            const nestedKey = path.slice(4);
+            return {
+                get: () => Config.barValueForScreen(GlobalStates.dashboardBarScreen, nestedKey),
+                set: value => Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, nestedKey, value)
+            };
+        }
         const keys = path.split(".");
         const last = keys.pop();
         const parent = () => keys.reduce((node, key) => node[key], Config.options);
@@ -317,10 +324,10 @@ Singleton {
             { displayName: Translation.tr("Morph"), icon: "join_inner", value: "morph" }
         ]),
         "bar:Show Frame": root.toggle(
-            () => Config.options.bar.showFrame,
+            () => Config.barValueForScreen(GlobalStates.dashboardBarScreen, "showFrame"),
             value => {
                 if (value) GlobalStates.refreshBar();
-                Config.options.bar.showFrame = value;
+                Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, "showFrame", value);
             }
         ),
         "bar:Frame thickness": root.optionSpin("bar.frameThickness", 2, 10, 1),
@@ -335,8 +342,8 @@ Singleton {
             { displayName: Translation.tr("Separated"), icon: "view_column_2", value: "separated" },
             { displayName: Translation.tr("Segmented"), icon: "tablet", value: "segmented" }
         ]), {
-            canReset: () => (Config.options.bar.widgetStyles ?? []).length > 0,
-            reset: () => { Config.options.bar.widgetStyles = []; }
+            canReset: () => (Config.barValueForScreen(GlobalStates.dashboardBarScreen, "widgetStyles") ?? []).length > 0,
+            reset: () => Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, "widgetStyles", [])
         }),
         "bar:Autohide": root.optionSelect("bar.autoHide.enable", [
             { displayName: Translation.tr("No"), icon: "close", value: false },
@@ -387,10 +394,11 @@ Singleton {
             { displayName: Translation.tr("Text"), icon: "text_fields", value: "text" }
         ]),
         "bar:Bar position": root.select(
-            () => (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0),
+            () => (Config.barValueForScreen(GlobalStates.dashboardBarScreen, "bottom") ? 1 : 0)
+                | (Config.barValueForScreen(GlobalStates.dashboardBarScreen, "vertical") ? 2 : 0),
             value => {
-                Config.options.bar.bottom = (value & 1) !== 0;
-                Config.options.bar.vertical = (value & 2) !== 0;
+                Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, "bottom", (value & 1) !== 0);
+                Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, "vertical", (value & 2) !== 0);
             },
             [
                 { displayName: Translation.tr("Top"),    icon: "arrow_upward",   value: 0 },
@@ -400,8 +408,8 @@ Singleton {
             ]
         ),
         "bar:Numbers style": root.select(
-            () => JSON.stringify(Config.options.bar.workspaces.numberMap),
-            value => { Config.options.bar.workspaces.numberMap = JSON.parse(value); },
+            () => JSON.stringify(Config.barValueForScreen(GlobalStates.dashboardBarScreen, "workspaces.numberMap")),
+            value => Config.setBarValueForScreen(GlobalStates.dashboardBarScreen, "workspaces.numberMap", JSON.parse(value)),
             [
                 { displayName: Translation.tr("Normal"),    icon: "timer_10",        value: '[]' },
                 { displayName: Translation.tr("Han chars"), icon: "glyphs",          value: '["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十"]' },

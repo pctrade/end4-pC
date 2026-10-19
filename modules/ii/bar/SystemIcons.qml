@@ -10,13 +10,15 @@ import qs.modules.common.functions
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
-    property bool borderless: Config.options.bar.borderless
-    property bool showDate: Config.options.bar.verbose
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
-    property bool isDi: GlobalStates.dynamicIslandEnabled && Config.options.bar.dynamicIsland.rightWidget === "systemIcons" 
+    property bool borderless: root.barConfig.borderless
+    property bool showDate: root.barConfig.verbose
+    property bool vertical: root.barConfig.vertical
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
+    property bool isDi: Config.barHasWidget(root.barScreenName, "dynamicIsland") && root.barConfig.dynamicIsland.rightWidget === "systemIcons"
 
     readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isDi ? Appearance.colors.colOnLayer1 : (root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1))
 

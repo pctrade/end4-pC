@@ -3,13 +3,16 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
 import QtQuick
+import Quickshell
 import QtQuick.Layouts
 
 BarWidgetSwitcher {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
-    property bool borderless: Config.options.bar.borderless
+    property bool borderless: root.barConfig.borderless
     property bool showDate: Config.options.time.showDate
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
@@ -192,7 +195,7 @@ BarWidgetSwitcher {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        hoverEnabled: !Config.options.bar.tooltips.clickToShow
+        hoverEnabled: !root.barConfig.tooltips.clickToShow
         ClockWidgetPopup {
             hoverTarget: mouseArea
             today: root.today
