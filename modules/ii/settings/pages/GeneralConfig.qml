@@ -360,6 +360,156 @@ ContentPage {
         }
 
         ContentSection {
+            id: powerSection
+            icon: "power_settings_new"
+            shape: MaterialShape.Shape.Gem
+            title: Translation.tr("Power & lid")
+
+            // These are system settings (logind, systemd-sleep, UPower, udev), read live and written with admin rights
+            Component.onCompleted: PowerSettings.refresh()
+
+            // The spin box's text field assigns `value` on creation, which drops any binding: push updates by hand
+            Connections {
+                target: PowerSettings
+                function onValuesChanged() {
+                    delaySpin.value = PowerSettings.values.hibernateDelay ?? 0;
+                    criticalSpin.value = PowerSettings.values.criticalPercent ?? 2;
+                }
+            }
+
+            readonly property var sleepActions: [
+                { displayName: Translation.tr("Suspend"), value: "suspend" },
+                { displayName: Translation.tr("Suspend, then hibernate"), value: "suspend-then-hibernate" },
+                { displayName: Translation.tr("Hibernate"), value: "hibernate" }
+            ]
+            readonly property var lidActions: powerSection.sleepActions.concat([
+                { displayName: Translation.tr("Lock"), value: "lock" },
+                { displayName: Translation.tr("Do nothing"), value: "ignore" }
+            ])
+            readonly property var powerKeyActions: [{ displayName: Translation.tr("Shut down"), value: "poweroff" }].concat(powerSection.lidActions)
+            readonly property bool usesDelay: [PowerSettings.values.lid, PowerSettings.values.lidPlugged, PowerSettings.values.idle,
+                PowerSettings.values.powerKey].includes("suspend-then-hibernate")
+
+            NoticeBox {
+                Layout.fillWidth: true
+                visible: PowerSettings.error !== ""
+                materialIcon: "error"
+                text: PowerSettings.error
+            }
+
+            GroupedList {
+                enabled: PowerSettings.ready
+
+                ConfigComboBox {
+                    buttonIcon: "laptop_chromebook"
+                    text: Translation.tr("When the lid closes")
+                    description: Translation.tr("On battery. Ignored while an external display is connected")
+                    model: powerSection.lidActions
+                    currentValue: PowerSettings.values.lid
+                    onSelected: newValue => PowerSettings.set("lid", newValue)
+                }
+                ConfigComboBox {
+                    buttonIcon: "power"
+                    text: Translation.tr("When the lid closes, plugged in")
+                    model: [{ displayName: Translation.tr("Same as on battery"), value: "same" }].concat(powerSection.lidActions)
+                    currentValue: PowerSettings.values.lidPlugged
+                    onSelected: newValue => PowerSettings.set("lidPlugged", newValue)
+                }
+                ConfigComboBox {
+                    buttonIcon: "bedtime"
+                    text: Translation.tr("When idle")
+                    description: Translation.tr("What Standby does. Its timer is in Hyprland › Idle")
+                    model: powerSection.sleepActions
+                    currentValue: PowerSettings.values.idle
+                    onSelected: newValue => PowerSettings.set("idle", newValue)
+                }
+                ConfigComboBox {
+                    buttonIcon: "power_settings_new"
+                    text: Translation.tr("Power button")
+                    description: Translation.tr("Short press. Holding it always forces the machine off")
+                    model: powerSection.powerKeyActions
+                    currentValue: PowerSettings.values.powerKey
+                    onSelected: newValue => PowerSettings.set("powerKey", newValue)
+                }
+                ConfigSpinBox {
+                    id: delaySpin
+                    enabled: powerSection.usesDelay
+                    icon: "hourglass_bottom"
+                    text: Translation.tr("Hibernate after suspended for (min, 0 = let the system decide)")
+                    value: PowerSettings.values.hibernateDelay ?? 0
+                    from: 0
+                    to: 240
+                    stepSize: 5
+                    onValueChanged: {
+                        if (PowerSettings.ready && value !== PowerSettings.values.hibernateDelay)
+                            PowerSettings.set("hibernateDelay", value);
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("System safety net")
+                tooltip: Translation.tr("Acts on its own even if the shell is frozen or the countdown was cancelled")
+                visible: Battery.available
+
+                GroupedList {
+                    enabled: PowerSettings.ready
+
+                    ConfigRow {
+                        uniform: true
+                        ConfigSpinBox {
+                            id: criticalSpin
+                            icon: "battery_alert"
+                            text: Translation.tr("At battery (%)")
+                            value: PowerSettings.values.criticalPercent ?? 2
+                            from: 1
+                            to: 4
+                            stepSize: 1
+                            onValueChanged: {
+                                if (PowerSettings.ready && value !== PowerSettings.values.criticalPercent)
+                                    PowerSettings.set("criticalPercent", value);
+                            }
+                        }
+                        ConfigComboBox {
+                            text: Translation.tr("the system will")
+                            fieldWidth: 150
+                            model: [
+                                { displayName: Translation.tr("Hibernate"), value: "Hibernate" },
+                                { displayName: Translation.tr("Shut down"), value: "PowerOff" }
+                            ]
+                            currentValue: PowerSettings.values.criticalAction
+                            onSelected: newValue => PowerSettings.set("criticalAction", newValue)
+                        }
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Devices that can wake the laptop")
+                tooltip: Translation.tr("USB keyboards, mice and receivers. A wireless mouse wakes it on any movement")
+                visible: (PowerSettings.values.wake ?? []).length > 0
+
+                // One single-row list per device: GroupedList can't hold a Repeater
+                Repeater {
+                    model: PowerSettings.values.wake ?? []
+                    delegate: GroupedList {
+                        id: wakeRow
+                        required property var modelData
+                        ConfigSwitch {
+                            buttonIcon: "usb"
+                            text: wakeRow.modelData.name
+                            checked: wakeRow.modelData.enabled
+                            onCheckedChanged: {
+                                if (checked !== wakeRow.modelData.enabled)
+                                    PowerSettings.set("wake", `${wakeRow.modelData.id}=${checked ? "on" : "off"}`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "volume_up"
             shape: MaterialShape.Shape.Circle
             title: Translation.tr("Audio")
