@@ -476,6 +476,21 @@ Singleton {
                         property string alignment: "center" // "left", "center", "right"
                         property bool shadow: true
                     }
+
+                    property JsonObject lyrics: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 700
+                        property real z: 0
+                        property string style: "line" // "line", "karaoke"
+                        property string fontFamily: "" // "" = the theme's title font
+                        property int fontSize: 48
+                        property string color: "" // "" = automatic, otherwise an Appearance color name
+                        property string alignment: "center" // "left", "center", "right"
+                        property bool shadow: true
+                        property bool hideWhenPaused: true
+                    }
                 }
                 property JsonObject liveWallpaper: JsonObject {
                     property bool pauseOnBattery: false // Pause as soon as the charger is out

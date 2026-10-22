@@ -146,6 +146,15 @@ QtObject {
         "desktop:Text size": { type: "slider", get: () => Config.options.background.widgets.customText.fontSize, set: v => { Config.options.background.widgets.customText.fontSize = Math.round(v); }, from: 12, to: 400, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Text alignment": { type: "select", get: () => Config.options.background.widgets.customText.alignment, set: v => { Config.options.background.widgets.customText.alignment = v; }, options: [{ displayName: Translation.tr("Left"), icon: "format_align_left", value: "left" }, { displayName: Translation.tr("Center"), icon: "format_align_center", value: "center" }, { displayName: Translation.tr("Right"), icon: "format_align_right", value: "right" }] },
         "desktop:Text color": { type: "select", get: () => Config.options.background.widgets.customText.color, set: v => { Config.options.background.widgets.customText.color = v; }, get options() { return ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0"].map(name => ({ value: name, color: Appearance.getColorFromName(name) })); } },
+        "desktop:Lyrics enable": { type: "switch", get: () => Config.options.background.widgets.lyrics.enable, set: v => { Config.options.background.widgets.lyrics.enable = v; } },
+        "desktop:Lyrics hide when paused": { type: "switch", get: () => Config.options.background.widgets.lyrics.hideWhenPaused, set: v => { Config.options.background.widgets.lyrics.hideWhenPaused = v; } },
+        "desktop:Lyrics shadow": { type: "switch", get: () => Config.options.background.widgets.lyrics.shadow, set: v => { Config.options.background.widgets.lyrics.shadow = v; } },
+        "desktop:Lyrics style": { type: "select", get: () => Config.options.background.widgets.lyrics.style, set: v => { Config.options.background.widgets.lyrics.style = v; }, options: [{ displayName: Translation.tr("Current line"), icon: "short_text", value: "line" }, { displayName: Translation.tr("Karaoke"), icon: "lyrics", value: "karaoke" }] },
+        "desktop:Lyrics font family": { type: "text", get: () => Config.options.background.widgets.lyrics.fontFamily, set: v => { Config.options.background.widgets.lyrics.fontFamily = v.trim(); } },
+        "desktop:Lyrics size": { type: "slider", get: () => Config.options.background.widgets.lyrics.fontSize, set: v => { Config.options.background.widgets.lyrics.fontSize = Math.round(v); }, from: 16, to: 200, stopIndicatorValues: [48], usePercentTooltip: false },
+        "desktop:Lyrics alignment": { type: "select", get: () => Config.options.background.widgets.lyrics.alignment, set: v => { Config.options.background.widgets.lyrics.alignment = v; }, options: [{ displayName: Translation.tr("Left"), icon: "format_align_left", value: "left" }, { displayName: Translation.tr("Center"), icon: "format_align_center", value: "center" }, { displayName: Translation.tr("Right"), icon: "format_align_right", value: "right" }] },
+        "desktop:Lyrics color": { type: "select", get: () => Config.options.background.widgets.lyrics.color, set: v => { Config.options.background.widgets.lyrics.color = v; }, get options() { return ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0"].map(name => ({ value: name, color: Appearance.getColorFromName(name) })); } },
+        "desktop:Lyrics auto colors": { type: "switch", get: () => Config.options.background.widgets.lyrics.color === "", set: v => { Config.options.background.widgets.lyrics.color = v ? "" : "primary"; } },
         "interface:AI policy": { type: "select", get: () => Config.options.policies.ai, set: v => { Config.options.policies.ai = v; }, options: [{ displayName: Translation.tr("No"), icon: "close", value: 0 }, { displayName: Translation.tr("Yes"), icon: "check", value: 1 }, { displayName: Translation.tr("Local"), icon: "sync_saved_locally", value: 2 }] },
         "interface:Weeb policy": { type: "select", get: () => Config.options.policies.weeb, set: v => { Config.options.policies.weeb = v; }, options: [{ displayName: Translation.tr("No"), icon: "close", value: 0 }, { displayName: Translation.tr("Yes"), icon: "check", value: 1 }, { displayName: Translation.tr("Closet"), icon: "ev_shadow", value: 2 }] },
         "interface:Overview order horizontal": { type: "select", get: () => Config.options.overview.orderRightLeft, set: v => { Config.options.overview.orderRightLeft = v; }, options: [{ displayName: Translation.tr("Left to right"), icon: "arrow_forward", value: 0 }, { displayName: Translation.tr("Right to left"), icon: "arrow_back", value: 1 }] },
@@ -531,6 +540,19 @@ QtObject {
                 { type: "slider", key: "desktop:Text size", title: Translation.tr("Font size"), icon: "format_size", percent: false },
                 { type: "select", key: "desktop:Text alignment", title: Translation.tr("Alignment"), icon: "format_align_center" },
                 { type: "swatch", key: "desktop:Text color", title: Translation.tr("Color"), icon: "palette", w: 2 }
+            ]
+        },
+        {
+            page: Translation.tr("Desktop"), title: Translation.tr("Lyrics"), icon: "lyrics", cards: [
+                { type: "toggle", key: "desktop:Lyrics enable", title: Translation.tr("Enable"), icon: "lyrics" },
+                { type: "toggle", key: "desktop:Lyrics hide when paused", title: Translation.tr("Hide when paused"), icon: "pause_circle" },
+                { type: "toggle", key: "desktop:Lyrics shadow", title: Translation.tr("Shadow"), icon: "shadow" },
+                { type: "toggle", key: "desktop:Lyrics auto colors", title: Translation.tr("Automatic colors"), icon: "auto_awesome" },
+                { type: "select", key: "desktop:Lyrics style", title: Translation.tr("Style"), icon: "format_line_spacing" },
+                { type: "text", key: "desktop:Lyrics font family", title: Translation.tr("Font family"), icon: "custom_typography" },
+                { type: "slider", key: "desktop:Lyrics size", title: Translation.tr("Font size"), icon: "format_size", percent: false },
+                { type: "select", key: "desktop:Lyrics alignment", title: Translation.tr("Alignment"), icon: "format_align_center" },
+                { type: "swatch", key: "desktop:Lyrics color", title: Translation.tr("Color"), icon: "palette", w: 2 }
             ]
         },
         {
