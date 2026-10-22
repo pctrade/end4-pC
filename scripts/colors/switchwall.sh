@@ -15,6 +15,55 @@ terminalscheme="$SCRIPT_DIR/terminal/scheme-base.json"
 # shellcheck source=../lib/config.sh
 source "$SCRIPT_DIR/../lib/config.sh"
 
+# kde-material-you-colors reads its own setting from
+# ~/.config/kde-material-you-colors/config.conf (HOME based, it ignores
+# XDG_CONFIG_HOME). Its --disable-konsole flag defaults to None, so a value in
+# this file wins.
+KMYC_CONFIG="$HOME/.config/kde-material-you-colors/config.conf"
+
+# Mirror the shell's "Keep Konsole color scheme" option into
+# kde-material-you-colors' disable_konsole setting. Editing with awk/sed keeps
+# the user's comments and layout intact (python configparser would strip them).
+sync_kmyc_konsole_lock() {
+    local lock="$1"
+    local want="True"
+    [[ "$lock" == "true" ]] || want="False"
+
+    if [ ! -f "$KMYC_CONFIG" ]; then
+        mkdir -p "$(dirname "$KMYC_CONFIG")"
+        printf '[CUSTOM]\ndisable_konsole = %s\n' "$want" > "$KMYC_CONFIG"
+        return
+    fi
+
+    # Already in sync? configparser takes the last occurrence, so compare that.
+    local current
+    current=$(grep -E '^[[:space:]]*disable_konsole[[:space:]]*=' "$KMYC_CONFIG" | tail -n1 | cut -d= -f2 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+    if [ "$current" == "$(printf '%s' "$want" | tr '[:upper:]' '[:lower:]')" ]; then
+        return
+    fi
+
+    local tmp
+    tmp="$(mktemp)"
+
+    if grep -qE '^[[:space:]]*disable_konsole[[:space:]]*=' "$KMYC_CONFIG"; then
+        awk -v want="$want" '
+            /^[[:space:]]*disable_konsole[[:space:]]*=/ { print "disable_konsole = " want; next }
+            { print }
+        ' "$KMYC_CONFIG" > "$tmp"
+    elif grep -qE '^\[CUSTOM\]' "$KMYC_CONFIG"; then
+        awk -v want="$want" '
+            /^\[CUSTOM\]/ { print; print "disable_konsole = " want; next }
+            { print }
+        ' "$KMYC_CONFIG" > "$tmp"
+    else
+        cp "$KMYC_CONFIG" "$tmp"
+        printf '\n[CUSTOM]\ndisable_konsole = %s\n' "$want" >> "$tmp"
+    fi
+
+    cat "$tmp" > "$KMYC_CONFIG"
+    rm -f "$tmp"
+}
+
 handle_kde_material_you_colors() {
     if [ -f "$SHELL_CONFIG_FILE" ]; then
         enable_qt_apps=$(jq -r '.appearance.wallpaperTheming.enableQtApps' "$SHELL_CONFIG_FILE")
@@ -32,6 +81,27 @@ handle_kde_material_you_colors() {
             kde_scheme_variant="scheme-tonal-spot"
             ;;
     esac
+
+    # Konsole lock: kde-material-you-colors rewrites the Konsole profiles and
+    # live-switches every running Konsole session over D-Bus, which recolors
+    # already-open windows. When the lock is on we disable its Konsole theming
+    # at the source so profiles, generated color schemes and running sessions
+    # are all left untouched, while every other app is still themed.
+    local lock_konsole="true"
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        lock_konsole=$(jq -r '.appearance.wallpaperTheming.lockKonsoleColors // "true"' "$SHELL_CONFIG_FILE")
+    fi
+    sync_kmyc_konsole_lock "$lock_konsole"
+
+    # Migration from the old snapshot/restore lock: drop the mirror profile it
+    # left behind (with the lock on it is never applied again), but only when no
+    # Konsole is running so live sessions aren't disturbed. The old state
+    # directory is orphaned now.
+    if [[ "$lock_konsole" == "true" ]] && ! pgrep -x konsole > /dev/null 2>&1; then
+        rm -f "$HOME/.local/share/konsole/TempMyou.profile"
+    fi
+    rm -rf "$STATE_DIR/user/generated/konsole-lock-backup"
+
     "$XDG_CONFIG_HOME"/matugen/templates/kde/kde-material-you-colors-wrapper.sh --scheme-variant "$kde_scheme_variant"
 }
 
