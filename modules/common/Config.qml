@@ -996,6 +996,15 @@ Singleton {
                 property int checkInterval: 120 // minutes
                 property int adviseUpdateThreshold: 75 // packages
                 property int stronglyAdviseUpdateThreshold: 200 // packages
+                property string distro: "auto" // Options: "auto", "arch", "cachyos", "debian", "fedora", "opensuse", "custom"
+                property string customUpdateCommand: "" // Used when distro == "custom", e.g. "sudo apt update && sudo apt upgrade"
+                property bool notifyUpstreamUpdates: true // Ping when the upstream end4-pC repo has new commits
+                property int upstreamCheckInterval: 360 // minutes
+                property string upstreamRepoUrl: "https://github.com/pctrade/end4-pC.git"
+                property bool notifyFixesRepo: false // Ping when a secondary "fixes" fork of the config has new commits
+                property string fixesRepoUrl: "" // e.g. "https://github.com/youruser/end4-pC-YourFixes.git"
+                property bool notifySystemUpdates: true // Notify once when system packages can be updated
+                property string systemUpdateTool: "auto" // "auto", "cachy-update", "yay", "paru", "pacman" — used on Arch-family distros
             }
             
             property JsonObject wallpaperSelector: JsonObject {
