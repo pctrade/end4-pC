@@ -17,8 +17,15 @@ Item {
     property bool glassEnabled: true
     property bool fullscreenSurface: false
     property real tintStrength: 0.3
+    // Glass on the wallpaper layer (desktop widgets) has only the wallpaper
+    // behind it, so it keeps the wallpaper lens even in live-blur mode.
+    property bool liveBlurAllowed: true
     readonly property bool live: glassEnabled && (Config.options?.background?.widgets?.glass?.enable ?? false)
-    readonly property bool tracking: live && (win?.visible ?? true)
+    // Live blur: Hyprland blurs the real windows behind the layer and only
+    // the rim, sheen and tint are drawn here (shaders/frostedRim.frag).
+    readonly property bool liveBlur: live && liveBlurAllowed && (Config.options?.background?.widgets?.glass?.liveBlur ?? false)
+    readonly property real liveTint: Config.options?.background?.widgets?.glass?.liveTint ?? 0.55
+    readonly property bool tracking: live && !liveBlur && (win?.visible ?? true)
 
     readonly property var win: QsWindow.window
     readonly property var surfaceScreen: ({
@@ -98,7 +105,7 @@ Item {
 
     Process {
         id: tracker
-        running: root.live && root.floating && !!root.win?.visible
+        running: root.live && !root.liveBlur && root.floating && !!root.win?.visible
         command: ["bash", "-c", "while :; do hyprctl -j activewindow | tr -d '\\n'; echo; sleep 0.016; done"]
         stdout: SplitParser {
             onRead: line => {
@@ -174,7 +181,22 @@ Item {
 
     Loader {
         anchors.fill: parent
-        active: root.live && !!root.scr && root.wallpaper !== ""
+        active: root.liveBlur
+
+        sourceComponent: ShaderEffect {
+            property vector4d radii: Qt.vector4d(root.topLeftRadius, root.topRightRadius, root.bottomRightRadius, root.bottomLeftRadius)
+            property color wash: Qt.rgba(root.tint.r, root.tint.g, root.tint.b, root.liveTint)
+            property vector2d size: Qt.vector2d(width, height)
+            property real rimWidth: 4
+            property real sheen: 0.31
+
+            fragmentShader: Qt.resolvedUrl("shaders/frostedRim.frag.qsb")
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        active: root.live && !root.liveBlur && !!root.scr && root.wallpaper !== ""
 
         sourceComponent: Item {
             Image {

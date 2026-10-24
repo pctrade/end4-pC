@@ -279,6 +279,8 @@ Singleton {
                     property real blurRadius: 32
                     property JsonObject glass: JsonObject {
                         property bool enable: false
+                        property bool liveBlur: false // blur real windows behind, not the wallpaper
+                        property real liveTint: 0.55 // tint opacity over the live blur
                     }
                     property bool shadow: true
                     property list<string> menuHidden: []

@@ -137,6 +137,8 @@ QtObject {
         "desktop:Visualizer height": { type: "slider", get: () => Config.options.background.widgets.visualizer.height, set: v => { Config.options.background.widgets.visualizer.height = Math.round(v); }, from: 120, to: 600, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Visualizer size": { type: "slider", get: () => Config.options.background.widgets.visualizer.ringSize, set: v => { Config.options.background.widgets.visualizer.ringSize = Math.round(v); }, from: 200, to: 900, stopIndicatorValues: [], usePercentTooltip: false },
         "interface:Glassy UI": { type: "switch", get: () => Config.options.background.widgets.glass.enable, set: v => { Config.options.background.widgets.glass.enable = v; } },
+        "interface:Glass live blur": { type: "switch", get: () => Config.options.background.widgets.glass.liveBlur, set: v => { Config.options.background.widgets.glass.liveBlur = v; } },
+        "interface:Glass tint": { type: "slider", get: () => Config.options.background.widgets.glass.liveTint * 100, set: v => { Config.options.background.widgets.glass.liveTint = Math.round(v) / 100; }, from: 0, to: 90, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Text enable": { type: "switch", get: () => Config.options.background.widgets.customText.enable, set: v => { Config.options.background.widgets.customText.enable = v; } },
         "desktop:Text shadow": { type: "switch", get: () => Config.options.background.widgets.customText.shadow, set: v => { Config.options.background.widgets.customText.shadow = v; } },
         "desktop:Text auto colors": { type: "switch", get: () => Config.options.background.widgets.customText.color === "", set: v => { Config.options.background.widgets.customText.color = v ? "" : "primary"; } },
@@ -285,6 +287,13 @@ QtObject {
                 { type: "toggle", key: "bar:Pin media controls", title: Translation.tr("Pin media controls"), icon: "push_pin" },
                 { type: "toggle", key: "bar:Show only title", title: Translation.tr("Only title"), icon: "title" },
                 { type: "spin", key: "bar:Max media width", title: Translation.tr("Max media width"), icon: "width" }
+            ]
+        },
+        {
+            page: Translation.tr("Interface"), title: Translation.tr("Glass"), icon: "water_drop", cards: [
+                { type: "toggle", key: "interface:Glassy UI", title: Translation.tr("Glassy UI"), icon: "water_drop" },
+                { type: "toggle", key: "interface:Glass live blur", title: Translation.tr("Live blur"), icon: "blur_on", kw: "glass blur windows behind compositor hyprland live real" },
+                { type: "slider", key: "interface:Glass tint", title: Translation.tr("Glass tint"), icon: "opacity", kw: "glass tint live blur darkness" }
             ]
         },
         {
