@@ -33,6 +33,20 @@ StyledImage {
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
     }
 
+    onStatusChanged: {
+        if (status === Image.Error && sourcePath.length > 0) {
+            const resolvedUrlWithoutFileProtocol = FileUtils.trimFileProtocol(`${Qt.resolvedUrl(sourcePath)}`);
+            const encodedUrlWithoutFileProtocol = resolvedUrlWithoutFileProtocol.split("/").map(part => encodeURIComponent(part)).join("/");
+            const md5Hash = Qt.md5(`file://${encodedUrlWithoutFileProtocol}`);
+            const normalThumb = `${Directories.genericCache}/thumbnails/normal/${md5Hash}.png`;
+            if (root.source.toString() === root.thumbnailPath && root.thumbnailSizeName !== "normal") {
+                root.source = normalThumb;
+            } else if (root.source.toString() !== Qt.resolvedUrl(root.sourcePath).toString()) {
+                root.source = Qt.resolvedUrl(root.sourcePath);
+            }
+        }
+    }
+
     onSourceSizeChanged: {
         if (!root.generateThumbnail) return;
         thumbnailGeneration.running = false;

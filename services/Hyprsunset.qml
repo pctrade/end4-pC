@@ -93,11 +93,18 @@ Singleton {
             root.disableTemperature();
             return;
         }
-        Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset & disown; sleep 0.3; hyprctl hyprsunset identity`]);
-        root.temperatureActive = false;
+        if (Config.options?.light?.night?.enabled ?? false) {
+            root.enableTemperature();
+        } else {
+            Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset & disown; sleep 0.3; hyprctl hyprsunset identity`]);
+            root.temperatureActive = false;
+        }
     }
 
     function enableTemperature() {
+        if (Config.options?.light?.night) {
+            Config.options.light.night.enabled = true;
+        }
         if (root.isNiri) {
             root.startNiriSunset(root.colorTemperature);
         } else {
@@ -108,6 +115,9 @@ Singleton {
     }
 
     function disableTemperature() {
+        if (Config.options?.light?.night) {
+            Config.options.light.night.enabled = false;
+        }
         if (root.isNiri) {
             root.stopNiriSunset();
         } else {

@@ -728,6 +728,7 @@ Singleton {
             property JsonObject light: JsonObject {
                 property JsonObject night: JsonObject {
                     property bool automatic: true
+                    property bool enabled: false
                     property string from: "19:00" // Format: "HH:mm", 24-hour time
                     property string to: "06:30"   // Format: "HH:mm", 24-hour time
                     property int colorTemperature: 5000
