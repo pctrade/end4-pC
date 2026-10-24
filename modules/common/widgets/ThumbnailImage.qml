@@ -43,9 +43,18 @@ StyledImage {
         command: {
             const maxSize = Images.thumbnailSizes[root.thumbnailSizeName];
             const thumbPath = FileUtils.trimFileProtocol(root.thumbnailPath);
-            return ["bash", "-c",
-                `[ -f '${thumbPath}' ] && exit 0 || { tmp='${thumbPath}.$$.tmp.png'; magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '\${tmp}' && mv '\${tmp}' '${thumbPath}' && exit 1; exit 2; }`
-            ]
+            // Paths are passed as positional args ($1..$3), never interpolated into the
+            // script, so quotes in file names can neither break nor inject into it.
+            // Exit codes: 0 = already cached, 1 = generated, 2 = failed.
+            return ["bash", "-c", `
+                thumb="$1"; src="$2"; max="$3"
+                [ -f "$thumb" ] && exit 0
+                tmp="$thumb.$$.tmp.png"
+                trap 'kill "$pid" 2>/dev/null; rm -f "$tmp"' EXIT
+                magick "$src" -resize "$max"x"$max" "$tmp" & pid=$!
+                wait "$pid" && mv "$tmp" "$thumb" && exit 1
+                exit 2
+            `, "_", thumbPath, root.sourcePath, `${maxSize}`]
         }
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 1) {
