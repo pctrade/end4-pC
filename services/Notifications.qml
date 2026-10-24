@@ -65,6 +65,11 @@ Singleton {
         running: true
         onTriggered: () => {
             const index = root.list.findIndex((notif) => notif.notificationId === notificationId);
+            // Already dismissed or discarded while the timer was running
+            if (index === -1) {
+                destroy();
+                return;
+            }
             const notifObject = root.list[index];
             print("[Notifications] Notification timer triggered for ID: " + notificationId + ", transient: " + notifObject?.isTransient);
             if (notifObject.isTransient) root.discardNotification(notificationId);
