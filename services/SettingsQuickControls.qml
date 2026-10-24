@@ -187,6 +187,7 @@ Singleton {
         "interface:Left Sidebar/Enable": root.optionSwitch("sidebar.media.enable"),
         "interface:Follow Album Colors": root.optionSwitch("sidebar.media.artColors"),
         "interface:Enable Translator": root.optionSwitch("sidebar.translator.enable"),
+        "interface:Enable Apps": root.optionSwitch("sidebar.apps.enable"),
         "interface:Enable Football": root.optionSwitch("sidebar.football.enable"),
         "interface:Football/Alerts": root.optionSwitch("sidebar.football.alerts"),
         "interface:Football/Scope": root.optionSelect("sidebar.football.alertsScope", [

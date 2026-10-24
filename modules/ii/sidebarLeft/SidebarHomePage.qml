@@ -30,6 +30,7 @@ Item {
         case "ai": return { shape: MaterialShape.Shape.Cookie9Sided, container: Appearance.colors.colTertiaryContainer, onContainer: Appearance.colors.colOnTertiaryContainer, accent: Appearance.colors.colTertiary, onAccent: Appearance.colors.colOnTertiary };
         case "translator": return { shape: MaterialShape.Shape.Clover4Leaf, container: Appearance.colors.colSecondaryContainer, onContainer: Appearance.colors.colOnSecondaryContainer, accent: Appearance.colors.colSecondary, onAccent: Appearance.colors.colOnSecondary };
         case "media": return { shape: MaterialShape.Shape.Sunny, container: Appearance.colors.colPrimaryContainer, onContainer: Appearance.colors.colOnPrimaryContainer, accent: Appearance.colors.colPrimary, onAccent: Appearance.colors.colOnPrimary };
+        case "apps": return { shape: MaterialShape.Shape.Pill, container: Appearance.colors.colPrimaryContainer, onContainer: Appearance.colors.colOnPrimaryContainer, accent: Appearance.colors.colPrimary, onAccent: Appearance.colors.colOnPrimary };
         case "sports": return { shape: MaterialShape.Shape.Flower, container: Appearance.colors.colTertiaryContainer, onContainer: Appearance.colors.colOnTertiaryContainer, accent: Appearance.colors.colTertiary, onAccent: Appearance.colors.colOnTertiary };
         default: return { shape: MaterialShape.Shape.Cookie6Sided, container: Appearance.colors.colSecondaryContainer, onContainer: Appearance.colors.colOnSecondaryContainer, accent: Appearance.colors.colSecondary, onAccent: Appearance.colors.colOnSecondary };
         }
@@ -42,6 +43,8 @@ Item {
             const count = Ai.messageIDs.length;
             return count > 0 ? `${name} · ${Translation.tr("%1 messages").arg(count)}` : name;
         }
+        case "apps":
+            return Translation.tr("%1 installed").arg(AppSearch.list.length);
         case "translator":
             return Translation.tr("Translate text");
         case "media":

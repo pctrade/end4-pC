@@ -17,9 +17,11 @@ Item {
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool mediaEnabled: Config.options.sidebar.media.enable
     property bool footballEnabled: Config.options.sidebar.football.enable
+    property bool appsEnabled: Config.options.sidebar.apps.enable
 
     readonly property var featurePages: [
         ...(root.aiChatEnabled ? [{"key": "ai", "icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
+        ...(root.appsEnabled ? [{"key": "apps", "icon": "apps", "name": Translation.tr("Applications")}] : []),
         ...(root.translatorEnabled ? [{"key": "translator", "icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...(root.mediaEnabled ? [{"key": "media", "icon": "music_note", "name": Translation.tr("Media")}] : []),
         ...(root.footballEnabled ? [{"key": "sports", "icon": "sports", "name": Translation.tr("Sports")}] : []),
@@ -195,6 +197,7 @@ Item {
 
                 PageSlot { pageKey: "home"; page: home }
                 PageSlot { pageKey: "ai"; enabledPage: root.aiChatEnabled; page: aiChat }
+                PageSlot { pageKey: "apps"; enabledPage: root.appsEnabled; page: apps }
                 PageSlot { pageKey: "translator"; enabledPage: root.translatorEnabled; page: translator }
                 PageSlot { pageKey: "media"; enabledPage: root.mediaEnabled; page: media }
                 PageSlot { pageKey: "sports"; enabledPage: root.footballEnabled; page: football }
@@ -212,6 +215,10 @@ Item {
         Component {
             id: aiChat
             AiChat {}
+        }
+        Component {
+            id: apps
+            AppsPage {}
         }
         Component {
             id: translator
