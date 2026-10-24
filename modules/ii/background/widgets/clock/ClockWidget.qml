@@ -82,6 +82,7 @@ AbstractBackgroundWidget {
             fade: false
             sourceComponent: DailyClock {
                 colText: root.resolvedClockColor
+                widget: root
             }
         }
 
