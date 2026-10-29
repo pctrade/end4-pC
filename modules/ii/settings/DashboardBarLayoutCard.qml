@@ -11,7 +11,8 @@ DashboardCard {
     property string icon: "view_week"
     property var tileShape: MaterialShape.Shape.Gem
 
-    readonly property var barConfig: Config.options.bar
+    readonly property string screenName: GlobalStates.dashboardBarScreen
+    readonly property var barConfig: Config.barForScreen(root.screenName)
     readonly property bool vertical: barConfig.vertical
     readonly property var leftList: Array.from(barConfig.layouts.leftLayout)
     readonly property var middleList: Array.from(barConfig.layouts.middleLayout)
@@ -204,10 +205,12 @@ DashboardCard {
         if (target !== "tray") lists[target].splice(index, 0, info.id);
 
         Qt.callLater(() => {
-            const layouts = Config.options.bar.layouts;
-            if (JSON.stringify(lists.left) !== JSON.stringify(leftList)) layouts.leftLayout = lists.left;
-            if (JSON.stringify(lists.middle) !== JSON.stringify(middleList)) layouts.middleLayout = lists.middle;
-            if (JSON.stringify(lists.right) !== JSON.stringify(rightList)) layouts.rightLayout = lists.right;
+            if (JSON.stringify(lists.left) !== JSON.stringify(leftList))
+                Config.setBarValueForScreen(root.screenName, "layouts.leftLayout", lists.left);
+            if (JSON.stringify(lists.middle) !== JSON.stringify(middleList))
+                Config.setBarValueForScreen(root.screenName, "layouts.middleLayout", lists.middle);
+            if (JSON.stringify(lists.right) !== JSON.stringify(rightList))
+                Config.setBarValueForScreen(root.screenName, "layouts.rightLayout", lists.right);
         });
     }
 
@@ -222,10 +225,9 @@ DashboardCard {
     function clearAll() {
         confirmClear = false;
         Qt.callLater(() => {
-            const layouts = Config.options.bar.layouts;
-            layouts.leftLayout = [];
-            layouts.middleLayout = [];
-            layouts.rightLayout = [];
+            Config.setBarValueForScreen(root.screenName, "layouts.leftLayout", []);
+            Config.setBarValueForScreen(root.screenName, "layouts.middleLayout", []);
+            Config.setBarValueForScreen(root.screenName, "layouts.rightLayout", []);
         });
     }
 
@@ -233,10 +235,9 @@ DashboardCard {
         const lists = { left: leftList.slice(), middle: middleList.slice(), right: rightList.slice() };
         lists[laneId].splice(index, 1);
         Qt.callLater(() => {
-            const layouts = Config.options.bar.layouts;
-            if (laneId === "left") layouts.leftLayout = lists.left;
-            else if (laneId === "middle") layouts.middleLayout = lists.middle;
-            else layouts.rightLayout = lists.right;
+            if (laneId === "left") Config.setBarValueForScreen(root.screenName, "layouts.leftLayout", lists.left);
+            else if (laneId === "middle") Config.setBarValueForScreen(root.screenName, "layouts.middleLayout", lists.middle);
+            else Config.setBarValueForScreen(root.screenName, "layouts.rightLayout", lists.right);
         });
     }
 

@@ -15,13 +15,15 @@ import Quickshell.Services.Mpris
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnSecondaryContainer
     property bool contentColorOverridden: false
     signal styleEditorRequested()
     
     property bool vertical: false
-    property bool borderless: Config.options.bar.borderless
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool borderless: root.barConfig.borderless
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
 
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
@@ -80,8 +82,8 @@ Item {
         : (isMaterial 
             ? materialRow.implicitWidth 
             : Math.max(
-                Config.options.bar.media.minWidth,
-                Math.min(rowLayout.implicitWidth + 8, Config.options.bar.media.maxWidth)
+                root.barConfig.media.minWidth,
+                Math.min(rowLayout.implicitWidth + 8, root.barConfig.media.maxWidth)
             ))
     implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight + 12) : Appearance.sizes.barHeight
 
@@ -95,7 +97,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
-        hoverEnabled: !Config.options.bar.tooltips.clickToShow
+        hoverEnabled: !root.barConfig.tooltips.clickToShow
         onPressed: (event) => {
             if (event.button === Qt.MiddleButton)      activePlayer?.togglePlaying()
             else if (event.button === Qt.BackButton)   activePlayer?.previous()
@@ -185,14 +187,14 @@ Item {
                 }
             }
             StyledText {
-                visible: Config.options.bar.verbose
+                visible: root.barConfig.verbose
                 Layout.alignment: Qt.AlignVCenter
                 Layout.fillWidth: true
                 Layout.rightMargin: 0
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
                 color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
-                text: Config.options.bar.media.onlyTitle ? root.cleanedTitle : `${root.cleanedTitle}${root.activePlayer?.trackArtist ? ' • ' + root.activePlayer.trackArtist : ''}`
+                text: root.barConfig.media.onlyTitle ? root.cleanedTitle : `${root.cleanedTitle}${root.activePlayer?.trackArtist ? ' • ' + root.activePlayer.trackArtist : ''}`
             }
         }
     }

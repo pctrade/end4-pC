@@ -8,18 +8,20 @@ import QtQuick.Layouts
 
 MouseArea {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     signal styleEditorRequested()
     property bool hovered: false
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool vertical: root.barConfig.vertical
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
 
     implicitWidth: vertical ? 32 : isMaterial ? (contentLoader.item?.implicitWidth ?? 0) : (contentLoader.item?.implicitWidth + 8 ?? 0)
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
 
     acceptedButtons: Qt.LeftButton | Qt.RightButton
-    hoverEnabled: !Config.options.bar.tooltips.clickToShow
+    hoverEnabled: !root.barConfig.tooltips.clickToShow
 
     onClicked: (mouse) => {
         if (mouse.button === Qt.RightButton) {

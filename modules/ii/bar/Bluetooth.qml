@@ -3,16 +3,19 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
+import Quickshell
 import QtQuick.Layouts
 
 MouseArea {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     signal styleEditorRequested()
 
     property bool vertical: false
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
     property bool hovered: containsMouse
     readonly property var screen: root.QsWindow?.window?.screen
     readonly property int screenWidth: screen?.width ?? 1920
@@ -33,7 +36,7 @@ MouseArea {
     readonly property string percentageText: `${Math.round(batteryPercentage * 100)}%`
 
     visible: BluetoothStatus.available
-    hoverEnabled: !Config.options.bar.tooltips.clickToShow
+    hoverEnabled: !root.barConfig.tooltips.clickToShow
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     cursorShape: Qt.PointingHandCursor
     implicitWidth: vertical

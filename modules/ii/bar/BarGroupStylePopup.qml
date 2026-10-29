@@ -11,14 +11,16 @@ import Quickshell.Hyprland
 
 PopupWindow {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     required property Item group
     signal dismissed
 
     readonly property var colorOptions: ["transparent", "layer0", "layer1", "layer2", "surfaceContainer", "primary", "primaryContainer", "secondary", "secondaryContainer", "tertiary", "tertiaryContainer", "errorContainer", "onError", "onLayer0"]
     readonly property real padding: Appearance.sizes.elevationMargin
     readonly property real bounceRoom: 24
-    readonly property bool barVertical: Config.options.bar.vertical
-    readonly property bool barAtEnd: Config.options.bar.bottom
+    readonly property bool barVertical: root.barConfig.vertical
+    readonly property bool barAtEnd: root.barConfig.bottom
     readonly property real awaySign: root.barAtEnd ? -1 : 1
     property bool closing: false
 
@@ -47,12 +49,12 @@ PopupWindow {
     anchor {
         window: root.group.QsWindow.window
         item: root.group
-        gravity: Config.options.bar.vertical
-            ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-            : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-        edges: Config.options.bar.vertical
-            ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-            : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+        gravity: root.barConfig.vertical
+            ? (root.barConfig.bottom ? Edges.Left : Edges.Right)
+            : (root.barConfig.bottom ? Edges.Top : Edges.Bottom)
+        edges: root.barConfig.vertical
+            ? (root.barConfig.bottom ? Edges.Left : Edges.Right)
+            : (root.barConfig.bottom ? Edges.Top : Edges.Bottom)
     }
 
     HyprlandFocusGrab {
