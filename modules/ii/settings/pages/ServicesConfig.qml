@@ -403,6 +403,129 @@ ContentPage {
                         Config.options.updates.checkInterval = value;
                     }
                 }
+
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "desktop_windows"
+                    text: Translation.tr("Distro / package manager")
+                    description: Translation.tr("Auto-detect reads /etc/os-release. Custom uses the command below.")
+                    fieldWidth: 240
+                    model: [
+                        { "displayName": Translation.tr("Auto-detect"), "icon": "travel_explore", "value": "auto" },
+                        { "displayName": "Arch (yay → paru → pacman)", "icon": "terminal", "value": "arch" },
+                        { "displayName": "CachyOS (cachy-update)", "icon": "terminal", "value": "cachyos" },
+                        { "displayName": "Debian / Ubuntu (apt)", "icon": "terminal", "value": "debian" },
+                        { "displayName": "Fedora (dnf)", "icon": "terminal", "value": "fedora" },
+                        { "displayName": "openSUSE (zypper)", "icon": "terminal", "value": "opensuse" },
+                        { "displayName": Translation.tr("Custom command"), "icon": "edit", "value": "custom" },
+                    ]
+                    currentValue: Config.options.updates.distro
+                    onSelected: newValue => {
+                        Config.options.updates.distro = newValue;
+                    }
+                }
+
+                ConfigTextArea {
+                    id: customUpdateCommandField
+                    visible: Config.options.updates.distro === "custom"
+                    Layout.fillWidth: true
+                    buttonIcon: "terminal"
+                    text: Translation.tr("Custom update command")
+                    placeholderText: Translation.tr("e.g. sudo apt update && sudo apt upgrade")
+                    value: Config.options.updates.customUpdateCommand
+                    onValueChanged: customUpdateCommandDebounce.restart()
+
+                    Timer {
+                        id: customUpdateCommandDebounce
+                        interval: 500
+                        repeat: false
+                        onTriggered: {
+                            Config.options.updates.customUpdateCommand = customUpdateCommandField.value;
+                        }
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "system_update_alt"
+                    text: Translation.tr("Notify when system packages have updates")
+                    description: Translation.tr("Ping once per new update count, with an “Update now” action that runs the command in a terminal.")
+                    checked: Config.options.updates.notifySystemUpdates
+                    onCheckedChanged: {
+                        Config.options.updates.notifySystemUpdates = checked;
+                    }
+                }
+
+                ConfigComboBox {
+                    visible: ["arch", "cachyos"].includes(Updates.resolvedDistro)
+                    Layout.fillWidth: true
+                    buttonIcon: "handyman"
+                    text: Translation.tr("System update tool")
+                    description: Translation.tr("Which tool the “Update now” action runs. Auto prefers cachy-update on CachyOS.")
+                    fieldWidth: 220
+                    model: [
+                        { "displayName": Translation.tr("Auto (cachy-update → yay → paru → pacman)"), "icon": "auto_awesome", "value": "auto" },
+                        { "displayName": "cachy-update", "icon": "terminal", "value": "cachy-update" },
+                        { "displayName": "yay", "icon": "terminal", "value": "yay" },
+                        { "displayName": "paru", "icon": "terminal", "value": "paru" },
+                        { "displayName": "pacman (polkit)", "icon": "terminal", "value": "pacman" },
+                    ]
+                    currentValue: Config.options.updates.systemUpdateTool
+                    onSelected: newValue => {
+                        Config.options.updates.systemUpdateTool = newValue;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "cloud_download"
+                    text: Translation.tr("Notify about upstream end4-pC updates")
+                    checked: Config.options.updates.notifyUpstreamUpdates
+                    onCheckedChanged: {
+                        Config.options.updates.notifyUpstreamUpdates = checked;
+                    }
+                }
+
+                ConfigSpinBox {
+                    icon: "av_timer"
+                    text: Translation.tr("Upstream check interval (mins)")
+                    value: Config.options.updates.upstreamCheckInterval
+                    from: 30
+                    to: 1440
+                    stepSize: 30
+                    onValueChanged: {
+                        Config.options.updates.upstreamCheckInterval = value;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "merge"
+                    text: Translation.tr("Notify about a secondary “fixes” repo")
+                    description: Translation.tr("Also watch a fork of the config (e.g. your personal fixes branch) and let the notification merge, skip, or view it.")
+                    checked: Config.options.updates.notifyFixesRepo
+                    onCheckedChanged: {
+                        Config.options.updates.notifyFixesRepo = checked;
+                    }
+                }
+
+                ConfigTextArea {
+                    id: fixesRepoUrlField
+                    visible: Config.options.updates.notifyFixesRepo
+                    Layout.fillWidth: true
+                    buttonIcon: "link"
+                    text: Translation.tr("Fixes repo URL")
+                    placeholderText: Translation.tr("e.g. https://github.com/youruser/end4-pC-YourFixes.git")
+                    value: Config.options.updates.fixesRepoUrl
+                    onValueChanged: fixesRepoUrlDebounce.restart()
+
+                    Timer {
+                        id: fixesRepoUrlDebounce
+                        interval: 500
+                        repeat: false
+                        onTriggered: {
+                            Config.options.updates.fixesRepoUrl = fixesRepoUrlField.value.trim();
+                        }
+                    }
+                }
+
             }
         }
 
