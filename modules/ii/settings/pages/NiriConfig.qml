@@ -290,7 +290,8 @@ rm -f "$tmp"`]
                             interval: 1000
                             repeat: false
                             onTriggered: {
-                                NiriConfig.options.input.kbLayout = kbLayoutField.value
+                                // "fr, us" as the placeholder suggests: xkb wants no spaces
+                                NiriConfig.options.input.kbLayout = kbLayoutField.value.split(",").map(l => l.trim()).filter(l => l.length > 0).join(",")
                             }
                         }
                     }
