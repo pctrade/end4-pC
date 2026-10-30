@@ -328,7 +328,7 @@ Singleton {
                             }
                         }
                         property JsonObject daily: JsonObject {
-                            property string variant: "badge" // Options: "badge", "morning", "script", "bold"
+                            property string variant: "badge" // Options: "badge", "morning", "script", "bold", "bento"
                         }
                         property JsonObject pixel: JsonObject {
                             property string orientation: "vertical"
