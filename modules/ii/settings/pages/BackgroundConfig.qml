@@ -1381,6 +1381,163 @@ ContentPage {
         }
 
         ContentSection {
+            id: settingsLyrics
+            icon: "lyrics"
+            shape: MaterialShape.Shape.Cookie4Sided
+            title: Translation.tr("Lyrics")
+
+            readonly property var entry: Config.options.background.widgets.lyrics
+
+            GroupedList {
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "check"
+                    text: Translation.tr("Enable")
+                    checked: settingsLyrics.entry.enable
+                    onCheckedChanged: {
+                        settingsLyrics.entry.enable = checked;
+                    }
+                }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "pause_circle"
+                    text: Translation.tr("Hide when paused")
+                    checked: settingsLyrics.entry.hideWhenPaused
+                    onCheckedChanged: {
+                        settingsLyrics.entry.hideWhenPaused = checked;
+                    }
+                }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "shadow"
+                    text: Translation.tr("Shadow")
+                    checked: settingsLyrics.entry.shadow
+                    onCheckedChanged: {
+                        settingsLyrics.entry.shadow = checked;
+                    }
+                }
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "format_line_spacing"
+                    currentValue: settingsLyrics.entry.style
+                    onSelected: newValue => {
+                        settingsLyrics.entry.style = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Current line"),
+                            icon: "short_text",
+                            value: "line"
+                        },
+                        {
+                            displayName: Translation.tr("Karaoke"),
+                            icon: "lyrics",
+                            value: "karaoke"
+                        }
+                    ]
+                }
+            }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                title: Translation.tr("Font")
+
+                GroupedList {
+                    ConfigTextArea {
+                        id: settingsLyricsFontField
+                        buttonIcon: "custom_typography"
+                        text: Translation.tr("Font family")
+                        Layout.fillWidth: true
+                        placeholderText: Translation.tr("Theme font")
+                        value: settingsLyrics.entry.fontFamily
+
+                        onValueChanged: {
+                            lyricsFontDebounce.restart();
+                        }
+
+                        Timer {
+                            id: lyricsFontDebounce
+                            interval: 500
+                            repeat: false
+                            onTriggered: {
+                                if (settingsLyricsFontField.value.trim() !== settingsLyrics.entry.fontFamily)
+                                    settingsLyrics.entry.fontFamily = settingsLyricsFontField.value.trim()
+                            }
+                        }
+                    }
+
+                    ConfigSlider {
+                        text: Translation.tr("Font size")
+                        value: settingsLyrics.entry.fontSize
+                        usePercentTooltip: false
+                        buttonIcon: "format_size"
+                        from: 16
+                        to: 200
+                        stopIndicatorValues: [48]
+                        onValueChanged: {
+                            settingsLyrics.entry.fontSize = Math.round(value);
+                        }
+                    }
+
+                    ConfigSelectionArray {
+                        text: Translation.tr("Alignment")
+                        icon: "format_align_center"
+                        currentValue: settingsLyrics.entry.alignment
+                        onSelected: newValue => {
+                            settingsLyrics.entry.alignment = newValue;
+                        }
+                        options: [
+                            {
+                                displayName: Translation.tr("Left"),
+                                icon: "format_align_left",
+                                value: "left"
+                            },
+                            {
+                                displayName: Translation.tr("Center"),
+                                icon: "format_align_center",
+                                value: "center"
+                            },
+                            {
+                                displayName: Translation.tr("Right"),
+                                icon: "format_align_right",
+                                value: "right"
+                            }
+                        ]
+                    }
+                }
+            }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                title: Translation.tr("Colors")
+
+                GroupedList {
+                    ConfigSwitch {
+                        id: lyricsAutoColorSwitch
+                        buttonIcon: "auto_awesome"
+                        text: Translation.tr("Automatic colors")
+                        checked: settingsLyrics.entry.color === ""
+                        onCheckedChanged: {
+                            if (checked) {
+                                settingsLyrics.entry.color = ""
+                            }
+                        }
+                    }
+
+                    ColorSelectionArray {
+                        icon: "palette"
+                        text: Translation.tr("Color")
+                        currentValue: settingsLyrics.entry.color
+                        onSelected: newValue => {
+                            settingsLyrics.entry.color = newValue
+                            lyricsAutoColorSwitch.checked = false
+                        }
+                    }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "widgets"
             shape: MaterialShape.Shape.Pill
             title: Translation.tr("Widgets")

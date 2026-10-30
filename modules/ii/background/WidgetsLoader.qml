@@ -20,6 +20,7 @@ import qs.modules.ii.background.widgets.notes
 import qs.modules.ii.background.widgets.todo
 import qs.modules.ii.background.widgets.timers
 import qs.modules.ii.background.widgets.customtext
+import qs.modules.ii.background.widgets.lyrics
 
 Item {
     id: root
@@ -49,6 +50,7 @@ Item {
             { key: "todo" },
             { key: "timers" },
             { key: "customText" },
+            { key: "lyrics" },
         ]
 
         delegate: FadeLoader {
@@ -81,6 +83,7 @@ Item {
                     case "todo":        return todoComp
                     case "timers":      return timersComp
                     case "customText":  return customTextComp
+                    case "lyrics":      return lyricsComp
                 }
                 return null
             }
@@ -272,6 +275,17 @@ Item {
     Component {
         id: customTextComp
         CustomTextWidget {
+            screenWidth: root.screen.width
+            screenHeight: root.screen.height
+            scaledScreenWidth: root.screen.width
+            scaledScreenHeight: root.screen.height
+            wallpaperScale: 1
+            wallpaperItem: root.wallpaperItem
+        }
+    }
+    Component {
+        id: lyricsComp
+        LyricsWidget {
             screenWidth: root.screen.width
             screenHeight: root.screen.height
             scaledScreenWidth: root.screen.width
