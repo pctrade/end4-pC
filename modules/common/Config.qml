@@ -888,6 +888,10 @@ Singleton {
                 property bool keepRightSidebarLoaded: true
                 property string leftLastPage: "home"
                 property bool leftRememberPage: true
+                property JsonObject apps: JsonObject {
+                    property bool enable: true
+                    property string view: "grid" // "grid" or "list"
+                }
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.

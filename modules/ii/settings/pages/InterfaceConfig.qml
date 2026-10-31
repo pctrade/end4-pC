@@ -372,6 +372,12 @@ ContentPage {
                             onCheckedChanged: { Config.options.sidebar.translator.enable = checked }
                         }
                         ConfigSwitch {
+                            buttonIcon: "apps"
+                            text: Translation.tr("Applications")
+                            checked: Config.options.sidebar.apps.enable
+                            onCheckedChanged: { Config.options.sidebar.apps.enable = checked }
+                        }
+                        ConfigSwitch {
                             buttonIcon: "sports_soccer"
                             text: Translation.tr("Football")
                             checked: Config.options.sidebar.football.enable
