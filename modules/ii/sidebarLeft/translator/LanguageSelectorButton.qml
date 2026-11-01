@@ -8,6 +8,7 @@ import QtQuick.Layouts
 
 RippleButton {
     id: root
+    glass: true
     property string displayText: ""
     property color buttonColor: Appearance.colors.colLayer2
     colBackground: buttonColor

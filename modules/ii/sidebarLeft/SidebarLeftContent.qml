@@ -31,7 +31,7 @@ Item {
     readonly property var currentPage: root.featurePages.find(page => page.key === root.currentKey) ?? null
     property bool restored: false
     property int direction: 1
-    readonly property bool glassPage: ["media", "sports", "ai", "anime"].includes(root.currentKey)
+    readonly property bool glassPage: ["media", "sports", "ai", "anime", "translator"].includes(root.currentKey)
 
     function goTo(key) {
         if (root.pageKeys.indexOf(key) < 0) key = "home"
@@ -148,7 +148,7 @@ Item {
 
             WindowGlass {
                 anchors.fill: parent
-                glassEnabled: root.currentKey === "sports" || root.currentKey === "ai" || root.currentKey === "anime"
+                glassEnabled: root.currentKey === "sports" || root.currentKey === "ai" || root.currentKey === "anime" || root.currentKey === "translator"
                 cardRadius: pagesBox.radius
             }
 
