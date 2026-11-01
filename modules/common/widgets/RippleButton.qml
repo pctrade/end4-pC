@@ -25,6 +25,8 @@ Button {
     property var altLongPressAction
     property bool altLongPressed: false
     property bool border: false
+    property bool glass: false
+    readonly property bool glassActive: glass && !toggled && (Config.options?.background.widgets.glass.enable ?? false)
     property real borderWidth: 1
     property color colBorder: Config.options.background.widgets.glass.enable
         ? ColorUtils.transparentize(Appearance?.colors.colOutlineVariant ?? "#79747E", 0.55)
@@ -41,8 +43,8 @@ Button {
     property color buttonColor: ColorUtils.transparentize(root.toggled ? 
         (root.hovered ? colBackgroundToggledHover : 
             colBackgroundToggled) :
-        (root.hovered ? colBackgroundHover : 
-            colBackground), root.enabled ? 0 : 1)
+        (root.hovered ? (root.glassActive ? ColorUtils.transparentize(colBackgroundHover, 0.6) : colBackgroundHover) : 
+            (root.glassActive ? "transparent" : colBackground)), root.enabled ? 0 : 1)
     property color rippleColor: root.toggled ? colRippleToggled : colRipple
 
     function startRipple(x, y) {
@@ -167,6 +169,12 @@ Button {
                 height: buttonBackground.height
                 radius: root.buttonEffectiveRadius
             }
+        }
+
+        WindowGlass {
+            anchors.fill: parent
+            glassEnabled: root.glassActive
+            cardRadius: root.buttonEffectiveRadius
         }
 
         Item {

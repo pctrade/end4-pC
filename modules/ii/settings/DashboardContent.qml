@@ -334,6 +334,7 @@ Item {
                 anchors.centerIn: parent
                 colBackground: ui.surface
                 outerShadow: true
+                glass: true
 
                 Repeater {
                     model: root.pageNames
@@ -385,10 +386,16 @@ Item {
                     implicitHeight: 44
                     implicitWidth: root.searchOpen ? Math.max(120, Math.min(220, (headerBar.width - navToolbar.width) / 2 - 12 - 108)) : 44
                     radius: height / 2
-                    color: ui.surface
+                    color: Config.options.background.widgets.glass.enable ? "transparent" : ui.surface
                     border.width: searchInput.activeFocus ? 2 : 0
                     border.color: ui.accent
                     clip: true
+
+                    WindowGlass {
+                        anchors.fill: parent
+                        glassEnabled: Config.options.background.widgets.glass.enable
+                        cardRadius: searchPill.radius
+                    }
 
                     Behavior on implicitWidth {
                         NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -456,6 +463,7 @@ Item {
                         implicitWidth: 44
                         implicitHeight: 44
                         buttonRadius: height / 2
+                        glass: true
                         colBackground: ui.surface
                         colBackgroundHover: ui.hover
                         onClicked: {
