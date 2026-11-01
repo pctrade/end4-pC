@@ -8,6 +8,7 @@ Item {
     property int animIndex: 0
     property real travelX: 0
     property real travelY: 0
+    property real exitX: travelX
     property int staggerMs: 45
     property real minScale: 0.25
     property bool fade: true
@@ -35,6 +36,7 @@ Item {
         const exit = root.smooth ? smoothExit : exitAnim
         if (root.active) {
             exit.stop()
+            if (root.smooth && root.animOpacity < 0.05) root.offsetX = root.travelX
             enter.restart()
         } else {
             enter.stop()
@@ -66,7 +68,7 @@ Item {
     ParallelAnimation {
         id: smoothExit
         NumberAnimation { target: root; property: "animScale"; to: root.minScale; duration: 220 / root.speed; easing.type: Easing.OutCubic }
-        NumberAnimation { target: root; property: "offsetX"; to: root.travelX; duration: 220 / root.speed; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "offsetX"; to: root.exitX; duration: 220 / root.speed; easing.type: Easing.OutCubic }
         NumberAnimation { target: root; property: "offsetY"; to: root.travelY; duration: 220 / root.speed; easing.type: Easing.OutCubic }
         NumberAnimation { target: root; property: "animOpacity"; to: root.fade ? 0 : 1; duration: 160 / root.speed; easing.type: Easing.OutCubic }
     }

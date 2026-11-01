@@ -370,6 +370,7 @@ Item {
                     implicitWidth: 44
                     implicitHeight: 44
                     buttonRadius: 22
+                    glass: true
                     enabled: !Football.loading
                     colBackground: Appearance.colors.colSecondaryContainer
                     colBackgroundHover: Appearance.colors.colSecondaryContainerHover
