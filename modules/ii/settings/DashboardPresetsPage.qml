@@ -746,6 +746,7 @@ Item {
             preset: root.selected
             pager: root.pager
             staggerMs: root.staggerMs
+            summarize: root.summaryOf
             onBack: root.back()
             onApplyRequested: {
                 if (root.selected.source === "online") PresetsOnline.download(root.selected.entry);
