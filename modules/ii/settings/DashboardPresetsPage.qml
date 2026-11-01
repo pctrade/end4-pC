@@ -201,6 +201,7 @@ Item {
                     implicitHeight: 44
                     horizontalPadding: 18
                     buttonRadius: 22
+                    glass: true
                     toggled: active
                     colBackground: Appearance.colors.colLayer1
                     colBackgroundHover: Appearance.colors.colLayer1Hover
@@ -258,6 +259,7 @@ Item {
                 implicitWidth: 44
                 implicitHeight: 44
                 buttonRadius: 22
+                glass: true
                 colBackground: Appearance.colors.colSecondaryContainer
                 colBackgroundHover: Appearance.colors.colSecondaryContainerHover
                 downAction: () => Qt.callLater(() => PresetsOnline.refresh())
@@ -278,9 +280,15 @@ Item {
                 Layout.minimumWidth: 160
                 implicitHeight: 44
                 radius: 22
-                color: Appearance.colors.colLayer1
+                color: Config.options.background.widgets.glass.enable ? "transparent" : Appearance.colors.colLayer1
                 border.width: saveInput.activeFocus ? 2 : 0
-                border.color: Appearance.colors.colPrimary
+                border.color: Config.options.background.widgets.glass.enable ? "transparent" : Appearance.colors.colPrimary
+
+                WindowGlass {
+                    anchors.fill: parent
+                    glassEnabled: Config.options.background.widgets.glass.enable
+                    cardRadius: parent.radius
+                }
 
                 RowLayout {
                     anchors.fill: parent
@@ -339,6 +347,7 @@ Item {
 
             RippleButton {
                 id: importButton
+                glass: true
                 visible: root.source !== "online"
                 implicitWidth: 44
                 implicitHeight: 44

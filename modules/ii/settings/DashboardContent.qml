@@ -388,7 +388,7 @@ Item {
                     radius: height / 2
                     color: Config.options.background.widgets.glass.enable && !ui.media ? "transparent" : ui.surface
                     border.width: searchInput.activeFocus ? 2 : 0
-                    border.color: ui.accent
+                    border.color: Config.options.background.widgets.glass.enable && !ui.media ? "transparent" : ui.accent
                     clip: true
 
                     WindowGlass {
