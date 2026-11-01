@@ -105,6 +105,7 @@ Rectangle {
             Layout.margins: 10
             Layout.rightMargin: 0
             forceCircle: true
+            glass: true
             downAction: () => {
                 root.setCollapsed(false);
             }
