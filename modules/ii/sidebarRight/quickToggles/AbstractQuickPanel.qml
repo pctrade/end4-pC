@@ -5,7 +5,7 @@ Rectangle {
     id: root
 
     radius: Appearance.rounding.normal
-    color: Appearance.colors.colLayer1
+    color: Config.options.background.widgets.glass.enable ? "transparent" : Appearance.colors.colLayer1
 
     signal openAudioOutputDialog()
     signal openAudioInputDialog()
