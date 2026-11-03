@@ -49,6 +49,7 @@ StyledImage {
             return ["bash", "-c", `
                 thumb="$1"; src="$2"; max="$3"
                 [ -f "$thumb" ] && exit 0
+                mkdir -p "$(dirname "$thumb")"
                 tmp="$thumb.$$.tmp.png"
                 trap 'kill "$pid" 2>/dev/null; rm -f "$tmp"' EXIT
                 magick "$src" -resize "$max"x"$max" "$tmp" & pid=$!
