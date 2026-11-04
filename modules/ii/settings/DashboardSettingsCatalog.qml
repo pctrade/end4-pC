@@ -485,6 +485,7 @@ QtObject {
         },
         {
             page: Translation.tr("Desktop"), title: Translation.tr("Wallpaper"), icon: "wallpaper", cards: [
+                { type: "monitorwallpapers", key: "desktop:Monitor wallpapers", title: Translation.tr("Wallpapers per monitor"), icon: "tv_displays" },
                 { type: "toggle", key: "desktop:Same wallpaper", title: Translation.tr("Same wallpaper (lock)"), icon: "sync" },
                 { type: "toggle", key: "desktop:Preview wallpaper", title: Translation.tr("Preview wallpaper"), icon: "preview" },
                 { type: "toggle", key: "desktop:Blur wall", title: Translation.tr("Blur wallpaper"), icon: "blur_on" },

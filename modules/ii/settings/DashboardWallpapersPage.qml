@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Widgets
 import qs
 import qs.services
@@ -14,6 +15,12 @@ Item {
     property int staggerMs: 45
     property int selectedIndex: 0
     property string target: "desktop"
+    readonly property string selectedScreen: GlobalStates.dashboardWallpaperScreen
+    readonly property var screenTargets: [
+        { value: "", label: Translation.tr("Global"), icon: "public" }
+    ].concat(Quickshell.screens.map(screen => ({
+        value: screen.name, label: screen.name, icon: "monitor"
+    })))
     DashboardSettingsCatalog {
         id: catalog
     }
@@ -30,14 +37,14 @@ Item {
 
     readonly property string query: pager.searchQuery ?? ""
     readonly property var paths: Wallpapers.wallpapers.filter(p => Images.isValidImageByName(p))
-    readonly property string desktopPath: FileUtils.trimFileProtocol(Config.options.background.wallpaperPath ?? "")
+    readonly property string desktopPath: FileUtils.trimFileProtocol(Config.wallpaperForScreen(root.selectedScreen) ?? "")
     readonly property string lockPath: FileUtils.trimFileProtocol(Config.options.background.lockWall ?? "")
     readonly property bool synced: lockPath === ""
     readonly property int columns: Math.max(2, Math.round(width / 270))
 
     function applyDesktop(path) {
         if (synced) Config.options.background.lockWall = desktopPath;
-        Wallpapers.apply(path);
+        Wallpapers.apply(path, Appearance.m3colors.darkmode, selectedScreen);
     }
 
     function applyLock(path) {
@@ -46,7 +53,7 @@ Item {
 
     function applyBoth(path) {
         Config.options.background.lockWall = "";
-        Wallpapers.apply(path);
+        Wallpapers.apply(path, Appearance.m3colors.darkmode, selectedScreen);
     }
 
     function applyTo(path) {
@@ -67,6 +74,11 @@ Item {
 
     function setSynced(value) {
         Config.options.background.lockWall = value ? "" : desktopPath;
+    }
+
+    function openPicker(value) {
+        target = value;
+        GlobalStates.openWallpaperSelector(selectedScreen, value === "lock" ? "lockWall" : "wallpaper");
     }
 
     function moveSelection(dx, dy) {
@@ -137,7 +149,13 @@ Item {
                 lockPath: root.synced ? root.desktopPath : root.lockPath
                 synced: root.synced
                 target: root.target
-                onTargetSelected: value => root.target = value
+                showScreenSelector: true
+                screenName: root.selectedScreen
+                screenTargets: root.screenTargets
+                canResetScreen: root.selectedScreen !== "" && Config.hasWallpaperOverride(root.selectedScreen)
+                onScreenSelected: value => GlobalStates.dashboardWallpaperScreen = value
+                onScreenReset: Config.resetWallpaperForScreen(root.selectedScreen)
+                onTargetSelected: value => root.openPicker(value)
                 onSyncToggled: value => root.setSynced(value)
                 pager: root.pager
                 staggerMs: root.staggerMs
@@ -165,7 +183,7 @@ Item {
                     travelX: 0
                     travelY: -120
                     onRandomRequested: root.randomWallpaper()
-                    onFoldersRequested: GlobalStates.wallpaperSelectorOpen = true
+                    onFoldersRequested: root.openPicker("desktop")
                 }
 
                 DashboardSpinCard {

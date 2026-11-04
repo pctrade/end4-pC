@@ -22,16 +22,8 @@ MouseArea {
     property bool toolbarVisible: showControls || Config.options.wallpaperSelector.showSearchbar
     property bool filterFieldFocused: false
     property Item activeFilterField: null
-    property string initialTargetScreenName: ""
-    property string targetScreenName: GlobalStates.wallpaperSelectorTarget === "lockWall"
-        ? "" : initialTargetScreenName
-    readonly property var wallpaperTargets: [
-        { value: "", displayName: Translation.tr("Global fallback"), icon: "public" }
-    ].concat(Quickshell.screens.map(screen => ({
-        value: screen.name,
-        displayName: screen.name,
-        icon: "monitor"
-    })))
+    readonly property string targetScreenName: GlobalStates.wallpaperSelectorTarget === "lockWall"
+        ? "" : GlobalStates.wallpaperSelectorScreen
 
     property var quickDirs: [
         { icon: "home",       name: "Home   ",       path: `${Directories.home}`,                alwaysVisible: Config.options.wallpaperSelector.showHomePath },
@@ -398,41 +390,6 @@ MouseArea {
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 6
-
-                        StyledComboBox {
-                            id: targetCombo
-                            visible: GlobalStates.wallpaperSelectorTarget !== "lockWall"
-                            glass: true
-                            implicitWidth: 155
-                            model: root.wallpaperTargets
-                            textRole: "displayName"
-                            currentIndex: {
-                                const index = model.findIndex(item => item.value === root.targetScreenName)
-                                return index >= 0 ? index : 0
-                            }
-                            onActivated: index => {
-                                Wallpapers.stopPreview()
-                                root.targetScreenName = model[index].value
-                            }
-                            StyledToolTip {
-                                text: root.targetScreenName
-                                    ? Translation.tr("Apply to this monitor")
-                                    : Translation.tr("Set the wallpaper inherited by monitors without an override")
-                            }
-                        }
-
-                        IconToolbarButton {
-                            visible: root.targetScreenName !== "" && Config.hasWallpaperOverride(root.targetScreenName)
-                            implicitWidth: height
-                            text: "link"
-                            onClicked: {
-                                Wallpapers.stopPreview(root.targetScreenName)
-                                Config.resetWallpaperForScreen(root.targetScreenName)
-                            }
-                            StyledToolTip {
-                                text: Translation.tr("Use global wallpaper on this monitor")
-                            }
-                        }
 
                         StyledComboBox {
                             id: sourceCombo

@@ -5,16 +5,24 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import Quickshell
 import Quickshell.Hyprland
 
 
 ContentPage {
     id: page
     forceWidth: true
+    property string wallpaperScreen: ""
+    readonly property string selectedWallpaperPath: Config.wallpaperForScreen(wallpaperScreen)
+    readonly property var wallpaperScreens: [
+        { displayName: Translation.tr("Global"), icon: "public", value: "" }
+    ].concat(Quickshell.screens.map(screen => ({
+        displayName: screen.name, icon: "monitor", value: screen.name
+    })))
 
-    function displayPathFor(path) {
+    function displayPathFor(path, screenName = "") {
         return /\.(mp4|webm|mkv|avi|mov)$/i.test(path)
-            ? Config.options.background.thumbnailPath
+            ? Config.wallpaperThumbnailForScreen(screenName)
             : path
     }
 
@@ -45,6 +53,15 @@ ContentPage {
                     anchors.margins: 8
                     spacing: 8
 
+                    ConfigSelectionArray {
+                        Layout.fillWidth: true
+                        text: Translation.tr("Display")
+                        icon: "tv_displays"
+                        currentValue: page.wallpaperScreen
+                        options: page.wallpaperScreens
+                        onSelected: value => page.wallpaperScreen = value
+                    }
+
                     Carousel {
                         Layout.fillWidth: true
                         implicitHeight: 280
@@ -52,18 +69,32 @@ ContentPage {
                         mediumItemWidthRatio: 0.485
                         itemSpacing: 8
                         model: [
-                            page.displayPathFor(Config.options.background.wallpaperPath),
+                            page.displayPathFor(page.selectedWallpaperPath, page.wallpaperScreen),
                             page.displayPathFor(
                                 Config.options.background.lockWall !== ""
                                     ? Config.options.background.lockWall
-                                    : Config.options.background.wallpaperPath
+                                    : page.selectedWallpaperPath
                             )
                         ]
                         wheelEnabled: false
                         dragEnabled: false
                         clickAction: (index, modelData) => {
-                            GlobalStates.wallpaperSelectorTarget = index === 1 ? "lockWall" : "wallpaper"
-                            GlobalStates.wallpaperSelectorOpen = true
+                            GlobalStates.openWallpaperSelector(
+                                page.wallpaperScreen, index === 1 ? "lockWall" : "wallpaper")
+                        }
+                    }
+
+                    RippleButton {
+                        Layout.fillWidth: true
+                        visible: page.wallpaperScreen !== "" && Config.hasWallpaperOverride(page.wallpaperScreen)
+                        implicitHeight: 38
+                        buttonRadius: 19
+                        onClicked: Config.resetWallpaperForScreen(page.wallpaperScreen)
+                        contentItem: RowLayout {
+                            Item { Layout.fillWidth: true }
+                            MaterialSymbol { text: "link"; iconSize: 18; color: Appearance.colors.colOnSecondaryContainer }
+                            StyledText { text: Translation.tr("Use global wallpaper"); color: Appearance.colors.colOnSecondaryContainer }
+                            Item { Layout.fillWidth: true }
                         }
                     }
 
@@ -136,18 +167,40 @@ ContentPage {
                     anchors.margins: 8
                     spacing: 8
 
+                    ConfigSelectionArray {
+                        Layout.fillWidth: true
+                        text: Translation.tr("Display")
+                        icon: "tv_displays"
+                        currentValue: page.wallpaperScreen
+                        options: page.wallpaperScreens
+                        onSelected: value => page.wallpaperScreen = value
+                    }
+
                     Carousel {
                         Layout.fillWidth: true
                         implicitHeight: 280
                         largeItemWidthRatio: 1
                         mediumItemWidthRatio: 0
                         itemSpacing: 8
-                        model: [page.displayPathFor(Config.options.background.wallpaperPath)]
+                        model: [page.displayPathFor(page.selectedWallpaperPath, page.wallpaperScreen)]
                         wheelEnabled: false
                         dragEnabled: false
                         clickAction: (index, modelData) => {
-                            GlobalStates.wallpaperSelectorTarget = "wallpaper"
-                            GlobalStates.wallpaperSelectorOpen = true
+                            GlobalStates.openWallpaperSelector(page.wallpaperScreen, "wallpaper")
+                        }
+                    }
+
+                    RippleButton {
+                        Layout.fillWidth: true
+                        visible: page.wallpaperScreen !== "" && Config.hasWallpaperOverride(page.wallpaperScreen)
+                        implicitHeight: 38
+                        buttonRadius: 19
+                        onClicked: Config.resetWallpaperForScreen(page.wallpaperScreen)
+                        contentItem: RowLayout {
+                            Item { Layout.fillWidth: true }
+                            MaterialSymbol { text: "link"; iconSize: 18; color: Appearance.colors.colOnSecondaryContainer }
+                            StyledText { text: Translation.tr("Use global wallpaper"); color: Appearance.colors.colOnSecondaryContainer }
+                            Item { Layout.fillWidth: true }
                         }
                     }
 
@@ -166,7 +219,7 @@ ContentPage {
                                 color: Appearance.colors.colPrimary
                             }
                             StyledText {
-                                text: Config.options.background.wallpaperPath.split("/").pop()
+                                text: page.selectedWallpaperPath.split("/").pop()
                                 font.pixelSize: Appearance.font.pixelSize.normal
                                 font.weight: Font.Medium
                                 color: Appearance.colors.colOnLayer1

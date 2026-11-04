@@ -50,6 +50,16 @@ Singleton {
     property real desktopMenuX: 0
     property real desktopMenuY: 0
     property string wallpaperSelectorTarget: "wallpaper"
+    // Empty targets the global fallback. Callers set this before opening the
+    // visually generic wallpaper selector.
+    property string wallpaperSelectorScreen: ""
+    property string dashboardWallpaperScreen: ""
+
+    function openWallpaperSelector(screenName = "", target = "wallpaper") {
+        root.wallpaperSelectorScreen = target === "lockWall" ? "" : screenName;
+        root.wallpaperSelectorTarget = target;
+        root.wallpaperSelectorOpen = true;
+    }
     property bool dropShelfOpen: false
     property real dropShelfX: 0
     property real dropShelfY: 0
@@ -61,7 +71,10 @@ Singleton {
     // route existing bar controls to a monitor override without duplicating UI.
     property string dashboardBarScreen: ""
     onSettingsOpenChanged: {
-        if (!settingsOpen) dashboardBarScreen = "";
+        if (!settingsOpen) {
+            dashboardBarScreen = "";
+            dashboardWallpaperScreen = "";
+        }
     }
     property var frameHover: ({})
     function setFrameHover(screenName, side, hovered) {

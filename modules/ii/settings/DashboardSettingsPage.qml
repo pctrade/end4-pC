@@ -88,6 +88,7 @@ Item {
         if (type === "timepreview") return [3, 2];
         if (type === "widgets") return [4, 3];
         if (type === "monitorbars") return [4, 2];
+        if (type === "monitorwallpapers") return [4, 2];
         if (type === "shape") return [2, 2];
         if (type === "barlayout") return [4, 3];
         if (type === "palette") return [4, 1];
@@ -627,6 +628,7 @@ Item {
                             : modelData.type === "batterystyle" ? batteryStyleComponent
                             : modelData.type === "widgets" ? widgetsComponent
                             : modelData.type === "monitorbars" ? monitorBarsComponent
+                            : modelData.type === "monitorwallpapers" ? monitorWallpapersComponent
                             : selectComponent
 
                         Component {
@@ -852,6 +854,44 @@ Item {
                             id: monitorBarsComponent
                             DashboardMonitorBarsCard {
                                 anchors.fill: parent
+                                pager: root.pager
+                                staggerMs: root.staggerMs
+                                animIndex: slot.index % 6
+                                travelX: slot.modelData.travelX
+                                travelY: slot.modelData.travelY
+                            }
+                        }
+
+                        Component {
+                            id: monitorWallpapersComponent
+                            DashboardWallpaperPreviewCard {
+                                anchors.fill: parent
+                                readonly property string selectedScreen: GlobalStates.dashboardWallpaperScreen
+                                readonly property string selectedDesktopPath: FileUtils.trimFileProtocol(
+                                    Config.wallpaperForScreen(selectedScreen) ?? "")
+                                readonly property string selectedLockPath: FileUtils.trimFileProtocol(
+                                    Config.options.background.lockWall !== ""
+                                        ? Config.options.background.lockWall
+                                        : Config.wallpaperForScreen(selectedScreen))
+
+                                desktopPath: selectedDesktopPath
+                                lockPath: selectedLockPath
+                                synced: Config.options.background.lockWall === ""
+                                target: "desktop"
+                                showScreenSelector: true
+                                screenName: selectedScreen
+                                screenTargets: [{ value: "", label: Translation.tr("Global"), icon: "public" }]
+                                    .concat(Quickshell.screens.map(screen => ({
+                                        value: screen.name, label: screen.name, icon: "monitor"
+                                    })))
+                                canResetScreen: selectedScreen !== "" && Config.hasWallpaperOverride(selectedScreen)
+                                onScreenSelected: value => GlobalStates.dashboardWallpaperScreen = value
+                                onScreenReset: Config.resetWallpaperForScreen(selectedScreen)
+                                onTargetSelected: value => GlobalStates.openWallpaperSelector(
+                                    selectedScreen, value === "lock" ? "lockWall" : "wallpaper")
+                                onSyncToggled: value => {
+                                    Config.options.background.lockWall = value ? "" : selectedDesktopPath;
+                                }
                                 pager: root.pager
                                 staggerMs: root.staggerMs
                                 animIndex: slot.index % 6
