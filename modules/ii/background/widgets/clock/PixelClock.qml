@@ -12,7 +12,8 @@ import qs.modules.ii.background.widgets
 Item {
     id: root
 
-    readonly property bool isVertical: Config.options.background.widgets.clock.pixel.orientation === "vertical"
+    // Overridable, for the copy inside the daily clock's bento tile
+    property bool isVertical: Config.options.background.widgets.clock.pixel.orientation === "vertical"
     required property Item wallpaperItem
     property real originX: 0
     property real originY: 0
@@ -24,8 +25,8 @@ Item {
     readonly property string glyphTopRight: DateTime.digitH1
     readonly property string glyphBottomLeft: DateTime.digitM0
     readonly property string glyphBottomRight: DateTime.digitM1
-    readonly property color tintSoft: Appearance.colors.colPrimaryContainer
-    readonly property color tintBold: Appearance.colors.colPrimary
+    property color tintSoft: Appearance.colors.colPrimaryContainer
+    property color tintBold: Appearance.colors.colPrimary
 
     readonly property real fringeSize: isVertical ? root.width * 0.026 : root.height * 0.03
     readonly property real tileW: isVertical ? root.width * 0.66 : root.width * 0.327
