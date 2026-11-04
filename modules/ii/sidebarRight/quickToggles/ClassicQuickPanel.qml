@@ -18,8 +18,7 @@ AbstractQuickPanel {
         id: buttonGroup
         spacing: 5
         padding: 5
-        glass: true
-        color: Appearance.colors.colLayer1
+        color: Config.options.background.widgets.glass.enable ? "transparent" : Appearance.colors.colLayer1
 
         NetworkToggle {
             altAction: () => {

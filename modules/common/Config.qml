@@ -47,6 +47,23 @@ Singleton {
         return JSON.parse(JSON.stringify(value));
     }
 
+    // Monitor overrides are snapshots, but upstream can add new bar keys after
+    // a snapshot was created. Fill only those missing keys from the current
+    // schema/default object while preserving every value explicitly saved by
+    // the monitor override.
+    function mergeBarSettings(defaults, override) {
+        if (override === undefined) return cloneValue(defaults);
+        if (override === null || typeof override !== "object" || Array.isArray(override))
+            return cloneValue(override);
+
+        const result = defaults !== null && typeof defaults === "object" && !Array.isArray(defaults)
+            ? cloneValue(defaults)
+            : {};
+        for (const key of Object.keys(override))
+            result[key] = mergeBarSettings(defaults?.[key], override[key]);
+        return result;
+    }
+
     function barOverrideIndex(screenName) {
         if (!screenName) return -1;
         const overrides = root.options.bar.monitorOverrides ?? [];
@@ -70,7 +87,7 @@ Singleton {
         const index = barOverrideIndex(screenName);
         if (index < 0) return root.options.bar;
         const entry = root.options.bar.monitorOverrides[index];
-        const settings = Object.assign({}, entry.settings ?? {});
+        const settings = mergeBarSettings(globalBarSnapshot(), entry.settings ?? {});
         settings.enabled = entry.enabled ?? true;
         return settings;
     }
@@ -87,6 +104,23 @@ Singleton {
         return (layouts?.leftLayout ?? []).includes(widgetName)
             || (layouts?.middleLayout ?? []).includes(widgetName)
             || (layouts?.rightLayout ?? []).includes(widgetName);
+    }
+
+    function activeBarScreens() {
+        const listedScreens = root.options.bar.screenList ?? [];
+        return Quickshell.screens.filter(screen => {
+            const config = barForScreen(screen.name);
+            const listed = listedScreens.length === 0 || listedScreens.includes(screen.name);
+            return listed && config.enabled !== false;
+        });
+    }
+
+    function anyBarHasWidget(widgetName) {
+        return activeBarScreens().some(screen => barHasWidget(screen.name, widgetName));
+    }
+
+    function anyBarValue(nestedKey) {
+        return activeBarScreens().some(screen => Boolean(barValueForScreen(screen.name, nestedKey)));
     }
 
     function setBarValueForScreen(screenName, nestedKey, value) {
@@ -390,6 +424,14 @@ Singleton {
                     property real blurRadius: 32
                     property JsonObject glass: JsonObject {
                         property bool enable: false
+                        property string tint: "transparent"
+                        property real tintStrength: 0.3
+                        property real rimWidth: 16
+                        property real pull: 26
+                        property real split: 0.06
+                        property real haze: 3
+                        property real vividness: 1.3
+                        property real sheen: 0.55
                     }
                     property bool shadow: true
                     property list<string> menuHidden: []
@@ -666,6 +708,8 @@ Singleton {
                 }
 
                 property JsonObject aiUsage: JsonObject {
+                    property bool claudeEnabled: true
+                    property bool codexEnabled: true
                     property int tokenLimit: 1000000
                     property int updateInterval: 60
                 }

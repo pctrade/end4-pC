@@ -18,7 +18,7 @@ Row {
     spacing: 3
 
     Repeater {
-        model: strip.alignRight ? Array.from(strip.games).reverse() : strip.games
+        model: strip.alignRight ? Array.from(strip.games).slice(-6).reverse() : Array.from(strip.games).slice(-6)
 
         delegate: Rectangle {
             id: pill

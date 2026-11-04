@@ -136,6 +136,12 @@ ContentPage {
                     enabled: Config.options.appearance.transparency.enable
                     onCheckedChanged: { Config.options.appearance.transparency.automatic = checked }
                 }
+                ConfigSwitch {
+                    buttonIcon: "water_drop"
+                    text: Translation.tr("Glassy UI")
+                    checked: Config.options.background.widgets.glass.enable
+                    onCheckedChanged: { Config.options.background.widgets.glass.enable = checked }
+                }
                 ConfigSlider {
                     buttonIcon: "layers"
                     text: Translation.tr("Background")

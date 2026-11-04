@@ -146,6 +146,7 @@ Item {
         if (e.when === "layoutdwindle" && (WM.compositor !== "hyprland" || Config.options.hyprland.general.layout !== "dwindle")) return false;
         if (e.when === "layoutmaster" && (WM.compositor !== "hyprland" || Config.options.hyprland.general.layout !== "master")) return false;
         if (e.when === "hyprbordercolor" && (WM.compositor !== "hyprland" || !Config.options.hyprland.general.borderColor.enable)) return false;
+        if (e.when === "glass" && !Config.options.background.widgets.glass.enable) return false;
         if (e.when === "football" && !Config.options.sidebar.football.enable) return false;
         if (e.when === "dockmagnify" && !Config.options.dock.magnify) return false;
         if (e.when === "dockhug" && Config.options.dock.style !== "hug") return false;
@@ -608,6 +609,7 @@ Item {
                             : modelData.type === "schemes" ? schemesComponent
                             : modelData.type === "barpos" ? barposComponent
                             : modelData.type === "toggle" ? toggleComponent
+                            : modelData.type === "reset" ? resetComponent
                             : modelData.type === "slider" ? sliderComponent
                             : modelData.type === "spin" ? spinComponent
                             : modelData.type === "combo" ? comboComponent
@@ -738,6 +740,21 @@ Item {
                                 title: slot.modelData.title
                                 icon: slot.modelData.icon
                                 tileShape: slot.modelData.shape
+                                pager: root.pager
+                                staggerMs: root.staggerMs
+                                animIndex: slot.index % 6
+                                travelX: slot.modelData.travelX
+                                travelY: slot.modelData.travelY
+                            }
+                        }
+
+                        Component {
+                            id: resetComponent
+                            DashboardResetCard {
+                                anchors.fill: parent
+                                override: catalog.controlFor(slot.modelData.key)
+                                title: slot.modelData.title
+                                icon: slot.modelData.icon
                                 pager: root.pager
                                 staggerMs: root.staggerMs
                                 animIndex: slot.index % 6

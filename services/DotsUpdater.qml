@@ -11,7 +11,7 @@ Singleton {
         Quickshell.execDetached([
             "kitty", "--hold",
             "fish", "-i", "-l", "-c",
-            "yay -Syu --combinedupgrade=false"
+            "if type -q yay; yay -Syu --combinedupgrade=false; else if type -q paru; paru -Syu; else; sudo pacman -Syu; end"
         ])
         Qt.callLater(() => GlobalStates.settingsOpen = false)
     }

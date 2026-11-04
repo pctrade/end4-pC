@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import Quickshell.Io
 import qs
 import qs.services
 import qs.modules.common
@@ -12,6 +13,8 @@ Item {
     required property var preset
     required property Item pager
     property int staggerMs: 45
+    property var summarize: null
+    property var onlineSummary: null
 
     property bool confirmDelete: false
     property bool confirmUnshare: false
@@ -46,7 +49,7 @@ Item {
         if (next !== "" && next.replace(/\s/g, "_") !== preset.name) renameRequested(next);
     }
 
-    readonly property var info: preset.summary ?? ({})
+    readonly property var info: online ? (onlineSummary ?? ({})) : (preset.summary ?? ({}))
     readonly property var barIcons: ({
         left: info.leftLayout ?? [],
         middle: info.middleLayout ?? [],
@@ -102,11 +105,26 @@ Item {
         onTriggered: root.confirmUnshare = false
     }
 
+    Process {
+        id: previewFetch
+        running: root.online && root.summarize !== null && (root.preset.entry?.jsonUrl ?? "") !== ""
+        command: ["curl", "-sSL", "-m", "20", root.preset.entry?.jsonUrl ?? ""]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.onlineSummary = root.summarize(JSON.parse(text));
+                } catch (e) {
+                    root.onlineSummary = null;
+                }
+            }
+        }
+    }
+
     Component.onCompleted: {
         if (preset.source === "mine" && !(info.origin ?? "")) Presets.checkOwnership(preset.name);
     }
 
-    readonly property var facts: online ? [] : [
+    readonly property var facts: (online && onlineSummary === null) ? [] : [
         { icon: "toast", label: Translation.tr("Bar position"), value: info.barPosition ?? "" },
         { icon: "style", label: Translation.tr("Bar style"), value: info.barStyle ?? "" },
         { icon: "palette", label: Translation.tr("Colors"), value: info.palette ?? "" },
@@ -306,8 +324,17 @@ Item {
                         }
                     }
 
+                    PresetAuthorChip {
+                        Layout.fillWidth: true
+                        visible: root.online && author !== ""
+                        author: root.preset.entry?.author ?? ""
+                        textColor: Appearance.colors.colOnSecondaryContainer
+                        avatarSize: 28
+                    }
+
                     StyledText {
                         Layout.fillWidth: true
+                        visible: !!root.info.description || !(root.online && (root.preset.entry?.author ?? "") !== "")
                         text: root.info.description || Translation.tr("No description")
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: Appearance.colors.colOnSecondaryContainer
@@ -327,20 +354,12 @@ Item {
 
                     StyledText {
                         Layout.fillWidth: true
-                        visible: root.online
-                        text: PresetsOnline.error !== "" ? PresetsOnline.error : Translation.tr("Download this preset to see its bar, colors and widgets, and to apply it.")
+                        visible: root.online && PresetsOnline.error !== ""
+                        text: PresetsOnline.error
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: PresetsOnline.error !== "" ? Appearance.colors.colError : Appearance.colors.colOnSecondaryContainer
                         opacity: 0.85
                         wrapMode: Text.WordWrap
-                    }
-
-                    PresetAuthorChip {
-                        Layout.fillWidth: true
-                        visible: root.online && author !== ""
-                        author: root.preset.entry?.author ?? ""
-                        textColor: Appearance.colors.colOnSecondaryContainer
-                        avatarSize: 28
                     }
 
                     Repeater {

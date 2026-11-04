@@ -211,8 +211,16 @@ Item {
         TapHandler {
             enabled: root.styleEditable && root.rightClickFree
             acceptedButtons: Qt.RightButton
-            gesturePolicy: TapHandler.ReleaseWithinBounds
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            gesturePolicy: TapHandler.DragThreshold
             onTapped: root.toggleStyleEditor()
+        }
+
+        TapHandler {
+            enabled: root.styleEditable && root.rightClickFree
+            acceptedDevices: PointerDevice.TouchScreen
+            gesturePolicy: TapHandler.DragThreshold
+            longPressThreshold: 0.8
             onLongPressed: root.toggleStyleEditor()
         }
     }

@@ -16,7 +16,7 @@ Item {
     property color tint: "transparent"
     property bool glassEnabled: true
     property bool fullscreenSurface: false
-    property real tintStrength: 0.3
+    property real tintStrength: 0
     property real flareLeft: 0
     property real flareRight: 0
     property real hangLeft: 0
@@ -36,8 +36,25 @@ Item {
     readonly property bool floating: !fullscreenSurface && !!win && win.anchors === undefined && win.anchor === undefined
     readonly property bool popup: !fullscreenSurface && !!win && win.anchor !== undefined
 
-    property real floatX: 0
-    property real floatY: 0
+    readonly property var floatPos: GlassFloating.positions[win?.title ?? ""] ?? null
+    readonly property var floatMonitor: scr ? HyprlandData.monitors.find(m => m.name === scr.name) : null
+    readonly property real floatX: floatPos ? floatPos.x - (floatMonitor?.x ?? 0) : 0
+    readonly property real floatY: floatPos ? floatPos.y - (floatMonitor?.y ?? 0) : 0
+    readonly property bool wantsFloatTracking: live && floating && !!win?.visible
+    property bool claimed: false
+
+    function syncClaim() {
+        if (root.wantsFloatTracking && !root.claimed) {
+            GlassFloating.claim()
+            root.claimed = true
+        } else if (!root.wantsFloatTracking && root.claimed) {
+            GlassFloating.release()
+            root.claimed = false
+        }
+    }
+
+    onWantsFloatTrackingChanged: syncClaim()
+    Component.onDestruction: if (root.claimed) GlassFloating.release()
 
     function panelOffset(w, s) {
         const a = w.anchors
@@ -55,20 +72,23 @@ Item {
     function layerOffset(w, s, guess) {
         const mon = GlassLayers.layers[s.name]
         if (!mon) return guess
+        const monitor = HyprlandData.monitors.find(m => m.name === s.name)
+        const ox = monitor?.x ?? 0
+        const oy = monitor?.y ?? 0
         let best = null
         let bestDist = Infinity
         for (const level of Object.values(mon.levels ?? {})) {
             for (const layer of level) {
                 if (!layer.namespace.startsWith("quickshell:")) continue
                 if (layer.w !== Math.round(w.width) || layer.h !== Math.round(w.height)) continue
-                const dist = Math.abs(layer.x - guess.x) + Math.abs(layer.y - guess.y)
+                const dist = Math.abs(layer.x - ox - guess.x) + Math.abs(layer.y - oy - guess.y)
                 if (dist < bestDist) {
                     bestDist = dist
                     best = layer
                 }
             }
         }
-        return best ? Qt.point(best.x, best.y) : guess
+        return best ? Qt.point(best.x - ox, best.y - oy) : guess
     }
 
     function popupOffset(w, s) {
@@ -101,23 +121,6 @@ Item {
     readonly property real winX: winPos.x
     readonly property real winY: winPos.y
 
-    Process {
-        id: tracker
-        running: root.live && root.floating && !!root.win?.visible
-        command: ["bash", "-c", "while :; do hyprctl -j activewindow | tr -d '\\n'; echo; sleep 0.016; done"]
-        stdout: SplitParser {
-            onRead: line => {
-                try {
-                    const client = JSON.parse(line)
-                    if (client.title !== root.win.title || !root.scr) return
-                    const mon = HyprlandData.monitors.find(m => m.name === root.scr.name)
-                    root.floatX = client.at[0] - (mon?.x ?? 0)
-                    root.floatY = client.at[1] - (mon?.y ?? 0)
-                } catch (e) {}
-            }
-        }
-    }
-
     property point origin: Qt.point(0, 0)
 
     function refresh() {
@@ -148,7 +151,10 @@ Item {
     onWidthChanged: kick()
     onHeightChanged: kick()
     onVisibleChanged: kick()
-    Component.onCompleted: kick()
+    Component.onCompleted: {
+        syncClaim()
+        kick()
+    }
 
     Connections {
         target: root.win

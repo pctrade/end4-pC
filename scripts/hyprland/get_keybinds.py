@@ -193,7 +193,7 @@ def get_binds_recursive(current_content: Section, scope: int) -> Section:
     return current_content
 
 
-def parse_keys(path: str) -> Section:
+def parse_file(path: str) -> Section:
     global content_lines, reading_line
     raw = read_content(path)
     if raw == "error":
@@ -201,6 +201,28 @@ def parse_keys(path: str) -> Section:
     content_lines = raw.splitlines()
     reading_line  = 0
     return get_binds_recursive(Section([], [], ""), 0)
+
+
+def parse_keys(path: str) -> Section:
+    expanded = os.path.expanduser(os.path.expandvars(path))
+
+    # A custom keybinds directory (e.g. hypr/custom/) can hold any number of
+    # *.lua files, all of which Hyprland sources. Merge binds from every one
+    # of them instead of only recognizing a single hardcoded filename.
+    if os.path.isdir(expanded):
+        merged = Section([], [], "")
+        for root_dir, _dirs, files in os.walk(expanded):
+            for fname in sorted(files):
+                if not fname.endswith(".lua"):
+                    continue
+                section = parse_file(os.path.join(root_dir, fname))
+                if section["name"] == "error":
+                    continue
+                merged["children"].extend(section["children"])
+                merged["keybinds"].extend(section["keybinds"])
+        return merged
+
+    return parse_file(path)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,8 @@ Item {
         return Translation.tr("Search with Google Lens");
     case RegionSelection.SnipAction.CharRecognition:
         return Translation.tr("Recognize text");
+    case RegionSelection.SnipAction.QrCode:
+        return Translation.tr("Scan QR code");
     case RegionSelection.SnipAction.Record:
     case RegionSelection.SnipAction.RecordWithSound:
         return Translation.tr("Record region");
@@ -31,6 +33,8 @@ Item {
         return "image_search";
     case RegionSelection.SnipAction.CharRecognition:
         return "document_scanner";
+    case RegionSelection.SnipAction.QrCode:
+        return "qr_code_scanner";
     case RegionSelection.SnipAction.Record:
     case RegionSelection.SnipAction.RecordWithSound:
         return "videocam";

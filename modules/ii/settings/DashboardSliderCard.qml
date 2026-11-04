@@ -49,6 +49,29 @@ DashboardCard {
                 elide: Text.ElideRight
             }
 
+            RippleButton {
+                visible: root.control?.reset !== undefined && Math.abs(root.current - (root.control?.defaultValue ?? root.current)) > 0.0001
+                implicitWidth: 30
+                implicitHeight: 30
+                buttonRadius: 15
+                colBackground: Qt.rgba(1, 1, 1, 0.12)
+                colBackgroundHover: Qt.rgba(1, 1, 1, 0.22)
+                colRipple: Qt.rgba(1, 1, 1, 0.3)
+                downAction: () => root.control.reset()
+
+                contentItem: MaterialSymbol {
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    text: "restart_alt"
+                    iconSize: 18
+                    color: Appearance.colors.colOnSecondaryContainer
+                }
+
+                StyledToolTip {
+                    text: Translation.tr("Reset to default")
+                }
+            }
+
             StyledText {
                 text: root.showPercent
                     ? Math.round((root.current - root.fromValue) / (root.toValue - root.fromValue) * 100) + "%"

@@ -151,18 +151,23 @@ BarWidgetSwitcher {
                 color: Appearance.colors.colOnLayer0
                 text: DateTime.longDate
                 Layout.alignment: Qt.AlignVCenter
+                Layout.preferredHeight: 24
+                verticalAlignment: Text.AlignVCenter
                 leftPadding: 5
             }
 
             Rectangle {
                 implicitWidth: timeText.implicitWidth + 16
                 implicitHeight: 24
+                Layout.alignment: Qt.AlignVCenter
                 radius: Appearance.rounding.full
                 color: Appearance.colors.colPrimary
 
                 StyledText {
                     id: timeText
-                    anchors.centerIn: parent
+                    anchors.fill: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                     font.pixelSize: Appearance.font.pixelSize.smallie
                     color: Appearance.colors.colOnPrimary
                     font.weight: Font.Bold
@@ -183,7 +188,9 @@ BarWidgetSwitcher {
                 Layout.leftMargin: -10
                 StyledText {
                     id: ampmText
-                    anchors.centerIn: parent
+                    anchors.fill: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: Appearance.colors.colPrimary
                     text: pill.ampm

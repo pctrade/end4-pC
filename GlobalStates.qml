@@ -83,9 +83,7 @@ Singleton {
         onTriggered: root.startupLockPending = false
     }
 
-    readonly property bool dynamicIslandEnabled: Config.options.bar.layouts.leftLayout.includes("dynamicIsland")
-        || Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
-        || Config.options.bar.layouts.rightLayout.includes("dynamicIsland")
+    readonly property bool dynamicIslandEnabled: Config.anyBarHasWidget("dynamicIsland")
 
     signal centeredWallpaperThumpRequested()
 

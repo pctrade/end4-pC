@@ -43,46 +43,6 @@ Scope {
         onContainsMouseChanged: GlobalStates.setFrameHover(screenName, side, containsMouse)
     }
 
-    component FrameCornerWindow: PanelWindow {
-        id: cornerPanelWindow
-        property var corner
-        required property var barConfig
-        readonly property real frameThickness: barConfig.frameThickness
-        readonly property color frameColor: Appearance.getColorFromName(barConfig.frameColor)
-
-        visible: barConfig.showFrame
-        exclusionMode: ExclusionMode.Ignore
-        mask: Region {}
-        WlrLayershell.namespace: "quickshell:screenframe-corner"
-        WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        color: "transparent"
-
-        anchors {
-            top: cornerWidget.isTopLeft || cornerWidget.isTopRight
-            left: cornerWidget.isBottomLeft || cornerWidget.isTopLeft
-            bottom: cornerWidget.isBottomLeft || cornerWidget.isBottomRight
-            right: cornerWidget.isTopRight || cornerWidget.isBottomRight
-        }
-        margins {
-            left: cornerWidget.isLeft ? cornerPanelWindow.frameThickness : 0
-            right: cornerWidget.isRight ? cornerPanelWindow.frameThickness : 0
-            top: cornerWidget.isTop ? cornerPanelWindow.frameThickness : 0
-            bottom: cornerWidget.isBottom ? cornerPanelWindow.frameThickness : 0
-        }
-
-        implicitWidth: cornerWidget.implicitWidth
-        implicitHeight: cornerWidget.implicitHeight
-
-        RoundCorner {
-            id: cornerWidget
-            anchors.fill: parent
-            corner: cornerPanelWindow.corner
-            implicitSize: Math.max(0, Appearance.rounding.screenRounding - cornerPanelWindow.frameThickness)
-            color: cornerPanelWindow.frameColor
-        }
-    }
-
     Variants {
         model: Quickshell.screens
 
@@ -160,11 +120,6 @@ Scope {
 
                 FrameHoverArea { side: "right"; screenName: frameGroup.modelData.name; barConfig: frameGroup.barConfig }
             }
-
-            FrameCornerWindow { screen: frameGroup.modelData; barConfig: frameGroup.barConfig; corner: RoundCorner.CornerEnum.TopLeft }
-            FrameCornerWindow { screen: frameGroup.modelData; barConfig: frameGroup.barConfig; corner: RoundCorner.CornerEnum.TopRight }
-            FrameCornerWindow { screen: frameGroup.modelData; barConfig: frameGroup.barConfig; corner: RoundCorner.CornerEnum.BottomLeft }
-            FrameCornerWindow { screen: frameGroup.modelData; barConfig: frameGroup.barConfig; corner: RoundCorner.CornerEnum.BottomRight }
         }
     }
 }

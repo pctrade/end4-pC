@@ -202,6 +202,7 @@ Item {
 
             GroupButton {
                 id: swapButton
+                glass: true
                 Layout.preferredWidth: height
                 colBackground: Appearance.colors.colTertiaryContainer
                 colBackgroundHover: Appearance.colors.colTertiaryContainerHover

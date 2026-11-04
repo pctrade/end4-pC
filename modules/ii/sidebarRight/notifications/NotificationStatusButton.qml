@@ -8,6 +8,8 @@ GroupButton {
     property string buttonIcon: ""
     property string buttonText: ""
 
+    glass: true
+
     baseHeight: 36
     baseWidth: content.implicitWidth + 46
     clickedWidth: baseWidth + 6

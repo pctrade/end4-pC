@@ -195,7 +195,33 @@ def positions():
     json.dump(result, sys.stdout)
 
 
-def team_form(league_id, team_ids, count=6):
+def event_corners(league_slug, event_id):
+    path = os.path.join(CACHE, f"corners_{event_id}.json")
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as handle:
+                return json.load(handle)
+        except Exception:
+            pass
+    try:
+        url = f"{SITE}/{league_slug}/summary?event={event_id}"
+        with urlopen(Request(url, headers={"User-Agent": UA}), timeout=15) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        found = {}
+        for team in data["boxscore"]["teams"]:
+            for stat in team.get("statistics", []):
+                if stat.get("name") == "wonCorners":
+                    found[team["team"]["id"]] = int(float(stat.get("displayValue") or 0))
+        if len(found) == 2:
+            os.makedirs(CACHE, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump(found, handle)
+        return found
+    except Exception:
+        return {}
+
+
+def team_form(league_id, team_ids, count=10):
     domestic = domestic_index()
     result = {}
 
@@ -226,12 +252,27 @@ def team_form(league_id, team_ids, count=6):
                     "r": "W" if mine_score > other_score else ("L" if mine_score < other_score else "D"),
                     "vs": other[0]["team"].get("abbreviation", ""),
                     "score": f"{mine_score}-{other_score}",
+                    "gf": mine_score,
+                    "ga": other_score,
+                    "event": event["id"],
+                    "league": (event.get("league") or {}).get("slug") or home_league,
                 })
             except Exception:
                 continue
         games.sort(key=lambda g: g["date"])
-        return team_id, games[-count:]
+        games = games[-count:]
 
+        def add_corners(game):
+            found = event_corners(game["league"], game["event"])
+            others = [value for key, value in found.items() if key != team_id]
+            if team_id in found and others:
+                game["cf"] = found[team_id]
+                game["ca"] = others[0]
+            return game
+
+        with ThreadPoolExecutor(max_workers=5) as inner:
+            games = list(inner.map(add_corners, games))
+        return team_id, games
     with ThreadPoolExecutor(max_workers=4) as pool:
         for team_id, games in pool.map(load, team_ids):
             result[team_id] = games

@@ -54,9 +54,11 @@ open_workspace() {
     work=$(mktemp -d)
     trap 'rm -rf "$work"' EXIT
 
-    gitgh clone --depth 1 --branch "$BASE_BRANCH" "https://github.com/$fork_repo.git" "$work/repo" >/dev/null 2>&1 \
+    gitgh clone --depth 1 --filter=blob:none --sparse --branch "$BASE_BRANCH" "https://github.com/$fork_repo.git" "$work/repo" >/dev/null 2>&1 \
         || die 12 "could not clone $fork_repo"
     cd "$work/repo" || die 12 "clone failed"
+    [ -z "${NAME:-}" ] || gitgh sparse-checkout set "presets/$NAME" >/dev/null 2>&1 \
+        || die 12 "could not prepare the working folder"
 }
 
 commit_and_open_pr() {

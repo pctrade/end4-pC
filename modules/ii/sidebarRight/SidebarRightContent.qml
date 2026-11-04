@@ -539,6 +539,7 @@ Item {
 
     Toolbar {
         id: editToolbar
+        glass: true
         z: 60
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom

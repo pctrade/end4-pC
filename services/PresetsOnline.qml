@@ -248,7 +248,7 @@ Singleton {
 
         let cmd = `mkdir -p ${root.shQuote(dir)}`;
         for (const asset of toDownload)
-            cmd += ` && curl -sSL ${root.shQuote(asset.url)} -o ${root.shQuote(dir + "/" + asset.filename)}`;
+            cmd += ` && curl -fsSL ${root.shQuote(asset.url)} -o ${root.shQuote(dir + "/" + asset.filename)}`;
         assetsProc.command = ["bash", "-c", cmd];
         assetsProc.running = true;
     }
@@ -264,7 +264,7 @@ Singleton {
         jsonProc.metaUrl = entry.metaUrl;
         jsonProc.stagingJsonPath = staging;
         jsonProc.command = ["bash", "-c",
-            `mkdir -p ${root.shQuote(root.cacheDir())} && curl -sSL ${root.shQuote(entry.jsonUrl)} -o ${root.shQuote(staging)}`];
+            `mkdir -p ${root.shQuote(root.cacheDir())} && curl -fsSL ${root.shQuote(entry.jsonUrl)} -o ${root.shQuote(staging)}`];
         jsonProc.running = true;
     }
 

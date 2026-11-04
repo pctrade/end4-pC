@@ -22,11 +22,14 @@ Scope {
 
     component CornerPanelWindow: PanelWindow {
         id: cornerPanelWindow
+        required property var barConfig
         property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
         property bool fullscreen
-        readonly property bool showFakeRounding: Config.options.bar.cornerStyle !== 5
+        readonly property bool showFakeRounding: barConfig.cornerStyle !== 5
             && (Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen))
-        visible: showFakeRounding || Config.options.sidebar.cornerOpen.enable
+        readonly property real frameInset: barConfig.frameThickness
+        readonly property bool showFrameCorner: barConfig.showFrame && !fullscreen
+        visible: showFakeRounding || Config.options.sidebar.cornerOpen.enable || showFrameCorner
         property var corner
 
         exclusionMode: ExclusionMode.Ignore
@@ -48,8 +51,8 @@ Scope {
             bottom: (Config.options.interactions.deadPixelWorkaround.enable && cornerPanelWindow.anchors.bottom) * -1
         }
 
-        implicitWidth: cornerWidget.implicitWidth
-        implicitHeight: cornerWidget.implicitHeight
+        implicitWidth: Math.max(cornerWidget.implicitWidth, showFrameCorner ? Math.max(frameInset, Appearance.rounding.screenRounding) : 0)
+        implicitHeight: Math.max(cornerWidget.implicitHeight, showFrameCorner ? Math.max(frameInset, Appearance.rounding.screenRounding) : 0)
 
         RoundCorner {
             id: cornerWidget
@@ -134,6 +137,23 @@ Scope {
                 }
             }
         }
+
+        RoundCorner {
+            visible: cornerPanelWindow.showFrameCorner
+            corner: cornerPanelWindow.corner
+            implicitSize: Math.max(0, Appearance.rounding.screenRounding - cornerPanelWindow.frameInset)
+            color: Appearance.getColorFromName(cornerPanelWindow.barConfig.frameColor)
+            anchors {
+                top: cornerWidget.isTop ? parent.top : undefined
+                bottom: cornerWidget.isBottom ? parent.bottom : undefined
+                left: cornerWidget.isLeft ? parent.left : undefined
+                right: cornerWidget.isRight ? parent.right : undefined
+                topMargin: cornerWidget.isTop ? cornerPanelWindow.frameInset : 0
+                bottomMargin: cornerWidget.isBottom ? cornerPanelWindow.frameInset : 0
+                leftMargin: cornerWidget.isLeft ? cornerPanelWindow.frameInset : 0
+                rightMargin: cornerWidget.isRight ? cornerPanelWindow.frameInset : 0
+            }
+        }
     }
 
     Variants {
@@ -142,6 +162,7 @@ Scope {
         Scope {
             id: monitorScope
             required property var modelData
+            readonly property var barConfig: Config.barForScreen(modelData.name)
             property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
             // Hide when fullscreen
@@ -155,21 +176,25 @@ Scope {
 
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.TopLeft
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.TopRight
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.BottomLeft
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.BottomRight
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }

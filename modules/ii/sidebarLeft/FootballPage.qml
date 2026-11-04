@@ -83,7 +83,7 @@ Item {
     }
 
     function lineOf(pick) {
-        return ({ o15: "1.5", o25: "2.5", c85: "8.5", c95: "9.5", c105: "10.5" })[pick] ?? "";
+        return ({ o15: "1.5", o25: "2.5", c85: "8.5", c75: "9.5", c105: "10.5" })[pick] ?? "";
     }
 
     function toggleMarket(id) {
@@ -106,6 +106,52 @@ Item {
 
     function posText(position) {
         return position > 0 ? "#" + position + " · " : "";
+    }
+
+    function formStats(games) {
+        if (!games || games.length === 0 || games[0].gf === undefined) return null;
+        const n = games.length;
+        const pct = test => 100 * games.filter(test).length / n;
+        const withCorners = games.filter(g => g.cf !== undefined);
+        const cornerAvg = key => withCorners.length > 0 ? withCorners.reduce((sum, g) => sum + g[key], 0) / withCorners.length : -1;
+        return {
+            n: n,
+            win: pct(g => g.r === "W"),
+            gf: games.reduce((sum, g) => sum + g.gf, 0) / n,
+            ga: games.reduce((sum, g) => sum + g.ga, 0) / n,
+            o15: pct(g => g.gf + g.ga > 1),
+            o25: pct(g => g.gf + g.ga > 2),
+            o35: pct(g => g.gf + g.ga > 3),
+            btts: pct(g => g.gf > 0 && g.ga > 0),
+            cs: pct(g => g.ga === 0),
+            cf: cornerAvg("cf"),
+            ca: cornerAvg("ca"),
+            c75: withCorners.length > 0 ? 100 * withCorners.filter(g => g.cf + g.ca > 7).length / withCorners.length : -1
+        };
+    }
+
+    readonly property var detailHomeStats: root.detailMatch ? root.formStats(Football.formByTeam[root.detailMatch.home.id]) : null
+    readonly property var detailAwayStats: root.detailMatch ? root.formStats(Football.formByTeam[root.detailMatch.away.id]) : null
+    readonly property var detailTip: root.tipFor(root.detailHomeStats, root.detailAwayStats)
+    readonly property real tipThreshold: 150
+
+    function tipFor(home, away) {
+        if (!home || !away) return null;
+        const markets = [
+            { key: "o15", label: Translation.tr("Over 1.5 goals"), icon: "sports_soccer" },
+            { key: "o25", label: Translation.tr("Over 2.5 goals"), icon: "sports_soccer" },
+            { key: "o35", label: Translation.tr("Over 3.5 goals"), icon: "sports_soccer" },
+            { key: "btts", label: Translation.tr("Both teams to score"), icon: "swap_horiz" },
+            { key: "c75", label: Translation.tr("Over 7.5 corners"), icon: "flag" }
+        ];
+        let best = null;
+        for (const market of markets) {
+            const h = home[market.key], a = away[market.key];
+            if (h === undefined || a === undefined || h < 0 || a < 0) continue;
+            const total = h + a;
+            if (best === null || total > best.total) best = { label: market.label, icon: market.icon, total: total };
+        }
+        return best;
     }
 
     function openMatch(match) {
@@ -324,6 +370,7 @@ Item {
                     implicitWidth: 44
                     implicitHeight: 44
                     buttonRadius: 22
+                    glass: true
                     enabled: !Football.loading
                     colBackground: Appearance.colors.colSecondaryContainer
                     colBackgroundHover: Appearance.colors.colSecondaryContainerHover
@@ -995,7 +1042,7 @@ Item {
                                     ProbChip { caption: Translation.tr("+1.5 goals"); value: card.probs ? card.probs.o15 : 0 }
                                     ProbChip { caption: Translation.tr("+2.5 goals"); value: card.probs ? card.probs.o25 : 0 }
                                     ProbChip { caption: Translation.tr("+8.5 corners"); value: card.probs ? card.probs.c85 : 0 }
-                                    ProbChip { caption: Translation.tr("+9.5 corners"); value: card.probs ? card.probs.c95 : 0 }
+                                    ProbChip { caption: Translation.tr("+9.5 corners"); value: card.probs ? card.probs.c75 : 0 }
                                 }
 
                                 StyledText {
@@ -1118,13 +1165,17 @@ Item {
                 }
 
                 ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
                     spacing: 0
 
                     StyledText {
+                        Layout.fillWidth: true
                         text: root.detailMatch ? root.detailMatch.league.name : ""
                         font.pixelSize: Appearance.font.pixelSize.title
                         font.family: Appearance.font.family.title
                         color: Appearance.colors.colOnLayer1
+                        elide: Text.ElideRight
                     }
                     StyledText {
                         text: Translation.tr("Standings")
@@ -1133,7 +1184,49 @@ Item {
                     }
                 }
 
-                Item { Layout.fillWidth: true }
+                Rectangle {
+                    id: tipChip
+                    readonly property bool strong: root.detailTip !== null && root.detailTip.total >= root.tipThreshold
+                    visible: root.detailMatch !== null && root.detailTip !== null
+                    implicitWidth: tipRow.implicitWidth + 24
+                    implicitHeight: 48
+                    radius: Appearance.rounding.normal
+                    color: strong ? Appearance.colors.colPrimaryContainer : Appearance.colors.colLayer2
+
+                    RowLayout {
+                        id: tipRow
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        MaterialShapeWrappedMaterialSymbol {
+                            text: tipChip.strong ? "auto_awesome" : "hourglass_empty"
+                            fill: 1
+                            iconSize: 16
+                            padding: 5
+                            wrappedShape: MaterialShape.Shape.Cookie9Sided
+                            color: tipChip.strong ? Appearance.colors.colPrimary : Appearance.colors.colLayer3
+                            colSymbol: tipChip.strong ? Appearance.colors.colOnPrimary : Appearance.colors.colSubtext
+                        }
+
+                        ColumnLayout {
+                            spacing: 0
+                            StyledText {
+                                text: tipChip.strong ? root.detailTip.label : Translation.tr("No clear pick")
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                font.weight: Font.DemiBold
+                                color: tipChip.strong ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnLayer2
+                            }
+                            StyledText {
+                                text: tipChip.strong
+                                    ? Translation.tr("Tip · %1% combined").arg(Math.round(root.detailTip.total))
+                                    : Translation.tr("Best: %1 · %2%").arg(root.detailTip ? root.detailTip.label : "").arg(root.detailTip ? Math.round(root.detailTip.total) : 0)
+                                font.pixelSize: Appearance.font.pixelSize.smallest
+                                color: tipChip.strong ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext
+                                opacity: 0.8
+                            }
+                        }
+                    }
+                }
         }
 
         StyledFlickable {
@@ -1272,6 +1365,155 @@ Item {
                         FootballFormStrip {
                             alignRight: true
                             games: root.detailMatch ? (Football.formByTeam[root.detailMatch.away.id] ?? []) : []
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: tenCard
+                    readonly property var homeStats: root.formStats(root.detailMatch ? Football.formByTeam[root.detailMatch.home.id] : null)
+                    readonly property var awayStats: root.formStats(root.detailMatch ? Football.formByTeam[root.detailMatch.away.id] : null)
+
+                    visible: root.detailMatch !== null && homeStats !== null && awayStats !== null
+                    Layout.fillWidth: true
+                    implicitHeight: tenColumn.implicitHeight + 28
+                    radius: Appearance.rounding.normal
+                    color: Appearance.colors.colLayer2
+
+                    ColumnLayout {
+                        id: tenColumn
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 12
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            MaterialShapeWrappedMaterialSymbol {
+                                text: "query_stats"
+                                iconSize: 18
+                                padding: 6
+                                wrappedShape: MaterialShape.Shape.Cookie9Sided
+                            }
+                            ColumnLayout {
+                                spacing: 0
+                                StyledText {
+                                    text: Translation.tr("Last %1 matches").arg(Math.max(tenCard.homeStats?.n ?? 0, tenCard.awayStats?.n ?? 0))
+                                    font.pixelSize: Appearance.font.pixelSize.normal
+                                    font.weight: Font.DemiBold
+                                    color: Appearance.colors.colOnLayer2
+                                }
+                                StyledText {
+                                    text: Translation.tr("Averages from each team's recent results")
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: Appearance.colors.colSubtext
+                                }
+                            }
+                        }
+
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Wins")
+                            homeValue: tenCard.homeStats?.win ?? 0
+                            awayValue: tenCard.awayStats?.win ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Goals scored / game")
+                            suffix: ""
+                            decimals: 1
+                            maxValue: 3.5
+                            homeValue: tenCard.homeStats?.gf ?? 0
+                            awayValue: tenCard.awayStats?.gf ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Goals conceded / game")
+                            suffix: ""
+                            decimals: 1
+                            maxValue: 3.5
+                            homeValue: tenCard.homeStats?.ga ?? 0
+                            awayValue: tenCard.awayStats?.ga ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Over 1.5 goals")
+                            homeValue: tenCard.homeStats?.o15 ?? 0
+                            awayValue: tenCard.awayStats?.o15 ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Over 2.5 goals")
+                            homeValue: tenCard.homeStats?.o25 ?? 0
+                            awayValue: tenCard.awayStats?.o25 ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Over 3.5 goals")
+                            homeValue: tenCard.homeStats?.o35 ?? 0
+                            awayValue: tenCard.awayStats?.o35 ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Both teams scored")
+                            homeValue: tenCard.homeStats?.btts ?? 0
+                            awayValue: tenCard.awayStats?.btts ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            Layout.fillWidth: true
+                            label: Translation.tr("Clean sheets")
+                            homeValue: tenCard.homeStats?.cs ?? 0
+                            awayValue: tenCard.awayStats?.cs ?? 0
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            visible: (tenCard.homeStats?.cf ?? -1) >= 0 && (tenCard.awayStats?.cf ?? -1) >= 0
+                            Layout.fillWidth: true
+                            label: Translation.tr("Corners won / game")
+                            suffix: ""
+                            decimals: 1
+                            maxValue: 8
+                            homeValue: Math.max(0, tenCard.homeStats?.cf ?? 0)
+                            awayValue: Math.max(0, tenCard.awayStats?.cf ?? 0)
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            visible: (tenCard.homeStats?.ca ?? -1) >= 0 && (tenCard.awayStats?.ca ?? -1) >= 0
+                            Layout.fillWidth: true
+                            label: Translation.tr("Corners conceded / game")
+                            suffix: ""
+                            decimals: 1
+                            maxValue: 8
+                            homeValue: Math.max(0, tenCard.homeStats?.ca ?? 0)
+                            awayValue: Math.max(0, tenCard.awayStats?.ca ?? 0)
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
+                        }
+                        FootballCompareRow {
+                            visible: (tenCard.homeStats?.c75 ?? -1) >= 0 && (tenCard.awayStats?.c75 ?? -1) >= 0
+                            Layout.fillWidth: true
+                            label: Translation.tr("Over 7.5 corners")
+                            homeValue: Math.max(0, tenCard.homeStats?.c75 ?? 0)
+                            awayValue: Math.max(0, tenCard.awayStats?.c75 ?? 0)
+                            homeColor: root.homeRowColor
+                            awayColor: root.awayRowColor
                         }
                     }
                 }
