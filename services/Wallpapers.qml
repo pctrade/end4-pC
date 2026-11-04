@@ -70,12 +70,35 @@ Singleton {
         id: applyProc
     }
     
-    function openFallbackPicker(darkMode = Appearance.m3colors.darkmode, startDir = "") {
-        const args = [Directories.wallpaperSwitchScriptPath, "--mode", darkMode ? "dark" : "light"];
-        if (startDir !== "") {
-            args.push("--start-dir", startDir);
+    Process {
+        id: fallbackPickerProc
+        property bool darkMode: Appearance.m3colors.darkmode
+        property string screenName: ""
+        property string target: "wallpaper"
+        stdout: StdioCollector { id: fallbackPickerOutput }
+        onExited: code => {
+            const path = fallbackPickerOutput.text.trim();
+            if (code !== 0 || path === "") return;
+
+            if (fallbackPickerProc.target === "lockWall") {
+                Config.options.background.lockWall = path;
+                return;
+            }
+            root.apply(path, fallbackPickerProc.darkMode, fallbackPickerProc.screenName);
         }
-        Quickshell.execDetached(args);
+    }
+
+    function openFallbackPicker(darkMode = Appearance.m3colors.darkmode, startDir = "", screenName = "", target = "wallpaper") {
+        const requestedDir = getCleanDirPath(startDir);
+        const pickerDir = requestedDir || root.effectiveDirectory || getCleanDirPath(root.defaultFolder);
+        fallbackPickerProc.darkMode = darkMode;
+        fallbackPickerProc.screenName = target === "lockWall" ? "" : screenName;
+        fallbackPickerProc.target = target;
+        fallbackPickerProc.command = [
+            "kdialog", "--title", Translation.tr("Choose wallpaper"),
+            "--getopenfilename", pickerDir
+        ];
+        fallbackPickerProc.running = true;
     }
 
     function apply(path, darkMode = Appearance.m3colors.darkmode, screenName = "") {

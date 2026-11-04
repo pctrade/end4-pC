@@ -622,11 +622,21 @@ MouseArea {
                                 IconToolbarButton {
                                     implicitWidth: height
                                     onClicked: {
-                                        Wallpapers.openFallbackPicker(root.useDarkMode);
+                                        Wallpapers.openFallbackPicker(
+                                            root.useDarkMode,
+                                            Wallpapers.effectiveDirectory,
+                                            root.targetScreenName,
+                                            GlobalStates.wallpaperSelectorTarget
+                                        );
                                         GlobalStates.wallpaperSelectorOpen = false;
                                     }
                                     altAction: () => {
-                                        Wallpapers.openFallbackPicker(root.useDarkMode);
+                                        Wallpapers.openFallbackPicker(
+                                            root.useDarkMode,
+                                            Wallpapers.effectiveDirectory,
+                                            root.targetScreenName,
+                                            GlobalStates.wallpaperSelectorTarget
+                                        );
                                         GlobalStates.wallpaperSelectorOpen = false;
                                         Config.options.wallpaperSelector.useSystemFileDialog = true;
                                     }

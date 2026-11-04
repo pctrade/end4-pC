@@ -58,6 +58,15 @@ Singleton {
     function openWallpaperSelector(screenName = "", target = "wallpaper") {
         root.wallpaperSelectorScreen = target === "lockWall" ? "" : screenName;
         root.wallpaperSelectorTarget = target;
+        if (Config.options.wallpaperSelector.useSystemFileDialog) {
+            Wallpapers.openFallbackPicker(
+                Appearance.m3colors.darkmode,
+                Wallpapers.effectiveDirectory,
+                root.wallpaperSelectorScreen,
+                target
+            );
+            return;
+        }
         root.wallpaperSelectorOpen = true;
     }
     property bool dropShelfOpen: false
