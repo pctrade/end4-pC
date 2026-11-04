@@ -58,6 +58,14 @@ Item {
         return prevCount % 2 === 1
     }
 
+    function applyWidgetMirroring(item, widgetName, layout, idx) {
+        // hasOwnProperty("mirrored") is unreliable for QML objects and can
+        // match a read-only Qt property. Only these widgets declare the
+        // writable property used by the bar layout.
+        if (item && (widgetName === "visualizer" || widgetName === "dynamicIsland"))
+            item.mirrored = root.getMirroredForIndex(layout, idx)
+    }
+
     function shouldPaintMaterialPill(name) {
         if (!root.isMaterial) return false;
         const blacklist = ["workspaces", "divisor", "powerButton", "docktoPanel", "leftSidebarButton", "activeWindow", "dynamicIsland", "avatar"];
@@ -294,10 +302,7 @@ Item {
                             Loader {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
-                                }
+                                onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveLeftLayout, index)
                             }
                         }
                     }
@@ -341,10 +346,7 @@ Item {
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
-                            }
+                            onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveLeftLayout, index)
                         }
                     }
                 }
@@ -356,10 +358,7 @@ Item {
                         Layout.topMargin: root.barConfig.bottom ? -5 : 3
                         Layout.alignment: Qt.AlignVCenter
                         source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(root.effectiveLeftLayout, index)
-                        }
+                        onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveLeftLayout, index)
                     }
                 }
             }
@@ -458,10 +457,7 @@ Item {
                             Loader {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item && item.hasOwnProperty("mirrored"))
-                                        item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
-                                }
+                                onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveMiddleLayout, index)
                             }
                         }
                     }
@@ -506,10 +502,7 @@ Item {
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item && item.hasOwnProperty("mirrored"))
-                                    item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
-                            }
+                            onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveMiddleLayout, index)
                         }
                     }
                 }
@@ -520,10 +513,7 @@ Item {
                         Layout.fillHeight: false
                         Layout.topMargin: root.barConfig.bottom ? -5 : 3
                         source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item && item.hasOwnProperty("mirrored"))
-                                item.mirrored = root.getMirroredForIndex(root.effectiveMiddleLayout, index)
-                        }
+                        onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveMiddleLayout, index)
                     }
                 }
             }
@@ -606,13 +596,7 @@ Item {
                             Loader {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item && item.hasOwnProperty("mirrored")) {
-                                        try {
-                                            item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
-                                        } catch (e) {}
-                                    }
-                                }
+                                onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveRightLayout, index)
                             }
                         }
                     }
@@ -644,13 +628,7 @@ Item {
                         Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item && item.hasOwnProperty("mirrored")) {
-                                    try {
-                                        item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
-                                    } catch (e) {}
-                                }
-                            }
+                            onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveRightLayout, index)
                         }
                     }
                 }
@@ -661,13 +639,7 @@ Item {
                         Layout.fillHeight: false
                         Layout.topMargin: root.barConfig.bottom ? -5 : 3
                         source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item && item.hasOwnProperty("mirrored")) {
-                                try {
-                                    item.mirrored = root.getMirroredForIndex(root.effectiveRightLayout, index);
-                                } catch (e) {}
-                            }
-                        }
+                        onLoaded: root.applyWidgetMirroring(item, modelData, root.effectiveRightLayout, index)
                     }
                 }
             }

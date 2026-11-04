@@ -52,15 +52,21 @@ Singleton {
     // schema/default object while preserving every value explicitly saved by
     // the monitor override.
     function mergeBarSettings(defaults, override) {
-        if (override === undefined) return cloneValue(defaults);
-        if (override === null || typeof override !== "object" || Array.isArray(override))
-            return cloneValue(override);
+        if (override === undefined)
+            return defaults === undefined ? undefined : cloneValue(defaults);
 
-        const result = defaults !== null && typeof defaults === "object" && !Array.isArray(defaults)
-            ? cloneValue(defaults)
+        // QML list properties can arrive as typed Qt objects for which
+        // Array.isArray() is false. JSON cloning normalizes them first.
+        const overrideCopy = cloneValue(override);
+        if (overrideCopy === null || typeof overrideCopy !== "object" || Array.isArray(overrideCopy))
+            return overrideCopy;
+
+        const defaultsCopy = defaults === undefined ? {} : cloneValue(defaults);
+        const result = defaultsCopy !== null && typeof defaultsCopy === "object" && !Array.isArray(defaultsCopy)
+            ? defaultsCopy
             : {};
-        for (const key of Object.keys(override))
-            result[key] = mergeBarSettings(defaults?.[key], override[key]);
+        for (const key of Object.keys(overrideCopy))
+            result[key] = mergeBarSettings(defaultsCopy?.[key], overrideCopy[key]);
         return result;
     }
 
@@ -101,13 +107,14 @@ Singleton {
 
     function barHasWidget(screenName, widgetName) {
         const layouts = barForScreen(screenName).layouts;
-        return (layouts?.leftLayout ?? []).includes(widgetName)
-            || (layouts?.middleLayout ?? []).includes(widgetName)
-            || (layouts?.rightLayout ?? []).includes(widgetName);
+        const left = cloneValue(layouts?.leftLayout ?? []);
+        const middle = cloneValue(layouts?.middleLayout ?? []);
+        const right = cloneValue(layouts?.rightLayout ?? []);
+        return left.includes(widgetName) || middle.includes(widgetName) || right.includes(widgetName);
     }
 
     function activeBarScreens() {
-        const listedScreens = root.options.bar.screenList ?? [];
+        const listedScreens = cloneValue(root.options.bar.screenList ?? []);
         return Quickshell.screens.filter(screen => {
             const config = barForScreen(screen.name);
             const listed = listedScreens.length === 0 || listedScreens.includes(screen.name);
