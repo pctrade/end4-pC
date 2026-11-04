@@ -47,6 +47,54 @@ Singleton {
         return JSON.parse(JSON.stringify(value));
     }
 
+    function wallpaperOverrideIndex(screenName) {
+        if (!screenName) return -1;
+        const overrides = root.options.background.monitorWallpapers ?? [];
+        return overrides.findIndex(entry => entry.screen === screenName);
+    }
+
+    function hasWallpaperOverride(screenName) {
+        return wallpaperOverrideIndex(screenName) >= 0;
+    }
+
+    // An empty screen name deliberately addresses the global wallpaper. This
+    // keeps existing callers compatible and gives every monitor a stable
+    // fallback when its output is renamed, disconnected, or has no override.
+    function wallpaperForScreen(screenName) {
+        const index = wallpaperOverrideIndex(screenName);
+        if (index < 0) return root.options.background.wallpaperPath;
+        return root.options.background.monitorWallpapers[index].path
+            || root.options.background.wallpaperPath;
+    }
+
+    function wallpaperThumbnailForScreen(screenName) {
+        const index = wallpaperOverrideIndex(screenName);
+        if (index < 0) return root.options.background.thumbnailPath;
+        return root.options.background.monitorWallpapers[index].thumbnailPath
+            || root.options.background.thumbnailPath;
+    }
+
+    function setWallpaperForScreen(screenName, path, thumbnailPath = "") {
+        if (!screenName) {
+            root.options.background.wallpaperPath = path;
+            if (thumbnailPath) root.options.background.thumbnailPath = thumbnailPath;
+            return;
+        }
+
+        const overrides = cloneValue(root.options.background.monitorWallpapers ?? []);
+        const entry = { screen: screenName, path: path, thumbnailPath: thumbnailPath };
+        const index = overrides.findIndex(item => item.screen === screenName);
+        if (index < 0) overrides.push(entry);
+        else overrides[index] = entry;
+        root.options.background.monitorWallpapers = overrides;
+    }
+
+    function resetWallpaperForScreen(screenName) {
+        if (!screenName) return;
+        root.options.background.monitorWallpapers = (root.options.background.monitorWallpapers ?? [])
+            .filter(entry => entry.screen !== screenName);
+    }
+
     // Monitor overrides are snapshots, but upstream can add new bar keys after
     // a snapshot was created. Fill only those missing keys from the current
     // schema/default object while preserving every value explicitly saved by
@@ -652,6 +700,9 @@ Singleton {
                     property real pauseBelowPercent: 0 // Or only under this charge, 0 to ignore
                 }
                 property list<string> screenList: [] 
+                // Optional entries: { screen, path, thumbnailPath }. A monitor
+                // without an entry inherits wallpaperPath/thumbnailPath.
+                property list<var> monitorWallpapers: []
                 property string wallpaperPath: ""
                 property bool centeredWallpaper: false
                 property string centeredWallpaperShape: "Cookie7Sided"

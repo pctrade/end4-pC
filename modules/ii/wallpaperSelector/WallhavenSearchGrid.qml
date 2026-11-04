@@ -14,6 +14,7 @@ Item {
     property int columns: 4
     property real previewCellAspectRatio: 4 / 3
     property bool useDarkMode: Appearance.m3colors.darkmode
+    property string targetScreenName: ""
     property bool loading: WallhavenSearch.fetching
     property bool downloading: false
     property string downloadingId: ""
@@ -47,7 +48,7 @@ Item {
             downloading = false
             downloadingId = ""
             if (success && localPath) {
-                Wallpapers.apply(localPath, root.useDarkMode)
+                Wallpapers.apply(localPath, root.useDarkMode, root.targetScreenName)
                 root.wallpaperApplied()
             }
         })

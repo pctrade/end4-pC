@@ -22,6 +22,16 @@ MouseArea {
     property bool toolbarVisible: showControls || Config.options.wallpaperSelector.showSearchbar
     property bool filterFieldFocused: false
     property Item activeFilterField: null
+    property string initialTargetScreenName: ""
+    property string targetScreenName: GlobalStates.wallpaperSelectorTarget === "lockWall"
+        ? "" : initialTargetScreenName
+    readonly property var wallpaperTargets: [
+        { value: "", displayName: Translation.tr("Global fallback"), icon: "public" }
+    ].concat(Quickshell.screens.map(screen => ({
+        value: screen.name,
+        displayName: screen.name,
+        icon: "monitor"
+    })))
 
     property var quickDirs: [
         { icon: "home",       name: "Home   ",       path: `${Directories.home}`,                alwaysVisible: Config.options.wallpaperSelector.showHomePath },
@@ -85,8 +95,8 @@ MouseArea {
                 // then select() sets confirmedPath to the new one — this causes
                 // onWallpaperPathChanged to fire with the real transition animation.
                 if (Config.options.background.enableWallpaperPreview)
-                    Wallpapers.stopPreview();
-                Wallpapers.select(filePath, root.useDarkMode);
+                    Wallpapers.stopPreview(root.targetScreenName);
+                Wallpapers.select(filePath, root.useDarkMode, null, root.targetScreenName);
             }
         }
     }
@@ -202,7 +212,8 @@ MouseArea {
                 anchors.fill: parent
                 visible: Config.options.wallpaperSelector.showBlurBackground
                 fillMode: Image.PreserveAspectCrop
-                source: Config.options.wallpaperSelector.showBlurBackground ? Config.options.background.wallpaperPath : ""
+                source: Config.options.wallpaperSelector.showBlurBackground
+                    ? Config.wallpaperForScreen(root.targetScreenName) : ""
                 // Only shown under a radius 48 blur, so a small decode looks the same
                 // and stays small enough for the pixmap cache to keep it between openings
                 sourceSize: Qt.size(480, 480)
@@ -389,6 +400,41 @@ MouseArea {
                         spacing: 6
 
                         StyledComboBox {
+                            id: targetCombo
+                            visible: GlobalStates.wallpaperSelectorTarget !== "lockWall"
+                            glass: true
+                            implicitWidth: 155
+                            model: root.wallpaperTargets
+                            textRole: "displayName"
+                            currentIndex: {
+                                const index = model.findIndex(item => item.value === root.targetScreenName)
+                                return index >= 0 ? index : 0
+                            }
+                            onActivated: index => {
+                                Wallpapers.stopPreview()
+                                root.targetScreenName = model[index].value
+                            }
+                            StyledToolTip {
+                                text: root.targetScreenName
+                                    ? Translation.tr("Apply to this monitor")
+                                    : Translation.tr("Set the wallpaper inherited by monitors without an override")
+                            }
+                        }
+
+                        IconToolbarButton {
+                            visible: root.targetScreenName !== "" && Config.hasWallpaperOverride(root.targetScreenName)
+                            implicitWidth: height
+                            text: "link"
+                            onClicked: {
+                                Wallpapers.stopPreview(root.targetScreenName)
+                                Config.resetWallpaperForScreen(root.targetScreenName)
+                            }
+                            StyledToolTip {
+                                text: Translation.tr("Use global wallpaper on this monitor")
+                            }
+                        }
+
+                        StyledComboBox {
                             id: sourceCombo
                             glass: true
                             implicitWidth: 120
@@ -455,6 +501,7 @@ MouseArea {
                         LocalWallpaperGrid {
                             columns: root.columns
                             previewCellAspectRatio: root.previewCellAspectRatio
+                            targetScreenName: root.targetScreenName
                             onWallpaperSelected: path => root.selectWallpaperPath(path)
                         }
                     }
@@ -465,6 +512,7 @@ MouseArea {
                             columns: root.columns
                             previewCellAspectRatio: root.previewCellAspectRatio
                             useDarkMode: root.useDarkMode
+                            targetScreenName: root.targetScreenName
                             onWallpaperApplied: {
                                 if (Config.options.wallpaperSelector.closeAfterSelection)
                                     GlobalStates.wallpaperSelectorOpen = false;
@@ -632,7 +680,7 @@ MouseArea {
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
-                                    onClicked: Wallpapers.randomFromCurrentFolder()
+                                    onClicked: Wallpapers.randomFromCurrentFolder(root.useDarkMode, root.targetScreenName)
                                     text: "ifl"
                                     StyledToolTip {
                                         text: Translation.tr("Random wallpaper from current folder")

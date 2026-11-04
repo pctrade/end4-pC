@@ -82,6 +82,7 @@ Scope {
                 height: parent.height
                 x: 0
                 y: 0
+                initialTargetScreenName: WM.focusedMonitor?.name ?? panelWindow.screen?.name ?? ""
 
                 function slideIn() {
                     content.y = -content.height;
