@@ -349,17 +349,7 @@ Singleton {
 
         ////////////////// Init ///////////////////
         nonAppResultsTimer.restart();
-        const mathResultObject = resultComp.createObject(null, {
-            name: root.mathResult,
-            verb: Translation.tr("Copy"),
-            type: Translation.tr("Math result"),
-            fontType: LauncherSearchResult.FontType.Monospace,
-            iconName: 'calculate',
-            iconType: LauncherSearchResult.IconType.Material,
-            execute: () => {
-                Quickshell.clipboardText = root.mathResult;
-            }
-        });
+        const mathResultObject = mathResultItem;
         const appResultObjects = AppSearch.fuzzyQuery(StringUtils.cleanPrefix(root.query, Config.options.search.prefix.app)).map(entry => {
             return resultComp.createObject(null, {
                 type: Translation.tr("App"),
@@ -499,5 +489,31 @@ Singleton {
     Component {
         id: resultComp
         LauncherSearchResult {}
+    }
+
+    // The settings index is a singleton created on first use, and it then loads
+    // and parses every settings page. Start it while idle, not on the first keystroke.
+    Timer {
+        running: true
+        interval: 3000
+        onTriggered: {
+            if (Config.options.settings.style !== "dashboard")
+                void SettingsSearchIndex.entriesByPage;
+        }
+    }
+
+    // One object whose name follows qalc, so that its answer arriving does not
+    // rebuild every app result (and their list rows) a second time per keystroke
+    LauncherSearchResult {
+        id: mathResultItem
+        name: root.mathResult
+        verb: Translation.tr("Copy")
+        type: Translation.tr("Math result")
+        fontType: LauncherSearchResult.FontType.Monospace
+        iconName: 'calculate'
+        iconType: LauncherSearchResult.IconType.Material
+        execute: () => {
+            Quickshell.clipboardText = root.mathResult;
+        }
     }
 }
