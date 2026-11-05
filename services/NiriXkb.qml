@@ -65,6 +65,12 @@ Singleton {
         }
     }
 
+    // "next" or "prev", or a layout index
+    function switchLayout(direction) {
+        if (WM.compositor !== "niri" || root.layoutNames.length <= 1) return;
+        Quickshell.execDetached(["niri", "msg", "action", "switch-layout", String(direction)]);
+    }
+
     function refresh() {
         if (WM.compositor !== "niri") return;
         fetchLayoutsProc.running = true;

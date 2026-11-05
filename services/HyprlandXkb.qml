@@ -17,12 +17,51 @@ Singleton {
     property var cachedLayoutCodes: ({})
     property string currentLayoutName: ""
     property string currentLayoutCode: ""
+    property int currentLayoutIndex: 0
+    // Layout code -> description ("fr" -> "French"), to name every layout of
+    // the list and not only the active one
+    property var layoutDescriptions: ({})
     // For the service
     property var baseLayoutFilePath: "/usr/share/X11/xkb/rules/base.lst"
-    property bool needsLayoutRefresh: false
+
+    // "next" or "prev", or a layout index
+    function switchLayout(direction) {
+        if (WM.compositor !== "hyprland" || root.layoutCodes.length <= 1) return;
+        Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", String(direction)]);
+    }
 
     // Update the layout code according to the layout name (Hyprland gives the name not the code)
-    onCurrentLayoutNameChanged: root.updateLayoutCode()
+    onCurrentLayoutNameChanged: {
+        root.updateLayoutCode();
+        root.updateLayoutIndex();
+    }
+    onLayoutDescriptionsChanged: root.updateLayoutIndex()
+    function updateLayoutIndex() {
+        const index = root.layoutCodes.findIndex(code => root.layoutDescriptions[code] === root.currentLayoutName);
+        if (index >= 0) root.currentLayoutIndex = index;
+    }
+
+    Process {
+        id: descriptionsProc
+        running: WM.compositor === "hyprland"
+        command: ["cat", root.baseLayoutFilePath]
+        stdout: StdioCollector {
+            id: descriptionsCollector
+            onStreamFinished: {
+                let descriptions = {};
+                let inLayouts = false;
+                for (const line of descriptionsCollector.text.split("\n")) {
+                    if (line.startsWith("!")) {
+                        inLayouts = line.trim() === "! layout";
+                        continue;
+                    }
+                    const match = inLayouts && line.match(/^\s*(\S+)\s+(.+)$/);
+                    if (match) descriptions[match[1]] = match[2];
+                }
+                root.layoutDescriptions = descriptions;
+            }
+        }
+    }
     function updateLayoutCode() {
         if (WM.compositor !== "hyprland") return;
         if (cachedLayoutCodes.hasOwnProperty(currentLayoutName)) {
@@ -82,7 +121,8 @@ Singleton {
             onStreamFinished: {
                 const parsedOutput = JSON.parse(devicesCollector.text);
                 const hyprlandKeyboard = parsedOutput["keyboards"].find(kb => kb.main === true);
-                root.layoutCodes = hyprlandKeyboard["layout"].split(",");
+                root.layoutCodes = hyprlandKeyboard["layout"].split(",").map(code => code.trim());
+                root.currentLayoutIndex = hyprlandKeyboard["active_layout_index"] ?? 0;
                 root.currentLayoutName = hyprlandKeyboard["active_keymap"];
             }
         }
@@ -94,11 +134,6 @@ Singleton {
         enabled: WM.compositor === "hyprland"
         function onRawEvent(event) {
             if (event.name === "activelayout") {
-                if (root.needsLayoutRefresh) {
-                    root.needsLayoutRefresh = false;
-                    fetchLayoutsProc.running = true;
-                }
-
                 if (root.layoutCodes.length <= 1) return;
 
                 const dataString = event.data;
@@ -106,7 +141,9 @@ Singleton {
 
                 Config.options.osk.layout = root.currentLayoutName.split(" (")[0];
             } else if (event.name == "configreloaded") {
-                root.needsLayoutRefresh = true;
+                // A layout list edited in the settings arrives with a reload,
+                // and no activelayout event may follow it
+                fetchLayoutsProc.running = true;
             }
         }
     }
