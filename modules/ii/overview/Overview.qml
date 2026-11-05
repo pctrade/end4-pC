@@ -210,7 +210,7 @@ Scope {
             GlobalStates.overviewOpen = true;
         }
         function toggleReleaseInterrupt() {
-            GlobalStates.superReleaseMightTrigger = false;
+            GlobalStates.interruptSuperHold();
         }
         function clipboardToggle() {
             overviewScope.toggleClipboard();
@@ -259,10 +259,10 @@ Scope {
     }
     CompositorGlobalShortcut {
         name: "searchToggleReleaseInterrupt"
-        description: "Interrupts possibility of search being toggled on release. " + "This is necessary because GlobalShortcut.onReleased in quickshell triggers whether or not you press something else while holding the key. " + "To make sure this works consistently, use binditn = MODKEYS, catchall in an automatically triggered submap that includes everything."
+        description: "Interrupts a pending Super-release action and clears held-Super visuals when another shortcut key is pressed."
 
         onPressed: {
-            GlobalStates.superReleaseMightTrigger = false;
+            GlobalStates.interruptSuperHold();
         }
     }
     CompositorGlobalShortcut {

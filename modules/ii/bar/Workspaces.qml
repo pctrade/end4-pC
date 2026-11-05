@@ -377,6 +377,8 @@ ButtonMouseArea {
         }
         function onSuperReleaseMightTriggerChanged() {
             superPressAndHeldTimer.stop();
+            if (!GlobalStates.superReleaseMightTrigger)
+                root.superPressAndHeld = false;
         }
     }
 

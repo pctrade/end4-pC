@@ -36,6 +36,11 @@ Singleton {
     property bool workspaceShowNumbers: false
     property var settingsTarget: null
 
+    function interruptSuperHold() {
+        root.superReleaseMightTrigger = false;
+        root.superDown = false;
+    }
+
     function openSettingsAt(pageId, label, section, subsection) {
         root.settingsOpen = true;
         Qt.callLater(() => {
