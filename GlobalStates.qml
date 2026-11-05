@@ -36,6 +36,11 @@ Singleton {
     property bool workspaceShowNumbers: false
     property var settingsTarget: null
 
+    function interruptSuperHold() {
+        root.superReleaseMightTrigger = false;
+        root.superDown = false;
+    }
+
     function openSettingsAt(pageId, label, section, subsection) {
         root.settingsOpen = true;
         Qt.callLater(() => {
@@ -50,6 +55,25 @@ Singleton {
     property real desktopMenuX: 0
     property real desktopMenuY: 0
     property string wallpaperSelectorTarget: "wallpaper"
+    // Empty targets the global fallback. Callers set this before opening the
+    // visually generic wallpaper selector.
+    property string wallpaperSelectorScreen: ""
+    property string dashboardWallpaperScreen: ""
+
+    function openWallpaperSelector(screenName = "", target = "wallpaper") {
+        root.wallpaperSelectorScreen = target === "lockWall" ? "" : screenName;
+        root.wallpaperSelectorTarget = target;
+        if (Config.options.wallpaperSelector.useSystemFileDialog) {
+            Wallpapers.openFallbackPicker(
+                Appearance.m3colors.darkmode,
+                Wallpapers.effectiveDirectory,
+                root.wallpaperSelectorScreen,
+                target
+            );
+            return;
+        }
+        root.wallpaperSelectorOpen = true;
+    }
     property bool dropShelfOpen: false
     property real dropShelfX: 0
     property real dropShelfY: 0
@@ -57,6 +81,15 @@ Singleton {
     property bool barCenterOnly: false
     property int dashboardPage: 0
     property string dashboardGroup: ""
+    // Empty means the global bar configuration. The dashboard uses this to
+    // route existing bar controls to a monitor override without duplicating UI.
+    property string dashboardBarScreen: ""
+    onSettingsOpenChanged: {
+        if (!settingsOpen) {
+            dashboardBarScreen = "";
+            dashboardWallpaperScreen = "";
+        }
+    }
     property var frameHover: ({})
     function setFrameHover(screenName, side, hovered) {
         const key = `${screenName}:${side}`;
@@ -77,9 +110,7 @@ Singleton {
         onTriggered: root.startupLockPending = false
     }
 
-    readonly property bool dynamicIslandEnabled: Config.options.bar.layouts.leftLayout.includes("dynamicIsland")
-        || Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
-        || Config.options.bar.layouts.rightLayout.includes("dynamicIsland")
+    readonly property bool dynamicIslandEnabled: Config.anyBarHasWidget("dynamicIsland")
 
     signal centeredWallpaperThumpRequested()
 

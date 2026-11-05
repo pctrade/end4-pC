@@ -5,14 +5,17 @@ import qs.modules.common
 import qs.modules.common.models
 import qs.modules.common.widgets
 import QtQuick
+import Quickshell
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
 
     required property var host
     required property var model
 
-    readonly property string style: Config.options.bar.workspaces.style
+    readonly property string style: root.barConfig.workspaces.style
     readonly property bool vertical: root.host.vertical
     readonly property real slot: root.host.slotLength
     readonly property int count: root.model.shownCount

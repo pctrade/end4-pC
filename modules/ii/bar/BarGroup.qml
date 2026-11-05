@@ -1,14 +1,17 @@
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
+import Quickshell
 import QtQuick.Layouts
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property bool vertical: false
     property int currentIndex: 0
     property int totalCount: 0
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
     property bool paintMaterialPill: false
     property bool paintBackground: true
     property color bgColor: Appearance.colors.colPrimaryContainer
@@ -22,12 +25,12 @@ Item {
     readonly property bool flatBL: (morphEdge === "bottom" && morphStartFlat) || (morphEdge === "left" && morphEndFlat)
     readonly property bool flatBR: (morphEdge === "bottom" || morphEdge === "right") && morphEndFlat
 
-    readonly property string borderlessMode: Config.options?.bar.borderless ?? "pills"
+    readonly property string borderlessMode: root.barConfig.borderless ?? "pills"
     readonly property bool styleEditable: !root.isMaterial && root.paintBackground && root.widgetName !== ""
     property var stylePreview: ({})
     readonly property var style: {
         if (root.isMaterial) return ({});
-        const entry = (Config.options?.bar?.widgetStyles ?? []).find(e => e.mode === root.borderlessMode && e.widget === root.widgetName);
+        const entry = (root.barConfig.widgetStyles ?? []).find(e => e.mode === root.borderlessMode && e.widget === root.widgetName);
         return Object?.assign?.({}, entry ?? {}, root.stylePreview) ?? ({});
     }
 
@@ -87,7 +90,7 @@ Item {
     }
 
     function setStyle(key, value) {
-        const styles = (Config.options.bar.widgetStyles ?? []).map(e => Object.assign({}, e));
+        const styles = (root.barConfig.widgetStyles ?? []).map(e => Object.assign({}, e));
         let entry = styles.find(e => e.mode === root.borderlessMode && e.widget === root.widgetName);
         if (!entry) {
             entry = { mode: root.borderlessMode, widget: root.widgetName };
@@ -95,16 +98,18 @@ Item {
         }
         if (value === undefined) delete entry[key];
         else entry[key] = value;
-        Config.options.bar.widgetStyles = styles.filter(e => Object.keys(e).length > 2);
+        Config.setBarValueForScreen(root.barScreenName, "widgetStyles",
+            styles.filter(e => Object.keys(e).length > 2));
     }
 
     function resetStyle() {
-        Config.options.bar.widgetStyles = (Config.options.bar.widgetStyles ?? [])
-            .filter(e => !(e.mode === root.borderlessMode && e.widget === root.widgetName));
+        Config.setBarValueForScreen(root.barScreenName, "widgetStyles",
+            (root.barConfig.widgetStyles ?? [])
+                .filter(e => !(e.mode === root.borderlessMode && e.widget === root.widgetName)));
     }
 
     readonly property color resolvedGroupColor: {
-        const name = Config.options.bar.groupColor
+        const name = root.barConfig.groupColor
         const key = `col${name.charAt(0).toUpperCase()}${name.slice(1)}`
         return Appearance.colors[key] ?? Appearance.colors.colLayer1
     }
@@ -114,8 +119,8 @@ Item {
 
     property real padding: root.style?.padding ?? ((root.isMaterial && !root.paintMaterialPill) ? 0 : 5)
 
-    readonly property bool isSegmented: Config.options?.bar.borderless === "segmented"
-    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    readonly property bool isSegmented: root.barConfig.borderless === "segmented"
+    readonly property bool isPanel: root.barConfig.cornerStyle === 5
     readonly property real panelRadius: Appearance.rounding.unsharpenmore + 4
 
     readonly property real fullRadius: root.isPanel ? root.panelRadius : height / 2
@@ -123,7 +128,7 @@ Item {
         ? root.panelRadius
         : root.isSegmented
             ? 0
-            : (Config.options.bar.cornerStyle === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore)
+            : (root.barConfig.cornerStyle === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore)
 
     property real startRadius: {
         if (totalCount <= 1) return fullRadius;
@@ -170,9 +175,9 @@ Item {
                 ? "transparent"
                 : (root.isMaterial && root.paintMaterialPill)
                     ? root.bgColor
-                    : (Config.options?.bar.borderless === "transparent"
+                    : (root.barConfig.borderless === "transparent"
                         ? "transparent"
-                        : Config.options.bar.cornerStyle === 2 || (Config.options?.bar.borderless === "segmented" && !Config.options.bar.showBackground)
+                        : root.barConfig.cornerStyle === 2 || (root.barConfig.borderless === "segmented" && !root.barConfig.showBackground)
                             ? Appearance.colors.colUiBackground
                             : root.resolvedGroupColor)
 
@@ -181,10 +186,10 @@ Item {
         border.width: root.morphEdge !== "" ? 0 : root.style?.borderWidth ?? (root.paintBackground && root.isSegmented && !root.isMaterial ? 1 : 0)
         border.color: root.resolveColorName(root.style?.borderColor) ?? Appearance.colors.colLayer0Border
 
-        topLeftRadius: root.flatTL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.startRadius))
-        bottomLeftRadius: root.flatBL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
-        topRightRadius: root.flatTR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
-        bottomRightRadius: root.flatBR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.endRadius))
+        topLeftRadius: root.flatTL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.barConfig.borderless === "separated" ? root.fullRadius : root.startRadius))
+        bottomLeftRadius: root.flatBL ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.barConfig.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
+        topRightRadius: root.flatTR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.barConfig.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
+        bottomRightRadius: root.flatBR ? 0 : root.style?.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.barConfig.borderless === "separated" ? root.fullRadius : root.endRadius))
 
         Behavior on color {
             enabled: root.morphEdge === ""

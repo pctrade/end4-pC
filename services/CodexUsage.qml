@@ -14,14 +14,14 @@ Singleton {
     property int weeklyResetsAt: 0
 
     function refresh() {
-        if (Config.options.bar.aiUsage.codexEnabled && !usageProc.running)
+        if (Config.anyBarValue("aiUsage.codexEnabled") && !usageProc.running)
             usageProc.running = true;
     }
 
     Timer {
         interval: Config.options.bar.aiUsage.updateInterval * 1000
         repeat: true
-        running: Config.ready && Config.options.bar.aiUsage.codexEnabled
+        running: Config.ready && Config.anyBarValue("aiUsage.codexEnabled")
         triggeredOnStart: true
         onTriggered: root.refresh()
     }

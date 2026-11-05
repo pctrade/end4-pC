@@ -30,7 +30,10 @@ Scope {
     Timer {
         id: closeAnimTimer
         interval: Appearance.animation.sidebarSlideExit.duration
-        onTriggered: root.reallyOpen = false
+        onTriggered: {
+            root.reallyOpen = false;
+            GlobalStates.wallpaperSelectorScreen = "";
+        }
     }
 
     Loader {
@@ -82,7 +85,6 @@ Scope {
                 height: parent.height
                 x: 0
                 y: 0
-
                 function slideIn() {
                     content.y = -content.height;
                     if (WM.compositor === "niri") {

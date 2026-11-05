@@ -2,14 +2,17 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
 import QtQuick
+import Quickshell
 
 MouseArea {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnSecondaryContainer
     property bool contentColorOverridden: false
     property bool vertical: false
-    property bool borderless: Config.options.bar.borderless
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool borderless: root.barConfig.borderless
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
     readonly property var chargeState: Battery.chargeState
     readonly property bool isCharging: Battery.isCharging
     readonly property bool isPluggedIn: Battery.isPluggedIn
@@ -19,17 +22,17 @@ MouseArea {
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : glyph.implicitWidth + 8
     implicitHeight: vertical ? glyph.implicitHeight + 8 : Appearance.sizes.barHeight
 
-    hoverEnabled: !Config.options.bar.tooltips.clickToShow
+    hoverEnabled: !root.barConfig.tooltips.clickToShow
 
     BatteryGlyph {
         id: glyph
         anchors.centerIn: parent
-        style: Config.options.bar.battery.style
+        style: root.barConfig.battery.style
         percentage: root.percentage
         isCharging: root.isCharging
         isLow: root.isLow
-        showPercentage: Config.options.bar.battery.showPercentage
-        showCharging: Config.options.bar.battery.showCharging
+        showPercentage: root.barConfig.battery.showPercentage
+        showCharging: root.barConfig.battery.showCharging
         vertical: root.vertical
         contentColor: root.contentColor
     }

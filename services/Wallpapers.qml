@@ -39,6 +39,7 @@ Singleton {
     readonly property bool thumbnailGenerationRunning: thumbgenProc.running
     property real thumbnailGenerationProgress: 0
     property string previewPath: ""  // Set during arrow navigation; empty by default
+    property string previewScreen: "" // Empty previews the global wallpaper on every screen
     property string confirmedPath: ""  // Holds confirmed path until config catches up
 
     signal changed()
@@ -47,13 +48,21 @@ Singleton {
 
     function load () {} // For forcing initialization
 
-    function startPreview(path) {
+    function previewPathForScreen(screenName) {
+        if (!root.previewPath) return "";
+        return !root.previewScreen || root.previewScreen === screenName ? root.previewPath : "";
+    }
+
+    function startPreview(path, screenName = "") {
         if (!path || path.length === 0) return;
+        root.previewScreen = screenName;
         root.previewPath = path;
     }
 
-    function stopPreview() {
+    function stopPreview(screenName = "") {
+        if (screenName && root.previewScreen && root.previewScreen !== screenName) return;
         root.previewPath = "";
+        root.previewScreen = "";
     }
 
     // Executions
@@ -61,16 +70,45 @@ Singleton {
         id: applyProc
     }
     
-    function openFallbackPicker(darkMode = Appearance.m3colors.darkmode, startDir = "") {
-        const args = [Directories.wallpaperSwitchScriptPath, "--mode", darkMode ? "dark" : "light"];
-        if (startDir !== "") {
-            args.push("--start-dir", startDir);
+    Process {
+        id: fallbackPickerProc
+        property bool darkMode: Appearance.m3colors.darkmode
+        property string screenName: ""
+        property string target: "wallpaper"
+        stdout: StdioCollector { id: fallbackPickerOutput }
+        onExited: code => {
+            const path = fallbackPickerOutput.text.trim();
+            if (code !== 0 || path === "") return;
+
+            if (fallbackPickerProc.target === "lockWall") {
+                Config.options.background.lockWall = path;
+                return;
+            }
+            root.apply(path, fallbackPickerProc.darkMode, fallbackPickerProc.screenName);
         }
-        Quickshell.execDetached(args);
     }
 
-    function apply(path, darkMode = Appearance.m3colors.darkmode) {
+    function openFallbackPicker(darkMode = Appearance.m3colors.darkmode, startDir = "", screenName = "", target = "wallpaper") {
+        const requestedDir = getCleanDirPath(startDir);
+        const pickerDir = requestedDir || root.effectiveDirectory || getCleanDirPath(root.defaultFolder);
+        fallbackPickerProc.darkMode = darkMode;
+        fallbackPickerProc.screenName = target === "lockWall" ? "" : screenName;
+        fallbackPickerProc.target = target;
+        fallbackPickerProc.command = [
+            "kdialog", "--title", Translation.tr("Choose wallpaper"),
+            "--getopenfilename", pickerDir
+        ];
+        fallbackPickerProc.running = true;
+    }
+
+    function apply(path, darkMode = Appearance.m3colors.darkmode, screenName = "") {
         if (!path || path.length === 0) return;
+        if (screenName) {
+            root.stopPreview(screenName);
+            Config.setWallpaperForScreen(screenName, path);
+            root.changed();
+            return;
+        }
         root.confirmedPath = path;
         Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", darkMode ? "dark" : "light", "--image", path]);
         root.changed()
@@ -81,10 +119,12 @@ Singleton {
         property string filePath: ""
         property bool darkMode: Appearance.m3colors.darkmode
         property var onFileSelected: null
-        function select(filePath, darkMode = Appearance.m3colors.darkmode, onFileSelected = null) {
+        property string screenName: ""
+        function select(filePath, darkMode = Appearance.m3colors.darkmode, onFileSelected = null, screenName = "") {
             selectProc.filePath = filePath
             selectProc.darkMode = darkMode
             selectProc.onFileSelected = onFileSelected
+            selectProc.screenName = screenName
             selectProc.exec(["test", "-d", FileUtils.trimFileProtocol(filePath)])
         }
         onExited: (exitCode, exitStatus) => {
@@ -95,23 +135,23 @@ Singleton {
             if (selectProc.onFileSelected) {
                 selectProc.onFileSelected(selectProc.filePath);
             } else {
-                root.apply(selectProc.filePath, selectProc.darkMode);
+                root.apply(selectProc.filePath, selectProc.darkMode, selectProc.screenName);
             }
         }
     }
 
-    function select(filePath, darkMode = Appearance.m3colors.darkmode, onFileSelected = null) {
-        selectProc.select(filePath, darkMode, onFileSelected);
+    function select(filePath, darkMode = Appearance.m3colors.darkmode, onFileSelected = null, screenName = "") {
+        selectProc.select(filePath, darkMode, onFileSelected, screenName);
     }
 
-    function randomFromCurrentFolder(darkMode = Appearance.m3colors.darkmode) {
+    function randomFromCurrentFolder(darkMode = Appearance.m3colors.darkmode, screenName = "") {
         const count = wallpaperModel.count > 0 ? wallpaperModel.count : folderModel.count;
         if (count === 0) return;
         const randomIndex = Math.floor(Math.random() * count);
         const item = wallpaperModel.count > 0 ? wallpaperModel.get(randomIndex) : null;
         const filePath = item ? item.filePath : folderModel.get(randomIndex, "filePath");
         print("Randomly selected wallpaper:", filePath);
-        if (filePath) root.select(filePath, darkMode);
+        if (filePath) root.select(filePath, darkMode, null, screenName);
     }
 
     function getRandomWallpaperPath(excludePath = "") {

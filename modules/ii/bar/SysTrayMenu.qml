@@ -10,6 +10,8 @@ import Quickshell
 
 PopupWindow {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     required property QsMenuHandle trayItemMenuHandle
     property string trayItemId: ""
     property real popupBackgroundMargin: 0
@@ -72,9 +74,9 @@ PopupWindow {
             anchors {
                 left: parent.left
                 right: parent.right
-                verticalCenter: Config.options.bar.vertical ? parent.verticalCenter : undefined
-                top: Config.options.bar.vertical ? undefined : Config.options.bar.bottom ? undefined : parent.top
-                bottom: Config.options.bar.vertical ? undefined : Config.options.bar.bottom ? parent.bottom : undefined
+                verticalCenter: root.barConfig.vertical ? parent.verticalCenter : undefined
+                top: root.barConfig.vertical ? undefined : root.barConfig.bottom ? undefined : parent.top
+                bottom: root.barConfig.vertical ? undefined : root.barConfig.bottom ? parent.bottom : undefined
                 margins: root.padding
             }
 

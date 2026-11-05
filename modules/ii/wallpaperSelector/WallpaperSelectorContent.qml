@@ -22,6 +22,8 @@ MouseArea {
     property bool toolbarVisible: showControls || Config.options.wallpaperSelector.showSearchbar
     property bool filterFieldFocused: false
     property Item activeFilterField: null
+    readonly property string targetScreenName: GlobalStates.wallpaperSelectorTarget === "lockWall"
+        ? "" : GlobalStates.wallpaperSelectorScreen
 
     property var quickDirs: [
         { icon: "home",       name: "Home   ",       path: `${Directories.home}`,                alwaysVisible: Config.options.wallpaperSelector.showHomePath },
@@ -85,8 +87,8 @@ MouseArea {
                 // then select() sets confirmedPath to the new one — this causes
                 // onWallpaperPathChanged to fire with the real transition animation.
                 if (Config.options.background.enableWallpaperPreview)
-                    Wallpapers.stopPreview();
-                Wallpapers.select(filePath, root.useDarkMode);
+                    Wallpapers.stopPreview(root.targetScreenName);
+                Wallpapers.select(filePath, root.useDarkMode, null, root.targetScreenName);
             }
         }
     }
@@ -202,7 +204,8 @@ MouseArea {
                 anchors.fill: parent
                 visible: Config.options.wallpaperSelector.showBlurBackground
                 fillMode: Image.PreserveAspectCrop
-                source: Config.options.wallpaperSelector.showBlurBackground ? Config.options.background.wallpaperPath : ""
+                source: Config.options.wallpaperSelector.showBlurBackground
+                    ? Config.wallpaperForScreen(root.targetScreenName) : ""
                 // Only shown under a radius 48 blur, so a small decode looks the same
                 // and stays small enough for the pixmap cache to keep it between openings
                 sourceSize: Qt.size(480, 480)
@@ -455,6 +458,7 @@ MouseArea {
                         LocalWallpaperGrid {
                             columns: root.columns
                             previewCellAspectRatio: root.previewCellAspectRatio
+                            targetScreenName: root.targetScreenName
                             onWallpaperSelected: path => root.selectWallpaperPath(path)
                         }
                     }
@@ -465,6 +469,7 @@ MouseArea {
                             columns: root.columns
                             previewCellAspectRatio: root.previewCellAspectRatio
                             useDarkMode: root.useDarkMode
+                            targetScreenName: root.targetScreenName
                             onWallpaperApplied: {
                                 if (Config.options.wallpaperSelector.closeAfterSelection)
                                     GlobalStates.wallpaperSelectorOpen = false;
@@ -617,11 +622,21 @@ MouseArea {
                                 IconToolbarButton {
                                     implicitWidth: height
                                     onClicked: {
-                                        Wallpapers.openFallbackPicker(root.useDarkMode);
+                                        Wallpapers.openFallbackPicker(
+                                            root.useDarkMode,
+                                            Wallpapers.effectiveDirectory,
+                                            root.targetScreenName,
+                                            GlobalStates.wallpaperSelectorTarget
+                                        );
                                         GlobalStates.wallpaperSelectorOpen = false;
                                     }
                                     altAction: () => {
-                                        Wallpapers.openFallbackPicker(root.useDarkMode);
+                                        Wallpapers.openFallbackPicker(
+                                            root.useDarkMode,
+                                            Wallpapers.effectiveDirectory,
+                                            root.targetScreenName,
+                                            GlobalStates.wallpaperSelectorTarget
+                                        );
                                         GlobalStates.wallpaperSelectorOpen = false;
                                         Config.options.wallpaperSelector.useSystemFileDialog = true;
                                     }
@@ -632,7 +647,7 @@ MouseArea {
                                 }
                                 IconToolbarButton {
                                     implicitWidth: height
-                                    onClicked: Wallpapers.randomFromCurrentFolder()
+                                    onClicked: Wallpapers.randomFromCurrentFolder(root.useDarkMode, root.targetScreenName)
                                     text: "ifl"
                                     StyledToolTip {
                                         text: Translation.tr("Random wallpaper from current folder")

@@ -22,12 +22,13 @@ Scope {
 
     component CornerPanelWindow: PanelWindow {
         id: cornerPanelWindow
+        required property var barConfig
         property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
         property bool fullscreen
-        readonly property bool showFakeRounding: Config.options.bar.cornerStyle !== 5
+        readonly property bool showFakeRounding: barConfig.cornerStyle !== 5
             && (Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen))
-        readonly property real frameInset: Config.options.bar.frameThickness
-        readonly property bool showFrameCorner: Config.options.bar.showFrame && !fullscreen
+        readonly property real frameInset: barConfig.frameThickness
+        readonly property bool showFrameCorner: barConfig.showFrame && !fullscreen
         visible: showFakeRounding || Config.options.sidebar.cornerOpen.enable || showFrameCorner
         property var corner
 
@@ -141,7 +142,7 @@ Scope {
             visible: cornerPanelWindow.showFrameCorner
             corner: cornerPanelWindow.corner
             implicitSize: Math.max(0, Appearance.rounding.screenRounding - cornerPanelWindow.frameInset)
-            color: Appearance.getColorFromName(Config.options.bar.frameColor)
+            color: Appearance.getColorFromName(cornerPanelWindow.barConfig.frameColor)
             anchors {
                 top: cornerWidget.isTop ? parent.top : undefined
                 bottom: cornerWidget.isBottom ? parent.bottom : undefined
@@ -161,6 +162,7 @@ Scope {
         Scope {
             id: monitorScope
             required property var modelData
+            readonly property var barConfig: Config.barForScreen(modelData.name)
             property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
             // Hide when fullscreen
@@ -174,21 +176,25 @@ Scope {
 
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.TopLeft
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.TopRight
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.BottomLeft
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
             CornerPanelWindow {
                 screen: modelData
+                barConfig: monitorScope.barConfig
                 corner: RoundCorner.CornerEnum.BottomRight
                 fullscreen: monitorScope.fullscreen && !monitorScope.specialOpen
             }
