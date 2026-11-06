@@ -15,7 +15,17 @@ import Quickshell.Services.Mpris
 
 Item {
     id: root
-    property var player: Mpris.players.values[root.currentPlayerIndex] ?? Mpris.players.values[0]
+    //property var player: Mpris.players.values[root.currentPlayerIndex] ?? Mpris.players.values[0]
+    // Hide the duplicate Chromium MPRIS player
+     property var availablePlayers: Mpris.players.values.filter(p => {
+             const service = (p.dbusName ?? "").toLowerCase()
+
+             // Hide only the Chromium MPRIS instance
+             return !service.includes("org.mpris.mediaplayer2.chromium.instance")
+            })
+
+    // Currently selected player
+    property var player: availablePlayers[root.currentPlayerIndex] ?? availablePlayers[0]
     property var artUrl: player?.trackArtUrl ?? ""
     property string artDownloadLocation: Directories.coverArt
     property bool showLyrics: Config.options.sidebar.media.showLyrics ?? true
@@ -328,7 +338,27 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 24
+                    spacing: 12
+                    RippleButton {
+                        property real baseSize: Math.max(60, parent.parent.height * 0.06)
+                        implicitWidth: baseSize
+                        implicitHeight: baseSize 
+                        buttonRadius: Appearance.rounding.verylarge
+                        colBackground: "transparent"
+                        colBackgroundHover: "transparent"
+                        colRipple: "transparent"
+                        padding: -10
+                        downAction: () => root.player?.previous()
+                        contentItem: MaterialShapeWrappedMaterialSymbol {
+                            wrappedShape: MaterialShape.Shape.Cookie12Sided
+                            padding: 0
+                            iconSize: 32
+                            fill: 1
+                            text: "skip_previous"
+                            color: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
+                            colSymbol: blendedColors.colOnSecondaryContainer
+                        }
+                    }
 
                     RippleButton {
                         property real baseSize: Math.max(70, parent.parent.height * 0.1)
@@ -377,27 +407,7 @@ Item {
                     Layout.fillWidth: true
                     spacing: 24
 
-                    RippleButton {
-                        property real baseSize: Math.max(60, parent.parent.height * 0.06)
-                        implicitWidth: baseSize
-                        implicitHeight: baseSize 
-                        buttonRadius: Appearance.rounding.verylarge
-                        colBackground: "transparent"
-                        colBackgroundHover: "transparent"
-                        colRipple: "transparent"
-                        padding: -10
-                        downAction: () => root.player?.previous()
-                        contentItem: MaterialShapeWrappedMaterialSymbol {
-                            wrappedShape: MaterialShape.Shape.Cookie12Sided
-                            padding: 0
-                            iconSize: 32
-                            fill: 1
-                            text: "skip_previous"
-                            color: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
-                            colSymbol: blendedColors.colOnSecondaryContainer
-                        }
-                    }
-
+                
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
@@ -515,7 +525,7 @@ Item {
                     }
                 }
 
-                RippleButton {
+           /*  RippleButton {
                     property real baseSize: Math.max(36, parent.parent.height * 0.05)
                     Layout.fillWidth: true
                     implicitHeight: baseSize
@@ -554,8 +564,27 @@ Item {
                         text: "volume_up"
                     }
                 }
+*/
+                   // Volume slider
+                   StyledSlider {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
 
-                RippleButton {
+                        configuration: StyledSlider.Configuration.Wavy
+
+                        highlightColor: blendedColors.colPrimary
+                        trackColor: blendedColors.colSecondaryContainer
+                        handleColor: blendedColors.colPrimary
+
+                        value: root.player?.volume ?? 1
+
+                        onMoved: {
+                            if (root.player)
+                            root.player.volume = value
+                        }
+                    }
+                    
+               RippleButton {
                     id: moreButton
                     property real baseSize: Math.max(36, parent.parent.height * 0.05)
                     implicitWidth: baseSize
@@ -675,8 +704,15 @@ Item {
                 visible: Mpris.players.values.length > 1
                 Layout.fillWidth: true
                 Layout.topMargin: 12
-                model: Mpris.players.values.map(p => p.identity ?? p.desktopEntry ?? "Unknown")
-                currentIndex: 0
+                model: root.availablePlayers.map(p =>
+                     p.identity ?? p.desktopEntry ?? "Unknown"
+                )
+                //model: root.availablePlayers.map(p => p.identity ?? p.desktopEntry ?? "Unknown")
+                currentIndex: root.currentPlayerIndex
+
+    onActivated: index => {
+        root.currentPlayerIndex = index
+                }
             }
         }
     }
