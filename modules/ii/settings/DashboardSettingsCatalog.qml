@@ -357,6 +357,7 @@ QtObject {
                 { type: "toggle", key: "interface:Left Sidebar/Enable", title: Translation.tr("Media player"), icon: "music_note" },
                 { type: "toggle", key: "interface:Follow Album Colors", title: Translation.tr("Album colors"), icon: "palette" },
                 { type: "toggle", key: "interface:Enable Translator", title: Translation.tr("Translator"), icon: "translate" },
+                { type: "toggle", key: "interface:Enable Apps", title: Translation.tr("Applications"), icon: "apps", kw: "apps applications installed drawer" },
                 { type: "toggle", key: "interface:Enable Football", title: Translation.tr("Football"), icon: "sports_soccer", kw: "soccer parlay fixtures corners goals stats", action: { icon: "settings", tip: Translation.tr("Football sounds and alerts settings"), group: Translation.tr("General"), section: Translation.tr("Sounds") } },
                 { type: "select", key: "interface:AI policy", title: Translation.tr("AI"), icon: "smart_toy" },
                 { type: "select", key: "interface:Weeb policy", title: Translation.tr("Weeb"), icon: "playing_cards" }
