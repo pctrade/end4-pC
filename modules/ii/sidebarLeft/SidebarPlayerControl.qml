@@ -16,7 +16,6 @@ import Quickshell.Services.Mpris
 Item {
     id: root
     // Show all available MPRIS players.
-    // This allows mprisence browser players to appear in the sidebar.
     property var availablePlayers: Mpris.players.values
 
     // Optional: Hide Chromium's built-in MPRIS instances
