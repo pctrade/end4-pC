@@ -15,13 +15,18 @@ import Quickshell.Services.Mpris
 
 Item {
     id: root
-    // Hide the duplicate Chromium MPRIS player
-     property var availablePlayers: Mpris.players.values.filter(p => {
-             const service = (p.dbusName ?? "").toLowerCase()
+    // Show all available MPRIS players.
+    property var availablePlayers: Mpris.players.values
 
-             // Hide only the Chromium MPRIS instance
-             return !service.includes("org.mpris.mediaplayer2.chromium.instance")
-            })
+    // Optional: Hide Chromium's built-in MPRIS instances
+    // if they appear as duplicate players.
+    // To enable this filter, comment out the property above
+    // and uncomment the block below.
+
+    // property var availablePlayers: Mpris.players.values.filter(p => {
+    //     const service = (p.dbusName ?? "").toLowerCase()
+    //     return !service.includes("org.mpris.mediaplayer2.chromium.instance")
+    // })
 
     // Currently selected player
     property var player: availablePlayers[root.currentPlayerIndex] ?? availablePlayers[0]
