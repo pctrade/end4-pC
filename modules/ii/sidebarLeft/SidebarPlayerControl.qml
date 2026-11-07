@@ -15,7 +15,19 @@ import Quickshell.Services.Mpris
 
 Item {
     id: root
+    // Show all available MPRIS players.
+    // This allows mprisence browser players to appear in the sidebar.
     property var availablePlayers: Mpris.players.values
+
+    // Optional: Hide Chromium's built-in MPRIS instances
+    // if they appear as duplicate players.
+    // To enable this filter, comment out the property above
+    // and uncomment the block below.
+
+    // property var availablePlayers: Mpris.players.values.filter(p => {
+    //     const service = (p.dbusName ?? "").toLowerCase()
+    //     return !service.includes("org.mpris.mediaplayer2.chromium.instance")
+    // })
 
     // Currently selected player
     property var player: availablePlayers[root.currentPlayerIndex] ?? availablePlayers[0]
