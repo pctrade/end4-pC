@@ -15,14 +15,7 @@ import Quickshell.Services.Mpris
 
 Item {
     id: root
-    //property var player: Mpris.players.values[root.currentPlayerIndex] ?? Mpris.players.values[0]
-    // Hide the duplicate Chromium MPRIS player
-     property var availablePlayers: Mpris.players.values.filter(p => {
-             const service = (p.dbusName ?? "").toLowerCase()
-
-             // Hide only the Chromium MPRIS instance
-             return !service.includes("org.mpris.mediaplayer2.chromium.instance")
-            })
+    property var availablePlayers: Mpris.players.values
 
     // Currently selected player
     property var player: availablePlayers[root.currentPlayerIndex] ?? availablePlayers[0]
@@ -407,7 +400,6 @@ Item {
                     Layout.fillWidth: true
                     spacing: 24
 
-                
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
@@ -525,46 +517,6 @@ Item {
                     }
                 }
 
-           /*  RippleButton {
-                    property real baseSize: Math.max(36, parent.parent.height * 0.05)
-                    Layout.fillWidth: true
-                    implicitHeight: baseSize
-                    buttonRadius: Appearance.rounding.large
-                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
-                    colBackgroundHover: blendedColors.colSecondaryContainerHover
-                    colRipple: blendedColors.colSecondaryContainerActive
-                    downAction: () => {
-                        if (root.player) root.player.volume = Math.max(0, (root.player.volume ?? 1) - 0.1)  
-                    }
-                    contentItem: MaterialSymbol {
-                        iconSize: 18
-                        fill: 1
-                        horizontalAlignment: Text.AlignHCenter
-                        color: blendedColors.colOnSecondaryContainer
-                        text: "volume_down"
-                    }
-                }
-
-                RippleButton {
-                    property real baseSize: Math.max(36, parent.parent.height * 0.05)
-                    Layout.fillWidth: true
-                    implicitHeight: baseSize
-                    buttonRadius: Appearance.rounding.large
-                    colBackground: ColorUtils.transparentize(blendedColors.colSecondaryContainer, 0.7)
-                    colBackgroundHover: blendedColors.colSecondaryContainerHover
-                    colRipple: blendedColors.colSecondaryContainerActive
-                    downAction: () => {
-                        if (root.player) root.player.volume = Math.min(1.5, (root.player.volume ?? 1) + 0.1)  
-                    }
-                    contentItem: MaterialSymbol {
-                        iconSize: 18
-                        fill: 1
-                        horizontalAlignment: Text.AlignHCenter
-                        color: blendedColors.colOnSecondaryContainer
-                        text: "volume_up"
-                    }
-                }
-*/
                    // Volume slider
                    StyledSlider {
                         Layout.fillWidth: true
@@ -583,7 +535,7 @@ Item {
                             root.player.volume = value
                         }
                     }
-                    
+
                RippleButton {
                     id: moreButton
                     property real baseSize: Math.max(36, parent.parent.height * 0.05)
@@ -707,8 +659,7 @@ Item {
                 model: root.availablePlayers.map(p =>
                      p.identity ?? p.desktopEntry ?? "Unknown"
                 )
-                //model: root.availablePlayers.map(p => p.identity ?? p.desktopEntry ?? "Unknown")
-                currentIndex: root.currentPlayerIndex
+               currentIndex: root.currentPlayerIndex
 
     onActivated: index => {
         root.currentPlayerIndex = index
