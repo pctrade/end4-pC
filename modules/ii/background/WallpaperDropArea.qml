@@ -9,6 +9,7 @@ import qs.modules.common.functions as CF
 DropArea {
     id: root
     keys: ["text/uri-list"]
+    property string targetScreenName: ""
 
     property var currentUrls: []
 
@@ -32,7 +33,7 @@ DropArea {
             const path = CF.FileUtils.trimFileProtocol(decodeURIComponent(drop.urls[0].toString()))
             const validExt = /\.(png|jpe?g|webp|bmp|gif)$/i.test(path)
             if (validExt) {
-                Wallpapers.select(path, Appearance.m3colors.darkmode)
+                Wallpapers.select(path, Appearance.m3colors.darkmode, null, root.targetScreenName)
             } else {
                 const globalPos = root.mapToGlobal(drop.x, drop.y)
                 DropShelf.show(drop.urls, globalPos.x, globalPos.y)
@@ -68,7 +69,7 @@ DropArea {
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: dropOverlay.isSingleImage
-                    ? Translation.tr("Drop to set as wallpaper")
+                    ? Translation.tr("Drop to set as this monitor's wallpaper")
                     : Translation.tr("Drop to add to shelf")
                 font.pixelSize: Appearance.font.pixelSize.large
                 color: Appearance.colors.colOnPrimary

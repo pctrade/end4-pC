@@ -5,6 +5,7 @@ import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Io
 import Qt.labs.folderlistmodel
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -15,6 +16,13 @@ ContentPage {
     id: page
     property bool isMinimal: Config.options.settings.style === "minimal"
     property string openPopup: ""
+    property string wallpaperScreen: ""
+    readonly property string selectedWallpaperPath: Config.wallpaperForScreen(wallpaperScreen)
+    readonly property var wallpaperScreens: [
+        { value: "", label: Translation.tr("Global"), icon: "public" }
+    ].concat(Quickshell.screens.map(screen => ({
+        value: screen.name, label: screen.name, icon: "monitor"
+    })))
     forceWidth: true
     baseWidth: !isMinimal ? 700 : 600
     bottomContentPadding: 35
@@ -386,9 +394,9 @@ ContentPage {
                     anchors.fill: parent
                     sourceSize.height: 1080
                     fillMode: Image.PreserveAspectCrop
-                    source: /\.(mp4|webm|mkv|avi|mov)$/i.test(Config.options.background.wallpaperPath)
-                        ? Config.options.background.thumbnailPath
-                        : Config.options.background.wallpaperPath
+                    source: /\.(mp4|webm|mkv|avi|mov)$/i.test(page.selectedWallpaperPath)
+                        ? Config.wallpaperThumbnailForScreen(page.wallpaperScreen)
+                        : page.selectedWallpaperPath
                     cache: false
                     layer.enabled: true
                     layer.effect: OpacityMask {
@@ -400,8 +408,88 @@ ContentPage {
                     }
                 }
 
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: GlobalStates.openWallpaperSelector(page.wallpaperScreen, "wallpaper")
+                }
+
+                GlassCard {
+                    id: wallpaperScreenSelector
+                    z: 12
+                    backdrop: wallpaperImg
+                    height: 48
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                        margins: 12
+                    }
+                    width: screenSelectorRow.implicitWidth + 16
+
+                    RowLayout {
+                        id: screenSelectorRow
+                        anchors.fill: parent
+                        anchors.margins: 6
+                        spacing: 5
+
+                        Repeater {
+                            model: page.wallpaperScreens
+
+                            delegate: RippleButton {
+                                id: screenButton
+                                required property var modelData
+                                readonly property bool selected: page.wallpaperScreen === modelData.value
+                                implicitWidth: screenButtonRow.implicitWidth + 20
+                                implicitHeight: 36
+                                buttonRadius: 18
+                                colBackground: selected ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
+                                colBackgroundHover: selected ? Appearance.colors.colPrimaryHover : ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.82)
+                                colRipple: selected ? Appearance.colors.colPrimaryActive : ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.75)
+                                onClicked: page.wallpaperScreen = modelData.value
+
+                                contentItem: RowLayout {
+                                    id: screenButtonRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    MaterialSymbol {
+                                        text: screenButton.modelData.icon
+                                        iconSize: 17
+                                        fill: screenButton.selected ? 1 : 0
+                                        color: screenButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                    }
+                                    StyledText {
+                                        text: screenButton.modelData.label
+                                        font.pixelSize: Appearance.font.pixelSize.small
+                                        font.weight: screenButton.selected ? Font.DemiBold : Font.Normal
+                                        color: screenButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                    }
+                                }
+                            }
+                        }
+
+                        RippleButton {
+                            visible: page.wallpaperScreen !== "" && Config.hasWallpaperOverride(page.wallpaperScreen)
+                            implicitWidth: 36
+                            implicitHeight: 36
+                            buttonRadius: 18
+                            colBackground: Appearance.colors.colTertiaryContainer
+                            colBackgroundHover: Appearance.colors.colTertiaryContainerHover
+                            colRipple: Appearance.colors.colTertiaryContainerActive
+                            onClicked: Config.resetWallpaperForScreen(page.wallpaperScreen)
+                            contentItem: MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "link"
+                                iconSize: 18
+                                color: Appearance.colors.colOnTertiaryContainer
+                            }
+                            StyledToolTip { text: Translation.tr("Use global wallpaper") }
+                        }
+                    }
+                }
+
                 GlassCard {
                     id: bottomBar
+                    z: 12
                     backdrop: wallpaperImg
                     height: 64
                     anchors {

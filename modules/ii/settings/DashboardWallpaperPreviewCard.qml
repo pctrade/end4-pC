@@ -12,9 +12,15 @@ DashboardCard {
     property string lockPath: ""
     property bool synced: true
     property string target: "desktop"
+    property bool showScreenSelector: false
+    property string screenName: ""
+    property var screenTargets: []
+    property bool canResetScreen: false
 
     signal targetSelected(string value)
     signal syncToggled(bool value)
+    signal screenSelected(string value)
+    signal screenReset()
 
     tint: Appearance.colors.colLayer1
 
@@ -94,53 +100,126 @@ DashboardCard {
         }
     }
 
-    RowLayout {
+    ColumnLayout {
         anchors.fill: parent
         anchors.margins: 12
         spacing: 12
 
-        PreviewTile {
+        Flow {
             Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            Layout.fillHeight: true
-            path: root.desktopPath
-            label: Translation.tr("Desktop")
-            icon: "desktop_windows"
-            active: root.synced || root.target === "desktop"
-            onClicked: root.targetSelected("desktop")
+            visible: root.showScreenSelector
+            spacing: 6
+
+            Repeater {
+                model: root.screenTargets
+
+                delegate: RippleButton {
+                    id: screenButton
+                    required property var modelData
+                    readonly property bool selected: root.screenName === modelData.value
+                    implicitWidth: screenRow.implicitWidth + 22
+                    implicitHeight: 36
+                    buttonRadius: 18
+                    colBackground: selected ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
+                    colBackgroundHover: selected ? Appearance.colors.colPrimaryHover : Appearance.colors.colLayer2Hover
+                    colRipple: selected ? Appearance.colors.colPrimaryActive : Appearance.colors.colLayer2Active
+                    downAction: () => root.screenSelected(modelData.value)
+
+                    contentItem: RowLayout {
+                        id: screenRow
+                        anchors.centerIn: parent
+                        spacing: 6
+                        MaterialSymbol {
+                            text: screenButton.modelData.icon
+                            iconSize: 17
+                            fill: screenButton.selected ? 1 : 0
+                            color: screenButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
+                        }
+                        StyledText {
+                            text: screenButton.modelData.label
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.weight: screenButton.selected ? Font.DemiBold : Font.Normal
+                            color: screenButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
+                        }
+                    }
+                }
+            }
+
+            RippleButton {
+                visible: root.canResetScreen
+                implicitWidth: resetRow.implicitWidth + 22
+                implicitHeight: 36
+                buttonRadius: 18
+                colBackground: Appearance.colors.colTertiaryContainer
+                colBackgroundHover: Appearance.colors.colTertiaryContainerHover
+                colRipple: Appearance.colors.colTertiaryContainerActive
+                downAction: () => root.screenReset()
+                contentItem: RowLayout {
+                    id: resetRow
+                    anchors.centerIn: parent
+                    spacing: 6
+                    MaterialSymbol { text: "link"; iconSize: 17; color: Appearance.colors.colOnTertiaryContainer }
+                    StyledText {
+                        text: Translation.tr("Use global")
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        color: Appearance.colors.colOnTertiaryContainer
+                    }
+                }
+            }
         }
 
-        PreviewTile {
+        Item {
             Layout.fillWidth: true
-            Layout.preferredWidth: 1
             Layout.fillHeight: true
-            path: root.lockPath
-            label: Translation.tr("Lock screen")
-            icon: "lock"
-            active: root.synced || root.target === "lock"
-            onClicked: root.targetSelected("lock")
-            accent: root.synced ? Appearance.colors.colPrimary : Appearance.colors.colTertiary
-            onAccent: root.synced ? Appearance.colors.colOnPrimary : Appearance.colors.colOnTertiary
-        }
-    }
 
-    RippleButton {
-        anchors.centerIn: parent
-        implicitWidth: 48
-        implicitHeight: 48
-        buttonRadius: 24
-        colBackground: root.synced ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
-        colBackgroundHover: root.synced ? Appearance.colors.colPrimary : Appearance.colors.colLayer2Hover
-        colRipple: Qt.rgba(1, 1, 1, 0.3)
-        downAction: () => Qt.callLater(() => root.syncToggled(!root.synced))
+            RowLayout {
+                anchors.fill: parent
+                spacing: 12
 
-        contentItem: MaterialSymbol {
-            anchors.centerIn: parent
-            horizontalAlignment: Text.AlignHCenter
-            text: root.synced ? "link" : "link_off"
-            iconSize: 24
-            fill: root.synced ? 1 : 0
-            color: root.synced ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
+                PreviewTile {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.fillHeight: true
+                    path: root.desktopPath
+                    label: Translation.tr("Desktop")
+                    icon: "desktop_windows"
+                    active: root.synced || root.target === "desktop"
+                    onClicked: root.targetSelected("desktop")
+                }
+
+                PreviewTile {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.fillHeight: true
+                    path: root.lockPath
+                    label: Translation.tr("Lock screen")
+                    icon: "lock"
+                    active: root.synced || root.target === "lock"
+                    onClicked: root.targetSelected("lock")
+                    accent: root.synced ? Appearance.colors.colPrimary : Appearance.colors.colTertiary
+                    onAccent: root.synced ? Appearance.colors.colOnPrimary : Appearance.colors.colOnTertiary
+                }
+            }
+
+            RippleButton {
+                anchors.centerIn: parent
+                implicitWidth: 48
+                implicitHeight: 48
+                buttonRadius: 24
+                colBackground: root.synced ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
+                colBackgroundHover: root.synced ? Appearance.colors.colPrimary : Appearance.colors.colLayer2Hover
+                colRipple: Qt.rgba(1, 1, 1, 0.3)
+                downAction: () => Qt.callLater(() => root.syncToggled(!root.synced))
+
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    text: root.synced ? "link" : "link_off"
+                    iconSize: 24
+                    fill: root.synced ? 1 : 0
+                    color: root.synced ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
+                }
+            }
         }
     }
 }

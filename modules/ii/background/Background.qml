@@ -22,8 +22,9 @@ Variants {
         id: bgRoot
 
         required property var modelData
-        property string currentWallpaperSource: Config.options.background.wallpaperPath
-        property string previousWallpaperSource: Config.options.background.wallpaperPath
+        readonly property string screenName: modelData.name
+        property string currentWallpaperSource: Config.wallpaperForScreen(screenName)
+        property string previousWallpaperSource: Config.wallpaperForScreen(screenName)
         property bool videoRevealed: false
 
         readonly property real splitFraction: {
@@ -54,11 +55,13 @@ Variants {
         property string effectiveWallpaperPath: {
             if (GlobalStates.screenLocked && Config.options.background.lockWall !== "")
                 return Config.options.background.lockWall;
-            return Wallpapers.previewPath || Wallpapers.confirmedPath || Config.options.background.wallpaperPath;
+            return Wallpapers.previewPathForScreen(bgRoot.screenName)
+                || (!Config.hasWallpaperOverride(bgRoot.screenName) ? Wallpapers.confirmedPath : "")
+                || Config.wallpaperForScreen(bgRoot.screenName);
         }
 
         property bool wallpaperIsVideo: bgRoot.effectiveWallpaperPath.endsWith(".mp4") || bgRoot.effectiveWallpaperPath.endsWith(".webm") || bgRoot.effectiveWallpaperPath.endsWith(".mkv") || bgRoot.effectiveWallpaperPath.endsWith(".avi") || bgRoot.effectiveWallpaperPath.endsWith(".mov")
-        property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : bgRoot.effectiveWallpaperPath
+        property string wallpaperPath: wallpaperIsVideo ? Config.wallpaperThumbnailForScreen(bgRoot.screenName) : bgRoot.effectiveWallpaperPath
         property bool wallpaperSafetyTriggered: {
             const enabled = Config.options.workSafety.enable.wallpaper;
             const sensitiveWallpaper = (CF.StringUtils.stringListContainsSubstring(wallpaperPath.toLowerCase(), Config.options.workSafety.triggerCondition.fileKeywords));
@@ -180,7 +183,10 @@ Variants {
             repeat: true
             onTriggered: {
                 if (Wallpapers.folderModel.count > 0) {
-                    Wallpapers.randomFromCurrentFolder()
+                    if (Config.hasWallpaperOverride(bgRoot.screenName))
+                        Wallpapers.randomFromCurrentFolder(Appearance.m3colors.darkmode, bgRoot.screenName)
+                    else if (Quickshell.screens[0]?.name === bgRoot.screenName)
+                        Wallpapers.randomFromCurrentFolder()
                 }
             }
         }
@@ -364,6 +370,7 @@ Variants {
             /* Wallpaper Drop Area */
             WallpaperDropArea {
                 anchors.fill: parent
+                targetScreenName: bgRoot.screenName
             }
 
             /* Multiple wallpapers drop targets (below widgets so their drop areas win =) */

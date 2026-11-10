@@ -10,6 +10,8 @@ import qs.modules.common.widgets
 
 Item {
     id: diMediaRoot
+    readonly property string barScreenName: diMediaRoot.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(diMediaRoot.barScreenName)
     required property Item di
     anchors.fill: parent
 
@@ -151,7 +153,7 @@ Item {
             maxVisualizerValue: 1000
             smoothing: 2
             color: Appearance.colors.colOnLayer0
-            visible: Config.options.bar.dynamicIsland.visualizerStyle === "wave"
+            visible: diMediaRoot.barConfig.dynamicIsland.visualizerStyle === "wave"
         }
 
         Visualizer {
@@ -169,8 +171,8 @@ Item {
             dotSpacing: 3
             maxBarHeight: root.isMaterial ? root.pillHeight * 1.5 : root.pillHeight * 0.85
             barColor: Appearance.colors.colOnLayer0
-            visible: !Config.options.bar.dynamicIsland.showMediaControls
-                && Config.options.bar.dynamicIsland.visualizerStyle === "dots"
+            visible: !diMediaRoot.barConfig.dynamicIsland.showMediaControls
+                && diMediaRoot.barConfig.dynamicIsland.visualizerStyle === "dots"
         }
 
         RowLayout {
@@ -181,7 +183,7 @@ Item {
                 verticalCenter: parent.verticalCenter
             }
             spacing: root.isMaterial ? -2 : -4
-            visible: Config.options.bar.dynamicIsland.showMediaControls
+            visible: diMediaRoot.barConfig.dynamicIsland.showMediaControls
 
             Item {
                 Layout.alignment: Qt.AlignVCenter

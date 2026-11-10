@@ -1,17 +1,20 @@
 import QtQuick
+import Quickshell
 import qs.modules.common
 import qs.modules.common.widgets
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
-    property bool vertical: Config.options.bar.vertical
+    property bool vertical: root.barConfig.vertical
     property real btnSize: 40
     property real btnSpacing: 2
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
-    property string style: Config.options.bar.divider.style // "rect" - "dot" - "space"
-    property int dividerSpacing: Config.options.bar.divider.spacing
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
+    property string style: root.barConfig.divider.style // "rect" - "dot" - "space"
+    property int dividerSpacing: root.barConfig.divider.spacing
 
     width:  vertical ? btnSize : (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitWidth + 10 : (1 + btnSpacing * 3))
     height: vertical ? (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitHeight - 4 : (1 + btnSpacing * 3)) : btnSize

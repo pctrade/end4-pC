@@ -32,15 +32,18 @@ Scope {
     function displayPathFor(path) {
         if (!path) return path
         return /\.(mp4|webm|mkv|avi|mov)$/i.test(path)
-            ? Config.options.background.thumbnailPath
+            ? Config.wallpaperThumbnailForScreen(root.targetScreenName)
             : path
     }
+
+    readonly property string targetScreenName: GlobalStates.desktopMenuScreen?.name ?? ""
+    readonly property string currentWallpaperPath: Config.wallpaperForScreen(root.targetScreenName)
 
     // Wallpaper folder images
     FolderListModel {
         id: wallpaperFolder
         folder: {
-            const wallPath = Config.options.background.wallpaperPath
+            const wallPath = root.currentWallpaperPath
             if (!wallPath || wallPath.length === 0) return ""
             const lastSlash = wallPath.lastIndexOf("/")
             return "file://" + wallPath.substring(0, lastSlash)
@@ -52,7 +55,7 @@ Scope {
     property int carouselExtraCount: 5
     property bool useDarkMode: Appearance.m3colors.darkmode
     property var randomWallpapers: {
-        const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
+        const current = FileUtils.trimFileProtocol(root.currentWallpaperPath)
         let all = []
         for (let i = 0; i < wallpaperFolder.count; i++) {
             const fp = FileUtils.trimFileProtocol(wallpaperFolder.get(i, "filePath").toString())
@@ -66,7 +69,7 @@ Scope {
     }
 
     property var carouselModel: {
-        const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
+        const current = FileUtils.trimFileProtocol(root.currentWallpaperPath)
         if (!current || current.length === 0) return randomWallpapers.map(p => root.displayPathFor(p))
         return [root.displayPathFor(current), ...randomWallpapers.map(p => root.displayPathFor(p))]
     }
@@ -162,7 +165,7 @@ Scope {
                             anchors.margins: 10
                             model: root.carouselModel
                             onWallpaperSelected: (path) => {
-                                Wallpapers.select(path, Appearance.m3colors.darkmode)
+                                Wallpapers.select(path, Appearance.m3colors.darkmode, null, root.targetScreenName)
                                 GlobalStates.desktopMenuOpen = false
                             }
                         }

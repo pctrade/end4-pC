@@ -13,13 +13,15 @@ import Quickshell.Widgets
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     signal styleEditorRequested()
 
     property real iconSize:      23
     property real btnSize:       28
     property real btnSpacing:    2
-    property bool vertical:    Config.options.bar.vertical
-    property bool isMaterial:  Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool vertical:    root.barConfig.vertical
+    property bool isMaterial:  root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
     property var activeUnpinned: TaskbarApps.apps.filter(
         a => !a.pinned && a.appId !== "SEPARATOR" && a.toplevels.length > 0

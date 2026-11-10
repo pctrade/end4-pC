@@ -2,18 +2,21 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
 import QtQuick
+import Quickshell
 import QtQuick.Layouts
 
 MouseArea {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool vertical: false
     readonly property var providers: {
         const result = [];
-        if (Config.options.bar.aiUsage.claudeEnabled)
+        if (root.barConfig.aiUsage.claudeEnabled)
             result.push({ name: "Claude Code", icon: "claude-symbolic", usage: ClaudeUsage, codex: false });
-        if (Config.options.bar.aiUsage.codexEnabled)
+        if (root.barConfig.aiUsage.codexEnabled)
             result.push({ name: "Codex", icon: "openai-symbolic", usage: CodexUsage, codex: true });
         return result;
     }
@@ -21,7 +24,7 @@ MouseArea {
     visible: providers.length > 0
     implicitWidth: providers.length === 0 ? 0 : (vertical ? Appearance.sizes.verticalBarWidth : content.implicitWidth + 12)
     implicitHeight: providers.length === 0 ? 0 : (vertical ? content.implicitHeight + 10 : Appearance.sizes.barHeight)
-    hoverEnabled: !Config.options.bar.tooltips.clickToShow
+    hoverEnabled: !root.barConfig.tooltips.clickToShow
 
     GridLayout {
         id: content

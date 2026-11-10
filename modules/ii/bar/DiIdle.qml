@@ -9,12 +9,14 @@ import qs.modules.common.widgets
 
 Item {
     id: diIdleRoot
+    readonly property string barScreenName: diIdleRoot.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(diIdleRoot.barScreenName)
     required property Item di
     anchors.fill: parent
 
     readonly property bool systemIconsElsewhere:
-        Config.options.bar.layouts.leftLayout.includes("systemIcons")
-        || Config.options.bar.layouts.rightLayout.includes("systemIcons")
+        diIdleRoot.barConfig.layouts.leftLayout.includes("systemIcons")
+        || diIdleRoot.barConfig.layouts.rightLayout.includes("systemIcons")
 
     Rectangle {
         id: avatarRect
@@ -128,7 +130,7 @@ Item {
 
         Loader {
             Layout.alignment: Qt.AlignVCenter
-            sourceComponent: Config.options.bar.dynamicIsland.leftWidget === "clockWidget" ? weatherComponent : clockComponent
+            sourceComponent: diIdleRoot.barConfig.dynamicIsland.leftWidget === "clockWidget" ? weatherComponent : clockComponent
 
             Component {
                 id: clockComponent

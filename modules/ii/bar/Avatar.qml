@@ -7,8 +7,10 @@ import Quickshell
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property bool vertical: false
-    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    readonly property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
 
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : avatar.width + (root.isMaterial ? 0 : 8)
     implicitHeight: vertical ? avatar.height + 8 : Appearance.sizes.barHeight
@@ -44,12 +46,12 @@ Item {
             anchor {
                 window: root.QsWindow.window
                 item: root
-                gravity: Config.options.bar.vertical
-                    ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-                    : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-                edges: Config.options.bar.vertical
-                    ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-                    : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+                gravity: root.barConfig.vertical
+                    ? (root.barConfig.bottom ? Edges.Left : Edges.Right)
+                    : (root.barConfig.bottom ? Edges.Top : Edges.Bottom)
+                edges: root.barConfig.vertical
+                    ? (root.barConfig.bottom ? Edges.Left : Edges.Right)
+                    : (root.barConfig.bottom ? Edges.Top : Edges.Bottom)
             }
             onPopupClosed: popup.active = false
         }

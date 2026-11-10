@@ -14,6 +14,8 @@ import Quickshell.Widgets
 
 PopupWindow {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
 
     signal popupClosed()
 
@@ -29,10 +31,10 @@ PopupWindow {
     readonly property string displayName: Config.options.profile.displayName !== "" ? Config.options.profile.displayName : SystemInfo.username
     readonly property string description: Config.options.profile.descriptionText === "::distro::" ? SystemInfo.distroName : Config.options.profile.descriptionText
     property bool closing: false
-    readonly property bool barVertical: Config.options.bar.vertical
+    readonly property bool barVertical: root.barConfig.vertical
     readonly property string barEdge: {
-        if (!barVertical) return Config.options.bar.bottom ? "bottom" : "top"
-        return Config.options.bar.bottom ? "right" : "left"
+        if (!barVertical) return root.barConfig.bottom ? "bottom" : "top"
+        return root.barConfig.bottom ? "right" : "left"
     }
     readonly property real bounceRoom: 24
 

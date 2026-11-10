@@ -10,11 +10,13 @@ import Quickshell.Services.UPower
 
 Item {
     id: root
+    readonly property string barScreenName: root.QsWindow.window?.screen?.name ?? ""
+    readonly property var barConfig: Config.barForScreen(root.barScreenName)
     property color contentColor: Appearance.colors.colOnLayer2
     property bool contentColorOverridden: false
-    property bool borderless: Config.options.bar.borderless
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool borderless: root.barConfig.borderless
+    property bool vertical: root.barConfig.vertical
+    property bool isMaterial: root.barConfig.cornerStyle === 3 || root.barConfig.cornerStyle === 4
 
     implicitWidth: isMaterial && !root.vertical ? flow.implicitWidth : root.vertical ? Appearance.sizes.verticalBarWidth - 14 : flow.implicitWidth + 4
     implicitHeight: isMaterial && root.vertical ? flow.implicitHeight: isMaterial ? 32 : root.vertical ? flow.implicitHeight + 4 : Appearance.sizes.barHeight
@@ -26,7 +28,7 @@ Item {
         spacing: isMaterial ? 2 : 4
 
         Loader {
-            active: Config.options.bar.utilButtons.showScreenSnip
+            active: root.barConfig.utilButtons.showScreenSnip
             visible: active
             sourceComponent: isMaterial ? screenSnipM3 : legacyScreenSnip
         }
@@ -53,7 +55,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showColorPicker
+            active: root.barConfig.utilButtons.showColorPicker
             visible: active
             sourceComponent: isMaterial ? colorPickerM3 : legacyColorPicker
         }
@@ -78,7 +80,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showScreenRecord
+            active: root.barConfig.utilButtons.showScreenRecord
             visible: active
             sourceComponent: isMaterial ? screenRecordM3 : legacyScreenRecord
         }
@@ -134,7 +136,7 @@ Item {
                     anchors.left: btn.right
                     anchors.leftMargin: 8
                     anchors.verticalCenter: btn.verticalCenter
-                    reveal: recordingItem.isRecording && !root.vertical && !GlobalStates.dynamicIslandEnabled
+                    reveal: recordingItem.isRecording && !root.vertical && !Config.barHasWidget(root.barScreenName, "dynamicIsland")
 
                     StyledText {
                         width: implicitWidth
@@ -160,7 +162,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showKeyboardToggle
+            active: root.barConfig.utilButtons.showKeyboardToggle
             visible: active
             sourceComponent: isMaterial ? keyboardM3 : legacyKeyboard
         }
@@ -185,7 +187,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showWallpaperToggle
+            active: root.barConfig.utilButtons.showWallpaperToggle
             visible: active
             sourceComponent: isMaterial ? wallpaperM3 : legacyWallpaper
         }
@@ -210,7 +212,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showMicToggle
+            active: root.barConfig.utilButtons.showMicToggle
             visible: active
             sourceComponent: isMaterial ? micM3 : legacyMic
         }
@@ -236,7 +238,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showDarkModeToggle
+            active: root.barConfig.utilButtons.showDarkModeToggle
             visible: active
             sourceComponent: isMaterial ? darkModeM3 : legacyDarkMode
         }
@@ -272,7 +274,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.utilButtons.showPerformanceProfileToggle
+            active: root.barConfig.utilButtons.showPerformanceProfileToggle
             visible: active
             sourceComponent: isMaterial ? perfM3 : legacyPerf
         }

@@ -17,6 +17,9 @@ Item {
     signal wallpaperSelected(string path)
     property real cellWidth: grid.cellWidth
     property real cellHeight: grid.cellHeight
+    property string targetScreenName: ""
+    readonly property string selectedWallpaperPath: FileUtils.trimFileProtocol(
+        Config.wallpaperForScreen(root.targetScreenName) ?? "")
 
     function moveSelection(delta) { grid.moveSelection(delta) }
     function activateCurrent() { grid.activateCurrent() }
@@ -371,7 +374,8 @@ Item {
             positionViewAtIndex(currentIndex, GridView.Contain);
             const filePath = getModelProp(currentIndex, "filePath");
             const isDir = getModelProp(currentIndex, "fileIsDir");
-            if (!isDir && filePath && Config.options.background.enableWallpaperPreview) Wallpapers.startPreview(filePath);
+            if (!isDir && filePath && Config.options.background.enableWallpaperPreview)
+                Wallpapers.startPreview(filePath, root.targetScreenName);
         }
 
         function activateCurrent() {
@@ -429,12 +433,12 @@ Item {
                 fileModelData: delegateCell.modelData
                 colBackground: (delegateCell.index === grid.currentIndex || cellMouseArea.containsMouse)
                     ? Appearance.colors.colPrimary
-                    : (delegateCell.modelData.filePath === Config.options.background.wallpaperPath)
+                    : (FileUtils.trimFileProtocol(delegateCell.modelData.filePath) === root.selectedWallpaperPath)
                         ? Appearance.colors.colSecondaryContainer
                         : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)
                 colText: (delegateCell.index === grid.currentIndex || cellMouseArea.containsMouse)
                     ? Appearance.colors.colOnPrimary
-                    : (delegateCell.modelData.filePath === Config.options.background.wallpaperPath)
+                    : (FileUtils.trimFileProtocol(delegateCell.modelData.filePath) === root.selectedWallpaperPath)
                         ? Appearance.colors.colOnSecondaryContainer
                         : Appearance.colors.colOnLayer0
             }
@@ -539,7 +543,7 @@ Item {
                             root.wallpaperSelected(delegateCell.modelData.filePath);
                         } else {
                             if (!delegateCell.modelData.fileIsDir && Config.options.background.enableWallpaperPreview) {
-                                Wallpapers.startPreview(delegateCell.modelData.filePath);
+                                Wallpapers.startPreview(delegateCell.modelData.filePath, root.targetScreenName);
                             }
                         }
                     }
