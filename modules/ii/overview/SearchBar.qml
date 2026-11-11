@@ -97,6 +97,14 @@ RowLayout {
         }
 
         Keys.onPressed: event => {
+            // The first character can freeze the shell for a few hundred ms while
+            // the results are built. Qt then sees the key as held past the repeat
+            // delay and sends it again ("sspotify"). Nobody holds a letter to repeat
+            // it in a search, so only Backspace and the arrows keep repeating.
+            if (event.isAutoRepeat && event.text.length === 1 && event.text.charCodeAt(0) >= 0x20) {
+                event.accepted = true;
+                return;
+            }
             if (event.key === Qt.Key_Tab) {
                 if (LauncherSearch.results.length === 0) return;
                 const tabbedText = LauncherSearch.results[0].name;

@@ -160,6 +160,9 @@ RippleButton {
                 source: SystemAppearance.iconPath(root.iconName, "image-missing")
                 width: 35
                 height: 35
+                // Icon files decode off the main thread. Not theme icons: the
+                // image://icon provider gives the missing icon when run async.
+                asynchronous: !String(source).startsWith("image://")
             }
         }
 
@@ -386,6 +389,7 @@ RippleButton {
                             sourceComponent: IconImage {
                                 source: SystemAppearance.iconPath(actionButton.iconName)
                                 implicitSize: 20
+                                asynchronous: !String(source).startsWith("image://")
                             }
                         }
                     }
