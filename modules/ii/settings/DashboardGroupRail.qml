@@ -12,11 +12,12 @@ ColumnLayout {
     property var dimmed: ({})
     readonly property real speed: Math.max(0.5, Config.options.settings.animationSpeed ?? 1)
     readonly property int minGap: 6
+    readonly property int maxGap: 14
     readonly property real boxSize: Math.max(44, Math.min(64, (height - minGap * (groups.length - 1)) / Math.max(1, groups.length)))
 
     signal picked(string id)
 
-    spacing: groups.length > 1 ? Math.max(minGap, (height - boxSize * groups.length) / (groups.length - 1)) : 0
+    spacing: groups.length > 1 ? Math.min(maxGap, Math.max(minGap, (height - boxSize * groups.length) / (groups.length - 1))) : 0
 
     Repeater {
         model: root.groups
@@ -120,5 +121,10 @@ ColumnLayout {
                 }
             }
         }
+    }
+
+    // Keep tabs stacked at the top on tall panels instead of spreading them out.
+    Item {
+        Layout.fillHeight: true
     }
 }
