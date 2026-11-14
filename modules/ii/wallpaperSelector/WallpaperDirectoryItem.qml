@@ -77,7 +77,7 @@ Item {
                     ThumbnailImage {
                         id: thumbnailImage
                         anchors.fill: parent
-                        generateThumbnail: false
+                        generateThumbnail: true
                         sourcePath: (fileModelData && fileModelData.filePath) ? fileModelData.filePath : ""
                         cache: false
                         fillMode: Image.PreserveAspectCrop
