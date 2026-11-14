@@ -20,12 +20,15 @@ ProgressBar {
     property real waveAmplitudeMultiplier: wavy ? 0.5 : 0
     property real waveFrequency: 6
     property real waveFps: 60
+    // Off for a value that already moves continuously, such as a playback position read every frame
+    property bool animateValue: true
 
     Behavior on waveAmplitudeMultiplier {
         animation: Appearance?.animation.elementMoveFast.numberAnimation.createObject(this)
     }
 
     Behavior on value {
+        enabled: root.animateValue
         animation: Appearance?.animation.elementMoveEnter.numberAnimation.createObject(this)
     }
     
@@ -50,7 +53,8 @@ ProgressBar {
                 color: root.highlightColor
                 amplitudeMultiplier: root.wavy ? 0.5 : 0
                 height: contentItem.height * 6
-                width: contentItem.width * root.visualPosition
+                width: contentItem.width
+                drawLength: contentItem.width * root.visualPosition
                 lineWidth: contentItem.height
                 fullLength: root.width
                 Connections {
