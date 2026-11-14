@@ -523,7 +523,7 @@ Item {
                                         implicitHeight: screencopyView.height
                                         implicitWidth:  screencopyView.width
 
-                                        ScreencopyView {
+                                        SmoothScreencopyView {
                                             id: screencopyView
                                             anchors.centerIn: parent
                                             captureSource: windowButton.modelData
