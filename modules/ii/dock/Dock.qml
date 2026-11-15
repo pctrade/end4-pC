@@ -308,7 +308,7 @@ Scope {
                             DockSeparator {
                                 visible: dockRow.hasPinnedApps
                                     && (activeApps.activeUnpinned.length > 0
-                                        || (Config.options.dock.showMedia && MprisController.activePlayer !== null))
+                                        || (Config.options.dock.showMedia && activeApps.media.hasTrack))
                             }
 
                             DockActiveApps {
