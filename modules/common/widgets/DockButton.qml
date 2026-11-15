@@ -35,6 +35,29 @@ RippleButton {
     Component.onCompleted: if (root.magnifiable) root.magnifyId = DockMagnify.register(root)
     Component.onDestruction: DockMagnify.unregister(root.magnifyId)
 
+    // Windows that scrolling on this button cycles through (app buttons only).
+    property var scrollWindows: []
+    property real wheelAccum: 0
+
+    WheelHandler {
+        enabled: (Config.options.dock.scrollToCycleWindows ?? false) && (root.scrollWindows?.length ?? 0) > 0
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => {
+            // Touchpads send many small deltas; step once per mouse-wheel notch (120).
+            root.wheelAccum += event.angleDelta.y !== 0 ? event.angleDelta.y : event.angleDelta.x;
+            if (Math.abs(root.wheelAccum) < 120)
+                return;
+            const step = root.wheelAccum > 0 ? -1 : 1; // scroll down = next window
+            root.wheelAccum = 0;
+            const list = root.scrollWindows;
+            const current = list.findIndex(t => t.activated);
+            const next = current < 0
+                ? (step > 0 ? 0 : list.length - 1)
+                : (current + step + list.length) % list.length;
+            list[next].activate();
+        }
+    }
+
     background.implicitHeight: DockStyle.buttonBase
     background.implicitWidth: DockStyle.buttonBase
 }

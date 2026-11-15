@@ -184,6 +184,7 @@ Item {
                     entry.toplevels[next].activate()
                 }
 
+                scrollWindows: slotItem.appEntry?.toplevels ?? []
                 middleClickAction: () => { slotItem.deskEntry?.execute() }
                 altAction:         () => { root.contextMenu?.open(dockBtn, slotItem.appId) }
 

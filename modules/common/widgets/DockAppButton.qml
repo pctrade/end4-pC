@@ -70,6 +70,8 @@ DockButton {
         appToplevel.toplevels[lastFocused].activate()
     }
 
+    scrollWindows: appToplevel.toplevels
+
     middleClickAction: () => {
         root.desktopEntry?.execute();
     }

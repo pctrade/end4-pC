@@ -888,6 +888,12 @@ ContentPage {
                         checked: Config.options.dock.showTooltips
                         onCheckedChanged: { Config.options.dock.showTooltips = checked }
                     }
+                    ConfigSwitch {
+                        buttonIcon: "swap_vert"
+                        text: Translation.tr("Scroll to switch windows")
+                        checked: Config.options.dock.scrollToCycleWindows
+                        onCheckedChanged: { Config.options.dock.scrollToCycleWindows = checked }
+                    }
                     ConfigSpinBox {
                         icon: "photo_size_select_large"
                         text: Translation.tr("Icon size")
