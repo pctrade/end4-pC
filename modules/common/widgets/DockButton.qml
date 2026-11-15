@@ -38,6 +38,16 @@ RippleButton {
     // Windows that scrolling on this button cycles through (app buttons only).
     property var scrollWindows: []
     property real wheelAccum: 0
+    // Last window this button's scrolling activated. Focus (`activated`) only
+    // updates once the compositor confirms it, so quick steps use this instead.
+    property var wheelTarget: null
+    signal windowCycled(int index)
+
+    Timer {
+        id: wheelTargetReset
+        interval: 600
+        onTriggered: root.wheelTarget = null
+    }
 
     WheelHandler {
         enabled: (Config.options.dock.scrollToCycleWindows ?? false) && (root.scrollWindows?.length ?? 0) > 0
@@ -50,11 +60,16 @@ RippleButton {
             const step = root.wheelAccum > 0 ? -1 : 1; // scroll down = next window
             root.wheelAccum = 0;
             const list = root.scrollWindows;
-            const current = list.findIndex(t => t.activated);
+            let current = root.wheelTarget ? list.indexOf(root.wheelTarget) : -1;
+            if (current < 0)
+                current = list.findIndex(t => t.activated);
             const next = current < 0
                 ? (step > 0 ? 0 : list.length - 1)
                 : (current + step + list.length) % list.length;
+            root.wheelTarget = list[next];
+            wheelTargetReset.restart();
             list[next].activate();
+            root.windowCycled(next);
         }
     }
 

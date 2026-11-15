@@ -185,15 +185,16 @@ Item {
                 }
 
                 scrollWindows: slotItem.appEntry?.toplevels ?? []
+                // Keep click-cycling in step with scrolling.
+                onWindowCycled: index => slotItem._lastFocused = index
                 middleClickAction: () => { slotItem.deskEntry?.execute() }
                 altAction:         () => { root.contextMenu?.open(dockBtn, slotItem.appId) }
 
                 DockTooltip {
                     text: slotItem.deskEntry?.name || slotItem.appId
-                    // With previews on, the preview popup header shows the name instead.
                     show: dockBtn.hovered && !root._dragging
-                        && !(root.contextMenu?.isOpen ?? false)
-                        && !DockStyle.previewsFor(slotItem.appEntry)
+                    app: slotItem.appEntry ?? null
+                    contextMenu: root.contextMenu
                 }
 
                 contentItem: DockAppIcon {
@@ -264,9 +265,7 @@ Item {
 
         // One window: a header carries the app name, window title and close button,
         // and the tile drops its own title row.
-        readonly property bool mergedHeader: (Config.options.dock.showTooltips ?? true)
-            && appTopLevel?.toplevels?.length === 1
-        readonly property real headerHeight: mergedHeader ? 30 : 0
+        readonly property bool mergedHeader: appTopLevel?.toplevels?.length === 1
 
         property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
@@ -410,7 +409,7 @@ Item {
         implicitWidth: DockStyle.vertical ? popupMouseArea.implicitWidth : (root.QsWindow.window?.width ?? 1)
         implicitHeight: DockStyle.vertical
             ? (root.QsWindow.window?.height ?? 1)
-            : popupMouseArea.implicitHeight + root.windowControlsHeight + previewPopup.headerHeight + Appearance.sizes.elevationMargin * 2
+            : popupMouseArea.implicitHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
 
         MouseArea {
             id: popupMouseArea
@@ -420,7 +419,7 @@ Item {
             implicitWidth:  popupBackground.implicitWidth + Appearance.sizes.elevationMargin * 2
             implicitHeight: DockStyle.vertical
                 ? popupBackground.implicitHeight + Appearance.sizes.elevationMargin * 2
-                : root.maxWindowPreviewHeight + root.windowControlsHeight + previewPopup.headerHeight + Appearance.sizes.elevationMargin * 2
+                : root.maxWindowPreviewHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
             hoverEnabled: true
             x: DockStyle.vertical ? 0 : previewPopup.cachedCenter - width / 2
             y: DockStyle.vertical
@@ -493,7 +492,8 @@ Item {
                             // With several windows the hovered icon and the tile titles say enough.
                             visible: previewPopup.mergedHeader
                             Layout.fillWidth: true
-                            Layout.preferredHeight: previewPopup.headerHeight
+                            // Takes the place of the tile's title row, so the popup height is unchanged.
+                            Layout.preferredHeight: root.windowControlsHeight
                             Layout.leftMargin: 5
                             spacing: 6
 

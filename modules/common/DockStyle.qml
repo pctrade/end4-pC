@@ -39,7 +39,10 @@ Singleton {
     // Shared look for the dock's popups (tooltips and window previews), so they
     // read as part of the dock. Popups get no compositor blur, so the colour is
     // made opaque, and a border keeps the edge visible over dark windows.
-    readonly property color popupColor: ColorUtils.applyAlpha(backgroundColor, 1)
+    // OLED keeps the black used by the dock's other popups (e.g. the context menu).
+    readonly property color popupColor: Config.options.appearance.uiBackground === "oled"
+        ? "#000000"
+        : ColorUtils.applyAlpha(backgroundColor, 1)
     readonly property color popupBorderColor: Appearance.colors.colLayer0Border
     // Theme text colour when the popup is as light/dark as the theme, inverse otherwise.
     readonly property color popupTextColor: ColorUtils.isDark(popupColor) === Appearance.m3colors.darkmode

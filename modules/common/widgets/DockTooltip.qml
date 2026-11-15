@@ -11,8 +11,15 @@ Item {
     id: root
     property string text: ""
     property bool show: false
+    // App buttons: hide while the right-click menu is open, and when hovering
+    // opens the window preview instead (its header names the app).
+    property var app: null
+    property var contextMenu: null
 
-    readonly property bool wanted: (Config.options.dock.showTooltips ?? true) && root.show && root.text.length > 0
+    readonly property bool wanted: (Config.options.dock.showTooltips ?? true)
+        && root.show && root.text.length > 0
+        && !(root.contextMenu?.isOpen ?? false)
+        && !(root.app && DockStyle.previewsFor(root.app))
     property bool shown: false
 
     onWantedChanged: {
@@ -40,9 +47,10 @@ Item {
 
             // Taken once when the tooltip opens, like the preview popup's
             // cachedCenter, so magnification does not reposition it every frame.
-            readonly property point center: {
+            property point center: Qt.point(0, 0)
+            Component.onCompleted: {
                 const t = root.parent;
-                return t.mapToItem(null, t.width / 2, t.height / 2);
+                center = t.mapToItem(null, t.width / 2, t.height / 2);
             }
 
             // Same distance from the dock as the window preview card in DragApps.qml.

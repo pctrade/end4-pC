@@ -71,6 +71,8 @@ DockButton {
     }
 
     scrollWindows: appToplevel.toplevels
+    // Keep click-cycling in step with scrolling.
+    onWindowCycled: index => root.lastFocused = index
 
     middleClickAction: () => {
         root.desktopEntry?.execute();
@@ -82,10 +84,9 @@ DockButton {
 
     DockTooltip {
         text: root.desktopEntry?.name || root.appToplevel.appId
-        // With previews on, the preview popup header shows the name instead.
         show: root.hovered && !root.isSeparator
-            && !(root.contextMenu?.isOpen ?? false)
-            && !DockStyle.previewsFor(root.appToplevel)
+        app: root.appToplevel
+        contextMenu: root.contextMenu
     }
 
     contentItem: Loader {
