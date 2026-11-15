@@ -882,6 +882,12 @@ ContentPage {
                         checked: Config.options.dock.showPreviews
                         onCheckedChanged: { Config.options.dock.showPreviews = checked }
                     }
+                    ConfigSwitch {
+                        buttonIcon: "tooltip"
+                        text: Translation.tr("App name tooltips")
+                        checked: Config.options.dock.showTooltips
+                        onCheckedChanged: { Config.options.dock.showTooltips = checked }
+                    }
                     ConfigSpinBox {
                         icon: "photo_size_select_large"
                         text: Translation.tr("Icon size")

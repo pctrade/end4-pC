@@ -23,6 +23,7 @@ Item {
     property real maxWindowPreviewHeight: 200
     property real maxWindowPreviewWidth: 300
     property real windowControlsHeight: 30
+    readonly property real appNameHeight: (Config.options.dock.showTooltips ?? true) ? 24 : 0
     property Item lastHoveredButton: null
     property bool buttonHovered: false
     property bool requestDockShow: previewPopup.show
@@ -186,6 +187,14 @@ Item {
                 middleClickAction: () => { slotItem.deskEntry?.execute() }
                 altAction:         () => { root.contextMenu?.open(dockBtn, slotItem.appId) }
 
+                DockTooltip {
+                    text: slotItem.deskEntry?.name || slotItem.appId
+                    // With previews on, the preview popup header shows the name instead.
+                    show: dockBtn.hovered && !root._dragging
+                        && !(root.contextMenu?.isOpen ?? false)
+                        && !DockStyle.previewsFor(slotItem.appEntry)
+                }
+
                 contentItem: DockAppIcon {
                     anchors.centerIn: parent
                     iconSource: SystemAppearance.iconPath(AppSearch.guessIcon(slotItem.appId), "image-missing")
@@ -252,14 +261,14 @@ Item {
         id: previewPopup
         property var appTopLevel: root.lastHoveredButton?.appToplevel ?? null
 
-        property bool shouldShow: WM.compositor === "hyprland"
-                                  && (popupMouseArea.containsMouse || root.buttonHovered)
+        readonly property string appName: appTopLevel
+            ? (DesktopEntries.heuristicLookup(appTopLevel.appId)?.name || appTopLevel.appId)
+            : ""
+
+        property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
                                   && !(root.contextMenu?.isOpen ?? false)
-                                  && Config.options.dock.showPreviews
-                                  && appTopLevel
-                                  && appTopLevel.toplevels
-                                  && appTopLevel.toplevels.length > 0
+                                  && DockStyle.previewsFor(appTopLevel)
 
         property bool show: false
         property real cachedCenter: 0
@@ -395,7 +404,7 @@ Item {
         implicitWidth: DockStyle.vertical ? popupMouseArea.implicitWidth : (root.QsWindow.window?.width ?? 1)
         implicitHeight: DockStyle.vertical
             ? (root.QsWindow.window?.height ?? 1)
-            : popupMouseArea.implicitHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
+            : popupMouseArea.implicitHeight + root.windowControlsHeight + root.appNameHeight + Appearance.sizes.elevationMargin * 2
 
         MouseArea {
             id: popupMouseArea
@@ -405,7 +414,7 @@ Item {
             implicitWidth:  popupBackground.implicitWidth + Appearance.sizes.elevationMargin * 2
             implicitHeight: DockStyle.vertical
                 ? popupBackground.implicitHeight + Appearance.sizes.elevationMargin * 2
-                : root.maxWindowPreviewHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
+                : root.maxWindowPreviewHeight + root.windowControlsHeight + root.appNameHeight + Appearance.sizes.elevationMargin * 2
             hoverEnabled: true
             x: DockStyle.vertical ? 0 : previewPopup.cachedCenter - width / 2
             y: DockStyle.vertical
@@ -456,8 +465,8 @@ Item {
                     anchors.right: DockStyle.position === "right" ? parent.right : undefined
                     anchors.leftMargin: Appearance.sizes.elevationMargin
                     anchors.rightMargin: Appearance.sizes.elevationMargin
-                    implicitHeight: previewRowLayout.implicitHeight + padding * 2
-                    implicitWidth:  previewRowLayout.implicitWidth  + padding * 2
+                    implicitHeight: previewColumn.implicitHeight + padding * 2
+                    implicitWidth:  previewColumn.implicitWidth  + padding * 2
                     Behavior on implicitWidth {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
@@ -465,79 +474,98 @@ Item {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
 
-                    RowLayout {
-                        id: previewRowLayout
+                    ColumnLayout {
+                        id: previewColumn
                         anchors.centerIn: parent
+                        spacing: 0
 
-                        Repeater {
-                            model: ScriptModel {
-                                values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
-                            }
+                        StyledText {
+                            visible: root.appNameHeight > 0
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.appNameHeight
+                            Layout.leftMargin: 6
+                            Layout.rightMargin: 6
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.weight: Font.DemiBold
+                            text: previewPopup.appName
+                            elide: Text.ElideRight
+                            color: Appearance.m3colors.m3onSurface
+                        }
 
-                            RippleButton {
-                                id: windowButton
-                                Layout.fillHeight: true
-                                required property var modelData
-                                padding: 0
+                        RowLayout {
+                            id: previewRowLayout
 
-                                middleClickAction: () => { windowButton.modelData?.close() }
-                                onClicked: { windowButton.modelData?.activate() }
+                            Repeater {
+                                model: ScriptModel {
+                                    values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
+                                }
 
-                                contentItem: ColumnLayout {
-                                    implicitWidth:  screencopyView.implicitWidth
-                                    implicitHeight: screencopyView.implicitHeight
+                                RippleButton {
+                                    id: windowButton
+                                    Layout.fillHeight: true
+                                    required property var modelData
+                                    padding: 0
 
-                                    ButtonGroup {
-                                        contentWidth: parent.width - anchors.margins * 2
+                                    middleClickAction: () => { windowButton.modelData?.close() }
+                                    onClicked: { windowButton.modelData?.activate() }
 
-                                        StyledText {
-                                            Layout.margins: 5
-                                            Layout.fillWidth: true
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            text: windowButton.modelData?.title
-                                            elide: Text.ElideRight
-                                            color: Appearance.m3colors.m3onSurface
-                                        }
+                                    contentItem: ColumnLayout {
+                                        implicitWidth:  screencopyView.implicitWidth
+                                        implicitHeight: screencopyView.implicitHeight
 
-                                        GroupButton {
-                                            id: closeButton
-                                            colBackground: ColorUtils.transparentize(
-                                                Appearance.colors.colSurfaceContainer)
-                                            baseWidth:    root.windowControlsHeight
-                                            baseHeight:   root.windowControlsHeight
-                                            buttonRadius: Appearance.rounding.full
-                                            contentItem: MaterialSymbol {
-                                                anchors.centerIn: parent
-                                                horizontalAlignment: Text.AlignHCenter
-                                                text: "close"
-                                                iconSize: Appearance.font.pixelSize.normal
+                                        ButtonGroup {
+                                            contentWidth: parent.width - anchors.margins * 2
+
+                                            StyledText {
+                                                Layout.margins: 5
+                                                Layout.fillWidth: true
+                                                font.pixelSize: Appearance.font.pixelSize.small
+                                                text: windowButton.modelData?.title
+                                                elide: Text.ElideRight
                                                 color: Appearance.m3colors.m3onSurface
                                             }
-                                            onClicked: { windowButton.modelData?.close() }
+
+                                            GroupButton {
+                                                id: closeButton
+                                                colBackground: ColorUtils.transparentize(
+                                                    Appearance.colors.colSurfaceContainer)
+                                                baseWidth:    root.windowControlsHeight
+                                                baseHeight:   root.windowControlsHeight
+                                                buttonRadius: Appearance.rounding.full
+                                                contentItem: MaterialSymbol {
+                                                    anchors.centerIn: parent
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    text: "close"
+                                                    iconSize: Appearance.font.pixelSize.normal
+                                                    color: Appearance.m3colors.m3onSurface
+                                                }
+                                                onClicked: { windowButton.modelData?.close() }
+                                            }
                                         }
-                                    }
 
-                                    Item {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        implicitHeight: screencopyView.height
-                                        implicitWidth:  screencopyView.width
+                                        Item {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            implicitHeight: screencopyView.height
+                                            implicitWidth:  screencopyView.width
 
-                                        SmoothScreencopyView {
-                                            id: screencopyView
-                                            anchors.centerIn: parent
-                                            captureSource: windowButton.modelData
-                                            live: true
-                                            paintCursor: true
-                                            constraintSize: Qt.size(
-                                                root.maxWindowPreviewWidth,
-                                                root.maxWindowPreviewHeight)
-                                            layer.enabled: true
-                                            layer.effect: OpacityMask {
-                                                maskSource: Rectangle {
-                                                    width:  screencopyView.width
-                                                    height: screencopyView.height
-                                                    radius: Appearance.rounding.small
+                                            SmoothScreencopyView {
+                                                id: screencopyView
+                                                anchors.centerIn: parent
+                                                captureSource: windowButton.modelData
+                                                live: true
+                                                paintCursor: true
+                                                constraintSize: Qt.size(
+                                                    root.maxWindowPreviewWidth,
+                                                    root.maxWindowPreviewHeight)
+                                                layer.enabled: true
+                                                layer.effect: OpacityMask {
+                                                    maskSource: Rectangle {
+                                                        width:  screencopyView.width
+                                                        height: screencopyView.height
+                                                        radius: Appearance.rounding.small
+                                                    }
                                                 }
                                             }
                                         }

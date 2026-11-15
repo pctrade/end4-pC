@@ -78,6 +78,14 @@ DockButton {
         root.contextMenu?.open(root, appToplevel.appId);
     }
 
+    DockTooltip {
+        text: root.desktopEntry?.name || root.appToplevel.appId
+        // With previews on, the preview popup header shows the name instead.
+        show: root.hovered && !root.isSeparator
+            && !(root.contextMenu?.isOpen ?? false)
+            && !DockStyle.previewsFor(root.appToplevel)
+    }
+
     contentItem: Loader {
         active: !isSeparator
         sourceComponent: DockAppIcon {

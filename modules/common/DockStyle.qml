@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.services
 
 Singleton {
     property string position: Config.options.dock.position ?? "bottom"
@@ -21,6 +22,13 @@ Singleton {
 
     function mRight(inner, outer, alongEnd) {
         return vertical ? (position === "left" ? inner : outer) : (alongEnd ?? 0);
+    }
+
+    // True when hovering this app's button opens the window preview popup.
+    function previewsFor(app) {
+        return WM.compositor === "hyprland"
+            && (Config.options.dock.showPreviews ?? true)
+            && (app?.toplevels?.length ?? 0) > 0;
     }
 
     readonly property real padding: 5
