@@ -39,7 +39,7 @@ Item {
 
         DockMedia {
             id: dockMedia
-            visible: Config.options.dock.showMedia
+            visible: Config.options.dock.showMedia && dockMedia.hasTrack
             Layout.fillHeight: !DockStyle.vertical
             Layout.fillWidth: DockStyle.vertical
             Layout.topMargin: DockStyle.mTop(DockStyle.mediaInnerMargin, DockStyle.mediaOuterMargin)

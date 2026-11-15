@@ -23,7 +23,6 @@ Item {
     property real maxWindowPreviewHeight: 200
     property real maxWindowPreviewWidth: 300
     property real windowControlsHeight: 30
-    readonly property real appNameHeight: (Config.options.dock.showTooltips ?? true) ? 30 : 0
     property Item lastHoveredButton: null
     property bool buttonHovered: false
     property bool requestDockShow: previewPopup.show
@@ -156,6 +155,7 @@ Item {
                 anchors.fill: parent
 
                 property var appToplevel: slotItem.appEntry
+                property var desktopEntry: slotItem.deskEntry
                 magnifiable: true
 
                 innerInset: DockStyle.iconInset
@@ -262,12 +262,11 @@ Item {
         id: previewPopup
         property var appTopLevel: root.lastHoveredButton?.appToplevel ?? null
 
-        readonly property string appName: appTopLevel
-            ? (DesktopEntries.heuristicLookup(appTopLevel.appId)?.name || appTopLevel.appId)
-            : ""
-        readonly property int windowCount: appTopLevel?.toplevels?.length ?? 0
-        // One window: the header carries its title and close button, and the tile drops its own.
-        readonly property bool mergedHeader: root.appNameHeight > 0 && windowCount === 1
+        // One window: a header carries the app name, window title and close button,
+        // and the tile drops its own title row.
+        readonly property bool mergedHeader: (Config.options.dock.showTooltips ?? true)
+            && appTopLevel?.toplevels?.length === 1
+        readonly property real headerHeight: mergedHeader ? 30 : 0
 
         property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
@@ -396,10 +395,12 @@ Item {
                 : DockStyle.position === "right" ? (Edges.Bottom | Edges.Left)
                 : (Edges.Top | Edges.Right)
             edges: Edges.Top | Edges.Left
+            // The card has an elevation margin around it, so shift by that to put
+            // its visible edge on DockStyle.popupSideEdge.
             rect.x: DockStyle.position === "left"
-                ? DockStyle.zone + Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
+                ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) - Appearance.sizes.elevationMargin
                 : DockStyle.position === "right"
-                    ? (root.QsWindow.window?.width ?? 0) - DockStyle.zone - Appearance.sizes.hyprlandGapsOut + Appearance.sizes.elevationMargin
+                    ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) + Appearance.sizes.elevationMargin
                     : 0
         }
 
@@ -408,7 +409,7 @@ Item {
         implicitWidth: DockStyle.vertical ? popupMouseArea.implicitWidth : (root.QsWindow.window?.width ?? 1)
         implicitHeight: DockStyle.vertical
             ? (root.QsWindow.window?.height ?? 1)
-            : popupMouseArea.implicitHeight + root.windowControlsHeight + root.appNameHeight + Appearance.sizes.elevationMargin * 2
+            : popupMouseArea.implicitHeight + root.windowControlsHeight + previewPopup.headerHeight + Appearance.sizes.elevationMargin * 2
 
         MouseArea {
             id: popupMouseArea
@@ -418,7 +419,7 @@ Item {
             implicitWidth:  popupBackground.implicitWidth + Appearance.sizes.elevationMargin * 2
             implicitHeight: DockStyle.vertical
                 ? popupBackground.implicitHeight + Appearance.sizes.elevationMargin * 2
-                : root.maxWindowPreviewHeight + root.windowControlsHeight + root.appNameHeight + Appearance.sizes.elevationMargin * 2
+                : root.maxWindowPreviewHeight + root.windowControlsHeight + previewPopup.headerHeight + Appearance.sizes.elevationMargin * 2
             hoverEnabled: true
             x: DockStyle.vertical ? 0 : previewPopup.cachedCenter - width / 2
             y: DockStyle.vertical
@@ -491,13 +492,14 @@ Item {
                             // With several windows the hovered icon and the tile titles say enough.
                             visible: previewPopup.mergedHeader
                             Layout.fillWidth: true
-                            Layout.preferredHeight: root.appNameHeight
+                            Layout.preferredHeight: previewPopup.headerHeight
                             Layout.leftMargin: 5
                             spacing: 6
 
                             IconImage {
                                 implicitSize: 16
-                                source: previewPopup.appTopLevel
+                                // Guarded so the icon lookup only runs when the header is shown.
+                                source: previewPopup.mergedHeader
                                     ? SystemAppearance.iconPath(AppSearch.guessIcon(previewPopup.appTopLevel.appId), "image-missing")
                                     : ""
                             }
@@ -505,7 +507,7 @@ Item {
                             StyledText {
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.DemiBold
-                                text: previewPopup.appName
+                                text: root.lastHoveredButton?.desktopEntry?.name || (previewPopup.appTopLevel?.appId ?? "")
                                 color: DockStyle.popupTextColor
                             }
 
@@ -519,18 +521,8 @@ Item {
                                 color: DockStyle.popupSubtextColor
                             }
 
-                            GroupButton {
-                                colBackground: ColorUtils.transparentize(Appearance.colors.colSurfaceContainer)
-                                baseWidth: root.windowControlsHeight
-                                baseHeight: root.windowControlsHeight
-                                buttonRadius: Appearance.rounding.full
-                                contentItem: MaterialSymbol {
-                                    anchors.centerIn: parent
-                                    horizontalAlignment: Text.AlignHCenter
-                                    text: "close"
-                                    iconSize: Appearance.font.pixelSize.normal
-                                    color: DockStyle.popupTextColor
-                                }
+                            DockPreviewCloseButton {
+                                size: root.windowControlsHeight
                                 onClicked: previewPopup.appTopLevel?.toplevels[0]?.close()
                             }
                         }
@@ -569,21 +561,9 @@ Item {
                                                 color: DockStyle.popupTextColor
                                             }
 
-                                            GroupButton {
-                                                id: closeButton
-                                                colBackground: ColorUtils.transparentize(
-                                                    Appearance.colors.colSurfaceContainer)
-                                                baseWidth:    root.windowControlsHeight
-                                                baseHeight:   root.windowControlsHeight
-                                                buttonRadius: Appearance.rounding.full
-                                                contentItem: MaterialSymbol {
-                                                    anchors.centerIn: parent
-                                                    horizontalAlignment: Text.AlignHCenter
-                                                    text: "close"
-                                                    iconSize: Appearance.font.pixelSize.normal
-                                                    color: DockStyle.popupTextColor
-                                                }
-                                                onClicked: { windowButton.modelData?.close() }
+                                            DockPreviewCloseButton {
+                                                size: root.windowControlsHeight
+                                                onClicked: windowButton.modelData?.close()
                                             }
                                         }
 

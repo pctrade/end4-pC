@@ -32,13 +32,33 @@ Singleton {
             && (app?.toplevels?.length ?? 0) > 0;
     }
 
+    readonly property color backgroundColor: (hug && Config.options.dock.followFrameColor && Config.options.bar.showFrame)
+        ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        : Appearance.getColorFromName(Config.options.dock.backgroundColor)
+
     // Shared look for the dock's popups (tooltips and window previews), so they
     // read as part of the dock. Popups get no compositor blur, so the colour is
     // made opaque, and a border keeps the edge visible over dark windows.
-    readonly property color popupColor: ColorUtils.applyAlpha(Appearance.getColorFromName(Config.options.dock.backgroundColor), 1)
+    readonly property color popupColor: ColorUtils.applyAlpha(backgroundColor, 1)
     readonly property color popupBorderColor: Appearance.colors.colLayer0Border
-    readonly property color popupTextColor: ColorUtils.isDark(popupColor) ? "#F2EFF4" : "#1C1B1F"
+    // Theme text colour when the popup is as light/dark as the theme, inverse otherwise.
+    readonly property color popupTextColor: ColorUtils.isDark(popupColor) === Appearance.m3colors.darkmode
+        ? Appearance.colors.colOnLayer0
+        : Appearance.m3colors.m3inverseOnSurface
     readonly property color popupSubtextColor: ColorUtils.transparentize(popupTextColor, 0.35)
+
+    // Edge of the dock popups that faces the dock, along the screen edge the dock
+    // is on; popups open in this direction, away from that edge.
+    readonly property int popupAwayEdge: position === "left" ? Edges.Right
+        : position === "right" ? Edges.Left
+        : Edges.Top
+    // Side docks: x (in dock-window coordinates) where popups start, so the
+    // tooltip and the preview card sit the same distance from the dock.
+    function popupSideEdge(windowWidth) {
+        return position === "left"
+            ? zone + Appearance.sizes.hyprlandGapsOut
+            : windowWidth - zone - Appearance.sizes.hyprlandGapsOut;
+    }
 
     readonly property real padding: 5
     readonly property real spacing: 3
