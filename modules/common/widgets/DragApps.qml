@@ -487,7 +487,9 @@ Item {
 
                         RowLayout {
                             id: previewHeader
-                            visible: root.appNameHeight > 0
+                            // Only for a single window, where it replaces the tile's title row.
+                            // With several windows the hovered icon and the tile titles say enough.
+                            visible: previewPopup.mergedHeader
                             Layout.fillWidth: true
                             Layout.preferredHeight: root.appNameHeight
                             Layout.leftMargin: 5
@@ -512,15 +514,12 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.preferredWidth: 0
                                 font.pixelSize: Appearance.font.pixelSize.small
-                                text: previewPopup.mergedHeader
-                                    ? "— " + (previewPopup.appTopLevel?.toplevels[0]?.title ?? "")
-                                    : "· " + previewPopup.windowCount
+                                text: "— " + (previewPopup.appTopLevel?.toplevels[0]?.title ?? "")
                                 elide: Text.ElideRight
                                 color: DockStyle.popupSubtextColor
                             }
 
                             GroupButton {
-                                visible: previewPopup.mergedHeader
                                 colBackground: ColorUtils.transparentize(Appearance.colors.colSurfaceContainer)
                                 baseWidth: root.windowControlsHeight
                                 baseHeight: root.windowControlsHeight
@@ -610,6 +609,21 @@ Item {
                                                         height: screencopyView.height
                                                         radius: Appearance.rounding.small
                                                     }
+                                                }
+                                            }
+
+                                            // Ring on the app's focused window, so scrolling on the
+                                            // icon shows which window is now active.
+                                            Rectangle {
+                                                anchors.fill: screencopyView
+                                                anchors.margins: -3
+                                                radius: Appearance.rounding.small + 3
+                                                color: "transparent"
+                                                border.width: 2
+                                                border.color: Appearance.colors.colPrimary
+                                                opacity: windowButton.modelData?.activated ? 1 : 0
+                                                Behavior on opacity {
+                                                    NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                                                 }
                                             }
                                         }
