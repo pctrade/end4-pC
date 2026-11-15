@@ -23,7 +23,7 @@ Item {
     property real maxWindowPreviewHeight: 200
     property real maxWindowPreviewWidth: 300
     property real windowControlsHeight: 30
-    readonly property real appNameHeight: (Config.options.dock.showTooltips ?? true) ? 24 : 0
+    readonly property real appNameHeight: (Config.options.dock.showTooltips ?? true) ? 30 : 0
     property Item lastHoveredButton: null
     property bool buttonHovered: false
     property bool requestDockShow: previewPopup.show
@@ -264,6 +264,9 @@ Item {
         readonly property string appName: appTopLevel
             ? (DesktopEntries.heuristicLookup(appTopLevel.appId)?.name || appTopLevel.appId)
             : ""
+        readonly property int windowCount: appTopLevel?.toplevels?.length ?? 0
+        // One window: the header carries its title and close button, and the tile drops its own.
+        readonly property bool mergedHeader: root.appNameHeight > 0 && windowCount === 1
 
         property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
@@ -455,7 +458,9 @@ Item {
                     }
                     property real padding: 5
                     clip: true
-                    color: Config.options.appearance.uiBackground === "oled" ? "#000000" : Appearance.m3colors.m3surfaceContainer
+                    color: DockStyle.popupColor
+                    border.width: 1
+                    border.color: DockStyle.popupBorderColor
                     radius: Appearance.rounding.normal
                     anchors.bottom: DockStyle.vertical ? undefined : parent.bottom
                     anchors.bottomMargin: Appearance.sizes.elevationMargin
@@ -479,18 +484,55 @@ Item {
                         anchors.centerIn: parent
                         spacing: 0
 
-                        StyledText {
+                        RowLayout {
+                            id: previewHeader
                             visible: root.appNameHeight > 0
                             Layout.fillWidth: true
                             Layout.preferredHeight: root.appNameHeight
-                            Layout.leftMargin: 6
-                            Layout.rightMargin: 6
-                            verticalAlignment: Text.AlignVCenter
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            font.weight: Font.DemiBold
-                            text: previewPopup.appName
-                            elide: Text.ElideRight
-                            color: Appearance.m3colors.m3onSurface
+                            Layout.leftMargin: 5
+                            spacing: 6
+
+                            IconImage {
+                                implicitSize: 16
+                                source: previewPopup.appTopLevel
+                                    ? SystemAppearance.iconPath(AppSearch.guessIcon(previewPopup.appTopLevel.appId), "image-missing")
+                                    : ""
+                            }
+
+                            StyledText {
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                font.weight: Font.DemiBold
+                                text: previewPopup.appName
+                                color: DockStyle.popupTextColor
+                            }
+
+                            StyledText {
+                                // Width 0 so a long window title never widens the card; it elides instead.
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 0
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                text: previewPopup.mergedHeader
+                                    ? "— " + (previewPopup.appTopLevel?.toplevels[0]?.title ?? "")
+                                    : "· " + previewPopup.windowCount
+                                elide: Text.ElideRight
+                                color: DockStyle.popupSubtextColor
+                            }
+
+                            GroupButton {
+                                visible: previewPopup.mergedHeader
+                                colBackground: ColorUtils.transparentize(Appearance.colors.colSurfaceContainer)
+                                baseWidth: root.windowControlsHeight
+                                baseHeight: root.windowControlsHeight
+                                buttonRadius: Appearance.rounding.full
+                                contentItem: MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: "close"
+                                    iconSize: Appearance.font.pixelSize.normal
+                                    color: DockStyle.popupTextColor
+                                }
+                                onClicked: previewPopup.appTopLevel?.toplevels[0]?.close()
+                            }
                         }
 
                         RowLayout {
@@ -515,6 +557,7 @@ Item {
                                         implicitHeight: screencopyView.implicitHeight
 
                                         ButtonGroup {
+                                            visible: !previewPopup.mergedHeader
                                             contentWidth: parent.width - anchors.margins * 2
 
                                             StyledText {
@@ -523,7 +566,7 @@ Item {
                                                 font.pixelSize: Appearance.font.pixelSize.small
                                                 text: windowButton.modelData?.title
                                                 elide: Text.ElideRight
-                                                color: Appearance.m3colors.m3onSurface
+                                                color: DockStyle.popupTextColor
                                             }
 
                                             GroupButton {
@@ -538,7 +581,7 @@ Item {
                                                     horizontalAlignment: Text.AlignHCenter
                                                     text: "close"
                                                     iconSize: Appearance.font.pixelSize.normal
-                                                    color: Appearance.m3colors.m3onSurface
+                                                    color: DockStyle.popupTextColor
                                                 }
                                                 onClicked: { windowButton.modelData?.close() }
                                             }

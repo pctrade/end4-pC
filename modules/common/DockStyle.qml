@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.services
+import qs.modules.common.functions
 
 Singleton {
     property string position: Config.options.dock.position ?? "bottom"
@@ -30,6 +31,14 @@ Singleton {
             && (Config.options.dock.showPreviews ?? true)
             && (app?.toplevels?.length ?? 0) > 0;
     }
+
+    // Shared look for the dock's popups (tooltips and window previews), so they
+    // read as part of the dock. Popups get no compositor blur, so the colour is
+    // made opaque, and a border keeps the edge visible over dark windows.
+    readonly property color popupColor: ColorUtils.applyAlpha(Appearance.getColorFromName(Config.options.dock.backgroundColor), 1)
+    readonly property color popupBorderColor: Appearance.colors.colLayer0Border
+    readonly property color popupTextColor: ColorUtils.isDark(popupColor) ? "#F2EFF4" : "#1C1B1F"
+    readonly property color popupSubtextColor: ColorUtils.transparentize(popupTextColor, 0.35)
 
     readonly property real padding: 5
     readonly property real spacing: 3

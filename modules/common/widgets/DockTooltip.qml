@@ -13,10 +13,6 @@ Item {
     property string text: ""
     property bool show: false
     property int delay: 250
-    // Space between the button's top edge and the tooltip (bottom dock).
-    property real gap: 4
-    // Space between the dock background and the tooltip (left and right docks).
-    property real sideGap: 8
 
     readonly property bool wanted: (Config.options.dock.showTooltips ?? true) && root.show && root.text.length > 0
     property bool shown: false
@@ -56,18 +52,17 @@ Item {
                 return t.mapToItem(null, t.width / 2, 0);
             }
 
-            // Side docks: the dock background ends one elevation margin inside the
-            // window's inner edge. Using it keeps left and right symmetric, because
-            // the buttons sit off-centre inside the background.
+            // Same distance from the dock as the window preview card in DragApps.qml,
+            // so the label does not jump when moving between running and closed apps.
             readonly property real sideEdge: DockStyle.position === "left"
-                ? (root.QsWindow.window?.width ?? 0) - Appearance.sizes.elevationMargin + root.sideGap
-                : Appearance.sizes.elevationMargin - root.sideGap
+                ? DockStyle.zone + Appearance.sizes.hyprlandGapsOut
+                : (root.QsWindow.window?.width ?? 0) - DockStyle.zone - Appearance.sizes.hyprlandGapsOut
 
             anchor {
                 window: root.QsWindow.window
                 adjustment: PopupAdjustment.Slide
                 rect.x: DockStyle.vertical ? popup.sideEdge : popup.point.x
-                rect.y: DockStyle.vertical ? popup.point.y : popup.point.y - root.gap
+                rect.y: DockStyle.vertical ? popup.point.y : 0
                 rect.width: 1
                 rect.height: 1
                 edges: DockStyle.position === "left" ? Edges.Right
@@ -78,15 +73,40 @@ Item {
                     : Edges.Top
             }
 
+            // Bottom dock: the card ends one elevation margin above the dock window,
+            // like the preview card. The extra space is transparent and click-through.
             implicitWidth: content.implicitWidth
-            implicitHeight: content.implicitHeight
+            implicitHeight: content.implicitHeight + (DockStyle.vertical ? 0 : Appearance.sizes.elevationMargin)
 
-            StyledToolTipContent {
+            Rectangle {
                 id: content
-                anchors.centerIn: parent
-                text: root.text
-                shown: false
-                Component.onCompleted: shown = true
+                anchors.top: parent.top
+                anchors.horizontalCenter: parent.horizontalCenter
+                implicitWidth: label.implicitWidth + 24
+                implicitHeight: label.implicitHeight + 12
+                radius: Appearance.rounding.small
+                color: DockStyle.popupColor
+                border.width: 1
+                border.color: DockStyle.popupBorderColor
+
+                opacity: 0
+                scale: 0.92
+                transformOrigin: DockStyle.position === "left" ? Item.Left
+                    : DockStyle.position === "right" ? Item.Right
+                    : Item.Bottom
+                Component.onCompleted: { opacity = 1; scale = 1; }
+                Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+                StyledText {
+                    id: label
+                    anchors.centerIn: parent
+                    text: root.text
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    font.weight: Font.Medium
+                    font.hintingPreference: Font.PreferNoHinting
+                    color: DockStyle.popupTextColor
+                }
             }
         }
     }
