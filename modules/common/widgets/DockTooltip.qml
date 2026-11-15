@@ -50,22 +50,19 @@ Item {
                 window: root.QsWindow.window
                 adjustment: PopupAdjustment.Slide
                 rect.x: DockStyle.vertical ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) : popup.center.x
-                rect.y: DockStyle.vertical ? popup.center.y : 0
+                rect.y: DockStyle.vertical ? popup.center.y : DockStyle.popupBottomEdge
                 rect.width: 1
                 rect.height: 1
                 edges: DockStyle.popupAwayEdge
                 gravity: DockStyle.popupAwayEdge
             }
 
-            // Bottom dock: the card ends one elevation margin above the dock window,
-            // like the preview card. The extra space is transparent and click-through.
             implicitWidth: content.implicitWidth
-            implicitHeight: content.implicitHeight + (DockStyle.vertical ? 0 : Appearance.sizes.elevationMargin)
+            implicitHeight: content.implicitHeight
 
             Rectangle {
                 id: content
-                anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.centerIn: parent
                 implicitWidth: label.implicitWidth + 24
                 implicitHeight: label.implicitHeight + 12
                 radius: Appearance.rounding.small

@@ -52,13 +52,19 @@ Singleton {
     readonly property int popupAwayEdge: position === "left" ? Edges.Right
         : position === "right" ? Edges.Left
         : Edges.Top
-    // Side docks: x (in dock-window coordinates) where popups start, so the
-    // tooltip and the preview card sit the same distance from the dock.
+    // Space between the dock background and its popups (tooltip, preview card).
+    readonly property real popupGap: 6
+    // Where popups start, in dock-window coordinates. The dock background sits
+    // one elevation margin inside the window's inner edge (room for its shadow).
+    // Side docks: x of the popup's near edge.
     function popupSideEdge(windowWidth) {
         return position === "left"
-            ? zone + Appearance.sizes.hyprlandGapsOut
-            : windowWidth - zone - Appearance.sizes.hyprlandGapsOut;
+            ? windowWidth - Appearance.sizes.elevationMargin + popupGap
+            : Appearance.sizes.elevationMargin - popupGap;
     }
+    // Bottom dock: y of the popup's bottom edge. With magnification the icons
+    // grow into the space above the dock, so popups stay above the window.
+    readonly property real popupBottomEdge: magnifying ? 0 : Appearance.sizes.elevationMargin - popupGap
 
     readonly property real padding: 5
     readonly property real spacing: 3

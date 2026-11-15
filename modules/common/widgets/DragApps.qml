@@ -396,12 +396,13 @@ Item {
                 : (Edges.Top | Edges.Right)
             edges: Edges.Top | Edges.Left
             // The card has an elevation margin around it, so shift by that to put
-            // its visible edge on DockStyle.popupSideEdge.
+            // its visible edge on DockStyle.popupSideEdge / popupBottomEdge.
             rect.x: DockStyle.position === "left"
                 ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) - Appearance.sizes.elevationMargin
                 : DockStyle.position === "right"
                     ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) + Appearance.sizes.elevationMargin
                     : 0
+            rect.y: DockStyle.vertical ? 0 : DockStyle.popupBottomEdge + Appearance.sizes.elevationMargin
         }
 
         visible: body.opacity > 0
