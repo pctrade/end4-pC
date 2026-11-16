@@ -293,7 +293,7 @@ Scope {
                             DockSeparator {
                                 visible: Config.options.dock.showPinButton
                                     && (dockRow.hasPinnedApps
-                                        || !(Config.options.dock.showMedia && activeApps.media.hasTrack))
+                                        || !activeApps.media.visible)
                             }
 
                             DragApps {
@@ -308,7 +308,7 @@ Scope {
                             DockSeparator {
                                 visible: dockRow.hasPinnedApps
                                     && (activeApps.activeUnpinned.length > 0
-                                        || (Config.options.dock.showMedia && MprisController.activePlayer !== null))
+                                        || activeApps.media.visible)
                             }
 
                             DockActiveApps {
