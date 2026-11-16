@@ -168,7 +168,9 @@ Item {
                     if (hovered) {
                         root.lastHoveredButton = dockBtn
                         root.buttonHovered = true
-                    } else {
+                    } else if (root.lastHoveredButton === dockBtn) {
+                        // Leave events can arrive after the next button's enter;
+                        // only the button that is still current clears the hover.
                         root.buttonHovered = false
                     }
                 }
@@ -261,7 +263,23 @@ Item {
 
     PopupWindow {
         id: previewPopup
-        property var appTopLevel: root.lastHoveredButton?.appToplevel ?? null
+        // The button whose windows the card shows. It only changes to a button
+        // that has a preview, so a card that is closing (pointer moved to an app
+        // with no windows) keeps its content and place while it fades out.
+        property Item shownButton: null
+        readonly property var appTopLevel: shownButton?.appToplevel ?? null
+        readonly property var hoveredApp: root.lastHoveredButton?.appToplevel ?? null
+        // Also catches the hovered app opening its first window.
+        readonly property bool hoveredHasPreview: DockStyle.previewsFor(hoveredApp)
+        onHoveredHasPreviewChanged: followHoveredButton()
+
+        function followHoveredButton() {
+            const button = root.lastHoveredButton
+            if (!button || !root.QsWindow || !DockStyle.previewsFor(button.appToplevel))
+                return
+            previewPopup.shownButton = button
+            previewPopup.cachedCenter = root.popupCenterForButton(button)
+        }
 
         // One window: a header carries the app name, window title and close button,
         // and the tile drops its own title row.
@@ -270,7 +288,7 @@ Item {
         property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
                                   && !(root.contextMenu?.isOpen ?? false)
-                                  && DockStyle.previewsFor(appTopLevel)
+                                  && hoveredHasPreview
 
         property bool show: false
         property real cachedCenter: 0
@@ -280,12 +298,11 @@ Item {
         Connections {
             target: root
             function onLastHoveredButtonChanged() {
-                if (root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenter = root.popupCenterForButton(root.lastHoveredButton)
+                previewPopup.followHoveredButton()
             }
             function onButtonHoveredChanged() {
-                if (root.buttonHovered && root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenter = root.popupCenterForButton(root.lastHoveredButton)
+                if (root.buttonHovered)
+                    previewPopup.followHoveredButton()
                 updateTimer.restart()
             }
         }
@@ -298,6 +315,13 @@ Item {
             if (show) {
                 closeAnim.stop()
                 openAnim.restart()
+            } else if (root.buttonHovered) {
+                // Pointer moved to another dock icon (one with no preview, which
+                // shows its tooltip instead): drop the card at once rather than
+                // fading it over the new tooltip.
+                openAnim.stop()
+                closeAnim.stop()
+                body.opacity = 0
             } else {
                 openAnim.stop()
                 closeAnim.restart()
@@ -405,6 +429,13 @@ Item {
         }
 
         visible: body.opacity > 0
+        // Only the card (plus the gap down to the dock) takes input. The popup
+        // surface is larger than the card and overlaps the dock's edge, so
+        // without this it would steal hover from neighbouring dock icons.
+        mask: Region {
+            item: popupBackground
+            Region { item: gapBridge }
+        }
         color: "transparent"
         implicitWidth: DockStyle.vertical ? popupMouseArea.implicitWidth : (root.QsWindow.window?.width ?? 1)
         implicitHeight: DockStyle.vertical
@@ -445,6 +476,19 @@ Item {
                         id: bodyShift
                     }
                 ]
+
+                // Covers the gap between the card and the dock, so moving the
+                // pointer from the icon to the card keeps the preview open.
+                Item {
+                    id: gapBridge
+                    readonly property real size: DockStyle.popupGap + 2
+                    x: DockStyle.position === "left" ? popupBackground.x - size
+                        : DockStyle.position === "right" ? popupBackground.x + popupBackground.width
+                        : popupBackground.x
+                    y: DockStyle.vertical ? popupBackground.y : popupBackground.y + popupBackground.height
+                    width: DockStyle.vertical ? size : popupBackground.width
+                    height: DockStyle.vertical ? popupBackground.height : size
+                }
 
                 StyledRectangularShadow {
                     target: popupBackground
@@ -508,7 +552,7 @@ Item {
                             StyledText {
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.DemiBold
-                                text: root.lastHoveredButton?.desktopEntry?.name || (previewPopup.appTopLevel?.appId ?? "")
+                                text: previewPopup.shownButton?.desktopEntry?.name || (previewPopup.appTopLevel?.appId ?? "")
                                 color: DockStyle.popupTextColor
                             }
 
