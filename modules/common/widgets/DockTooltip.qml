@@ -21,23 +21,19 @@ Item {
         && !(root.contextMenu?.isOpen ?? false)
         && !(root.app && DockStyle.previewsFor(root.app))
 
-    // Shows as soon as an icon is hovered (no delay), with a short fade in and out.
-    readonly property int fadeInDuration: 100
-    readonly property int fadeOutDuration: 150
-    property bool fadingOut: false
-    onWantedChanged: {
-        root.fadingOut = !root.wanted;
-        if (root.fadingOut)
-            fadeOutTimer.restart();
-    }
-    Timer {
-        id: fadeOutTimer
-        interval: root.fadeOutDuration
-        onTriggered: root.fadingOut = false
+    // Shows as soon as an icon is hovered (no delay), with a short fade in and
+    // out. The popup stays loaded until the fade-out ends.
+    property real fade: root.wanted ? 1 : 0
+    Behavior on fade {
+        id: fadeBehavior
+        NumberAnimation {
+            duration: fadeBehavior.targetValue > 0 ? 100 : 150
+            easing.type: Easing.OutCubic
+        }
     }
 
     Loader {
-        active: (root.wanted || root.fadingOut) && root.QsWindow.window !== null
+        active: root.fade > 0 && root.QsWindow.window !== null
         sourceComponent: PopupWindow {
             id: popup
             visible: true
@@ -77,34 +73,7 @@ Item {
                 border.width: 1
                 border.color: DockStyle.popupBorderColor
 
-                opacity: 0
-                Component.onCompleted: fadeIn.start()
-                NumberAnimation on opacity {
-                    id: fadeIn
-                    running: false
-                    to: 1
-                    duration: root.fadeInDuration
-                    easing.type: Easing.OutCubic
-                }
-                NumberAnimation on opacity {
-                    id: fadeOut
-                    running: false
-                    to: 0
-                    duration: root.fadeOutDuration
-                    easing.type: Easing.OutCubic
-                }
-                Connections {
-                    target: root
-                    function onWantedChanged() {
-                        if (root.wanted) {
-                            fadeOut.stop();
-                            fadeIn.restart();
-                        } else {
-                            fadeIn.stop();
-                            fadeOut.restart();
-                        }
-                    }
-                }
+                opacity: root.fade
 
                 StyledText {
                     id: label

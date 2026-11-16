@@ -80,7 +80,6 @@ Item {
             property var    appEntry:  TaskbarApps.apps.find(a => a.appId === appId) ?? null
             property var    deskEntry: DesktopEntries.heuristicLookup(appId)
             property bool   appActive: appEntry?.toplevels?.find(t => t.activated) !== undefined
-            property int    _lastFocused: -1
 
             Connections {
                 target: DesktopEntries
@@ -164,31 +163,12 @@ Item {
                 Layout.leftMargin: 0
 
                 hoverEnabled: true
-                onHoveredChanged: {
-                    if (hovered) {
-                        root.lastHoveredButton = dockBtn
-                        root.buttonHovered = true
-                    } else if (root.lastHoveredButton === dockBtn) {
-                        // Leave events can arrive after the next button's enter;
-                        // only the button that is still current clears the hover.
-                        root.buttonHovered = false
-                    }
-                }
-
+                hoverOwner: root
+                windows: slotItem.appEntry?.toplevels ?? []
                 onClicked: {
-                    const entry = slotItem.appEntry
-                    if (!entry || entry.toplevels.length === 0) {
+                    if (!dockBtn.focusNextWindow())
                         slotItem.deskEntry?.execute()
-                        return
-                    }
-                    const next = (slotItem._lastFocused + 1) % entry.toplevels.length
-                    slotItem._lastFocused = next
-                    entry.toplevels[next].activate()
                 }
-
-                scrollWindows: slotItem.appEntry?.toplevels ?? []
-                // Keep click-cycling in step with scrolling.
-                onWindowCycled: index => slotItem._lastFocused = index
                 middleClickAction: () => { slotItem.deskEntry?.execute() }
                 altAction:         () => { root.contextMenu?.open(dockBtn, slotItem.appId) }
 
@@ -268,14 +248,13 @@ Item {
         // with no windows) keeps its content and place while it fades out.
         property Item shownButton: null
         readonly property var appTopLevel: shownButton?.appToplevel ?? null
-        readonly property var hoveredApp: root.lastHoveredButton?.appToplevel ?? null
         // Also catches the hovered app opening its first window.
-        readonly property bool hoveredHasPreview: DockStyle.previewsFor(hoveredApp)
+        readonly property bool hoveredHasPreview: DockStyle.previewsFor(root.lastHoveredButton?.appToplevel)
         onHoveredHasPreviewChanged: followHoveredButton()
 
         function followHoveredButton() {
             const button = root.lastHoveredButton
-            if (!button || !root.QsWindow || !DockStyle.previewsFor(button.appToplevel))
+            if (!previewPopup.hoveredHasPreview || !root.QsWindow)
                 return
             previewPopup.shownButton = button
             previewPopup.cachedCenter = root.popupCenterForButton(button)
@@ -420,11 +399,10 @@ Item {
             edges: Edges.Top | Edges.Left
             // The card has an elevation margin around it, so shift by that to put
             // its visible edge on DockStyle.popupSideEdge / popupBottomEdge.
-            rect.x: DockStyle.position === "left"
-                ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) - Appearance.sizes.elevationMargin
-                : DockStyle.position === "right"
-                    ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0) + Appearance.sizes.elevationMargin
-                    : 0
+            rect.x: DockStyle.vertical
+                ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0)
+                    + (DockStyle.position === "left" ? -1 : 1) * Appearance.sizes.elevationMargin
+                : 0
             rect.y: DockStyle.vertical ? 0 : DockStyle.popupBottomEdge + Appearance.sizes.elevationMargin
         }
 
@@ -461,7 +439,6 @@ Item {
                 id: body
                 anchors.fill: parent
                 opacity: 0
-                visible: opacity > 0
                 transform: [
                     Scale {
                         id: bodyScale

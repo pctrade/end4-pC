@@ -6,7 +6,6 @@ import QtQuick
 // Round close button used in the dock's window preview popup.
 GroupButton {
     property real size: 30
-    colBackground: "transparent"
     colBackgroundHover: ColorUtils.transparentize(DockStyle.popupTextColor, 0.88)
     colBackgroundActive: ColorUtils.transparentize(DockStyle.popupTextColor, 0.8)
     baseWidth: size
