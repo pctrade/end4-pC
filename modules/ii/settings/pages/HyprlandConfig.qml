@@ -457,8 +457,10 @@ ContentPage {
                             interval: 1000
                             repeat: false
                             onTriggered: {
-                                Config.options.hyprland.input.kbLayout = kbLayoutField.value
-                                HyprlandConfig.set("input:kb_layout", kbLayoutField.value)
+                                // "fr, us" as the placeholder suggests: xkb wants no spaces
+                                const layouts = kbLayoutField.value.split(",").map(l => l.trim()).filter(l => l.length > 0).join(",")
+                                Config.options.hyprland.input.kbLayout = layouts
+                                HyprlandConfig.set("input:kb_layout", layouts)
                             }
                         }
                     }
