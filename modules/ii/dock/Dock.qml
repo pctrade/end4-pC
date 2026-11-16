@@ -67,9 +67,7 @@ Scope {
             readonly property bool vertical: position !== "bottom"
             readonly property real gap: Appearance.sizes.hyprlandGapsOut
             readonly property real shadowMargin: Appearance.sizes.elevationMargin
-            readonly property color backgroundColor: (hug && Config.options.dock.followFrameColor && Config.options.bar.showFrame)
-                ? Appearance.getColorFromName(Config.options.bar.frameColor)
-                : Appearance.getColorFromName(Config.options.dock.backgroundColor)
+            readonly property color backgroundColor: DockStyle.backgroundColor
             readonly property real borderWidth: (Config.options.dock.showBackground && Config.options.dock.showBorder && !hug) ? Config.options.dock.borderWidth : 0
 
             property var monitor: WM.monitorFor(modelData.screen)
@@ -293,7 +291,7 @@ Scope {
                             DockSeparator {
                                 visible: Config.options.dock.showPinButton
                                     && (dockRow.hasPinnedApps
-                                        || !(Config.options.dock.showMedia && activeApps.media.hasTrack))
+                                        || !activeApps.media.visible)
                             }
 
                             DragApps {
@@ -308,7 +306,7 @@ Scope {
                             DockSeparator {
                                 visible: dockRow.hasPinnedApps
                                     && (activeApps.activeUnpinned.length > 0
-                                        || (Config.options.dock.showMedia && MprisController.activePlayer !== null))
+                                        || activeApps.media.visible)
                             }
 
                             DockActiveApps {

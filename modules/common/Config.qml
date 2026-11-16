@@ -676,6 +676,8 @@ Singleton {
                 property real radius: 23
                 property bool followFrameColor: false
                 property bool showPreviews: true
+                property bool showTooltips: true // App name on hover; shown in the preview header when previews open
+                property bool scrollToCycleWindows: false // Scroll on an app icon to focus its next/previous window
                 property real iconSize: 33
                 property real iconSpacing: 0
                 property bool showPinButton: true

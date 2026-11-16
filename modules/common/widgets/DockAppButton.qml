@@ -11,7 +11,6 @@ DockButton {
     property var appToplevel
     property var appListRoot
     property var contextMenu
-    property int lastFocused: -1
     property real iconSize: DockStyle.iconSize
     property bool appIsActive: appToplevel.toplevels.find(t => (t.activated == true)) !== undefined
 
@@ -40,34 +39,13 @@ DockButton {
         sourceComponent: DockSeparator {}
     }
 
-    Loader {
-        anchors.fill: parent
-        active: appToplevel.toplevels.length > 0
-        sourceComponent: MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
-            onEntered: {
-                appListRoot.lastHoveredButton = root
-                appListRoot.buttonHovered = true
-                lastFocused = appToplevel.toplevels.length - 1
-            }
-            onExited: {
-                if (appListRoot.lastHoveredButton === root) {
-                    appListRoot.buttonHovered = false
-                }
-            }
-        }
-    }
-
+    hoverOwner: appListRoot
+    // The first click focuses the most recent window.
+    onHoverEntered: root.cycleIndex = appToplevel.toplevels.length - 1
+    windows: appToplevel.toplevels
     onClicked: {
-        if (appToplevel.toplevels.length === 0) {
+        if (!root.focusNextWindow())
             root.desktopEntry?.execute();
-            return;
-        }
-        lastFocused = (lastFocused + 1) % appToplevel.toplevels.length
-        appToplevel.toplevels[lastFocused].activate()
     }
 
     middleClickAction: () => {
@@ -76,6 +54,13 @@ DockButton {
 
     altAction: () => {
         root.contextMenu?.open(root, appToplevel.appId);
+    }
+
+    DockTooltip {
+        text: root.desktopEntry?.name || root.appToplevel.appId
+        show: root.hovered && !root.isSeparator
+        app: root.appToplevel
+        contextMenu: root.contextMenu
     }
 
     contentItem: Loader {

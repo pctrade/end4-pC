@@ -80,7 +80,6 @@ Item {
             property var    appEntry:  TaskbarApps.apps.find(a => a.appId === appId) ?? null
             property var    deskEntry: DesktopEntries.heuristicLookup(appId)
             property bool   appActive: appEntry?.toplevels?.find(t => t.activated) !== undefined
-            property int    _lastFocused: -1
 
             Connections {
                 target: DesktopEntries
@@ -155,6 +154,7 @@ Item {
                 anchors.fill: parent
 
                 property var appToplevel: slotItem.appEntry
+                property var desktopEntry: slotItem.deskEntry
                 magnifiable: true
 
                 innerInset: DockStyle.iconInset
@@ -163,28 +163,21 @@ Item {
                 Layout.leftMargin: 0
 
                 hoverEnabled: true
-                onHoveredChanged: {
-                    if (hovered) {
-                        root.lastHoveredButton = dockBtn
-                        root.buttonHovered = true
-                    } else {
-                        root.buttonHovered = false
-                    }
-                }
-
+                hoverOwner: root
+                windows: slotItem.appEntry?.toplevels ?? []
                 onClicked: {
-                    const entry = slotItem.appEntry
-                    if (!entry || entry.toplevels.length === 0) {
+                    if (!dockBtn.focusNextWindow())
                         slotItem.deskEntry?.execute()
-                        return
-                    }
-                    const next = (slotItem._lastFocused + 1) % entry.toplevels.length
-                    slotItem._lastFocused = next
-                    entry.toplevels[next].activate()
                 }
-
                 middleClickAction: () => { slotItem.deskEntry?.execute() }
                 altAction:         () => { root.contextMenu?.open(dockBtn, slotItem.appId) }
+
+                DockTooltip {
+                    text: slotItem.deskEntry?.name || slotItem.appId
+                    show: dockBtn.hovered && !root._dragging
+                    app: slotItem.appEntry ?? null
+                    contextMenu: root.contextMenu
+                }
 
                 contentItem: DockAppIcon {
                     anchors.centerIn: parent
@@ -250,16 +243,31 @@ Item {
 
     PopupWindow {
         id: previewPopup
-        property var appTopLevel: root.lastHoveredButton?.appToplevel ?? null
+        // The button whose windows the card shows. It only changes to a button
+        // that has a preview, so a card that is closing (pointer moved to an app
+        // with no windows) keeps its content and place while it fades out.
+        property Item shownButton: null
+        readonly property var appTopLevel: shownButton?.appToplevel ?? null
+        // Also catches the hovered app opening its first window.
+        readonly property bool hoveredHasPreview: DockStyle.previewsFor(root.lastHoveredButton?.appToplevel)
+        onHoveredHasPreviewChanged: followHoveredButton()
 
-        property bool shouldShow: WM.compositor === "hyprland"
-                                  && (popupMouseArea.containsMouse || root.buttonHovered)
+        function followHoveredButton() {
+            const button = root.lastHoveredButton
+            if (!previewPopup.hoveredHasPreview || !root.QsWindow)
+                return
+            previewPopup.shownButton = button
+            previewPopup.cachedCenter = root.popupCenterForButton(button)
+        }
+
+        // One window: a header carries the app name, window title and close button,
+        // and the tile drops its own title row.
+        readonly property bool mergedHeader: appTopLevel?.toplevels?.length === 1
+
+        property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered)
                                   && !root._dragging
                                   && !(root.contextMenu?.isOpen ?? false)
-                                  && Config.options.dock.showPreviews
-                                  && appTopLevel
-                                  && appTopLevel.toplevels
-                                  && appTopLevel.toplevels.length > 0
+                                  && hoveredHasPreview
 
         property bool show: false
         property real cachedCenter: 0
@@ -269,12 +277,11 @@ Item {
         Connections {
             target: root
             function onLastHoveredButtonChanged() {
-                if (root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenter = root.popupCenterForButton(root.lastHoveredButton)
+                previewPopup.followHoveredButton()
             }
             function onButtonHoveredChanged() {
-                if (root.buttonHovered && root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenter = root.popupCenterForButton(root.lastHoveredButton)
+                if (root.buttonHovered)
+                    previewPopup.followHoveredButton()
                 updateTimer.restart()
             }
         }
@@ -287,6 +294,13 @@ Item {
             if (show) {
                 closeAnim.stop()
                 openAnim.restart()
+            } else if (root.buttonHovered) {
+                // Pointer moved to another dock icon (one with no preview, which
+                // shows its tooltip instead): drop the card at once rather than
+                // fading it over the new tooltip.
+                openAnim.stop()
+                closeAnim.stop()
+                body.opacity = 0
             } else {
                 openAnim.stop()
                 closeAnim.restart()
@@ -383,14 +397,23 @@ Item {
                 : DockStyle.position === "right" ? (Edges.Bottom | Edges.Left)
                 : (Edges.Top | Edges.Right)
             edges: Edges.Top | Edges.Left
-            rect.x: DockStyle.position === "left"
-                ? DockStyle.zone + Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
-                : DockStyle.position === "right"
-                    ? (root.QsWindow.window?.width ?? 0) - DockStyle.zone - Appearance.sizes.hyprlandGapsOut + Appearance.sizes.elevationMargin
-                    : 0
+            // The card has an elevation margin around it, so shift by that to put
+            // its visible edge on DockStyle.popupSideEdge / popupBottomEdge.
+            rect.x: DockStyle.vertical
+                ? DockStyle.popupSideEdge(root.QsWindow.window?.width ?? 0)
+                    + (DockStyle.position === "left" ? -1 : 1) * Appearance.sizes.elevationMargin
+                : 0
+            rect.y: DockStyle.vertical ? 0 : DockStyle.popupBottomEdge + Appearance.sizes.elevationMargin
         }
 
         visible: body.opacity > 0
+        // Only the card (plus the gap down to the dock) takes input. The popup
+        // surface is larger than the card and overlaps the dock's edge, so
+        // without this it would steal hover from neighbouring dock icons.
+        mask: Region {
+            item: popupBackground
+            Region { item: gapBridge }
+        }
         color: "transparent"
         implicitWidth: DockStyle.vertical ? popupMouseArea.implicitWidth : (root.QsWindow.window?.width ?? 1)
         implicitHeight: DockStyle.vertical
@@ -416,7 +439,6 @@ Item {
                 id: body
                 anchors.fill: parent
                 opacity: 0
-                visible: opacity > 0
                 transform: [
                     Scale {
                         id: bodyScale
@@ -432,6 +454,19 @@ Item {
                     }
                 ]
 
+                // Covers the gap between the card and the dock, so moving the
+                // pointer from the icon to the card keeps the preview open.
+                Item {
+                    id: gapBridge
+                    readonly property real size: DockStyle.popupGap + 2
+                    x: DockStyle.position === "left" ? popupBackground.x - size
+                        : DockStyle.position === "right" ? popupBackground.x + popupBackground.width
+                        : popupBackground.x
+                    y: DockStyle.vertical ? popupBackground.y : popupBackground.y + popupBackground.height
+                    width: DockStyle.vertical ? size : popupBackground.width
+                    height: DockStyle.vertical ? popupBackground.height : size
+                }
+
                 StyledRectangularShadow {
                     target: popupBackground
                 }
@@ -446,7 +481,9 @@ Item {
                     }
                     property real padding: 5
                     clip: true
-                    color: Config.options.appearance.uiBackground === "oled" ? "#000000" : Appearance.m3colors.m3surfaceContainer
+                    color: DockStyle.popupColor
+                    border.width: 1
+                    border.color: DockStyle.popupBorderColor
                     radius: Appearance.rounding.normal
                     anchors.bottom: DockStyle.vertical ? undefined : parent.bottom
                     anchors.bottomMargin: Appearance.sizes.elevationMargin
@@ -456,8 +493,8 @@ Item {
                     anchors.right: DockStyle.position === "right" ? parent.right : undefined
                     anchors.leftMargin: Appearance.sizes.elevationMargin
                     anchors.rightMargin: Appearance.sizes.elevationMargin
-                    implicitHeight: previewRowLayout.implicitHeight + padding * 2
-                    implicitWidth:  previewRowLayout.implicitWidth  + padding * 2
+                    implicitHeight: previewColumn.implicitHeight + padding * 2
+                    implicitWidth:  previewColumn.implicitWidth  + padding * 2
                     Behavior on implicitWidth {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
@@ -465,79 +502,130 @@ Item {
                         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                     }
 
-                    RowLayout {
-                        id: previewRowLayout
+                    ColumnLayout {
+                        id: previewColumn
                         anchors.centerIn: parent
+                        spacing: 0
 
-                        Repeater {
-                            model: ScriptModel {
-                                values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
+                        RowLayout {
+                            id: previewHeader
+                            // Only for a single window, where it replaces the tile's title row.
+                            // With several windows the hovered icon and the tile titles say enough.
+                            visible: previewPopup.mergedHeader
+                            Layout.fillWidth: true
+                            // Takes the place of the tile's title row, so the popup height is unchanged.
+                            Layout.preferredHeight: root.windowControlsHeight
+                            Layout.leftMargin: 5
+                            spacing: 6
+
+                            IconImage {
+                                implicitSize: 16
+                                // Guarded so the icon lookup only runs when the header is shown.
+                                source: previewPopup.mergedHeader
+                                    ? SystemAppearance.iconPath(AppSearch.guessIcon(previewPopup.appTopLevel.appId), "image-missing")
+                                    : ""
                             }
 
-                            RippleButton {
-                                id: windowButton
-                                Layout.fillHeight: true
-                                required property var modelData
-                                padding: 0
+                            StyledText {
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                font.weight: Font.DemiBold
+                                text: previewPopup.shownButton?.desktopEntry?.name || (previewPopup.appTopLevel?.appId ?? "")
+                                color: DockStyle.popupTextColor
+                            }
 
-                                middleClickAction: () => { windowButton.modelData?.close() }
-                                onClicked: { windowButton.modelData?.activate() }
+                            StyledText {
+                                // Width 0 so a long window title never widens the card; it elides instead.
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 0
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                text: "— " + (previewPopup.appTopLevel?.toplevels[0]?.title ?? "")
+                                elide: Text.ElideRight
+                                color: DockStyle.popupSubtextColor
+                            }
 
-                                contentItem: ColumnLayout {
-                                    implicitWidth:  screencopyView.implicitWidth
-                                    implicitHeight: screencopyView.implicitHeight
+                            DockPreviewCloseButton {
+                                size: root.windowControlsHeight
+                                onClicked: previewPopup.appTopLevel?.toplevels[0]?.close()
+                            }
+                        }
 
-                                    ButtonGroup {
-                                        contentWidth: parent.width - anchors.margins * 2
+                        RowLayout {
+                            id: previewRowLayout
 
-                                        StyledText {
-                                            Layout.margins: 5
-                                            Layout.fillWidth: true
-                                            font.pixelSize: Appearance.font.pixelSize.small
-                                            text: windowButton.modelData?.title
-                                            elide: Text.ElideRight
-                                            color: Appearance.m3colors.m3onSurface
-                                        }
+                            Repeater {
+                                model: ScriptModel {
+                                    values: WM.compositor === "hyprland" ? (previewPopup.appTopLevel?.toplevels ?? []) : []
+                                }
 
-                                        GroupButton {
-                                            id: closeButton
-                                            colBackground: ColorUtils.transparentize(
-                                                Appearance.colors.colSurfaceContainer)
-                                            baseWidth:    root.windowControlsHeight
-                                            baseHeight:   root.windowControlsHeight
-                                            buttonRadius: Appearance.rounding.full
-                                            contentItem: MaterialSymbol {
-                                                anchors.centerIn: parent
-                                                horizontalAlignment: Text.AlignHCenter
-                                                text: "close"
-                                                iconSize: Appearance.font.pixelSize.normal
-                                                color: Appearance.m3colors.m3onSurface
+                                RippleButton {
+                                    id: windowButton
+                                    Layout.fillHeight: true
+                                    required property var modelData
+                                    padding: 0
+
+                                    middleClickAction: () => { windowButton.modelData?.close() }
+                                    onClicked: { windowButton.modelData?.activate() }
+
+                                    contentItem: ColumnLayout {
+                                        implicitWidth:  screencopyView.implicitWidth
+                                        implicitHeight: screencopyView.implicitHeight
+
+                                        ButtonGroup {
+                                            visible: !previewPopup.mergedHeader
+                                            contentWidth: parent.width - anchors.margins * 2
+
+                                            StyledText {
+                                                Layout.margins: 5
+                                                Layout.fillWidth: true
+                                                font.pixelSize: Appearance.font.pixelSize.small
+                                                text: windowButton.modelData?.title
+                                                elide: Text.ElideRight
+                                                color: DockStyle.popupTextColor
                                             }
-                                            onClicked: { windowButton.modelData?.close() }
+
+                                            DockPreviewCloseButton {
+                                                size: root.windowControlsHeight
+                                                onClicked: windowButton.modelData?.close()
+                                            }
                                         }
-                                    }
 
-                                    Item {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        implicitHeight: screencopyView.height
-                                        implicitWidth:  screencopyView.width
+                                        Item {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            implicitHeight: screencopyView.height
+                                            implicitWidth:  screencopyView.width
 
-                                        SmoothScreencopyView {
-                                            id: screencopyView
-                                            anchors.centerIn: parent
-                                            captureSource: windowButton.modelData
-                                            live: true
-                                            paintCursor: true
-                                            constraintSize: Qt.size(
-                                                root.maxWindowPreviewWidth,
-                                                root.maxWindowPreviewHeight)
-                                            layer.enabled: true
-                                            layer.effect: OpacityMask {
-                                                maskSource: Rectangle {
-                                                    width:  screencopyView.width
-                                                    height: screencopyView.height
-                                                    radius: Appearance.rounding.small
+                                            SmoothScreencopyView {
+                                                id: screencopyView
+                                                anchors.centerIn: parent
+                                                captureSource: windowButton.modelData
+                                                live: true
+                                                paintCursor: true
+                                                constraintSize: Qt.size(
+                                                    root.maxWindowPreviewWidth,
+                                                    root.maxWindowPreviewHeight)
+                                                layer.enabled: true
+                                                layer.effect: OpacityMask {
+                                                    maskSource: Rectangle {
+                                                        width:  screencopyView.width
+                                                        height: screencopyView.height
+                                                        radius: Appearance.rounding.small
+                                                    }
+                                                }
+                                            }
+
+                                            // Ring on the app's focused window, so scrolling on the
+                                            // icon shows which window is now active.
+                                            Rectangle {
+                                                anchors.fill: screencopyView
+                                                anchors.margins: -3
+                                                radius: Appearance.rounding.small + 3
+                                                color: "transparent"
+                                                border.width: 2
+                                                border.color: Appearance.colors.colPrimary
+                                                opacity: windowButton.modelData?.activated ? 1 : 0
+                                                Behavior on opacity {
+                                                    NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                                                 }
                                             }
                                         }

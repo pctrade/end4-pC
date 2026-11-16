@@ -134,6 +134,8 @@ QtObject {
         "interface:Dock/Style": { type: "select", get: () => Config.options.dock.style, set: v => { Config.options.dock.style = v; }, options: [{ displayName: Translation.tr("Float"), icon: "call_to_action", value: "float" }, { displayName: Translation.tr("Hug"), icon: "dock_to_bottom", value: "hug" }] },
         "interface:Dock/Position": { type: "select", get: () => Config.options.dock.position, set: v => { Config.options.dock.position = v; }, options: [{ displayName: Translation.tr("Left"), icon: "dock_to_left", value: "left" }, { displayName: Translation.tr("Bottom"), icon: "dock_to_bottom", value: "bottom" }, { displayName: Translation.tr("Right"), icon: "dock_to_right", value: "right" }] },
         "interface:Dock/Previews": { type: "switch", get: () => Config.options.dock.showPreviews, set: v => { Config.options.dock.showPreviews = v; } },
+        "interface:Dock/Tooltips": { type: "switch", get: () => Config.options.dock.showTooltips, set: v => { Config.options.dock.showTooltips = v; } },
+        "interface:Dock/Scroll windows": { type: "switch", get: () => Config.options.dock.scrollToCycleWindows, set: v => { Config.options.dock.scrollToCycleWindows = v; } },
         "interface:Dock/Icon size": { type: "spin", get: () => Config.options.dock.iconSize, set: v => { Config.options.dock.iconSize = v; }, from: 20, to: 48, stepSize: 1 },
         "interface:Dock/Icon spacing": { type: "spin", get: () => Config.options.dock.iconSpacing, set: v => { Config.options.dock.iconSpacing = v; }, from: 0, to: 12, stepSize: 1 },
         "interface:Dock/Radius": { type: "spin", get: () => Config.options.dock.radius, set: v => { Config.options.dock.radius = v; }, from: 0, to: 40, stepSize: 1 },
@@ -414,6 +416,8 @@ QtObject {
                 { type: "toggle", key: "interface:Show Apps Button", title: Translation.tr("Apps button"), icon: "apps" },
                 { type: "toggle", key: "interface:Tint app icons", title: Translation.tr("Tint app icons"), icon: "palette" },
                 { type: "toggle", key: "interface:Dock/Previews", title: Translation.tr("Window previews"), icon: "preview" },
+                { type: "toggle", key: "interface:Dock/Tooltips", title: Translation.tr("App name tooltips"), icon: "tooltip", kw: "dock tooltip label name hover" },
+                { type: "toggle", key: "interface:Dock/Scroll windows", title: Translation.tr("Scroll to switch windows"), icon: "swap_vert", kw: "dock scroll wheel cycle switch windows focus" },
                 { type: "spin", key: "interface:Dock/Icon size", title: Translation.tr("Icon size"), icon: "photo_size_select_large" },
                 { type: "spin", key: "interface:Dock/Icon spacing", title: Translation.tr("Icon spacing"), icon: "space_bar" }
             ]

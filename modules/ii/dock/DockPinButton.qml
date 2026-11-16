@@ -1,3 +1,4 @@
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
@@ -25,6 +26,10 @@ VerticalButtonGroup {
         buttonRadius: Appearance.rounding.normal
         toggled: root.pinned
         onClicked: root.toggled()
+        DockTooltip {
+            text: root.pinned ? Translation.tr("Unpin dock") : Translation.tr("Pin dock")
+            show: parent.hovered
+        }
         contentItem: MaterialSymbol {
             text: "keep"
             horizontalAlignment: Text.AlignHCenter

@@ -2,6 +2,8 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.services
+import qs.modules.common.functions
 
 Singleton {
     property string position: Config.options.dock.position ?? "bottom"
@@ -22,6 +24,50 @@ Singleton {
     function mRight(inner, outer, alongEnd) {
         return vertical ? (position === "left" ? inner : outer) : (alongEnd ?? 0);
     }
+
+    // True when hovering this app's button opens the window preview popup.
+    function previewsFor(app) {
+        return WM.compositor === "hyprland"
+            && (Config.options.dock.showPreviews ?? true)
+            && (app?.toplevels?.length ?? 0) > 0;
+    }
+
+    readonly property color backgroundColor: (hug && Config.options.dock.followFrameColor && Config.options.bar.showFrame)
+        ? Appearance.getColorFromName(Config.options.bar.frameColor)
+        : Appearance.getColorFromName(Config.options.dock.backgroundColor)
+
+    // Shared look for the dock's popups (tooltips and window previews), so they
+    // read as part of the dock. Popups get no compositor blur, so the colour is
+    // made opaque, and a border keeps the edge visible over dark windows.
+    // OLED keeps the black used by the dock's other popups (e.g. the context menu).
+    readonly property color popupColor: Config.options.appearance.uiBackground === "oled"
+        ? "#000000"
+        : ColorUtils.applyAlpha(backgroundColor, 1)
+    readonly property color popupBorderColor: Appearance.colors.colLayer0Border
+    // Theme text colour when the popup is as light/dark as the theme, inverse otherwise.
+    readonly property color popupTextColor: ColorUtils.isDark(popupColor) === Appearance.m3colors.darkmode
+        ? Appearance.colors.colOnLayer0
+        : Appearance.m3colors.m3inverseOnSurface
+    readonly property color popupSubtextColor: ColorUtils.transparentize(popupTextColor, 0.35)
+
+    // Edge of the dock popups that faces the dock, along the screen edge the dock
+    // is on; popups open in this direction, away from that edge.
+    readonly property int popupAwayEdge: position === "left" ? Edges.Right
+        : position === "right" ? Edges.Left
+        : Edges.Top
+    // Space between the dock background and its popups (tooltip, preview card).
+    readonly property real popupGap: 6
+    // Where popups start, in dock-window coordinates. The dock background sits
+    // one elevation margin inside the window's inner edge (room for its shadow).
+    // Side docks: x of the popup's near edge.
+    function popupSideEdge(windowWidth) {
+        return position === "left"
+            ? windowWidth - Appearance.sizes.elevationMargin + popupGap
+            : Appearance.sizes.elevationMargin - popupGap;
+    }
+    // Bottom dock: y of the popup's bottom edge. With magnification the icons
+    // grow into the space above the dock, so popups stay above the window.
+    readonly property real popupBottomEdge: magnifying ? 0 : Appearance.sizes.elevationMargin - popupGap
 
     readonly property real padding: 5
     readonly property real spacing: 3
