@@ -43,6 +43,14 @@ ContentPage {
     }
     MonitorConfigOption { id: monitorConfig }
 
+    Connections {
+        target: monitorConfig
+        function onMonitorsChanged() {
+            if (monitorCanvas.selectedIndex >= monitorConfig.monitors.length)
+                monitorCanvas.selectedIndex = Math.max(0, monitorConfig.monitors.length - 1)
+        }
+    }
+
     // Same roles as the settings panel border color on the Interface page.
     readonly property var borderColorRoles: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0Border"]
 
@@ -58,6 +66,24 @@ ContentPage {
             shape: MaterialShape.Shape.ClamShell
             title: Translation.tr("Displays")
             visible: monitorConfig.monitors.length > 0
+
+            GroupedList {
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "monitor"
+                    text: Translation.tr("Monitor")
+                    model: monitorConfig.monitors.map(m => ({
+                        displayName: m.name
+                            + (m.disabled ? "  (" + Translation.tr("disabled") + ")" : ""),
+                        value: m.name
+                    }))
+                    currentValue: monitorConfig.monitors[monitorCanvas.selectedIndex]?.name ?? ""
+                    onSelected: newValue => {
+                        const i = monitorConfig.monitors.findIndex(m => m.name === newValue)
+                        if (i >= 0) monitorCanvas.selectedIndex = i
+                    }
+                }
+            }
 
             MonitorCanvas {
                 id: monitorCanvas
