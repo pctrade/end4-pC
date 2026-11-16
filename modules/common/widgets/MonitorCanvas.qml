@@ -15,6 +15,11 @@ Item {
 
     implicitHeight: 220
 
+    // View only. The fit follows the preview, so the camera zooms out while
+    // dragging and every rectangle stays visible — as in the original
+    // canvas. It cannot feed back into the drag: MonitorRect maps the cursor
+    // with the fit frozen at press time, and the rectangle, the ghost and
+    // the drop test all read the same logical position.
     property var bounds: {
         let minX = Infinity, minY = Infinity
         let maxX = -Infinity, maxY = -Infinity
@@ -86,24 +91,38 @@ Item {
         return m
     }
 
-    function updatePreview(idx, newX, newY) {
-        const normalized = computeNormalized(monitorConfig.monitors, idx, newX, newY)
-        root.dragHasOverlap = checkOverlap(normalized, idx)
+    function updatePreview(idx, newX, newY, rawX, rawY) {
+        // Validity and the commit use the landing (snapped); the drawing
+        // plane uses the raw hand. Both are normalized the same way, so the
+        // canvas keeps one coordinate system: rect = raw, ghost = landing.
+        const landing = computeNormalized(monitorConfig.monitors, idx, newX, newY)
+        root.dragHasOverlap = checkOverlap(landing, idx)
+        const hand = computeNormalized(monitorConfig.monitors, idx, rawX, rawY)
         let preview = {}
-        for (let i = 0; i < normalized.length; i++) {
-            preview[normalized[i].name] = { x: normalized[i].x, y: normalized[i].y }
+        for (let i = 0; i < hand.length; i++) {
+            preview[hand[i].name] = { x: hand[i].x, y: hand[i].y }
         }
         root.previewPositions = preview
+        console.log(`[mc] preview ${idx} -> land ${newX},${newY} raw ${rawX},${rawY} overlap=${root.dragHasOverlap} s=${root.scaleFactor.toFixed(3)} off=${root.offset.x.toFixed(0)},${root.offset.y.toFixed(0)}`)
     }
 
     function commitPosition(idx, newX, newY) {
         const normalized = computeNormalized(monitorConfig.monitors, idx, newX, newY)
+        const prev = monitorConfig.monitors
         monitorConfig.monitors = normalized
         root.previewPositions = {}
+        // A drag only stages. Nothing touches hyprctl or monitors.lua until
+        // the page's Apply runs: firing one hyprctl keyword per monitor on
+        // the shared applyProc raced — the second command replaced the first
+        // before it started, the desktop came up half-applied, and the
+        // refresh that followed painted the old y back over the canvas as an
+        // overlap. No keywords means no refresh, so the staged y survives.
         for (let i = 0; i < normalized.length; i++) {
-            monitorConfig.applyMonitor(normalized[i])
+            if (normalized[i].x !== prev[i].x || normalized[i].y !== prev[i].y) {
+                monitorConfig.updateMonitor(i, { x: normalized[i].x, y: normalized[i].y })
+                console.log(`[mc] stage ${i} ${normalized[i].name} -> ${normalized[i].x},${normalized[i].y}`)
+            }
         }
-        monitorConfig.save()
     }
 
     Rectangle {
@@ -131,14 +150,20 @@ Item {
                     previewPositions: root.previewPositions
                     hasOverlap: root.dragHasOverlap && isDragging
 
-                    onMonitorClicked: (idx) => root.selectedIndex = idx
-                    onPositionDragging: (idx, x, y) => root.updatePreview(idx, x, y)
-                    onPositionCommitted: (idx, x, y) => {
-                        const hadOverlap = root.dragHasOverlap
+                    onMonitorClicked: (idx) => {
                         root.previewPositions = {}
                         root.dragHasOverlap = false
-                        if (!hadOverlap)
-                            root.commitPosition(idx, x, y)
+                        root.selectedIndex = idx
+                    }
+                    onPositionDragging: (idx, x, y, rawX, rawY) => root.updatePreview(idx, x, y, rawX, rawY)
+                    onPositionCommitted: (idx, x, y) => {
+                        const hadOverlap = root.dragHasOverlap
+                        console.log(`[mc] drop ${idx} -> ${x},${y} overlap=${hadOverlap}`)
+                        // Commit first so the rectangle goes straight from where
+                        // the drag left it to where it now lives.
+                        if (!hadOverlap) root.commitPosition(idx, x, y)
+                        root.previewPositions = {}
+                        root.dragHasOverlap = false
                     }
                 }
             }
