@@ -21,7 +21,8 @@ Item {
         && !(root.contextMenu?.isOpen ?? false)
         && !(root.app && DockStyle.previewsFor(root.app))
 
-    // Like a macOS dock label: appears instantly, fades out when the pointer leaves.
+    // Shows as soon as an icon is hovered (no delay), with a short fade in and out.
+    readonly property int fadeInDuration: 100
     readonly property int fadeOutDuration: 150
     property bool fadingOut: false
     onWantedChanged: {
@@ -76,6 +77,15 @@ Item {
                 border.width: 1
                 border.color: DockStyle.popupBorderColor
 
+                opacity: 0
+                Component.onCompleted: fadeIn.start()
+                NumberAnimation on opacity {
+                    id: fadeIn
+                    running: false
+                    to: 1
+                    duration: root.fadeInDuration
+                    easing.type: Easing.OutCubic
+                }
                 NumberAnimation on opacity {
                     id: fadeOut
                     running: false
@@ -88,8 +98,9 @@ Item {
                     function onWantedChanged() {
                         if (root.wanted) {
                             fadeOut.stop();
-                            content.opacity = 1;
+                            fadeIn.restart();
                         } else {
+                            fadeIn.stop();
                             fadeOut.restart();
                         }
                     }
