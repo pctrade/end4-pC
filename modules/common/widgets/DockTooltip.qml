@@ -20,25 +20,23 @@ Item {
         && root.show && root.text.length > 0
         && !(root.contextMenu?.isOpen ?? false)
         && !(root.app && DockStyle.previewsFor(root.app))
-    property bool shown: false
 
+    // Like a macOS dock label: appears instantly, fades out when the pointer leaves.
+    readonly property int fadeOutDuration: 150
+    property bool fadingOut: false
     onWantedChanged: {
-        if (root.wanted) {
-            showTimer.restart();
-        } else {
-            showTimer.stop();
-            root.shown = false;
-        }
+        root.fadingOut = !root.wanted;
+        if (root.fadingOut)
+            fadeOutTimer.restart();
     }
-
     Timer {
-        id: showTimer
-        interval: 250
-        onTriggered: root.shown = root.wanted
+        id: fadeOutTimer
+        interval: root.fadeOutDuration
+        onTriggered: root.fadingOut = false
     }
 
     Loader {
-        active: root.shown && root.QsWindow.window !== null
+        active: (root.wanted || root.fadingOut) && root.QsWindow.window !== null
         sourceComponent: PopupWindow {
             id: popup
             visible: true
@@ -78,17 +76,23 @@ Item {
                 border.width: 1
                 border.color: DockStyle.popupBorderColor
 
-                opacity: 0
-                scale: 0.92
-                transformOrigin: DockStyle.position === "left" ? Item.Left
-                    : DockStyle.position === "right" ? Item.Right
-                    : Item.Bottom
-                Component.onCompleted: { opacity = 1; scale = 1; }
-                Behavior on opacity {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                NumberAnimation on opacity {
+                    id: fadeOut
+                    running: false
+                    to: 0
+                    duration: root.fadeOutDuration
+                    easing.type: Easing.OutCubic
                 }
-                Behavior on scale {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                Connections {
+                    target: root
+                    function onWantedChanged() {
+                        if (root.wanted) {
+                            fadeOut.stop();
+                            content.opacity = 1;
+                        } else {
+                            fadeOut.restart();
+                        }
+                    }
                 }
 
                 StyledText {
