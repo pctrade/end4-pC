@@ -47,10 +47,14 @@ Singleton {
         return entries;
     }
 
+    // Pages are parsed as their files load but published together: every
+    // assignment re-runs the launcher results, apps included, so publishing
+    // page by page rebuilt them once per page right under the first keystroke
+    property var pendingEntries: ({})
     function indexPage(pageId, source) {
-        const next = Object.assign({}, root.entriesByPage);
-        next[pageId] = root.parsePage(source);
-        root.entriesByPage = next;
+        root.pendingEntries[pageId] = root.parsePage(source);
+        if (Object.keys(root.pendingEntries).length >= SettingsPages.pages.length)
+            root.entriesByPage = Object.assign({}, root.pendingEntries);
     }
 
     function search(query, limit) {
@@ -106,6 +110,7 @@ Singleton {
             required property var modelData
             path: FileUtils.trimFileProtocol(Quickshell.shellPath(modelData.path))
             onLoaded: root.indexPage(modelData.id, text())
+            onLoadFailed: root.indexPage(modelData.id, "")
         }
     }
 }
