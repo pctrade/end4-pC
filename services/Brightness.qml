@@ -185,8 +185,7 @@ Singleton {
 
     // Anti-flashbang
     property int workspaceAnimationDelay: 500
-    property int contentSwitchDelay: 30
-    property string screenshotDir: "/tmp/quickshell/brightness/antiflashbang"
+    property int contentSwitchDelay: 150
     function brightnessMultiplierForLightness(x: real): real {
         // I hand picked some values and fitted an exponential curve for this
         // 6.600135 + 216.360356 * e^(-0.0811129189x)
@@ -199,7 +198,6 @@ Singleton {
             id: screenScope
             required property var modelData
             property string screenName: modelData.name
-            property string screenshotPath: `${root.screenshotDir}/screenshot-${screenName}.png`
             Connections {
                 enabled: Config.options.light.antiFlashbang.enable && Appearance.m3colors.darkmode
                 target: Hyprland
@@ -226,14 +224,12 @@ Singleton {
             Process {
                 id: screenshotProc
                 command: ["bash", "-c",
-                    `mkdir -p '${StringUtils.shellSingleQuoteEscape(root.screenshotDir)}'`
-                    + ` && grim -o '${StringUtils.shellSingleQuoteEscape(screenScope.screenName)}' -`
-                    + ` | magick png:- -colorspace Gray -format "%[fx:mean*100]" info:`
+                    `grim -s 0.1 -t ppm -o '${StringUtils.shellSingleQuoteEscape(screenScope.screenName)}' -`
+                    + ` | magick ppm:- -colorspace Gray -format "%[fx:mean*100]" info:`
                 ]
                 stdout: StdioCollector {
                     id: lightnessCollector
                     onStreamFinished: {
-                        Quickshell.execDetached(["rm", screenScope.screenshotPath]); // Cleanup
                         const lightness = lightnessCollector.text
                         const newMultiplier = root.brightnessMultiplierForLightness(parseFloat(lightness))
                         Brightness.getMonitorForScreen(screenScope.modelData).setBrightnessMultiplier(newMultiplier)
