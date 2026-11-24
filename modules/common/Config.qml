@@ -877,6 +877,13 @@ Singleton {
                     property string imageSearchEngineBaseUrl: "https://lens.google.com/uploadbyurl?url="
                     property bool useCircleSelection: false
                 }
+                property JsonObject omni: JsonObject {
+                    property bool enableFileSearch: true
+                    property bool enableBrowserHistory: true
+                    property bool enableDirectUrl: true
+                    property bool enableAiShortcuts: false // Opt-in: gpt / chatgpt / claude / ai prefixes
+                    property bool enableSpotify: false // Opt-in: p <song> / q <song> prefixes + queue daemon
+                }
             }
 
             property JsonObject sidebar: JsonObject {
