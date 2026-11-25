@@ -810,6 +810,11 @@ QtObject {
             page: Translation.tr("Services"), title: Translation.tr("Search"), icon: "search", cards: [
                 { type: "toggle", key: "services:Use Levenshtein distance-based algorithm instead of fuzzy", title: Translation.tr("Levenshtein search"), icon: "manage_search" },
                 { type: "toggle", key: "services:Show clipboard preview popups", title: Translation.tr("Clipboard previews"), icon: "preview" },
+                { type: "toggle", key: "services:File & folder search (/)", title: Translation.tr("File search (/)"), icon: "folder_open", kw: "omni search file folder path launcher" },
+                { type: "toggle", key: "services:Browser & launcher history suggestions", title: Translation.tr("Browser history"), icon: "history", kw: "omni search browser history firefox zen suggestions" },
+                { type: "toggle", key: "services:Direct URL / domain launch", title: Translation.tr("Direct URL launch"), icon: "language", kw: "omni search url domain website browser" },
+                { type: "toggle", key: "services:AI quick-launch shortcuts", title: Translation.tr("AI shortcuts"), icon: "neurology", kw: "omni search ai gpt chatgpt claude" },
+                { type: "toggle", key: "services:Spotify play & queue shortcuts", title: Translation.tr("Spotify shortcuts"), icon: "queue_music", kw: "omni search spotify play queue music" },
                 { type: "text", w: 2, key: "services:Base URL", title: Translation.tr("Web search base URL"), icon: "travel_explore" },
                 { type: "text", key: "services:Prefix action", title: Translation.tr("Prefix: Action"), icon: "bolt" },
                 { type: "text", key: "services:Prefix clipboard", title: Translation.tr("Prefix: Clipboard"), icon: "content_paste" },

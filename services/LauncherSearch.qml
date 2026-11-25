@@ -230,7 +230,7 @@ Singleton {
 
     Timer {
         id: suggestionTimer
-        interval: 35
+        interval: 180
         onTriggered: {
             const q = root.query.trim();
             if (Config.options.search.omni.enableBrowserHistory && q.length > 0 && !q.startsWith("/")) {
@@ -269,7 +269,7 @@ Singleton {
 
     Timer {
         id: fileSearchTimer
-        interval: 40
+        interval: 120
         onTriggered: {
             if (Config.options.search.omni.enableFileSearch && root.query.startsWith("/")) {
                 fileSearchProc.search(root.query);
@@ -812,7 +812,13 @@ Singleton {
                     iconName: 'language',
                     iconType: LauncherSearchResult.IconType.Material,
                     execute: () => {
-                        Quickshell.execDetached(["python3", root.helperScriptPath, "open-url", targetUrl]);
+                        Quickshell.execDetached([
+                            "python3",
+                            root.helperScriptPath,
+                            "open-url",
+                            targetUrl,
+                            Config.options.search.omni.enableBrowserHistory ? "1" : "0",
+                        ]);
                     }
                 });
             }
@@ -822,6 +828,25 @@ Singleton {
         let result = [];
         if (domainResultObject)
             result.push(domainResultObject);
+
+        const startsWithNumber = /^\d/.test(root.query);
+        const startsWithMathPrefix = root.query.startsWith(Config.options.search.prefix.math);
+        const startsWithShellCommandPrefix = root.query.startsWith(Config.options.search.prefix.shellCommand);
+        const startsWithWebSearchPrefix = root.query.startsWith(Config.options.search.prefix.webSearch);
+        if (startsWithNumber || startsWithMathPrefix) {
+            result.push(mathResultObject);
+        } else if (startsWithShellCommandPrefix) {
+            result.push(commandResultObject);
+        } else if (startsWithWebSearchPrefix) {
+            result.push(webSearchResultObject);
+        }
+
+        //////////////// Apps //////////////////
+        result = result.concat(appResultObjects);
+        ////////////// Settings ////////////////
+        result = result.concat(settingsResults);
+        ////////// Launcher actions ////////////
+        result = result.concat(launcherActionObjects);
 
         //////// Smart Suggestions (Browser History + Launcher History) /////////
         if (Config.options.search.omni.enableBrowserHistory && root.lastSuggestionQuery === trimmedQuery.toLowerCase() && root.smartSuggestions.length > 0) {
@@ -836,7 +861,7 @@ Singleton {
                         iconName: "history",
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
-                            Quickshell.execDetached(["python3", root.helperScriptPath, "open-url", s.text]);
+                            Quickshell.execDetached(["python3", root.helperScriptPath, "open-url", s.text, "1"]);
                         }
                     }));
                 } else if (Config.options.search.omni.enableSpotify && s.type === "spotify_play") {
@@ -899,24 +924,6 @@ Singleton {
                 }
             }
         }
-        const startsWithNumber = /^\d/.test(root.query);
-        const startsWithMathPrefix = root.query.startsWith(Config.options.search.prefix.math);
-        const startsWithShellCommandPrefix = root.query.startsWith(Config.options.search.prefix.shellCommand);
-        const startsWithWebSearchPrefix = root.query.startsWith(Config.options.search.prefix.webSearch);
-        if (startsWithNumber || startsWithMathPrefix) {
-            result.push(mathResultObject);
-        } else if (startsWithShellCommandPrefix) {
-            result.push(commandResultObject);
-        } else if (startsWithWebSearchPrefix) {
-            result.push(webSearchResultObject);
-        }
-
-        //////////////// Apps //////////////////
-        result = result.concat(appResultObjects);
-        ////////////// Settings ////////////////
-        result = result.concat(settingsResults);
-        ////////// Launcher actions ////////////
-        result = result.concat(launcherActionObjects);
 
         /// Math result, command, web search ///
         if (Config.options.search.prefix.showDefaultActionsWithoutPrefix) {

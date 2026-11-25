@@ -45,12 +45,31 @@ def notify(title: str, body: str, icon: str = "system-search", app_name: str = "
 # 1. LAUNCHER HISTORY & BROWSER HISTORY (SMART SUGGESTIONS)
 # ============================================================================
 
+def _write_private_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(path.parent, 0o700)
+    except OSError:
+        pass
+    fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.")
+    try:
+        os.chmod(tmp_path, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
 def record_history(item_type: str, text: str, data: str = "") -> None:
     text = text.strip()
     if not text:
         return
     try:
-        HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
         history = []
         if HISTORY_FILE.exists():
             try:
@@ -78,7 +97,7 @@ def record_history(item_type: str, text: str, data: str = "") -> None:
 
         history.sort(key=lambda x: x.get("ts", 0), reverse=True)
         history = history[:200]
-        HISTORY_FILE.write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
+        _write_private_json(HISTORY_FILE, history)
     except Exception:
         pass
 
@@ -235,8 +254,9 @@ def search_suggestions(raw_query: str, include_browser: bool = True, include_spo
     return suggestions[:8]
 
 
-def open_browser_url(url: str) -> None:
-    record_history("url", url, url)
+def open_browser_url(url: str, save_history: bool = True) -> None:
+    if save_history:
+        record_history("url", url, url)
     cmd = get_default_browser_cmd() + [url]
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -807,7 +827,7 @@ def main() -> None:
     elif cmd == "record":
         record_history(arg, arg2, arg3)
     elif cmd == "open-url":
-        open_browser_url(arg)
+        open_browser_url(arg, save_history=(arg2 != "0"))
     elif cmd == "open-search":
         open_browser_search(arg, arg2 or "https://www.google.com/search?q=")
     elif cmd == "run-shell":
