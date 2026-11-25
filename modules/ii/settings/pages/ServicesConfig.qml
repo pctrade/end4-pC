@@ -280,6 +280,53 @@ ContentPage {
                     }
                 }
             }
+
+            ContentSubsection {
+                title: Translation.tr("Omni-search")
+
+                GroupedList {
+                    ConfigSwitch {
+                        buttonIcon: "folder_open"
+                        text: Translation.tr("File & folder search (/)")
+                        checked: Config.options.search.omni.enableFileSearch
+                        onCheckedChanged: {
+                            Config.options.search.omni.enableFileSearch = checked;
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "history"
+                        text: Translation.tr("Browser & launcher history suggestions")
+                        checked: Config.options.search.omni.enableBrowserHistory
+                        onCheckedChanged: {
+                            Config.options.search.omni.enableBrowserHistory = checked;
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "language"
+                        text: Translation.tr("Direct URL / domain launch")
+                        checked: Config.options.search.omni.enableDirectUrl
+                        onCheckedChanged: {
+                            Config.options.search.omni.enableDirectUrl = checked;
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "neurology"
+                        text: Translation.tr("AI quick-launch shortcuts")
+                        checked: Config.options.search.omni.enableAiShortcuts
+                        onCheckedChanged: {
+                            Config.options.search.omni.enableAiShortcuts = checked;
+                        }
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "queue_music"
+                        text: Translation.tr("Spotify play & queue shortcuts")
+                        checked: Config.options.search.omni.enableSpotify
+                        onCheckedChanged: {
+                            Config.options.search.omni.enableSpotify = checked;
+                        }
+                    }
+                }
+            }
         }
 
         ContentSection {

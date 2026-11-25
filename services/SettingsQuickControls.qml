@@ -440,6 +440,11 @@ Singleton {
 
         "services:Use Levenshtein distance-based algorithm instead of fuzzy": root.toggle(() => Config.options.search.sloppy, v => Config.options.search.sloppy = v),
         "services:Show clipboard preview popups": root.optionSwitch("search.clipboardPreviewPopup"),
+        "services:File & folder search (/)": root.toggle(() => Config.options.search.omni.enableFileSearch, v => Config.options.search.omni.enableFileSearch = v),
+        "services:Browser & launcher history suggestions": root.toggle(() => Config.options.search.omni.enableBrowserHistory, v => Config.options.search.omni.enableBrowserHistory = v),
+        "services:Direct URL / domain launch": root.toggle(() => Config.options.search.omni.enableDirectUrl, v => Config.options.search.omni.enableDirectUrl = v),
+        "services:AI quick-launch shortcuts": root.toggle(() => Config.options.search.omni.enableAiShortcuts, v => Config.options.search.omni.enableAiShortcuts = v),
+        "services:Spotify play & queue shortcuts": root.toggle(() => Config.options.search.omni.enableSpotify, v => Config.options.search.omni.enableSpotify = v),
         "services:Enable update checks": root.toggle(() => Config.options.updates.enableCheck, v => Config.options.updates.enableCheck = v),
         "services:Enable GPS based location": root.toggle(() => Config.options.bar.weather.enableGPS, v => Config.options.bar.weather.enableGPS = v),
         "services:Fahrenheit unit": root.toggle(() => Config.options.bar.weather.useUSCS, v => Config.options.bar.weather.useUSCS = v),
