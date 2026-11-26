@@ -60,8 +60,14 @@ Singleton {
         return -1
     })()
 
+    readonly property bool islandHandlesAlerts: Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
+
     onIsLowAndNotChargingChanged: {
         if (!root.available || !isLowAndNotCharging) return;
+        if (root.islandHandlesAlerts) {
+            if (root.soundEnabled) Audio.playSystemSound("dialog-warning");
+            return;
+        }
         Quickshell.execDetached([
             "notify-send", 
             Translation.tr("Low battery"), 
@@ -76,6 +82,10 @@ Singleton {
 
     onIsCriticalAndNotChargingChanged: {
         if (!root.available || !isCriticalAndNotCharging) return;
+        if (root.islandHandlesAlerts) {
+            if (root.soundEnabled) Audio.playSystemSound("suspend-error");
+            return;
+        }
         Quickshell.execDetached([
             "notify-send", 
             Translation.tr("Critically low battery"), 
@@ -88,9 +98,32 @@ Singleton {
         if (root.soundEnabled) Audio.playSystemSound("suspend-error");
     }
 
+    property int hibernateCountdown: -1
+    readonly property int hibernateDelay: 60
+
+    function cancelHibernate() {
+        root.hibernateCountdown = -1;
+    }
+
     onIsSuspendingAndNotChargingChanged: {
         if (root.available && isSuspendingAndNotCharging) {
-            Quickshell.execDetached(["bash", "-c", `systemctl suspend || loginctl suspend`]);
+            if (root.islandHandlesAlerts) root.hibernateCountdown = root.hibernateDelay;
+            else Quickshell.execDetached(["bash", "-c", `systemctl suspend || loginctl suspend`]);
+        } else {
+            root.hibernateCountdown = -1;
+        }
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.hibernateCountdown > 0
+        onTriggered: {
+            root.hibernateCountdown--;
+            if (root.hibernateCountdown === 0) {
+                root.hibernateCountdown = -1;
+                Quickshell.execDetached(["bash", "-c", `systemctl hibernate || systemctl suspend || loginctl suspend`]);
+            }
         }
     }
 

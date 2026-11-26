@@ -69,6 +69,7 @@ Singleton {
         return root.frameHover[`${screenName}:${side}`] ?? false;
     }
     property bool diSessionOpen: false
+    property var islandBuriedByScreen: ({})
     property bool startupLockPending: true
 
     Timer {

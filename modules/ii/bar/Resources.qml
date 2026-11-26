@@ -45,6 +45,7 @@ BarWidgetSwitcherArea {
                 label: "TMP"
                 shown: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
+                warningThreshold: 85
                 Layout.leftMargin: shown ? 6 : 0
             }
             Resource {
@@ -98,6 +99,7 @@ BarWidgetSwitcherArea {
                 label: "TMP"
                 shown: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
+                warningThreshold: 85
                 Layout.leftMargin: shown ? 6 : 0
             }
             Resource {
@@ -156,6 +158,7 @@ BarWidgetSwitcherArea {
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
+                warningThreshold: 85
             }
             Resource {
                 contentColor: root.contentColor
@@ -215,6 +218,7 @@ BarWidgetSwitcherArea {
                 vertical: true
                 visible: Config.options.bar.resources.alwaysShowCpuTemp
                 percentage: ResourceUsage.cpuTemp / 100
+                warningThreshold: 85
             }
             Resource {
                 contentColor: root.contentColor

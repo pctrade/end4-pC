@@ -4,6 +4,8 @@ import QtQuick.Layouts
 
 Item {
     id: root
+    // Each declared child becomes one row. Do not use a Repeater: a default property list<Item> captures it as a
+    // single zero-height entry and the rows overlap what follows.
     default property list<Item> items
     property real bigRadius: Appearance.rounding.normal
     property real smallRadius: Appearance.rounding.unsharpenmore

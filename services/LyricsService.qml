@@ -13,6 +13,12 @@ Singleton {
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
 
+    readonly property string trackKey: `${root.activePlayer?.trackTitle ?? ""}|${root.activePlayer?.trackArtist ?? ""}`
+    property string fetchedFor: ""
+    property bool wanted: true
+
+    onWantedChanged: if (root.wanted && root.fetchedFor !== root.trackKey) root.restartLyrics()
+
     property var lyricsLines: []
     property int activeIndex: -1
     property string status: "loading"
@@ -174,5 +180,12 @@ Singleton {
         function onPlaybackStateChanged() { root.resync() }
     }
 
-    Component.onCompleted: root.restartLyrics()
+        onTrackKeyChanged: lyricsDebounce.restart()
+    Timer {
+        id: lyricsDebounce
+        interval: 250
+        onTriggered: if (root.fetchedFor !== root.trackKey) root.restartLyrics()
+    }
+
+Component.onCompleted: root.restartLyrics()
 }

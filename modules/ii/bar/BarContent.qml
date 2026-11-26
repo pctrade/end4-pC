@@ -83,7 +83,6 @@ Item {
     property var screen: root.QsWindow.window?.screen
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
 
-
     Rectangle {
         id: barBackground
         anchors.fill: parent
@@ -227,14 +226,24 @@ Item {
         anchors.fill: barBackground
         anchors.margins: root.barPadding
 
+        readonly property real sideRoom: Math.max(0, contentContainer.width / 2 - absoluteCenter.width / 2 - 14)
+        readonly property real leftPush: Math.max(0, leftSection.width - contentContainer.sideRoom)
+        readonly property real rightPush: Math.max(0, rightSection.width - contentContainer.sideRoom)
+
         // Left
         Item {
+            id: leftSection
             anchors.left: parent.left
             anchors.leftMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: root.useTabWrapper ? (leftMaterialPill.width + (root.hasTabs && root.effectiveLeftLayout.length > 0 ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
+            width: root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug && root.effectiveLeftLayout.length > 0 ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
+            opacity: contentContainer.leftPush > 0 ? Math.max(0.25, 1 - contentContainer.leftPush / 120) : 1
+            transform: Translate { x: -contentContainer.leftPush }
 
+            Behavior on opacity {
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            }
             // Material pill wrapper
             Rectangle {
                 id: leftMaterialPill
@@ -276,7 +285,7 @@ Item {
                     spacing: root.isSplitHug ? root.splitGroupSpacing : 3
 
                     Repeater {
-                        model: root.effectiveLeftLayout
+                        model: root.isMaterial ? root.effectiveLeftLayout : []
                         delegate: leftMaterialGroupDelegate
                     }
 
@@ -325,7 +334,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveLeftLayout
+                    model: root.isMaterial ? [] : root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
                 }
 
@@ -405,6 +414,7 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
+                objectName: "dynamicIslandSurface"
                 WindowGlass {
                     anchors.fill: parent
                     anchors.leftMargin: -root.tabFlare
@@ -420,8 +430,7 @@ Item {
                     bottomRightRadius: parent && parent.bottomRightRadius >= 0 ? parent.bottomRightRadius : cardRadius
                     tint: parent?.fill ?? 'transparent'
                 }
-                visible: root.useTabWrapper && root.effectiveMiddleLayout.length > 0
-                anchors.centerIn: parent
+                visible: root.useTabWrapper && root.effectiveMiddleLayout.length > 0                anchors.centerIn: parent
                 width: centerMaterialRow.implicitWidth + (root.hasTabs ? 16 : 10)
                 height: root.hasTabs ? parent.height : centerMaterialRow.implicitHeight 
                 radius: root.hasTabs ? 0 : Appearance.rounding.full
@@ -439,7 +448,7 @@ Item {
                     spacing: root.isSplitHug ? root.splitGroupSpacing : 3
 
                     Repeater {
-                        model: root.effectiveMiddleLayout
+                        model: root.isMaterial ? root.effectiveMiddleLayout : []
                         delegate: middleMaterialGroupDelegate
                     }
 
@@ -489,7 +498,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveMiddleLayout
+                    model: root.isMaterial ? [] : root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
                 }
 
@@ -529,12 +538,18 @@ Item {
 
         // Right
         Item {
+            id: rightSection
             anchors.right: parent.right
             anchors.rightMargin: root.hasTabs ? 0 : (root.useTabWrapper ? (Config.options.hyprland.general.gapsOut || 5) : (Config.options.bar.cornerStyle === 1 ? 4 : Config.options.bar.cornerStyle === 5 ? 4 : 8))
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: root.useTabWrapper ? (rightMaterialPill.width + (root.hasTabs && root.effectiveRightLayout.length > 0 ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
+            width: root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug && root.effectiveRightLayout.length > 0 ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
+            opacity: contentContainer.rightPush > 0 ? Math.max(0.25, 1 - contentContainer.rightPush / 120) : 1
+            transform: Translate { x: contentContainer.rightPush }
 
+            Behavior on opacity {
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            }
             RoundCorner {
                 id: rightLeftOutwardCorner
                 glass: true
@@ -588,7 +603,7 @@ Item {
                     spacing: root.isSplitHug ? root.splitGroupSpacing : 3
 
                     Repeater {
-                        model: root.effectiveRightLayout
+                        model: root.isMaterial ? root.effectiveRightLayout : []
                         delegate: rightMaterialGroupDelegate
                     }
 
@@ -628,7 +643,7 @@ Item {
                     : root.isPanel ? 4 : 2
 
                 Repeater {
-                    model: root.effectiveRightLayout
+                    model: root.isMaterial ? [] : root.effectiveRightLayout
                     delegate: rightBarGroupDelegate
                 }
 

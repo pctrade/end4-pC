@@ -57,8 +57,8 @@ Item {
                     color: actionDelegate.isFocused ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
                     colSymbol: actionDelegate.isFocused ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
 
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on colSymbol { ColorAnimation { duration: 150 } }
+                    Behavior on color { ColorAnimation { duration: IslandMotion.micro } }
+                    Behavior on colSymbol { ColorAnimation { duration: IslandMotion.micro } }
                 }
 
                 MouseArea {

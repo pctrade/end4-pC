@@ -44,14 +44,37 @@ Singleton {
     property var recognizedTrack: ({ title:"", subtitle:"", url:""})
     property bool manuallyStopped: false
 
+    readonly property int historyMax: 8
+    property var history: []
+
     function handleRecognition(jsonText) {
         try {
             var obj = JSON.parse(jsonText)
-            root.recognizedTrack = {
-                title: obj.track.title,
-                subtitle: obj.track.subtitle,
-                url: obj.track.url
+            var t = obj.track ?? {}
+            var images = t.images ?? {}
+            var hub = t.hub ?? {}
+            var providers = hub.providers ?? []
+            var spotify = providers.find(p => p.type === "SPOTIFY")
+            var spotifyUri = (spotify?.actions ?? []).map(a => a.uri).find(u => !!u) ?? ""
+            var sections = t.sections ?? []
+            var metadata = sections.find(s => s.type === "SONG")?.metadata ?? []
+            var album = metadata.find(m => /album/i.test(m.title ?? ""))?.text ?? ""
+            var year = metadata.find(m => /release/i.test(m.title ?? ""))?.text ?? ""
+            var search = encodeURIComponent(`${t.title ?? ""} ${t.subtitle ?? ""}`.trim())
+
+            var track = {
+                title: t.title ?? "",
+                subtitle: t.subtitle ?? "",
+                url: t.url ?? "",
+                cover: images.coverarthq ?? images.coverart ?? "",
+                album: album,
+                year: year,
+                spotifyUrl: spotifyUri,
+                youtubeUrl: `https://www.youtube.com/results?search_query=${search}`,
+                shazamUrl: t.url ?? ""
             }
+            root.recognizedTrack = track
+            root.history = [track].concat(root.history).slice(0, root.historyMax)
             musicReconizedProc.running = true
         } catch(e) {
             Quickshell.execDetached(["notify-send", Translation.tr("Couldn't recognize music"), Translation.tr("Perhaps what you're listening to is too niche"), "-a", "Shell"])
