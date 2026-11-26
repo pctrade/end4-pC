@@ -124,8 +124,16 @@ Item {
             }
         }
         Loader {
+            // The layout already has its own capsule when added to the bar
+            readonly property var barLayouts: Config.options.bar.layouts
+            active: ![...barLayouts.leftLayout, ...barLayouts.middleLayout, ...barLayouts.rightLayout]
+                .includes("hyprlandXkbIndicator")
+            visible: active
             source: "HyprlandXkbIndicator.qml"
-            onLoaded: item.color = root.iconColor
+            onLoaded: {
+                item.compact = true;
+                item.contentColor = Qt.binding(() => root.iconColor);
+            }
         }
         MaterialSymbol {
             text: Network.materialSymbol
