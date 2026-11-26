@@ -62,12 +62,13 @@ PanelWindow {
     readonly property real falsePositivePreventionRatio: 0.5
 
     // Screen & interaction vars
-    readonly property var monitor: WM.monitorFor(screen)
-    readonly property var monitorGeometry: WM.monitorGeometry(screen)
+    // Use IPC data when Quickshell's Hyprland monitor model is unavailable.
+    readonly property var monitor: HyprlandData.monitors.find(m => m.name === root.screen.name) ?? WM.monitorFor(screen)
+    readonly property var monitorGeometry: monitor ?? WM.monitorGeometry(screen)
     readonly property real monitorScale: monitorGeometry.scale
     readonly property real monitorOffsetX: monitorGeometry.x
     readonly property real monitorOffsetY: monitorGeometry.y
-    property int activeWorkspaceId: WM.activeWorkspaceForMonitor(root.monitor?.name)?.id ?? 0
+    property int activeWorkspaceId: monitor?.activeWorkspace?.id ?? WM.activeWorkspaceForMonitor(root.monitor?.name)?.id ?? 0
     property string screenshotPath: `${root.screenshotDir}/image-${screen.name}`
     property real dragStartX: 0
     property real dragStartY: 0
@@ -370,6 +371,7 @@ PanelWindow {
             }
             // Detect if it was a click -> Try to select targeted region
             if (root.draggingX === root.dragStartX && root.draggingY === root.dragStartY) {
+                root.updateTargetedRegion(mouse.x, mouse.y);
                 if (root.targetedRegionValid()) {
                     root.setRegionToTargeted();
                 }
