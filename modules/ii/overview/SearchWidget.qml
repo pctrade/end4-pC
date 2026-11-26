@@ -159,7 +159,7 @@ Item { // Wrapper
         // Only handle visible printable characters (ignore control chars, arrows, etc.)
         if (event.text && event.text.length === 1 && event.key !== Qt.Key_Enter && event.key !== Qt.Key_Return && event.key !== Qt.Key_Delete && event.text.charCodeAt(0) >= 0x20) // ignore control chars like Backspace, Tab, etc.
         {
-            if (!searchBar.searchInput.activeFocus) {
+            if (!searchBar.searchInput.activeFocus && !event.isAutoRepeat) {
                 root.focusSearchInput();
                 // Insert the character at the cursor position
                 searchBar.searchInput.text = searchBar.searchInput.text.slice(0, searchBar.searchInput.cursorPosition) + event.text + searchBar.searchInput.text.slice(searchBar.searchInput.cursorPosition);
