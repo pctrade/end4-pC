@@ -172,6 +172,7 @@ Singleton {
 
     property string mathResult: ""
     property string helperScriptPath: FileUtils.trimFileProtocol(Quickshell.shellPath("scripts/super_menu_helper.py"))
+    readonly property var helperCommand: ["env", "QS_OMNI_HISTORY=" + (Config.options.search.omni.enableBrowserHistory ? "1" : "0"), "python3", helperScriptPath]
     property var fileSearchResults: []
     property string lastFileQuery: ""
     property var spotifySearchResults: []
@@ -213,7 +214,7 @@ Singleton {
         function search(isPlay, q) {
             spotifyHistoryProc.running = false;
             spotifyHistoryProc.targetQuery = q.toLowerCase();
-            spotifyHistoryProc.command = ["python3", root.helperScriptPath, "spotify-history", isPlay ? "play" : "queue", q];
+            spotifyHistoryProc.command = [...root.helperCommand, "spotify-history", isPlay ? "play" : "queue", q];
             spotifyHistoryProc.running = true;
         }
         stdout: SplitParser {
@@ -246,8 +247,7 @@ Singleton {
             suggestionProc.running = false;
             suggestionProc.targetQuery = q.toLowerCase();
             suggestionProc.command = [
-                "python3",
-                root.helperScriptPath,
+                ...root.helperCommand,
                 "suggestions",
                 q,
                 Config.options.search.omni.enableBrowserHistory ? "1" : "0",
@@ -283,7 +283,7 @@ Singleton {
         function search(q) {
             fileSearchProc.running = false;
             fileSearchProc.targetQuery = q;
-            fileSearchProc.command = ["python3", root.helperScriptPath, "file-search", q];
+            fileSearchProc.command = [...root.helperCommand, "file-search", q];
             fileSearchProc.running = true;
         }
         stdout: SplitParser {
@@ -317,7 +317,7 @@ Singleton {
         function search(sq) {
             spotifySearchProc.running = false;
             spotifySearchProc.targetSongQuery = sq.toLowerCase();
-            spotifySearchProc.command = ["python3", root.helperScriptPath, "spotify-search", sq];
+            spotifySearchProc.command = [...root.helperCommand, "spotify-search", sq];
             spotifySearchProc.running = true;
         }
         stdout: SplitParser {
@@ -524,7 +524,7 @@ Singleton {
                     execute: () => {
                         GlobalStates.overviewOpen = false;
                         if (prompt) Quickshell.clipboardText = prompt;
-                        Quickshell.execDetached(["python3", root.helperScriptPath, "open-claude", prompt]);
+                        Quickshell.execDetached([...root.helperCommand, "open-claude", prompt]);
                     }
                 })];
             } else if (prefix === "gpt" || prefix === "chatgpt") {
@@ -538,7 +538,7 @@ Singleton {
                     execute: () => {
                         GlobalStates.overviewOpen = false;
                         if (prompt) Quickshell.clipboardText = prompt;
-                        Quickshell.execDetached(["python3", root.helperScriptPath, "open-chatgpt", prompt]);
+                        Quickshell.execDetached([...root.helperCommand, "open-chatgpt", prompt]);
                     }
                 })];
             }
@@ -576,9 +576,9 @@ Singleton {
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
                             if (h.uri) {
-                                Quickshell.execDetached(["python3", root.helperScriptPath, isPlay ? "spotify-play" : "spotify-queue", h.uri, h.text]);
+                                Quickshell.execDetached([...root.helperCommand, isPlay ? "spotify-play" : "spotify-queue", h.uri, h.text]);
                             } else {
-                                Quickshell.execDetached(["python3", root.helperScriptPath, isPlay ? "spotify-play-query" : "spotify-queue-query", h.text]);
+                                Quickshell.execDetached([...root.helperCommand, isPlay ? "spotify-play-query" : "spotify-queue-query", h.text]);
                             }
                         }
                     });
@@ -606,7 +606,7 @@ Singleton {
                 iconName: isPlay ? "play_circle" : "queue_music",
                 iconType: LauncherSearchResult.IconType.Material,
                 execute: () => {
-                    Quickshell.execDetached(["python3", root.helperScriptPath, isPlay ? "spotify-play-query" : "spotify-queue-query", songQuery]);
+                    Quickshell.execDetached([...root.helperCommand, isPlay ? "spotify-play-query" : "spotify-queue-query", songQuery]);
                 }
             });
 
@@ -620,7 +620,7 @@ Singleton {
                         iconName: isPlay ? "play_circle" : "queue_music",
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
-                            Quickshell.execDetached(["python3", root.helperScriptPath, isPlay ? "spotify-play" : "spotify-queue", track.uri, track.display]);
+                            Quickshell.execDetached([...root.helperCommand, isPlay ? "spotify-play" : "spotify-queue", track.uri, track.display]);
                         },
                         actions: [
                             resultComp.createObject(null, {
@@ -628,7 +628,7 @@ Singleton {
                                 iconName: isPlay ? "queue_music" : "play_arrow",
                                 iconType: LauncherSearchResult.IconType.Material,
                                 execute: () => {
-                                    Quickshell.execDetached(["python3", root.helperScriptPath, isPlay ? "spotify-queue" : "spotify-play", track.uri, track.display]);
+                                    Quickshell.execDetached([...root.helperCommand, isPlay ? "spotify-queue" : "spotify-play", track.uri, track.display]);
                                 }
                             })
                         ]
@@ -768,7 +768,7 @@ Singleton {
                         iconName: item.is_dir ? "folder" : "description",
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
-                            Quickshell.execDetached(["python3", root.helperScriptPath, "file-open", item.path]);
+                            Quickshell.execDetached([...root.helperCommand, "file-open", item.path]);
                         }
                     });
                 });
@@ -781,7 +781,7 @@ Singleton {
                     iconName: "folder_open",
                     iconType: LauncherSearchResult.IconType.Material,
                     execute: () => {
-                        Quickshell.execDetached(["python3", root.helperScriptPath, "file-open", root.query]);
+                        Quickshell.execDetached([...root.helperCommand, "file-open", root.query]);
                     }
                 })];
             }
@@ -812,13 +812,7 @@ Singleton {
                     iconName: 'language',
                     iconType: LauncherSearchResult.IconType.Material,
                     execute: () => {
-                        Quickshell.execDetached([
-                            "python3",
-                            root.helperScriptPath,
-                            "open-url",
-                            targetUrl,
-                            Config.options.search.omni.enableBrowserHistory ? "1" : "0",
-                        ]);
+                        Quickshell.execDetached([...root.helperCommand, "open-url", targetUrl]);
                     }
                 });
             }
@@ -861,7 +855,7 @@ Singleton {
                         iconName: "history",
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
-                            Quickshell.execDetached(["python3", root.helperScriptPath, "open-url", s.text, "1"]);
+                            Quickshell.execDetached([...root.helperCommand, "open-url", s.text]);
                         }
                     }));
                 } else if (Config.options.search.omni.enableSpotify && s.type === "spotify_play") {
@@ -874,9 +868,9 @@ Singleton {
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
                             if (s.data) {
-                                Quickshell.execDetached(["python3", root.helperScriptPath, "spotify-play", s.data, s.text]);
+                                Quickshell.execDetached([...root.helperCommand, "spotify-play", s.data, s.text]);
                             } else {
-                                Quickshell.execDetached(["python3", root.helperScriptPath, "spotify-play-query", s.text]);
+                                Quickshell.execDetached([...root.helperCommand, "spotify-play-query", s.text]);
                             }
                         }
                     }));
@@ -890,9 +884,9 @@ Singleton {
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
                             if (s.data) {
-                                Quickshell.execDetached(["python3", root.helperScriptPath, "spotify-queue", s.data, s.text]);
+                                Quickshell.execDetached([...root.helperCommand, "spotify-queue", s.data, s.text]);
                             } else {
-                                Quickshell.execDetached(["python3", root.helperScriptPath, "spotify-queue-query", s.text]);
+                                Quickshell.execDetached([...root.helperCommand, "spotify-queue-query", s.text]);
                             }
                         }
                     }));
@@ -905,7 +899,7 @@ Singleton {
                         iconName: "search",
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
-                            Quickshell.execDetached(["python3", root.helperScriptPath, "open-search", s.text, Config.options.search.engineBaseUrl]);
+                            Quickshell.execDetached([...root.helperCommand, "open-search", s.text, Config.options.search.engineBaseUrl]);
                         }
                     }));
                 } else if (s.type === "command") {
@@ -918,7 +912,7 @@ Singleton {
                         iconName: "terminal",
                         iconType: LauncherSearchResult.IconType.Material,
                         execute: () => {
-                            Quickshell.execDetached(["python3", root.helperScriptPath, "run-shell", s.text]);
+                            Quickshell.execDetached([...root.helperCommand, "run-shell", s.text]);
                         }
                     }));
                 }
