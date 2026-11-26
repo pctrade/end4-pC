@@ -7,12 +7,35 @@ import tempfile
 BOOL_KEYS = {
     "decoration:blur:enabled",
     "decoration:shadow:enabled",
+    "decoration:dim_inactive",
     "animations:enabled",
+    "general:resize_on_border",
+    "general:allow_tearing",
     "input:numlock_by_default",
+    "input:force_no_accel",
+    "input:left_handed",
     "input:touchpad:natural_scroll",
     "input:touchpad:disable_while_typing",
     "input:touchpad:clickfinger_behavior",
+    "input:touchpad:tap-to-click",
+    "input:touchpad:tap-and-drag",
+    "input:touchpad:middle_button_emulation",
     "misc:focus_on_activate",
+    "misc:disable_hyprland_logo",
+    "misc:disable_splash_rendering",
+    "misc:mouse_move_enables_dpms",
+    "misc:key_press_enables_dpms",
+    "misc:animate_manual_resizes",
+    "misc:enable_swallow",
+    "misc:middle_click_paste",
+    "misc:close_special_on_empty",
+    "cursor:hide_on_key_press",
+    "dwindle:preserve_split",
+    "dwindle:smart_split",
+    "xwayland:force_zero_scaling",
+    "binds:workspace_back_and_forth",
+    "binds:allow_workspace_cycles",
+    "group:auto_group",
 }
 
 ANIM_PRESETS = {
@@ -84,7 +107,7 @@ def to_lua_value(key, value):
 
 
 def to_lua_line(key, value):
-    parts = key.replace(":", ".").split(".")
+    parts = key.replace("-", "_").replace(":", ".").split(".")
     val = to_lua_value(key, value)
     inner = f"{{ {parts[-1]} = {val} }}"
     for part in reversed(parts[:-1]):
@@ -93,7 +116,7 @@ def to_lua_line(key, value):
 
 
 def make_marker(key):
-    parts = key.replace(":", ".").split(".")
+    parts = key.replace("-", "_").replace(":", ".").split(".")
 
     fragment = " = { ".join(parts[:-1])
     if fragment:

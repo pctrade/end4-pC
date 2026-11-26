@@ -18,7 +18,7 @@ Item {
     property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
     property bool isDi: GlobalStates.dynamicIslandEnabled && Config.options.bar.dynamicIsland.rightWidget === "systemIcons" 
 
-    readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isDi ? Appearance.colors.colOnLayer1 : (root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1))
+    readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isDi ? Appearance.colors.colOnLayer1 : (root.isMaterial ? (Config.options.background.widgets.glass.enable ? Appearance.colors.colOnLayer0 : Appearance.colors.colOnPrimary) : Appearance.colors.colOnLayer1))
 
     implicitWidth: root.vertical ? 32 : flow.implicitWidth + (root.isMaterial ? 12 : 4)
     implicitHeight: root.vertical ? flow.implicitHeight + 4 : 32
@@ -137,6 +137,43 @@ Item {
             text: BluetoothStatus.connected ? "bluetooth_connected" : BluetoothStatus.enabled ? "bluetooth" : "bluetooth_disabled"
             iconSize: Appearance.font.pixelSize.larger
             color: root.iconColor
+        }
+        Repeater {
+            model: ScriptModel {
+                values: PeripheralBattery.lowDevices
+                objectProp: "nativePath"
+            }
+            delegate: MaterialSymbol {
+                id: peripheralIcon
+                required property var modelData
+                readonly property bool critical: PeripheralBattery.isCritical(modelData)
+                property bool hovered: peripheralMouse.containsMouse
+                text: {
+                    switch (modelData.type) {
+                    case UPowerDeviceType.Mouse: return "mouse";
+                    case UPowerDeviceType.Keyboard: return "keyboard";
+                    case UPowerDeviceType.Headset:
+                    case UPowerDeviceType.Headphones: return "headphones";
+                    case UPowerDeviceType.GamingInput: return "sports_esports";
+                    case UPowerDeviceType.Phone: return "smartphone";
+                    default: return "battery_alert";
+                    }
+                }
+                iconSize: Appearance.font.pixelSize.larger
+                color: critical ? Appearance.colors.colError : root.iconColor
+                fill: 1
+
+                MouseArea {
+                    id: peripheralMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.NoButton
+                }
+
+                StyledToolTip {
+                    text: `${modelData.model || Translation.tr("Device")} • ${Math.round(modelData.percentage * 100)}%`
+                }
+            }
         }
         Loader {
             id: notifLoader

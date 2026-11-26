@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import qs.services
 import qs.modules.common
 import qs.modules.common.models.quickToggles
@@ -33,6 +34,39 @@ GroupButton {
     altAction: toggleModel?.hasMenu ? (() => root.openMenu()) : (toggleModel?.altAction ?? null)
 
     property bool editMode: false
+
+    property real dragOffsetX: 0
+    property real dragOffsetY: 0
+    property bool settlePending: false
+    property point settleScenePos: Qt.point(0, 0)
+
+    transform: Translate { x: root.dragOffsetX; y: root.dragOffsetY }
+
+    ParallelAnimation {
+        id: settleAnim
+        NumberAnimation { target: root; property: "dragOffsetX"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "dragOffsetY"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+        onFinished: root.setRowRaised(false)
+    }
+
+    function setRowRaised(raised) {
+        const row = root.parent?.parent
+        if (row) row.z = raised ? 100 : 0
+    }
+
+    function applySettle() {
+        if (!root.settlePending) return
+        root.settlePending = false
+        const nowScene = root.mapToItem(null, 0, 0)
+        const layoutX = nowScene.x - root.dragOffsetX
+        const layoutY = nowScene.y - root.dragOffsetY
+        root.dragOffsetX = root.settleScenePos.x - layoutX
+        root.dragOffsetY = root.settleScenePos.y - layoutY
+        settleAnim.restart()
+    }
+
+    onXChanged: root.applySettle()
+    onYChanged: root.applySettle()
 
     baseWidth: root.baseCellWidth * cellSize + cellSpacing * (cellSize - 1)
     baseHeight: root.baseCellHeight
@@ -202,46 +236,61 @@ GroupButton {
             onActiveChanged: {
                 editModeInteraction.isDragging = active;
 
-                if (!active) {
-                    if (root.dropIndicatorRef) root.dropIndicatorRef.visible = false;
-                    const sceneX = centroid.scenePosition.x;
-                    const sceneY = centroid.scenePosition.y;
-                    const nearest = findNearest(sceneX, sceneY);
-                    if (nearest) {
-                        const toggleList = Config.options.sidebar.quickToggles.android.toggles;
-                        const myType = root.buttonData.type;
-                        const sibType = nearest.buttonData.type;
-                        const myIdx = toggleList.findIndex(t => t.type === myType);
-                        const sibIdx = toggleList.findIndex(t => t.type === sibType);
-                        if (myIdx !== -1 && sibIdx !== -1 && myIdx !== sibIdx) {
-                            const temp = toggleList[myIdx];
-                            toggleList[myIdx] = toggleList[sibIdx];
-                            toggleList[sibIdx] = temp;
-                        }
-                    }
+                if (active) {
+                    settleAnim.stop();
+                    root.settlePending = false;
+                    root.setRowRaised(true);
+                    return;
                 }
-            }
 
-            onCentroidChanged: {
-                if (!active || !root.dropIndicatorRef || !root.gridRef) return;
+                if (root.dropIndicatorRef) root.dropIndicatorRef.visible = false;
                 const sceneX = centroid.scenePosition.x;
                 const sceneY = centroid.scenePosition.y;
                 const nearest = findNearest(sceneX, sceneY);
-
+                root.settleScenePos = root.mapToItem(null, 0, 0);
+                root.settlePending = true;
                 if (nearest) {
-                    const nearestScene = nearest.mapToItem(null, 0, 0);
-                    const myScene = root.mapToItem(null, 0, 0);
-                    const goesAfter = nearestScene.x > myScene.x || nearestScene.y > myScene.y;
-                    const nearestLocal = nearest.mapToItem(root.gridRef, 0, 0);
+                    const toggleList = Config.options.sidebar.quickToggles.android.toggles;
+                    const myType = root.buttonData.type;
+                    const sibType = nearest.buttonData.type;
+                    const myIdx = toggleList.findIndex(t => t.type === myType);
+                    const sibIdx = toggleList.findIndex(t => t.type === sibType);
+                    if (myIdx !== -1 && sibIdx !== -1 && myIdx !== sibIdx) {
+                        const temp = toggleList[myIdx];
+                        toggleList[myIdx] = toggleList[sibIdx];
+                        toggleList[sibIdx] = temp;
+                    }
+                }
+                settleSettleTimer.restart();
+            }
 
-                    root.dropIndicatorRef.x = goesAfter
-                        ? nearestLocal.x + nearest.width + 1
-                        : nearestLocal.x - 5;
-                    root.dropIndicatorRef.y = nearestLocal.y;
+            onCentroidChanged: {
+                if (!active) return;
+                root.dragOffsetX = centroid.scenePosition.x - centroid.scenePressPosition.x;
+                root.dragOffsetY = centroid.scenePosition.y - centroid.scenePressPosition.y;
+                if (!root.dropIndicatorRef) return;
+                const nearest = findNearest(centroid.scenePosition.x, centroid.scenePosition.y);
+                if (nearest) {
+                    const pos = nearest.mapToItem(root.dropIndicatorRef.parent, 0, 0);
+                    root.dropIndicatorRef.x = pos.x;
+                    root.dropIndicatorRef.y = pos.y;
+                    root.dropIndicatorRef.width = nearest.width;
                     root.dropIndicatorRef.height = nearest.height;
+                    root.dropIndicatorRef.radius = nearest.buttonRadius;
                     root.dropIndicatorRef.visible = true;
                 } else {
                     root.dropIndicatorRef.visible = false;
+                }
+            }
+        }
+
+        Timer {
+            id: settleSettleTimer
+            interval: 60
+            onTriggered: {
+                if (root.settlePending) {
+                    root.settlePending = false;
+                    settleAnim.restart();
                 }
             }
         }
@@ -261,6 +310,17 @@ GroupButton {
             if (!toggleList.find(t => t.type === buttonType))
                 toggleList.push({ type: buttonType, size: 1 });
         }
+    }
+
+    Rectangle {
+        visible: editModeInteraction.isDragging
+        anchors.fill: parent
+        anchors.margins: -3
+        z: 5
+        radius: root.buttonRadius + 3
+        color: "transparent"
+        border.width: 2
+        border.color: Appearance.colors.colPrimary
     }
 
     // del
@@ -307,30 +367,43 @@ GroupButton {
     }
 
     // resize
-    Rectangle {
+    Item {
         id: resizeBtn
         visible: root.editMode && !root.isUnused
         z: 10
-        width: 20
-        height: 20
-        radius: 4
-        color: resizeHover.containsMouse ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colPrimary, 0.15)
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.bottomMargin: -6
-        anchors.rightMargin: -6
+        width: 32
+        height: 32
 
-        Behavior on color {
-            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-        }
+        readonly property real cornerR: Math.max(8, Math.min(root.buttonRadius, root.height / 2, root.width / 2))
+        readonly property real arcR: cornerR + 4
+        x: root.width - cornerR + arcR * 0.7071 - width / 2
+        y: root.height - cornerR + arcR * 0.7071 - height / 2
 
-        MaterialSymbol {
-            anchors.centerIn: parent
-            text: "open_in_full"
-            iconSize: 13
-            color: Appearance.colors.colOnPrimary
-            Behavior on color {
-                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+        Shape {
+            anchors.fill: parent
+            layer.enabled: true
+            layer.samples: 4
+
+            ShapePath {
+                strokeWidth: 4
+                strokeColor: resizeHover.pressed || resizeHover.containsMouse
+                    ? Appearance.colors.colPrimary
+                    : ColorUtils.transparentize(Appearance.colors.colOnLayer2, 0.2)
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+
+                Behavior on strokeColor {
+                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                }
+
+                PathAngleArc {
+                    centerX: resizeBtn.width / 2 - resizeBtn.arcR * 0.7071
+                    centerY: resizeBtn.height / 2 - resizeBtn.arcR * 0.7071
+                    radiusX: resizeBtn.arcR
+                    radiusY: resizeBtn.arcR
+                    startAngle: 20
+                    sweepAngle: 50
+                }
             }
         }
 

@@ -12,12 +12,11 @@ Singleton {
     id: root
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
-    property int viewers: 0
-    readonly property bool wanted: root.viewers > 0 || ((Config.options?.bar?.dynamicIsland?.lyrics ?? true)
-        && ((Config.options?.bar?.dynamicIsland?.lyricsPill ?? true) || (Config.options?.bar?.dynamicIsland?.lyricsCard ?? true)))
-    readonly property bool playing: root.activePlayer?.isPlaying ?? false
-    property string fetchedFor: ""
+
     readonly property string trackKey: `${root.activePlayer?.trackTitle ?? ""}|${root.activePlayer?.trackArtist ?? ""}`
+    property string fetchedFor: ""
+    property bool wanted: true
+
     onWantedChanged: if (root.wanted && root.fetchedFor !== root.trackKey) root.restartLyrics()
 
     property var lyricsLines: []
@@ -41,30 +40,77 @@ Singleton {
         return result
     }
 
-    Timer {
-        id: syncTimer
-        interval: 150
-        repeat: true
-        running: root.status === "ok" && root.lyricsLines.length > 0 && root.wanted && root.playing
-        onTriggered: root.syncNow()
+    readonly property bool playing: root.activePlayer?.isPlaying ?? false
+    readonly property bool synced: root.status === "ok" && root.lyricsLines.length > 0
+    readonly property real leadSeconds: 0.15
+
+    property real basePosition: 0
+    property real baseTime: Date.now()
+
+    function currentPosition() {
+        return root.playing ? root.basePosition + (Date.now() - root.baseTime) / 1000 : root.basePosition
     }
 
-    // Highlights the line at the player position. Also runs on lyrics arrival, pause/resume and view requests,
-    // so a paused song keeps its line.
-    function syncNow() {
-        if (root.status !== "ok" || root.lyricsLines.length === 0) return
-        const pos = root.activePlayer?.position ?? 0
-        let idx = -1
-        for (let i = 0; i < root.lyricsLines.length; i++) {
-            if (root.lyricsLines[i].time <= pos) idx = i
-            else break
+    function resync() {
+        if (!root.activePlayer) return
+        root.activePlayer.positionChanged()
+        readPositionTimer.restart()
+    }
+
+    function indexAt(pos) {
+        const lines = root.lyricsLines
+        let low = 0
+        let high = lines.length - 1
+        let result = -1
+        while (low <= high) {
+            const mid = (low + high) >> 1
+            if (lines[mid].time <= pos) {
+                result = mid
+                low = mid + 1
+            } else {
+                high = mid - 1
+            }
         }
+        return result
+    }
+
+    function update() {
+        boundaryTimer.stop()
+        if (!root.synced) return
+        const idx = root.indexAt(root.currentPosition() + root.leadSeconds)
         if (idx !== root.activeIndex) {
             root.activeIndex = idx
             root.slots = root.buildSlots(idx)
         }
+        const next = root.lyricsLines[idx + 1]
+        if (!root.playing || !next) return
+        const delay = (next.time - root.leadSeconds - root.currentPosition()) * 1000
+        boundaryTimer.interval = Math.max(1, Math.ceil(delay))
+        boundaryTimer.start()
     }
-    onPlayingChanged: root.syncNow()
+
+    Timer {
+        id: readPositionTimer
+        interval: 80
+        onTriggered: {
+            root.basePosition = root.activePlayer?.position ?? 0
+            root.baseTime = Date.now()
+            root.update()
+        }
+    }
+
+    Timer {
+        id: boundaryTimer
+        onTriggered: root.update()
+    }
+
+    Timer {
+        id: driftTimer
+        interval: 4000
+        repeat: true
+        running: root.synced && root.playing
+        onTriggered: root.resync()
+    }
 
     Process {
         id: lyricsProc
@@ -92,23 +138,18 @@ Singleton {
                 root.activeIndex = -1
                 root.slots = root.buildSlots(-1)
                 root.status = "ok"
-                Qt.callLater(root.syncNow)
+                root.resync()
             }
         }
     }
 
     function restartLyrics() {
         lyricsProc.running = false
+        boundaryTimer.stop()
         root.lyricsLines = []
         root.activeIndex = -1
         root.slots = ["", "", "", "", "", "", ""]
         root.status = "loading"
-        if (!root.wanted) {
-            root.status = "off"
-            root.fetchedFor = ""
-            return
-        }
-        root.fetchedFor = root.trackKey
 
         const title    = root.activePlayer?.trackTitle  ?? ""
         const artist   = root.activePlayer?.trackArtist ?? ""
@@ -124,14 +165,27 @@ Singleton {
         lyricsProc.running = true
     }
 
-    // Keyed on title + artist (and so on the player): title alone missed player switches and reloads. Debounced
-    // because title and artist often arrive apart.
-    onTrackKeyChanged: lyricsDebounce.restart()
+    Timer {
+        id: restartDebounce
+        interval: 150
+        onTriggered: root.restartLyrics()
+    }
+
+    onActivePlayerChanged: restartDebounce.restart()
+
+    Connections {
+        target: root.activePlayer
+        function onTrackTitleChanged() { root.restartLyrics() }
+        function onTrackArtistChanged() { restartDebounce.restart() }
+        function onPlaybackStateChanged() { root.resync() }
+    }
+
+        onTrackKeyChanged: lyricsDebounce.restart()
     Timer {
         id: lyricsDebounce
         interval: 250
         onTriggered: if (root.fetchedFor !== root.trackKey) root.restartLyrics()
     }
 
-    Component.onCompleted: root.restartLyrics()
+Component.onCompleted: root.restartLyrics()
 }

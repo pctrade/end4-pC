@@ -9,6 +9,12 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
+    WindowGlass {
+        anchors.fill: parent
+        glassEnabled: (parent?.color.a ?? 0) > 0
+        cardRadius: parent?.radius ?? 0
+        tint: parent?.color ?? 'transparent'
+    }
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
 

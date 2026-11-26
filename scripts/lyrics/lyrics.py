@@ -3,6 +3,8 @@ import sys
 import urllib.request
 import urllib.parse
 import json
+import re
+import xml.etree.ElementTree as ET
 
 def _parse_lrc(lrc_text: str) -> list:
     lines = []
@@ -54,6 +56,46 @@ def fetch_lrclib(title: str, artist: str, duration: float) -> list:
             continue
     return []
 
+def _ttml_seconds(value: str) -> float:
+    total = 0.0
+    for part in value.replace("s", "").split(":"):
+        total = total * 60 + float(part)
+    return total
+
+def _parse_ttml(ttml: str) -> list:
+    root = ET.fromstring(ttml)
+    lines = []
+    for p in root.iter():
+        if not p.tag.endswith("}p") and p.tag != "p":
+            continue
+        begin = p.get("begin")
+        if begin is None:
+            continue
+        text = re.sub(r"\s+", " ", "".join(p.itertext())).strip()
+        try:
+            lines.append({"time": _ttml_seconds(begin), "text": text})
+        except ValueError:
+            continue
+    return sorted(lines, key=lambda x: x["time"])
+
+BOIDU_BASES = ["https://api.betterlyrics.org", "https://lyrics-api.boidu.dev"]
+
+def fetch_boidu(title: str, artist: str, duration: float) -> list:
+    query = f"/getLyrics?s={urllib.parse.quote(title)}&a={urllib.parse.quote(artist)}"
+    if duration > 0:
+        query += f"&d={int(duration)}"
+    for base in BOIDU_BASES:
+        try:
+            req = urllib.request.Request(base + query, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                data = json.loads(r.read().decode())
+            lines = _parse_ttml(data.get("ttml") or "")
+            if len(lines) >= 3:
+                return lines
+        except Exception:
+            continue
+    return []
+
 def main():
     if len(sys.argv) < 4:
         print("no_info", flush=True)
@@ -64,7 +106,7 @@ def main():
     if not title or not artist:
         print("no_info", flush=True)
         sys.exit(0)
-    lines = fetch_lrclib(title, artist, duration)
+    lines = fetch_lrclib(title, artist, duration) or fetch_boidu(title, artist, duration)
     if not lines:
         print("not_found", flush=True)
         sys.exit(0)

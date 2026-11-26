@@ -42,6 +42,20 @@
 
 ---
 
+## 🎨 社区预设
+
+一键分享你的整个桌面，也可以一键试用别人的。
+
+**[end4-pCpresets](https://github.com/pctrade/end4-pCpresets)** 是本 Shell 的社区预设库。打开 **Dashboard → Presets**，选择预设后点击 **Download** 试用，或点击 **Install** 永久保存。想分享自己的？点击 **Upload**，选择一张截图，再通过 Pull Request 提交即可，无需使用 git。
+
+- 🔒 **注重隐私：** 不会收集你的任何数据，Shell 只读取 GitHub 上的公开文件。
+- 🧹 **导出已清理：** 分享前会移除个人路径、密钥和命令。
+- ✅ **每个预设都会自动检查**，并由人工合并。
+
+[浏览预设库](https://github.com/pctrade/end4-pCpresets) · [如何分享你的预设](https://github.com/pctrade/end4-pCpresets#share-your-preset)
+
+---
+
 ## ⚡ 安装
 
 > [!NOTE]

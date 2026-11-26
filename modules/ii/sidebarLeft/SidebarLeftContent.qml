@@ -4,8 +4,7 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
-import Qt.labs.synchronizer
+import Quickshell.Widgets
 
 Item {
     id: root
@@ -17,26 +16,58 @@ Item {
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
     property bool mediaEnabled: Config.options.sidebar.media.enable
-    property var tabButtonList: [
-        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
-        ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
-        ...(root.mediaEnabled ? [{"icon": "music_note", "name": Translation.tr("Media")}] : []),
-        ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
+    property bool footballEnabled: Config.options.sidebar.football.enable
+
+    readonly property var featurePages: [
+        ...(root.aiChatEnabled ? [{"key": "ai", "icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
+        ...(root.translatorEnabled ? [{"key": "translator", "icon": "translate", "name": Translation.tr("Translator")}] : []),
+        ...(root.mediaEnabled ? [{"key": "media", "icon": "music_note", "name": Translation.tr("Media")}] : []),
+        ...(root.footballEnabled ? [{"key": "sports", "icon": "sports", "name": Translation.tr("Sports")}] : []),
+        ...((root.animeEnabled && !root.animeCloset) ? [{"key": "anime", "icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
     ]
-    property int tabCount: swipeView.count
+    readonly property var pageKeys: ["home", ...root.featurePages.map(page => page.key)]
+    property string currentKey: "home"
+    readonly property int currentIndex: Math.max(0, root.pageKeys.indexOf(root.currentKey))
+    readonly property var currentPage: root.featurePages.find(page => page.key === root.currentKey) ?? null
+    property bool restored: false
+    property int direction: 1
+    readonly property bool glassPage: ["media", "sports", "ai", "anime", "translator"].includes(root.currentKey)
+
+    function goTo(key) {
+        if (root.pageKeys.indexOf(key) < 0) key = "home"
+        root.direction = root.pageKeys.indexOf(key) >= root.currentIndex ? 1 : -1
+        root.currentKey = key
+        if (Config.options.sidebar.leftRememberPage) Config.options.sidebar.leftLastPage = key
+    }
+
+    function step(delta) {
+        const next = (root.currentIndex + delta + root.pageKeys.length) % root.pageKeys.length
+        root.goTo(root.pageKeys[next])
+    }
 
     function focusActiveItem() {
-        swipeView.currentItem.forceActiveFocus()
+        const slot = pageStack.children.find(child => child.current === true)
+        slot?.item?.forceActiveFocus()
+    }
+
+    Component.onCompleted: {
+        const saved = Config.options.sidebar.leftLastPage
+        if (Config.options.sidebar.leftRememberPage && root.pageKeys.indexOf(saved) >= 0) root.currentKey = saved
+        root.restored = true
+    }
+
+    onPageKeysChanged: {
+        if (root.restored && root.pageKeys.indexOf(root.currentKey) < 0) root.currentKey = "home"
     }
 
     Keys.onPressed: (event) => {
         if (event.modifiers === Qt.ControlModifier) {
             if (event.key === Qt.Key_PageDown) {
-                swipeView.incrementCurrentIndex()
+                root.step(1)
                 event.accepted = true;
             }
             else if (event.key === Qt.Key_PageUp) {
-                swipeView.decrementCurrentIndex()
+                root.step(-1)
                 event.accepted = true;
             }
         }
@@ -47,54 +78,148 @@ Item {
             fill: parent
             margins: sidebarPadding
         }
-        spacing: verticalTabBar.expanded ? -2 : 0
+        spacing: 6
 
-        VerticalTabBar {
-            id: verticalTabBar
-            visible: tabButtonList.length > 0
+        RowLayout {
             Layout.fillWidth: true
-            tabButtonList: root.tabButtonList
-            currentIndex: swipeView.currentIndex
-            onCurrentIndexChanged: swipeView.currentIndex = currentIndex
-        }
+            Layout.preferredHeight: 40
+            visible: root.currentKey !== "home"
+            spacing: 8
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            implicitWidth: swipeView.implicitWidth
-            implicitHeight: swipeView.implicitHeight
-            topLeftRadius: 0
-            bottomLeftRadius: Appearance.rounding.normal
-            topRightRadius: 0
-            bottomRightRadius: Appearance.rounding.normal
-            color: Appearance.colors.colLayer1
-
-            SwipeView { // Content pages
-                id: swipeView
-                anchors.fill: parent
-                spacing: 10
-                currentIndex: tabBar.currentIndex
-
-                clip: true
-                layer.enabled: true
-                layer.effect: OpacityMask {
-                    maskSource: Rectangle {
-                        width: swipeView.width
-                        height: swipeView.height
-                        radius: Appearance.rounding.small
-                    }
+            RippleButton {
+                implicitWidth: 40
+                implicitHeight: 40
+                buttonRadius: Appearance.rounding.full
+                colBackground: Appearance.colors.colSecondaryContainer
+                colBackgroundHover: Appearance.colors.colSecondaryContainerHover
+                colRipple: Appearance.colors.colSecondaryContainerActive
+                onClicked: root.goTo("home")
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "arrow_back"
+                    iconSize: Appearance.font.pixelSize.larger
+                    color: Appearance.colors.colOnSecondaryContainer
                 }
+            }
 
-                contentChildren: [
-                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
-                    ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...(root.mediaEnabled ? [media.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
-                    ...(root.animeEnabled ? [anime.createObject()] : []),
-                ]
+            MaterialSymbol {
+                text: root.currentPage?.icon ?? ""
+                fill: 1
+                iconSize: Appearance.font.pixelSize.huge
+                color: Appearance.colors.colPrimary
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                text: root.currentPage?.name ?? ""
+                font.pixelSize: Appearance.font.pixelSize.larger
+                font.weight: Font.DemiBold
+                color: Appearance.colors.colOnLayer0
+                elide: Text.ElideRight
+            }
+
+            Repeater {
+                model: root.featurePages.filter(page => page.key !== root.currentKey)
+                delegate: RippleButton {
+                    required property var modelData
+                    implicitWidth: 36
+                    implicitHeight: 36
+                    buttonRadius: Appearance.rounding.full
+                    onClicked: root.goTo(modelData.key)
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        horizontalAlignment: Text.AlignHCenter
+                        text: modelData.icon
+                        iconSize: Appearance.font.pixelSize.larger
+                        color: Appearance.colors.colSubtext
+                    }
+                    StyledToolTip { text: modelData.name }
+                }
             }
         }
 
+        ClippingRectangle {
+            id: pagesBox
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            radius: Appearance.rounding.normal
+            color: root.glassPage && Config.options.background.widgets.glass.enable ? "transparent" : Appearance.colors.colLayer1
+
+            WindowGlass {
+                anchors.fill: parent
+                glassEnabled: root.currentKey === "sports" || root.currentKey === "ai" || root.currentKey === "anime" || root.currentKey === "translator"
+                cardRadius: pagesBox.radius
+            }
+
+            Item { // Content pages
+                id: pageStack
+                anchors.fill: parent
+
+                component PageSlot: SidebarPop {
+                    id: slot
+                    required property string pageKey
+                    property bool enabledPage: true
+                    property Component page: null
+                    property bool lingering: false
+                    property bool visited: false
+                    readonly property bool current: root.currentKey === pageKey
+                    readonly property bool isHome: pageKey === "home"
+                    readonly property alias item: loader.item
+
+                    anchors.fill: parent
+                    active: current
+                    visible: current || lingering
+                    minScale: isHome ? 1 : 0.97
+                    travelX: isHome ? 0 : root.direction * slot.width * 0.35
+                    exitX: -travelX
+                    travelY: 0
+                    fade: !isHome
+                    animIndex: 0
+                    smooth: !isHome
+
+                    Component.onCompleted: if (current) visited = true
+
+                    onCurrentChanged: {
+                        if (current) visited = true
+                        if (!current) {
+                            lingering = true
+                            lingerTimer.restart()
+                        }
+                    }
+
+                    Timer {
+                        id: lingerTimer
+                        interval: 760
+                        onTriggered: slot.lingering = false
+                    }
+
+                    Loader {
+                        id: loader
+                        anchors.fill: parent
+                        asynchronous: !slot.isHome
+                        active: slot.enabledPage && (slot.isHome || slot.visited)
+                        sourceComponent: slot.page
+                        onLoaded: if (slot.isHome) item.active = Qt.binding(() => slot.current)
+                    }
+                }
+
+                PageSlot { pageKey: "home"; page: home }
+                PageSlot { pageKey: "ai"; enabledPage: root.aiChatEnabled; page: aiChat }
+                PageSlot { pageKey: "translator"; enabledPage: root.translatorEnabled; page: translator }
+                PageSlot { pageKey: "media"; enabledPage: root.mediaEnabled; page: media }
+                PageSlot { pageKey: "sports"; enabledPage: root.footballEnabled; page: football }
+                PageSlot { pageKey: "anime"; enabledPage: root.animeEnabled && !root.animeCloset; page: anime }
+            }
+        }
+
+        Component {
+            id: home
+            SidebarHomePage {
+                pages: root.featurePages
+                onPageRequested: key => root.goTo(key)
+            }
+        }
         Component {
             id: aiChat
             AiChat {}
@@ -108,18 +233,12 @@ Item {
             SidebarPlayerControl {}
         }
         Component {
-            id: anime
-            Anime {}
+            id: football
+            FootballPage {}
         }
         Component {
-            id: placeholder
-            Item {
-                StyledText {
-                    anchors.centerIn: parent
-                    text: root.animeCloset ? Translation.tr("Nothing") : Translation.tr("Enjoy your empty sidebar...")
-                    color: Appearance.colors.colSubtext
-                }
-            }
+            id: anime
+            Anime {}
         }
     }
 }

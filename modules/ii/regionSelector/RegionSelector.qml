@@ -37,10 +37,10 @@ Scope {
         if (Persistent.states.record.enable) {
             const saveDir = Config.options.screenSnip.savePath !== "" ? Config.options.screenSnip.savePath : "";
             if (saveDir !== "") {
-                const cmd = `mkdir -p '${saveDir}' && filePath="${saveDir}/screenshot-$(date '+%Y-%m-%d_%H.%M.%S').png" && grim -g "$(slurp)" "$filePath" && cat "$filePath" | wl-copy && notify-send "Screenshot Saved" "Saved to $filePath" -a "Screen Snip" -i "image-x-generic"`;
+                const cmd = `mkdir -p '${saveDir}' && filePath="${saveDir}/screenshot-$(date '+%Y-%m-%d_%H.%M.%S').png" && grim -g "$(slurp)" "$filePath" && cat "$filePath" | wl-copy --type image/png && notify-send "Screenshot Saved" "Saved to $filePath" -a "Screen Snip" -i "image-x-generic"`;
                 Quickshell.execDetached(["bash", "-c", cmd]);
             } else {
-                const cmd = `grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot Copied" "Copied to clipboard" -a "Screen Snip" -i "image-x-generic"`;
+                const cmd = `grim -g "$(slurp)" - | wl-copy --type image/png && notify-send "Screenshot Copied" "Copied to clipboard" -a "Screen Snip" -i "image-x-generic"`;
                 Quickshell.execDetached(["bash", "-c", cmd]);
             }
             return;
@@ -66,6 +66,12 @@ Scope {
         GlobalStates.regionSelectorOpen = true
     }
 
+    function qr() {
+        root.action = RegionSelection.SnipAction.QrCode
+        root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        GlobalStates.regionSelectorOpen = true
+    }
+
     function record() {
         if (Persistent.states.record.enable) {
             Quickshell.execDetached([Directories.recordScriptPath]);
@@ -81,7 +87,8 @@ Scope {
             Quickshell.execDetached([Directories.recordScriptPath]);
             return;
         }
-        root.action = RegionSelection.SnipAction.RecordWithSound
+        Config.options.screenRecord.systemAudio = true
+        root.action = RegionSelection.SnipAction.Record
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
         GlobalStates.regionSelectorOpen = true
     }
@@ -97,6 +104,9 @@ Scope {
         }
         function ocr() {
             root.ocr()
+        }
+        function qr() {
+            root.qr()
         }
         function record() {
             root.record()
@@ -129,6 +139,11 @@ Scope {
         name: "regionOcr"
         description: "Recognizes text in the selected region"
         onPressed: root.ocr()
+    }
+    CompositorGlobalShortcut {
+        name: "regionQr"
+        description: "Scans a QR code in the selected region"
+        onPressed: root.qr()
     }
     CompositorGlobalShortcut {
         name: "regionRecord"

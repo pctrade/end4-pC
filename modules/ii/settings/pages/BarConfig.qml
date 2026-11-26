@@ -8,6 +8,7 @@ import Quickshell.Hyprland
 
 ContentPage {
     id: page
+    readonly property bool defaultWorkspacesDesign: (Config.options.bar.workspaces.style ?? "default") === "default"
     forceWidth: true
 
     readonly property color leftIconColor: {
@@ -19,6 +20,7 @@ ContentPage {
         { id: "leftSidebarButton", name: Translation.tr("Left Sidebar Button"),  icon: "left_panel_open" },
         { id: "workspaces",        name: Translation.tr("Workspaces"),           icon: "steppers" },
         { id: "weatherBar",        name: Translation.tr("Weather"),              icon: "flare" },
+        { id: "liveWallpaper",     name: Translation.tr("Live wallpaper"),        icon: "play_pause" },
         { id: "media",             name: Translation.tr("Media"),                icon: "music_note" },
         { id: "resources",         name: Translation.tr("Resources"),            icon: "empty_dashboard" },
         { id: "systemIcons",       name: Translation.tr("System Icons"),         icon: "info" },
@@ -61,6 +63,36 @@ ContentPage {
             if (w.id === "dynamicIsland" && (Config.options.bar.vertical || section !== "middle")) return false
             return !used.includes(w.id) || multipleAllowed.includes(w.id)
         })
+    }
+
+    readonly property var usedWidgets: {
+        const layouts = Config.options.bar.layouts
+        const used = [...layouts.leftLayout, ...layouts.middleLayout, ...layouts.rightLayout]
+        if (used.includes("dynamicIsland")) {
+            used.push(Config.options.bar.dynamicIsland.leftWidget, Config.options.bar.dynamicIsland.rightWidget)
+        }
+        return used
+    }
+
+    function isUsed(id) {
+        return page.usedWidgets.includes(id)
+    }
+
+    readonly property var widgetSections: ({
+        dynamicIsland: Translation.tr("Dynamic Island"),
+        sysTray: Translation.tr("Tray"),
+        leftSidebarButton: Translation.tr("Left sidebar button"),
+        divisor: Translation.tr("Divider"),
+        utilButtons: Translation.tr("Utility buttons"),
+        workspaces: Translation.tr("Workspaces"),
+        resources: Translation.tr("Resources"),
+        media: Translation.tr("Media"),
+        aiUsage: Translation.tr("AI Usage")
+    })
+
+    function openWidgetSettings(id) {
+        const title = page.widgetSections[id]
+        if (title) page.goTo(title, title)
     }
 
     function getWidgetName(id) {
@@ -164,6 +196,8 @@ ContentPage {
             icon: "splitscreen_add"
             shape: MaterialShape.Shape.Cookie6Sided
             title: Translation.tr("Bar layout")
+            hint: Translation.tr("Right-click a widget to open its settings (not every widget has settings here)")
+            hintIcon: "info"
 
             GroupedList {
                 LayoutSection {
@@ -172,6 +206,7 @@ ContentPage {
                     availableWidgets: page.availableFor("left")
                     getWidgetName: page.getWidgetName
                     onUpdate: list => Config.options.bar.layouts.leftLayout = list
+                    onWidgetContextRequested: id => page.openWidgetSettings(id)
                 }
 
                 LayoutSection {
@@ -180,6 +215,7 @@ ContentPage {
                     availableWidgets: page.availableFor("middle")
                     getWidgetName: page.getWidgetName
                     onUpdate: list => Config.options.bar.layouts.middleLayout = list
+                    onWidgetContextRequested: id => page.openWidgetSettings(id)
                 }
 
                 LayoutSection {
@@ -188,6 +224,7 @@ ContentPage {
                     availableWidgets: page.availableFor("right")
                     getWidgetName: page.getWidgetName
                     onUpdate: list => Config.options.bar.layouts.rightLayout = list
+                    onWidgetContextRequested: id => page.openWidgetSettings(id)
                 }
             }
         }
@@ -220,6 +257,7 @@ ContentPage {
                     onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
                     options: [
                         { displayName: Translation.tr("Hug"),     icon: "line_curve", value: 0 },
+                        { displayName: Translation.tr("Split Hug"), icon: "splitscreen", value: 6 },
                         { displayName: Translation.tr("Float"),   icon: "view_day",   value: 1 },
                         { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
                         { displayName: Translation.tr("M3"), icon: "interests",   value: 3 },
@@ -326,6 +364,7 @@ ContentPage {
             icon: "nest_wifi_pro"
             shape: MaterialShape.Shape.Cookie4Sided
             title: Translation.tr("Dynamic Island")
+            visible: page.isUsed("dynamicIsland")
 
             GroupedList {
                 ConfigSelectionArray {
@@ -1030,6 +1069,7 @@ ContentPage {
             shape: MaterialShape.Shape.Square
             icon: "inbox_customize"
             title: Translation.tr("Tray")
+            visible: page.isUsed("sysTray")
             GroupedList {
                 ConfigSwitch {
                     buttonIcon: "keep"; text: Translation.tr("Make icons pinned by default")
@@ -1048,6 +1088,7 @@ ContentPage {
             icon: "right_panel_open"
             shape: MaterialShape.Shape.Pentagon
             title: Translation.tr("Left sidebar button")
+            visible: page.isUsed("leftSidebarButton")
 
             GroupedList {
                 ConfigRow {
@@ -1118,6 +1159,7 @@ ContentPage {
             icon: "vertical_align_center"
             shape: MaterialShape.Shape.Diamond
             title: Translation.tr("Divider")
+            visible: page.isUsed("divisor")
 
             GroupedList {
                 ConfigSelectionArray {
@@ -1150,6 +1192,7 @@ ContentPage {
             icon: "buttons_alt"
             shape: MaterialShape.Shape.SoftBurst
             title: Translation.tr("Utility buttons")
+            visible: page.isUsed("utilButtons")
 
             GroupedList {
                 ConfigRow {
@@ -1218,13 +1261,37 @@ ContentPage {
         ContentSection {
             shape: MaterialShape.Shape.Cookie12Sided
             icon: "steppers"; title: Translation.tr("Workspaces")
+            visible: page.isUsed("workspaces")
             GroupedList {
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "style"
+                    currentValue: Config.options.bar.workspaces.style ?? "default"
+                    onSelected: newValue => {
+                        Config.options.bar.workspaces.style = newValue
+                    }
+                    options: [
+                        { displayName: Translation.tr("Default"), icon: "view_carousel",         value: "default" },
+                        { displayName: Translation.tr("GNOME"),   icon: "more_horiz",            value: "gnome" },
+                        { displayName: Translation.tr("Dots"),    icon: "hdr_weak",               value: "dots" },
+                        { displayName: Translation.tr("Ticks"),   icon: "more_vert",             value: "ticks" }
+                    ]
+                }
+                ConfigSpinBox {
+                    icon: "view_column"; text: Translation.tr("Workspaces shown")
+                    value: Config.options.bar.workspaces.shown
+                    from: 1; to: 30
+                    onValueChanged: { Config.options.bar.workspaces.shown = value; }
+                }
                 ConfigSwitch {
+                    enabled: page.defaultWorkspacesDesign
                     buttonIcon: "counter_1"; text: Translation.tr("Always show numbers")
                     checked: Config.options.bar.workspaces.alwaysShowNumbers
                     onCheckedChanged: { Config.options.bar.workspaces.alwaysShowNumbers = checked; }
                 }
                 ConfigSelectionArray {
+                    enabled: page.defaultWorkspacesDesign
+                    opacity: page.defaultWorkspacesDesign ? 1 : 0.5
                     text: Translation.tr("Numbers style")
                     icon: "looks_3"
                     currentValue: JSON.stringify(Config.options.bar.workspaces.numberMap)
@@ -1238,17 +1305,14 @@ ContentPage {
                     ]
                 }
                 ConfigSwitch {
+                    enabled: page.defaultWorkspacesDesign
                     buttonIcon: "award_star"; text: Translation.tr("Show app icons")
                     checked: Config.options.bar.workspaces.showAppIcons
                     onCheckedChanged: { Config.options.bar.workspaces.showAppIcons = checked; }
                 }
-                ConfigSpinBox {
-                    icon: "view_column"; text: Translation.tr("Workspaces shown")
-                    value: Config.options.bar.workspaces.shown
-                    from: 1; to: 30
-                    onValueChanged: { Config.options.bar.workspaces.shown = value; }
-                }
                 ConfigSelectionArray {
+                    enabled: page.defaultWorkspacesDesign
+                    opacity: page.defaultWorkspacesDesign ? 1 : 0.5
                     text: Translation.tr("Indicator style")
                     icon: "page_control"
                     currentValue: Config.options.bar.workspaces.indicatorStyle ?? "icon"
@@ -1264,9 +1328,49 @@ ContentPage {
         }
 
         ContentSection {
+            icon: "battery_android_full"
+            title: Translation.tr("Battery")
+            visible: page.isUsed("batteryIndicator")
+
+            GroupedList {
+                ConfigComboBox {
+                    Layout.fillWidth: true
+                    buttonIcon: "style"
+                    text: Translation.tr("Battery style")
+                    fieldWidth: 220
+                    fixedWidth: true
+                    currentValue: Config.options.bar.battery.style
+                    onSelected: newValue => { Config.options.bar.battery.style = newValue }
+                    model: [
+                        { displayName: "Android", value: "bar" },
+                        { displayName: "iOS", value: "ios" },
+                        { displayName: "macOS", value: "macos" },
+                        { displayName: "Windows", value: "windows" },
+                        { displayName: Translation.tr("Ring"), value: "ring" },
+                        { displayName: Translation.tr("Icon"), value: "icon" },
+                        { displayName: Translation.tr("Number"), value: "number" }
+                    ]
+                }
+                ConfigSwitch {
+                    buttonIcon: "percent"
+                    text: Translation.tr("Show percentage")
+                    checked: Config.options.bar.battery.showPercentage
+                    onCheckedChanged: { Config.options.bar.battery.showPercentage = checked }
+                }
+                ConfigSwitch {
+                    buttonIcon: "bolt"
+                    text: Translation.tr("Charging bolt")
+                    checked: Config.options.bar.battery.showCharging
+                    onCheckedChanged: { Config.options.bar.battery.showCharging = checked }
+                }
+            }
+        }
+
+        ContentSection {
             icon: "empty_dashboard"
             shape: MaterialShape.Shape.Burst
             title: Translation.tr("Resources")
+            visible: page.isUsed("resources")
 
             GroupedList {
                 ConfigRow {
@@ -1315,7 +1419,8 @@ ContentPage {
                     onSelected: newValue => { Config.options.bar.resources.style = newValue; }
                     options: [
                         { displayName: Translation.tr("Filled"),    icon: "incomplete_circle",  value: "filled" },
-                        { displayName: Translation.tr("Outline"),   icon: "circles",            value: "outline" }
+                        { displayName: Translation.tr("Outline"),   icon: "circles",            value: "outline" },
+                        { displayName: Translation.tr("Text"),      icon: "text_fields",        value: "text" }
                     ]
                 }
                 ConfigSwitch {
@@ -1338,9 +1443,30 @@ ContentPage {
         }
 
         ContentSection {
+            icon: "neurology"
+            title: Translation.tr("AI Usage")
+
+            GroupedList {
+                ConfigSwitch {
+                    buttonIcon: "terminal"
+                    text: Translation.tr("Claude Code")
+                    checked: Config.options.bar.aiUsage.claudeEnabled
+                    onCheckedChanged: Config.options.bar.aiUsage.claudeEnabled = checked
+                }
+                ConfigSwitch {
+                    buttonIcon: "code"
+                    text: Translation.tr("Codex")
+                    checked: Config.options.bar.aiUsage.codexEnabled
+                    onCheckedChanged: Config.options.bar.aiUsage.codexEnabled = checked
+                }
+            }
+        }
+
+        ContentSection {
             icon: "music_note"
             shape: MaterialShape.Shape.Sunny
             title: Translation.tr("Media")
+            visible: page.isUsed("media")
 
             GroupedList {
                 ConfigTextArea {
@@ -1401,6 +1527,17 @@ ContentPage {
                     checked: Config.options.bar.tooltips.clickToShow
                     onCheckedChanged: { Config.options.bar.tooltips.clickToShow = checked; }
                     enabled: Config.options.bar.tooltips.enable
+                }
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "tooltip"
+                    enabled: Config.options.bar.tooltips.enable
+                    currentValue: Config.options.bar.tooltips.style
+                    onSelected: newValue => { Config.options.bar.tooltips.style = newValue }
+                    options: [
+                        { displayName: Translation.tr("Default"), icon: "tooltip", value: "default" },
+                        { displayName: Translation.tr("Morph"), icon: "join_inner", value: "morph" }
+                    ]
                 }
             }
         }

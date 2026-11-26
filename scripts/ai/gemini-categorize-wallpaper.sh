@@ -15,7 +15,15 @@ RESIZED_IMG_PATH="/tmp/quickshell/ai/wallpaper.jpg"
 
 # Resize image for speed
 mkdir -p "$(dirname "$RESIZED_IMG_PATH")"
-magick "$SOURCE_IMG_PATH" -resize 200x -quality 50 "$RESIZED_IMG_PATH"
+case "${SOURCE_IMG_PATH,,}" in
+    # magick would decode every frame of a video: grab only the first one
+    *.mp4|*.webm|*.mkv|*.avi|*.mov)
+        ffmpeg -y -loglevel error -i "$SOURCE_IMG_PATH" -frames:v 1 -vf scale=200:-2 -q:v 10 "$RESIZED_IMG_PATH"
+        ;;
+    *)
+        magick "$SOURCE_IMG_PATH[0]" -resize 200x -quality 50 "$RESIZED_IMG_PATH"
+        ;;
+esac
 
 # Get API key
 API_KEY=$(secret-tool lookup 'application' 'illogical-impulse' | jq -r '.apiKeys.gemini')

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
@@ -163,6 +164,7 @@ ContentPage {
         property string iconText
         property string popupId
         property var popupHost: null
+        property int maxVisibleRows: 9
         property Item backdrop
         property string popupTitle
         property real popupXOffset: 0
@@ -273,63 +275,84 @@ ContentPage {
                         color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.45)
                     }
 
-                    Repeater {
-                        model: barScreenPopupButton.options
+                    Flickable {
+                        id: optionsFlick
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(optionsColumn.implicitHeight, barScreenPopupButton.maxVisibleRows * 30 + (barScreenPopupButton.maxVisibleRows - 1) * 2)
+                        contentWidth: width
+                        contentHeight: optionsColumn.implicitHeight
+                        clip: true
+                        interactive: contentHeight > height
+                        boundsBehavior: Flickable.StopAtBounds
 
-                        delegate: Rectangle {
-                            id: popupOptionRow
-                            required property var modelData
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 30
-                            radius: Appearance.rounding.normal
+                        TouchpadScrollArea { flickable: optionsFlick }
 
-                            property bool isSelected: barScreenPopupButton.isCurrentValue(modelData.value)
-                            readonly property bool rowHovered: optionMouseArea.containsMouse
+                        ScrollBar.vertical: StyledScrollBar {}
 
-                            color: isSelected ? Appearance.colors.colPrimary
-                                : rowHovered ? ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
-                                : "transparent"
+                        ColumnLayout {
+                            id: optionsColumn
+                            width: optionsFlick.width
+                            spacing: 2
 
-                            MouseArea {
-                                id: optionMouseArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    barScreenPopupButton.pickValue(popupOptionRow.modelData.value);
-                                    if (barScreenPopupButton.popupHost !== null)
-                                        barScreenPopupButton.popupHost.openPopup = "";
+                        Repeater {
+                            model: barScreenPopupButton.options
+
+                            delegate: Rectangle {
+                                id: popupOptionRow
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 30
+                                radius: Appearance.rounding.normal
+
+                                property bool isSelected: barScreenPopupButton.isCurrentValue(modelData.value)
+                                readonly property bool rowHovered: optionMouseArea.containsMouse
+
+                                color: isSelected ? Appearance.colors.colPrimary
+                                    : rowHovered ? ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
+                                    : "transparent"
+
+                                MouseArea {
+                                    id: optionMouseArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        barScreenPopupButton.pickValue(popupOptionRow.modelData.value);
+                                        if (barScreenPopupButton.popupHost !== null)
+                                            barScreenPopupButton.popupHost.openPopup = "";
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 10
+                                    spacing: 8
+
+                                    MaterialSymbol {
+                                        text: popupOptionRow.modelData.icon
+                                        iconSize: Appearance.font.pixelSize.larger
+                                        color: popupOptionRow.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                    }
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: popupOptionRow.modelData.displayName
+                                        font.pixelSize: Appearance.font.pixelSize.small
+                                        font.weight: Font.Medium
+                                        elide: Text.ElideRight
+                                        color: popupOptionRow.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                    }
+
+                                    MaterialSymbol {
+                                        visible: popupOptionRow.isSelected
+                                        text: "check"
+                                        iconSize: Appearance.font.pixelSize.larger
+                                        color: Appearance.colors.colOnPrimary
+                                    }
                                 }
                             }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                spacing: 8
-
-                                MaterialSymbol {
-                                    text: popupOptionRow.modelData.icon
-                                    iconSize: Appearance.font.pixelSize.larger
-                                    color: popupOptionRow.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
-                                }
-
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    text: popupOptionRow.modelData.displayName
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    font.weight: Font.Medium
-                                    elide: Text.ElideRight
-                                    color: popupOptionRow.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
-                                }
-
-                                MaterialSymbol {
-                                    visible: popupOptionRow.isSelected
-                                    text: "check"
-                                    iconSize: Appearance.font.pixelSize.larger
-                                    color: Appearance.colors.colOnPrimary
-                                }
-                            }
+                        }
                         }
                     }
                 }
@@ -443,6 +466,7 @@ ContentPage {
                                 popupTitle: Translation.tr("Bar style")
                                 options: [
                                     { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
+                                    { displayName: Translation.tr("Split Hug"), icon: "splitscreen", value: 6 },
                                     { displayName: Translation.tr("Float"), icon: "view_day", value: 1 },
                                     { displayName: Translation.tr("Islands"), icon: "crop_3_2", value: 2 },
                                     { displayName: Translation.tr("M3"), icon: "interests", value: 3 },
@@ -491,6 +515,7 @@ ContentPage {
 
                         RippleButton {
                             id: accentColorButton
+                            visible: ColorSchemes.current === ""
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                             width: 48
@@ -519,18 +544,21 @@ ContentPage {
                         BarScreenPopupButton {
                             id: schemeButton
                             z: 11
-                            anchors.right: accentColorButton.left
-                            anchors.rightMargin: 6
+                            anchors.right: accentColorButton.visible ? accentColorButton.left : parent.right
+                            anchors.rightMargin: accentColorButton.visible ? 6 : 0
                             anchors.verticalCenter: parent.verticalCenter
                             width: 48
                             height: parent.height
                             iconText: "palette"
                             popupId: "schemes"
                             popupHost: page
-                            popupXOffset: isMinimal ? -30 : -40
+                            popupXOffset: (isMinimal ? -30 : -40) - (namedMode ? 68 : 0)
                             backdrop: wallpaperImg
                             popupTitle: Translation.tr("Color scheme")
-                            options: [
+                            readonly property bool namedMode: ColorSchemes.current !== ""
+                            options: namedMode ? [{ displayName: "Material", icon: "auto_awesome", value: "" }].concat(
+                                ColorSchemes.schemeOptions().filter(o => o.value !== "").map(o => ({ displayName: o.displayName, icon: "palette", value: o.value }))
+                            ) : [
                                 { displayName: Translation.tr("Auto"),        icon: "auto_awesome",  value: "auto" },
                                 { displayName: Translation.tr("Content"),     icon: "image",         value: "scheme-content" },
                                 { displayName: Translation.tr("Expressive"),  icon: "palette",       value: "scheme-expressive" },
@@ -541,8 +569,12 @@ ContentPage {
                                 { displayName: Translation.tr("Rainbow"),     icon: "gradient",      value: "scheme-rainbow" },
                                 { displayName: Translation.tr("Tonal Spot"),  icon: "lens",          value: "scheme-tonal-spot" }
                             ]
-                            isCurrentValue: value => Config.options.appearance.palette.type === value
+                            isCurrentValue: value => namedMode ? ColorSchemes.current === value : Config.options.appearance.palette.type === value
                             pickValue: value => {
+                                if (namedMode) {
+                                    ColorSchemes.setScheme(value);
+                                    return;
+                                }
                                 Config.options.appearance.palette.type = value;
                                 Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --noswitch`]);
                             }

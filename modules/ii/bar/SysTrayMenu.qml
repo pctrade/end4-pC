@@ -62,6 +62,12 @@ PopupWindow {
 
         Rectangle {
             id: popupBackground
+            WindowGlass {
+                anchors.fill: parent
+                glassEnabled: (parent?.color.a ?? 0) > 0
+                cardRadius: parent?.radius ?? 0
+                tint: parent?.color ?? 'transparent'
+            }
             readonly property real padding: 4
             anchors {
                 left: parent.left

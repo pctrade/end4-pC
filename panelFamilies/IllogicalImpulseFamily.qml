@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 
+import qs
 import qs.modules.common
 import qs.modules.ii.background
 import qs.modules.ii.bar
@@ -50,7 +51,7 @@ Scope {
     PanelLoader { component: WallpaperSelector {} }
     PanelLoader { component: Settings {} }
     PanelLoader { component: DesktopMenu {} }
-    PanelLoader { component: DropShelfPanel {} }
+    PanelLoader { extraCondition: GlobalStates.dropShelfOpen; component: DropShelfPanel {} }
     PanelLoader { component: NiriBackdrop {} }
     PanelLoader { component: ScreenFrame {} }
 }

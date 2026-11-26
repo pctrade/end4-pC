@@ -10,6 +10,12 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
+    WindowGlass {
+        anchors.fill: parent
+        glassEnabled: (parent?.color.a ?? 0) > 0
+        cardRadius: parent?.radius ?? 0
+        tint: parent?.color ?? 'transparent'
+    }
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
     clip: true
@@ -99,6 +105,7 @@ Rectangle {
             Layout.margins: 10
             Layout.rightMargin: 0
             forceCircle: true
+            glass: true
             downAction: () => {
                 root.setCollapsed(false);
             }

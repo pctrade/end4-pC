@@ -9,37 +9,57 @@ MouseArea {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool vertical: false
-    readonly property bool active: ClaudeUsage.activeSessions > 0
+    readonly property var providers: {
+        const result = [];
+        if (Config.options.bar.aiUsage.claudeEnabled)
+            result.push({ name: "Claude Code", icon: "claude-symbolic", usage: ClaudeUsage, codex: false });
+        if (Config.options.bar.aiUsage.codexEnabled)
+            result.push({ name: "Codex", icon: "openai-symbolic", usage: CodexUsage, codex: true });
+        return result;
+    }
 
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : content.implicitWidth + 12
-    implicitHeight: vertical ? content.implicitHeight + 10 : Appearance.sizes.barHeight
+    visible: providers.length > 0
+    implicitWidth: providers.length === 0 ? 0 : (vertical ? Appearance.sizes.verticalBarWidth : content.implicitWidth + 12)
+    implicitHeight: providers.length === 0 ? 0 : (vertical ? content.implicitHeight + 10 : Appearance.sizes.barHeight)
     hoverEnabled: !Config.options.bar.tooltips.clickToShow
 
     GridLayout {
         id: content
         anchors.centerIn: parent
-        columns: root.vertical ? 1 : 2
-        columnSpacing: 5
-        rowSpacing: 2
+        columns: root.vertical ? 1 : root.providers.length
+        columnSpacing: 10
+        rowSpacing: 5
 
-        CustomIcon {
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            width: 15
-            height: 15
-            source: "claude-symbolic"
-            colorize: true
-            color: root.active ? root.contentColor : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.6) : Appearance.colors.colSubtext)
-        }
+        Repeater {
+            model: root.providers
+            delegate: GridLayout {
+                required property var modelData
+                readonly property bool active: modelData.codex ? modelData.usage.available : modelData.usage.activeSessions > 0
+                readonly property color providerColor: active ? root.contentColor : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.6) : Appearance.colors.colSubtext)
+                columns: root.vertical ? 1 : 2
+                columnSpacing: 5
+                rowSpacing: 2
 
-        StyledText {
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            text: `${Math.round(ClaudeUsage.percentage * 100)}%`
-            font.pixelSize: root.vertical ? Appearance.font.pixelSize.smaller : Appearance.font.pixelSize.small
-            color: root.active ? root.contentColor : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.6) : Appearance.colors.colSubtext)
+                CustomIcon {
+                    Layout.alignment: Qt.AlignCenter
+                    width: 15
+                    height: 15
+                    source: modelData.icon
+                    colorize: true
+                    color: providerColor
+                }
+                StyledText {
+                    Layout.alignment: Qt.AlignCenter
+                    text: modelData.codex && !modelData.usage.available ? "—" : `${Math.round(modelData.usage.percentage * 100)}%`
+                    font.pixelSize: root.vertical ? Appearance.font.pixelSize.smaller : Appearance.font.pixelSize.small
+                    color: providerColor
+                }
+            }
         }
     }
 
     AiUsagePopup {
         hoverTarget: root
+        providers: root.providers
     }
 }

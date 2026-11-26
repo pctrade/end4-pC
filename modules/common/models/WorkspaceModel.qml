@@ -43,7 +43,7 @@ NestableObject {
     readonly property string specialWorkspaceName: specialWorkspaceActive ? (specialWorkspace.name.replace("special:", "") || "special") : ""
 
     property list<bool> occupied: []
-    readonly property bool shouldShowAppIcons: Boolean(C.Config.options.bar?.workspaces?.showAppIcons || C.Config.options.bar?.workspaces?.indicatorStyle === "icon")
+    readonly property bool shouldShowAppIcons: (C.Config.options.bar?.workspaces?.style ?? "default") === "default" && Boolean(C.Config.options.bar?.workspaces?.showAppIcons || C.Config.options.bar?.workspaces?.indicatorStyle === "icon")
     property list<var> biggestWindow: shouldShowAppIcons ? occupied.map((_, index) => {
         const number = getWorkspaceIdAt(index)
         return root.biggestWindowForNumber(number)

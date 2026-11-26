@@ -188,48 +188,13 @@ AbstractBackgroundWidget {
         }
     }
 
-    Rectangle {
-        id: toggleHandle
-        width: 16
-        height: 16
-        radius: 6
-        color: Appearance.colors.colOnPrimaryContainer
-        anchors {
-            left: parent.right
-            bottom: parent.bottom
-            margins: -6
-        }
-        opacity: root.containsMouse || toggleArea.containsMouse ? 0.7 : 0
-        visible: opacity > 0 && !Config.options.background.widgetsLocked
-
-        Behavior on opacity {
-            NumberAnimation { duration: 150 }
-        }
-
-        MaterialSymbol {
-            anchors.centerIn: parent
-            text: "rotate_right"
-            iconSize: 11
-            color: Appearance.colors.colPrimaryContainer
-
-            RotationAnimation on rotation {
-                running: toggleArea.containsMouse
-                from: 0
-                to: 360
-                duration: 1000
-                loops: Animation.Infinite
-            }
-        }
-
-        MouseArea {
-            id: toggleArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                root.isVertical = !root.isVertical
-                root.configEntry.vertical = root.isVertical
-            }
+    WidgetFlipHandle {
+        anchorItem: root
+        hoverActive: root.containsMouse
+        locked: Config.options.background.widgetsLocked
+        onClicked: {
+            root.isVertical = !root.isVertical
+            root.configEntry.vertical = root.isVertical
         }
     }
 }

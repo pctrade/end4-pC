@@ -15,22 +15,54 @@ ComboBox {
     property color colBackground: Appearance.colors.colSecondaryContainer
     property color colBackgroundHover: Appearance.colors.colSecondaryContainerHover
     property color colBackgroundActive: Appearance.colors.colSecondaryContainerActive
+    property color colText: Appearance.colors.colOnSecondaryContainer
+    property color colAccent: Appearance.colors.colPrimary
+    property color colOnAccent: Appearance.colors.colOnPrimary
+    property color colPopup: Appearance.m3colors.m3surfaceContainerHigh
+    property color colSelected: Appearance.colors.colSecondaryContainer
+    property color colSelectedHover: Appearance.colors.colSecondaryContainerHover
+    property color colSelectedActive: Appearance.colors.colSecondaryContainerActive
+    property color colOnSelected: Appearance.colors.colOnSecondaryContainer
+    property color colItemHover: Appearance.colors.colLayer3Hover
+    property color colItemActive: Appearance.colors.colLayer3Active
+    property color colOnItem: Appearance.colors.colOnLayer3
+    property color colSearch: Appearance.colors.colLayer2
+    property color colOnSearch: Appearance.colors.colOnLayer1
+    property color colSearchHint: Appearance.colors.colSubtext
+    property bool popupAbove: false
     property string searchText: ""
+    property bool splitIndicator: false
 
-    property int visibleCount: {
-        if (!root.searchText || root.searchText.length === 0) 
-            return root.model?.length ?? 0
-        return (root.model ?? []).filter(item => {
-            const display = typeof item === "object" ? (item[root.textRole] ?? "") : String(item)
-            return display.toLowerCase().includes(root.searchText.toLowerCase())
-        }).length
+    readonly property var filteredItems: {
+        const query = root.searchText.toLowerCase()
+        const source = root.model ?? []
+        const result = []
+        for (let i = 0; i < source.length; i++) {
+            const item = source[i]
+            const isObject = typeof item === "object"
+            const label = isObject ? (item[root.textRole] ?? "") : String(item)
+            if (query.length === 0 || label.toLowerCase().includes(query))
+                result.push({ realIndex: i, label: label, icon: isObject ? (item.icon ?? "") : "" })
+        }
+        return result
+    }
+    readonly property int visibleCount: root.filteredItems.length
+
+    function pick(realIndex) {
+        root.activated(realIndex)
+        root.popup.close()
     }
 
     implicitHeight: 40
     Layout.fillWidth: true
 
     background: Rectangle {
-        radius: root.buttonRadius
+        anchors.fill: parent
+        anchors.rightMargin: root.splitIndicator ? root.indicator.width + 2 : 0
+        topLeftRadius: root.buttonRadius
+        bottomLeftRadius: root.buttonRadius
+        topRightRadius: root.splitIndicator ? Appearance.rounding.unsharpenmore : root.buttonRadius
+        bottomRightRadius: topRightRadius
         color: (root.down && !root.popup.visible) ? root.colBackgroundActive : root.hovered ? root.colBackgroundHover : root.colBackground
 
         Behavior on color {
@@ -44,16 +76,36 @@ ComboBox {
         }
     }
 
-    indicator: MaterialSymbol {
-        x: root.width - width - 16
-        y: root.height / 2 - height / 2
-        text: "keyboard_arrow_down"
-        iconSize: Appearance.font.pixelSize.larger
-        color: Appearance.colors.colOnSecondaryContainer
+    indicator: Item {
+        x: root.width - width
+        width: root.splitIndicator ? badge.width : chevron.width + 32
+        height: root.height
 
-        rotation: root.popup.visible ? 180 : 0
-        Behavior on rotation {
-            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+        ComboChevronBadge {
+            id: badge
+            visible: root.splitIndicator
+            anchors.right: parent.right
+            height: parent.height
+            open: root.popup.visible
+            colClosed: (root.down && !root.popup.visible) ? root.colBackgroundActive : root.hovered ? root.colBackgroundHover : root.colBackground
+            colOpen: root.colAccent
+            colIconClosed: root.colText
+            colIconOpen: root.colOnAccent
+        }
+
+        MaterialSymbol {
+            id: chevron
+            visible: !root.splitIndicator
+            x: parent.width - width - 16
+            y: parent.height / 2 - height / 2
+            text: "keyboard_arrow_down"
+            iconSize: Appearance.font.pixelSize.larger
+            color: root.colText
+
+            rotation: root.popup.visible ? 180 : 0
+            Behavior on rotation {
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
         }
     }
 
@@ -66,11 +118,11 @@ ComboBox {
             anchors.fill: parent
             spacing: 8
             anchors.leftMargin: 16
-            anchors.rightMargin: 16
+            anchors.rightMargin: root.splitIndicator ? root.indicator.width + 12 : 16
 
             Loader {
                 Layout.alignment: Qt.AlignVCenter
-                active: root.buttonIcon.length > 0 || (root.currentIndex >= 0 && typeof root.model[root.currentIndex] === 'object' && root.model[root.currentIndex]?.icon)
+                active: root.buttonIcon.length > 0 || !!(root.currentIndex >= 0 && typeof root.model[root.currentIndex] === 'object' && root.model[root.currentIndex]?.icon)
                 visible: active
                 sourceComponent: MaterialSymbol {
                     text: {
@@ -80,14 +132,14 @@ ComboBox {
                         return root.buttonIcon;
                     }
                     iconSize: Appearance.font.pixelSize.larger
-                    color: Appearance.colors.colOnSecondaryContainer
+                    color: root.colText
                 }
             }
 
             StyledText {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
-                color: Appearance.colors.colOnSecondaryContainer
+                color: root.colText
                 text: root.displayText
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
@@ -95,86 +147,88 @@ ComboBox {
         }
     }
 
-    delegate: ItemDelegate {
-        id: itemDelegate
-        width: ListView.view ? ListView.view.width : root.width
-        implicitHeight: visible ? 40 : 0
-        visible: {
-            if (!root.searchText || root.searchText.length === 0) return true
-            const display = typeof model === "object" ? (model[root.textRole] ?? "") : String(model)
-            return display.toLowerCase().includes(root.searchText.toLowerCase())
-        }
+    Component {
+        id: entryDelegate
 
-        required property var model
-        required property int index
+        ItemDelegate {
+            id: itemDelegate
+            required property var modelData
+            required property int index
+            readonly property bool selected: root.currentIndex === itemDelegate.modelData.realIndex
 
-        property color color: {
-            if (root.currentIndex === itemDelegate.index) {
-                if (itemDelegate.down) return Appearance.colors.colSecondaryContainerActive;
-                if (itemDelegate.hovered) return Appearance.colors.colSecondaryContainerHover;
-                return Appearance.colors.colSecondaryContainer;
-            } else {
-                if (itemDelegate.down) return Appearance.colors.colLayer3Active;
-                if (itemDelegate.hovered) return Appearance.colors.colLayer3Hover;
-                return ColorUtils.transparentize(Appearance.colors.colLayer3);
+            width: ListView.view ? ListView.view.width : root.width
+            implicitHeight: 42
+            onClicked: root.pick(itemDelegate.modelData.realIndex)
+
+            property color color: {
+                if (itemDelegate.selected) {
+                    if (itemDelegate.down) return root.colSelectedActive;
+                    if (itemDelegate.hovered) return root.colSelectedHover;
+                    return root.colSelected;
+                } else {
+                    if (itemDelegate.down) return root.colItemActive;
+                    if (itemDelegate.hovered) return root.colItemHover;
+                    return ColorUtils.transparentize(Appearance.colors.colLayer3);
+                }
             }
-        }
-        property color colText: (root.currentIndex === itemDelegate.index) ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer3
+            property color colText: itemDelegate.selected ? root.colOnSelected : root.colOnItem
 
-        background: Rectangle {
-            anchors.fill: parent
-            radius: Appearance.rounding.small
-            color: itemDelegate.color
-            Behavior on color {
-                animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
-            }
-            MouseArea {
+            background: Rectangle {
                 anchors.fill: parent
-                acceptedButtons: Qt.NoButton
-                cursorShape: Qt.PointingHandCursor
-            }
-        }
-
-        contentItem: RowLayout {
-            spacing: 8
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-
-            Loader {
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: Appearance.font.pixelSize.larger
-                active: typeof itemDelegate.model === 'object' && itemDelegate.model?.icon?.length > 0
-                visible: active
-                sourceComponent: Item {
-                    implicitWidth: icon.implicitWidth
-                    implicitHeight: Appearance.font.pixelSize.larger
-                    MaterialSymbol {
-                        id: icon
-                        anchors.centerIn: parent
-                        text: itemDelegate.model?.icon ?? ""
-                        iconSize: Appearance.font.pixelSize.larger
-                        color: itemDelegate.colText
-                    }
+                anchors.bottomMargin: 2
+                radius: Appearance.rounding.small
+                color: itemDelegate.color
+                Behavior on color {
+                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    cursorShape: Qt.PointingHandCursor
                 }
             }
 
-            StyledText {
-                Layout.fillWidth: true
-                Layout.preferredHeight: Appearance.font.pixelSize.larger
-                color: itemDelegate.colText
-                text: itemDelegate.model[root.textRole]
-                elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
+            contentItem: RowLayout {
+                spacing: 8
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+
+                Loader {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredHeight: Appearance.font.pixelSize.larger
+                    active: itemDelegate.modelData.icon.length > 0
+                    visible: active
+                    sourceComponent: Item {
+                        implicitWidth: icon.implicitWidth
+                        implicitHeight: Appearance.font.pixelSize.larger
+                        MaterialSymbol {
+                            id: icon
+                            anchors.centerIn: parent
+                            text: itemDelegate.modelData.icon
+                            iconSize: Appearance.font.pixelSize.larger
+                            color: itemDelegate.colText
+                        }
+                    }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Appearance.font.pixelSize.larger
+                    color: itemDelegate.colText
+                    text: itemDelegate.modelData.label
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
         }
     }
 
     popup: Popup {
-        y: root.height + 4
+        y: root.popupAbove ? -height - 4 : root.height + 4
         width: root.width
         clip: true
         height: Math.min(
-            searchField.implicitHeight + 20 + (visibleCount * 42) + topPadding + bottomPadding,
+            searchField.implicitHeight + 12 + (root.visibleCount * 42) + topPadding + bottomPadding,
             320
         )
         padding: 8
@@ -182,6 +236,10 @@ ComboBox {
         onVisibleChanged: {
             if (visible) {
                 searchField.forceActiveFocus()
+                Qt.callLater(() => {
+                    const position = root.filteredItems.findIndex(entry => entry.realIndex === root.currentIndex)
+                    if (position >= 0) listView.positionViewAtIndex(position, ListView.Center)
+                })
             } else {
                 root.searchText = ""
                 searchField.text = ""
@@ -211,7 +269,7 @@ ComboBox {
                 id: popupBackground
                 anchors.fill: parent
                 radius: Appearance.rounding.normal
-                color: Appearance.m3colors.m3surfaceContainerHigh
+                color: root.colPopup
             }
         }
 
@@ -222,7 +280,7 @@ ComboBox {
                 Layout.fillWidth: true
                 implicitHeight: searchField.implicitHeight + 8
                 radius: Appearance.rounding.small
-                color: Appearance.colors.colLayer2
+                color: root.colSearch
 
                 RowLayout {
                     anchors.fill: parent
@@ -233,14 +291,16 @@ ComboBox {
                         Layout.leftMargin: 6
                         text: "search"
                         iconSize: Appearance.font.pixelSize.larger
-                        color: Appearance.colors.colSubtext
+                        color: root.colSearchHint
                     }
 
                     TextField {
                         id: searchField
+                        ContextMenu.menu: StyledTextEditMenu { editor: searchField }
                         Layout.fillWidth: true
                         placeholderText: "Search..."
-                        color: Appearance.colors.colOnLayer1
+                        placeholderTextColor: root.colSearchHint
+                        color: root.colOnSearch
                         background: null
                         font.family: Appearance.font.family.main
                         font.pixelSize: Appearance.font.pixelSize.normal
@@ -248,10 +308,8 @@ ComboBox {
                         Keys.onDownPressed: listView.incrementCurrentIndex()
                         Keys.onUpPressed: listView.decrementCurrentIndex()
                         Keys.onReturnPressed: {
-                            if (listView.currentIndex >= 0) {
-                                root.currentIndex = listView.currentIndex
-                                root.popup.close()
-                            }
+                            const entry = root.filteredItems[Math.max(listView.currentIndex, 0)]
+                            if (entry) root.pick(entry.realIndex)
                         }
                     }
 
@@ -259,7 +317,7 @@ ComboBox {
                         visible: searchField.text.length > 0
                         text: "close"
                         iconSize: Appearance.font.pixelSize.normal
-                        color: Appearance.colors.colSubtext
+                        color: root.colSearchHint
                         Layout.rightMargin: 6
                         MouseArea {
                             anchors.fill: parent
@@ -276,11 +334,13 @@ ComboBox {
             StyledListView {
                 id: listView
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(contentHeight, 320 - searchField.implicitHeight - 8 - 46)
+                Layout.preferredHeight: Math.min(contentHeight, 320 - root.popup.topPadding - root.popup.bottomPadding - searchField.implicitHeight - 12)
                 clip: true
-                spacing: 2
-                model: root.popup.visible ? root.delegateModel : null
-                currentIndex: root.highlightedIndex
+                spacing: 0
+                popin: false
+                animateAppearance: false
+                model: root.popup.visible ? root.filteredItems : null
+                delegate: entryDelegate
             }
         }
     }

@@ -162,7 +162,7 @@ AbstractBackgroundWidget {
             UserAvatar {
                 anchors.fill: parent
                 radius: Appearance.rounding?.verylarge ?? 30
-                color: Appearance.colors.colLayer0
+                color: status === Image.Ready ? "transparent" : Appearance.colors.colPrimaryContainer
             }
         }
 

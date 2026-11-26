@@ -28,8 +28,8 @@ PanelWindow {
 
     // Modes
     // TODO: Ask: sidebar AI
-    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound } 
-    enum SelectionMode { RectCorners, Circle }
+    enum SnipAction { Copy, Edit, Search, CharRecognition, QrCode, Record, RecordWithSound } 
+    enum SelectionMode { RectCorners, Circle, ScreenTarget }
     enum Phase { Select, Post }
     property var action: RegionSelection.SnipAction.Copy
     property var selectionMode: RegionSelection.SelectionMode.RectCorners
@@ -116,9 +116,10 @@ PanelWindow {
 
     // Config
     property bool isCircleSelection: (root.selectionMode === RegionSelection.SelectionMode.Circle)
-    property bool enableWindowRegions: Config.options.regionSelector.targetRegions.windows && !isCircleSelection
-    property bool enableLayerRegions: Config.options.regionSelector.targetRegions.layers && !isCircleSelection
-    property bool enableContentRegions: Config.options.regionSelector.targetRegions.content
+    property bool isScreenMode: (root.selectionMode === RegionSelection.SelectionMode.ScreenTarget)
+    property bool enableWindowRegions: Config.options.regionSelector.targetRegions.windows && !isCircleSelection && !root.isScreenMode
+    property bool enableLayerRegions: Config.options.regionSelector.targetRegions.layers && !isCircleSelection && !root.isScreenMode
+    property bool enableContentRegions: Config.options.regionSelector.targetRegions.content && !root.isScreenMode
 
     // Target
     property real targetedRegionX: -1
@@ -136,9 +137,16 @@ PanelWindow {
         root.regionHeight = root.targetedRegionHeight + padding * 2;
     }
 
+    function selectFullScreen() {
+        root.regionX = 0;
+        root.regionY = 0;
+        root.regionWidth = root.screen.width;
+        root.regionHeight = root.screen.height;
+    }
+
     function updateTargetedRegion(x, y) {
         // Image regions
-        const clickedRegion = root.imageRegions.find(region => {
+        const clickedRegion = root.isScreenMode ? null : root.imageRegions.find(region => {
             return region.at[0] <= x && x <= region.at[0] + region.size[0] && region.at[1] <= y && y <= region.at[1] + region.size[1];
         });
         if (clickedRegion) {
@@ -150,7 +158,7 @@ PanelWindow {
         }
 
         // Layer regions
-        const clickedLayer = root.layerRegions.find(region => {
+        const clickedLayer = root.isScreenMode ? null : root.layerRegions.find(region => {
             return region.at[0] <= x && x <= region.at[0] + region.size[0] && region.at[1] <= y && y <= region.at[1] + region.size[1];
         });
         if (clickedLayer) {
@@ -261,6 +269,8 @@ PanelWindow {
                 return ScreenshotAction.Action.Search;
             case RegionSelection.SnipAction.CharRecognition:
                 return ScreenshotAction.Action.CharRecognition;
+            case RegionSelection.SnipAction.QrCode:
+                return ScreenshotAction.Action.QrCode;
             case RegionSelection.SnipAction.Record:
                 return ScreenshotAction.Action.Record;
             case RegionSelection.SnipAction.RecordWithSound:
@@ -289,8 +299,8 @@ PanelWindow {
         root.regionHeight = Math.max(0, Math.min(root.regionHeight, root.screen.height - root.regionY));
 
         // Adjust action
-        if (root.action === RegionSelection.SnipAction.Copy || root.action === RegionSelection.SnipAction.Edit) {
-            root.action = root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.Edit : RegionSelection.SnipAction.Copy;
+        if (root.action === RegionSelection.SnipAction.Copy && root.mouseButton === Qt.RightButton) {
+            root.action = RegionSelection.SnipAction.Edit;
         }
         
         const screenshotDir = Config.options.screenSnip.savePath !== "" ? //
@@ -304,8 +314,9 @@ PanelWindow {
             root.screenshotPath, //
             screenshotAction, //
             screenshotDir, //
-            `${Math.round(root.monitorOffsetX + root.regionX)},${Math.round(root.monitorOffsetY + root.regionY)} ${Math.floor(root.regionWidth / 2) * 2}x${Math.floor(root.regionHeight / 2) * 2}`
-        )
+            `${Math.round(root.monitorOffsetX + root.regionX)},${Math.round(root.monitorOffsetY + root.regionY)} ${Math.floor(root.regionWidth / 2) * 2}x${Math.floor(root.regionHeight / 2) * 2}`, //
+            Config.options.screenRecord.systemAudio, //
+            Config.options.screenRecord.microphone        )
         Quickshell.execDetached(command);
         if (root.action == RegionSelection.SnipAction.Record || root.action == RegionSelection.SnipAction.RecordWithSound) {
             root.phase = RegionSelection.Phase.Post
@@ -324,10 +335,12 @@ PanelWindow {
         }
     }
 
-    ScreencopyView { // For freezing
+    Image { // For freezing
         anchors.fill: parent
-        live: false
-        captureSource: root.screen
+        source: root.preparationDone ? `file://${root.screenshotPath}` : ""
+        cache: false
+        asynchronous: false
+        fillMode: Image.Stretch
         visible: root.phase === RegionSelection.Phase.Select
 
         focus: root.visible
@@ -347,6 +360,10 @@ PanelWindow {
 
         // Controls
         onPressed: (mouse) => {
+            if (root.isScreenMode) {
+                root.mouseButton = mouse.button;
+                return;
+            }
             root.dragStartX = mouse.x;
             root.dragStartY = mouse.y;
             root.draggingX = mouse.x;
@@ -355,6 +372,11 @@ PanelWindow {
             root.mouseButton = mouse.button;
         }
         onReleased: (mouse) => {
+            if (root.isScreenMode) {
+                root.selectFullScreen();
+                root.snip();
+                return;
+            }
             // Detect if it was a click -> Try to select targeted region
             if (root.draggingX === root.dragStartX && root.draggingY === root.dragStartY) {
                 if (root.targetedRegionValid()) {
@@ -389,7 +411,7 @@ PanelWindow {
         Loader {
             z: 2
             anchors.fill: parent
-            active: root.selectionMode === RegionSelection.SelectionMode.RectCorners
+            active: root.selectionMode !== RegionSelection.SelectionMode.Circle
             sourceComponent: RectCornersSelectionDetails {
                 regionX: root.regionX
                 regionY: root.regionY
@@ -399,6 +421,7 @@ PanelWindow {
                 mouseY: mouseArea.mouseY
                 color: root.selectionBorderColor
                 overlayColor: root.overlayColor
+                showAimLines: root.isScreenMode ? false : Config.options.regionSelector.rect.showAimLines
                 breathingBorderOnly: root.phase === RegionSelection.Phase.Post
             }
         }
@@ -546,6 +569,18 @@ PanelWindow {
                     property alias source: root.selectionMode
                 }
                 onDismiss: root.dismiss();
+            }
+            ToolbarPairedFab {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: root.isScreenMode
+                iconText: root.isRecording ? "fiber_manual_record" : "screenshot_monitor"
+                onClicked: {
+                    root.selectFullScreen();
+                    root.snip();
+                }
+                StyledToolTip {
+                    text: root.isRecording ? Translation.tr("Record this screen") : Translation.tr("Capture this screen")
+                }
             }
             ToolbarPairedFab {
                 anchors.verticalCenter: parent.verticalCenter

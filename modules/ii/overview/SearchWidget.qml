@@ -24,6 +24,79 @@ Item { // Wrapper
     implicitWidth: searchWidgetContent.implicitWidth + Appearance.sizes.elevationMargin * 2
     implicitHeight: searchWidgetContent.implicitHeight + searchBar.verticalPadding * 2 + Appearance.sizes.elevationMargin * 2
 
+    property Item previewItem: null
+    property alias clipboardPopover: clipboardPopover
+    property real previewAnchorY: 0
+    property real previewMinY: 8
+    property real previewMaxBottom: 100000
+    readonly property bool previewOnRight: {
+        const winWidth = root.Window.width
+        const rightEdge = searchWidgetContent.x + searchWidgetContent.width
+        const sceneRight = root.mapToItem(null, rightEdge, 0).x
+        return sceneRight + clipboardPopover.arrowSize + clipboardPopover.maxContentWidth + 60 < winWidth
+    }
+
+    function updatePreviewAnchor() {
+        if (!root.previewItem) return
+        root.previewAnchorY = root.previewItem.mapToItem(root, 0, root.previewItem.height / 2).y
+        const rootTop = root.mapToItem(null, 0, 0).y
+        root.previewMinY = 10 - rootTop
+        root.previewMaxBottom = root.Window.height - 10 - rootTop
+    }
+
+    Timer {
+        id: previewDelay
+        interval: 120
+        onTriggered: {
+            root.updatePreviewAnchor()
+            clipboardPopover.entry = root.previewItem?.entry ?? null
+        }
+    }
+
+    function setPreviewItem(item, selected) {
+        const wantsPreview = selected && Config.options.search.clipboardPreviewPopup && (item.entry?.clipboard ?? false)
+        if (wantsPreview) {
+            root.previewItem = item
+            previewDelay.interval = clipboardPopover.active ? 60 : 220
+            previewDelay.restart()
+        } else if (root.previewItem === item) {
+            previewDelay.stop()
+            previewCloseDelay.restart()
+        }
+        if (wantsPreview) previewCloseDelay.stop()
+    }
+
+    function resetPreview() {
+        previewDelay.stop()
+        previewCloseDelay.stop()
+        root.previewItem = null
+        clipboardPopover.reset()
+    }
+
+    Connections {
+        target: GlobalStates
+        function onOverviewOpenChanged() {
+            if (!GlobalStates.overviewOpen) root.resetPreview()
+        }
+    }
+
+    Timer {
+        id: previewCloseDelay
+        interval: 220
+        onTriggered: {
+            if (clipboardPopover.hovered) return
+            root.previewItem = null
+            clipboardPopover.entry = null
+        }
+    }
+
+    Connections {
+        target: clipboardPopover
+        function onHoveredChanged() {
+            if (!clipboardPopover.hovered && root.previewItem) previewCloseDelay.restart()
+        }
+    }
+
     function focusFirstItem() {
         appResults.currentIndex = 0;
     }
@@ -100,8 +173,24 @@ Item { // Wrapper
     StyledRectangularShadow {
         target: searchWidgetContent
     }
+
+    ClipboardPopover {
+        id: clipboardPopover
+        z: 50
+        pointLeft: root.previewOnRight
+        anchorX: root.previewOnRight ? searchWidgetContent.x + searchWidgetContent.width + 2 : searchWidgetContent.x - 2
+        anchorY: root.previewAnchorY
+        minY: root.previewMinY
+        maxBottom: root.previewMaxBottom
+    }
     Rectangle { // Background
         id: searchWidgetContent
+        WindowGlass {
+            anchors.fill: parent
+            glassEnabled: (parent?.color.a ?? 0) > 0
+            cardRadius: parent?.radius ?? 0
+            tint: parent?.color ?? 'transparent'
+        }
         anchors {
             top: parent.top
             horizontalCenter: parent.horizontalCenter
@@ -111,7 +200,7 @@ Item { // Wrapper
         implicitWidth: columnLayout.implicitWidth
         implicitHeight: columnLayout.implicitHeight
         radius: searchBar.height / 2 + searchBar.verticalPadding
-        color: Appearance.colors.colBackgroundSurfaceContainer
+        color: Appearance.colors.colUiSurfaceContainer
 
         Behavior on implicitHeight {
             id: searchHeightBehavior
@@ -174,6 +263,9 @@ Item { // Wrapper
                     if (focus)
                         appResults.currentIndex = 1;
                 }
+                onContentYChanged: root.updatePreviewAnchor()
+
+                TouchpadScrollArea { flickable: appResults }
 
                 Connections {
                     target: root
@@ -212,6 +304,8 @@ Item { // Wrapper
                     anchors.left: parent?.left
                     anchors.right: parent?.right
                     entry: modelData
+                    onSelectedChanged: root.setPreviewItem(searchItem, selected)
+                    Component.onDestruction: root.setPreviewItem(searchItem, false)
                     query: StringUtils.cleanOnePrefix(root.searchingText, [Config.options.search.prefix.action, Config.options.search.prefix.app, Config.options.search.prefix.clipboard, Config.options.search.prefix.emojis, Config.options.search.prefix.symbols, Config.options.search.prefix.math, Config.options.search.prefix.shellCommand, Config.options.search.prefix.webSearch])
 
                     Keys.onPressed: event => {

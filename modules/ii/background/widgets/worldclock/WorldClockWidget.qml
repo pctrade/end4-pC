@@ -18,8 +18,11 @@ AbstractBackgroundWidget {
     readonly property int clockCount: Math.min(Math.max(root.configEntry.clockCount ?? 4, 1), 4)
     readonly property real fourByOneWidth: root.clockCount * 132 + (root.clockCount - 1) * 12
 
-    property real widgetWidth:  sizeMode === "2x2" ? 276 : root.fourByOneWidth
-    property real widgetHeight: sizeMode === "2x2" ? 252 : 120
+    property bool isVertical: root.configEntry.vertical ?? false
+    readonly property real stackedHeight: root.clockCount * 120 + (root.clockCount - 1) * 12
+
+    property real widgetWidth:  sizeMode === "2x2" ? 276 : (root.isVertical ? 132 : root.fourByOneWidth)
+    property real widgetHeight: sizeMode === "2x2" ? 252 : (root.isVertical ? root.stackedHeight : 120)
 
     function modeForWidth(width) {
         return Math.abs(width - root.fourByOneWidth) < Math.abs(width - 276) ? "4x1" : "2x2"
@@ -53,6 +56,7 @@ AbstractBackgroundWidget {
             color: sizeMode === "4x1" ? "transparent" : Appearance.colors.colPrimaryContainer
             shadowed: sizeMode !== "4x1" && Config.options.background.widgets.shadow
             blurred: Config.options.background.widgets.blurWidgets && sizeMode === "2x2"
+            glass: sizeMode !== "4x1"
 
             // 2x2
             ColumnLayout {
@@ -222,6 +226,8 @@ AbstractBackgroundWidget {
                         contentHeight: settingsColumn.implicitHeight
                         boundsBehavior: Flickable.StopAtBounds
 
+                        TouchpadScrollArea { flickable: settingsFlick }
+
                         ColumnLayout {
                             id: settingsColumn
                             width: settingsFlick.width
@@ -270,9 +276,11 @@ AbstractBackgroundWidget {
             }
 
             // 4x1
-            RowLayout {
+            GridLayout {
                 anchors { fill: parent; margins: 0 }
-                spacing: 12
+                rowSpacing: 12
+                columnSpacing: 12
+                columns: root.isVertical ? 1 : Math.max(1, root.clockCount)
                 visible: sizeMode === "4x1"
 
                 Repeater {
@@ -281,6 +289,7 @@ AbstractBackgroundWidget {
                         id: clockWrapper
                         required property int index
                         property var cityData: root.worldCities[index] ?? null
+                        readonly property bool glassOn: Config.options.background.widgets.glass.enable
 
                         Layout.preferredWidth: 132
                         Layout.preferredHeight: 120
@@ -291,9 +300,21 @@ AbstractBackgroundWidget {
                             visible: Config.options.background.widgets.shadow
                         }
 
+                        FrostedGlass {
+                            anchors.fill: parent
+                            blurSource: root.wallpaperItem
+                            cardRadius: Appearance.rounding?.verylarge ?? 30
+                            tint: (clockWrapper.cityData?.isDay ?? true)
+                                ? Appearance.colors.colPrimary
+                                : Appearance.colors.colLayer1
+                            trackX: root.x + clockWrapper.x
+                            trackY: root.y + clockWrapper.y
+                            visible: clockWrapper.glassOn
+                        }
+
                         FastBlurred {
                             anchors.fill: parent
-                            visible: Config.options.background.widgets.blurWidgets
+                            visible: Config.options.background.widgets.blurWidgets && !clockWrapper.glassOn
                             blurSource: root.wallpaperItem
                             cardRadius: Appearance.rounding?.verylarge ?? 30
                             tint: (clockWrapper.cityData?.isDay ?? true)
@@ -309,7 +330,7 @@ AbstractBackgroundWidget {
                             anchors.fill: parent
                             radius: Appearance.rounding?.verylarge ?? 30
 
-                            backgroundColor: Config.options.background.widgets.blurWidgets
+                            backgroundColor: Config.options.background.widgets.blurWidgets || clockWrapper.glassOn
                                 ? "transparent"
                                 : ((clockWrapper.cityData?.isDay ?? true)
                                     ? Appearance.colors.colPrimary
@@ -340,6 +361,17 @@ AbstractBackgroundWidget {
                             }
                         }
                     }
+                }
+            }
+
+            WidgetFlipHandle {
+                anchorItem: contentRect
+                corner: "topRight"
+                hoverActive: root.containsMouse
+                locked: Config.options.background.widgetsLocked || root.showingSettings || root.sizeMode !== "4x1" || root.clockCount < 2
+                onClicked: {
+                    root.isVertical = !root.isVertical
+                    root.configEntry.vertical = root.isVertical
                 }
             }
 

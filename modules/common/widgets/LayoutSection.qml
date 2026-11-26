@@ -1,6 +1,7 @@
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
+import qs.modules.common.functions
 import QtQuick
 import QtQuick.Layouts
 
@@ -12,6 +13,47 @@ ContentSubsection {
     property var getWidgetName: (id) => id
     property var availableWidgets: []
     property var onUpdate: (list) => {}
+    signal widgetContextRequested(string widgetId)
+
+    property bool liveReflow: false
+    property bool reflowAnimate: true
+    property int reflowTarget: -1
+    property var slotOffsets: []
+    property var draggedSlot: null
+
+    function computeReflow(draggedIndex, targetIndex) {
+        const count = itemRepeater.count
+        const order = []
+        for (let k = 0; k < count; k++) if (k !== draggedIndex) order.push(k)
+        order.splice(targetIndex, 0, draggedIndex)
+
+        const flowWidth = itemFlow.width
+        const gap = itemFlow.spacing
+        const slots = new Array(count)
+        let x = 0
+        let y = 0
+        let rowHeight = 0
+        for (const k of order) {
+            const chip = itemRepeater.itemAt(k)
+            if (!chip) continue
+            if (x > 0 && x + chip.width > flowWidth) {
+                x = 0
+                y += rowHeight + gap
+                rowHeight = 0
+            }
+            slots[k] = { x: x, y: y }
+            x += chip.width + gap
+            rowHeight = Math.max(rowHeight, chip.height)
+        }
+
+        const offsets = []
+        for (let k = 0; k < count; k++) {
+            const chip = itemRepeater.itemAt(k)
+            offsets.push(chip && slots[k] ? { x: slots[k].x - chip.x, y: slots[k].y - chip.y } : { x: 0, y: 0 })
+        }
+        root.slotOffsets = offsets
+        root.draggedSlot = slots[draggedIndex] ?? null
+    }
 
     title: sectionTitle
     Layout.fillWidth: true
@@ -36,6 +78,7 @@ ContentSubsection {
                     model: root.layout
 
                     delegate: SelectionGroupButton {
+                        id: chip
                         required property var modelData
                         required property int index
                         isDragging: dragHandler.active
@@ -43,6 +86,67 @@ ContentSubsection {
                         buttonIcon: "close"
                         buttonText: root.getWidgetName(modelData)
                         toggled: !dragHandler.active
+                        altAction: () => root.widgetContextRequested(modelData)
+
+                        property real dragOffsetX: 0
+                        property real dragOffsetY: 0
+                        property real displaceX: root.liveReflow && !dragHandler.active ? (root.slotOffsets[index]?.x ?? 0) : 0
+                        property real displaceY: root.liveReflow && !dragHandler.active ? (root.slotOffsets[index]?.y ?? 0) : 0
+
+                        Behavior on displaceX {
+                            enabled: root.reflowAnimate
+                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                        }
+                        Behavior on displaceY {
+                            enabled: root.reflowAnimate
+                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                        }
+                        property bool settlePending: false
+                        property point settleScenePos: Qt.point(0, 0)
+
+                        transform: Translate { x: chip.dragOffsetX + chip.displaceX; y: chip.dragOffsetY + chip.displaceY }
+                        z: (dragHandler.active || settleAnim.running) ? 100 : 0
+
+                        ParallelAnimation {
+                            id: settleAnim
+                            NumberAnimation { target: chip; property: "dragOffsetX"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: chip; property: "dragOffsetY"; to: 0; duration: 220; easing.type: Easing.OutCubic }
+                        }
+
+                        function startSettle(scenePos) {
+                            chip.settleScenePos = scenePos
+                            chip.settlePending = true
+                            settleFallback.restart()
+                        }
+
+                        function applySettle() {
+                            if (!chip.settlePending) return
+                            chip.settlePending = false
+                            const nowScene = chip.mapToItem(null, 0, 0)
+                            chip.dragOffsetX = chip.settleScenePos.x - (nowScene.x - chip.dragOffsetX)
+                            chip.dragOffsetY = chip.settleScenePos.y - (nowScene.y - chip.dragOffsetY)
+                            settleAnim.restart()
+                        }
+
+                        onXChanged: chip.applySettle()
+                        onYChanged: chip.applySettle()
+
+                        Timer {
+                            id: settleFallback
+                            interval: 60
+                            onTriggered: chip.applySettle()
+                        }
+
+                        Rectangle {
+                            visible: dragHandler.active
+                            anchors.fill: parent
+                            anchors.margins: -3
+                            z: 5
+                            radius: chip.height / 2 + 3
+                            color: "transparent"
+                            border.width: 2
+                            border.color: Appearance.colors.colPrimary
+                        }
 
                         DragHandler {
                             id: dragHandler
@@ -56,7 +160,7 @@ ContentSubsection {
                                     if (i === index) continue
                                     const child = itemRepeater.itemAt(i)
                                     if (!child) continue
-                                    const childCenter = child.mapToItem(null, child.width / 2, child.height / 2)
+                                    const childCenter = itemFlow.mapToItem(null, child.x + child.width / 2, child.y + child.height / 2)
                                     const dx = dragX - childCenter.x
                                     const dy = dragY - childCenter.y
                                     const dist = Math.sqrt(dx * dx + dy * dy)
@@ -69,39 +173,57 @@ ContentSubsection {
                             }
 
                             onActiveChanged: {
-                                if (!active) {
-                                    dropIndicator.visible = false
-                                    dropIndicator.targetIndex = -1
-                                    const dragX = dragHandler.centroid.scenePosition.x
-                                    const dragY = dragHandler.centroid.scenePosition.y
-                                    const newIndex = findNewIndex(dragX, dragY)
-                                    if (newIndex !== index) {
-                                        let list = root.layout.slice()
-                                        const item = list.splice(index, 1)[0]
-                                        list.splice(newIndex, 0, item)
-                                        root.onUpdate(list)
-                                    }
+                                if (active) {
+                                    settleAnim.stop()
+                                    chip.settlePending = false
+                                    root.reflowTarget = index
+                                    root.slotOffsets = []
+                                    root.draggedSlot = null
+                                    root.liveReflow = true
+                                    return
                                 }
+
+                                root.reflowAnimate = false
+                                root.liveReflow = false
+                                Qt.callLater(() => { root.reflowAnimate = true })
+                                dropIndicator.visible = false
+                                dropIndicator.targetIndex = -1
+                                const dragX = dragHandler.centroid.scenePosition.x
+                                const dragY = dragHandler.centroid.scenePosition.y
+                                const newIndex = findNewIndex(dragX, dragY)
+                                if (newIndex === index) {
+                                    settleAnim.restart()
+                                    return
+                                }
+
+                                const sceneBefore = chip.mapToItem(null, 0, 0)
+                                chip.dragOffsetX = 0
+                                chip.dragOffsetY = 0
+                                let list = root.layout.slice()
+                                const item = list.splice(index, 1)[0]
+                                list.splice(newIndex, 0, item)
+                                root.onUpdate(list)
+                                itemRepeater.itemAt(newIndex)?.startSettle(sceneBefore)
                             }
 
                             onCentroidChanged: {
                                 if (!active) return
-                                const dragX = dragHandler.centroid.scenePosition.x
-                                const dragY = dragHandler.centroid.scenePosition.y
-                                const newIndex = findNewIndex(dragX, dragY)
+                                chip.dragOffsetX = centroid.scenePosition.x - centroid.scenePressPosition.x
+                                chip.dragOffsetY = centroid.scenePosition.y - centroid.scenePressPosition.y
 
-                                if (newIndex !== index) {
-                                    const refChild = itemRepeater.itemAt(newIndex)
-                                    if (refChild) {
-                                        const refLocal = refChild.mapToItem(itemFlow, 0, 0)
-                                        dropIndicator.x = newIndex < index
-                                            ? refLocal.x - 5
-                                            : refLocal.x + refChild.width + 1
-                                        dropIndicator.y = refLocal.y
-                                        dropIndicator.height = refChild.height
-                                        dropIndicator.visible = true
-                                        dropIndicator.targetIndex = newIndex
-                                    }
+                                const newIndex = findNewIndex(centroid.scenePosition.x, centroid.scenePosition.y)
+                                if (newIndex !== root.reflowTarget || !root.draggedSlot) {
+                                    root.reflowTarget = newIndex
+                                    root.computeReflow(index, newIndex)
+                                }
+                                const slot = root.draggedSlot
+                                if (slot) {
+                                    dropIndicator.width = chip.width
+                                    dropIndicator.height = chip.height
+                                    dropIndicator.x = slot.x
+                                    dropIndicator.y = slot.y
+                                    dropIndicator.visible = true
+                                    dropIndicator.targetIndex = newIndex
                                 } else {
                                     dropIndicator.visible = false
                                     dropIndicator.targetIndex = -1
@@ -122,30 +244,14 @@ ContentSubsection {
                 id: dropIndicator
                 property int targetIndex: -1
                 visible: false
-                width: 3
-                height: 32 
-                radius: 2
-                color: Appearance.colors.colPrimary
+                z: 99
+                radius: height / 2
+                color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.88)
+                border.width: 2
+                border.color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.35)
 
                 Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                 Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                Behavior on opacity { NumberAnimation { duration: 150 } }
-
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: parent.top
-                    anchors.topMargin: -4
-                    width: 8; height: 8; radius: 4
-                    color: Appearance.colors.colPrimary
-                }
-
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCentera
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: -4
-                    width: 8; height: 8; radius: 4
-                    color: Appearance.colors.colPrimary
-                }
             }
         }
 

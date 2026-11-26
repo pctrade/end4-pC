@@ -118,6 +118,13 @@ MouseArea { // Notification group area
     }
     Rectangle { // Background of the notification
         id: background
+
+        WindowGlass {
+            anchors.fill: parent
+            glassEnabled: root.popup && (parent?.color.a ?? 0) > 0
+            cardRadius: parent?.radius ?? 0
+            tint: parent?.color ?? 'transparent'
+        }
         anchors.left: parent.left
         width: parent.width
         color: popup ? Appearance.colors.colBackgroundSurfaceContainer : Appearance.colors.colLayer2

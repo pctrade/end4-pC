@@ -31,12 +31,23 @@ Item {
     }
 
     // Placeholder when list is empty
-    PagePlaceholder {
-        shown: Notifications.list.length === 0
-        icon: "notifications_active"
-        description: Translation.tr("Nothing")
-        shape: MaterialShape.Shape.Ghostish
-        descriptionHorizontalAlignment: Text.AlignHCenter
+    Item {
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+            bottom: statusRow.top
+            bottomMargin: 5
+        }
+
+        PagePlaceholder {
+            shown: Notifications.list.length === 0
+            icon: "notifications_active"
+            description: Translation.tr("Nothing")
+            shape: MaterialShape.Shape.Ghostish
+            descriptionHorizontalAlignment: Text.AlignHCenter
+            minIconHeight: 130
+        }
     }
 
     ButtonGroup {

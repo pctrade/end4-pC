@@ -9,6 +9,7 @@ Item {
     property alias baseSize: fabWidget.baseSize
     default property alias fabData: fabWidget.data
     property bool enableShadow: true
+    property alias glass: fabWidget.glass
 
     implicitWidth: fabWidget.implicitWidth
     implicitHeight: fabWidget.implicitHeight

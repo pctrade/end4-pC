@@ -41,8 +41,16 @@ apply_kitty() {
     sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
   done
 
-  # Reload
-  kill -SIGUSR1 $(pidof kitty)
+  # Reload. SIGUSR1 makes kitty re-read its whole config, which also resets the
+  # font size (zoom) of every window. Where remote control is reachable
+  # (allow_remote_control + listen_on unix:@kitty-{kitty_pid}) only the colors are
+  # updated; any instance without it falls back to SIGUSR1.
+  local pid
+  for pid in $(pgrep -x kitty); do
+    kitten @ --to "unix:@kitty-$pid" set-colors --all --configured \
+      "$STATE_DIR"/user/generated/terminal/kitty-theme.conf >/dev/null 2>&1 \
+      || kill -SIGUSR1 "$pid" 2>/dev/null
+  done
 }
 
 apply_anyterm() {

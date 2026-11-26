@@ -1,4 +1,5 @@
 import qs
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions as CF
@@ -18,26 +19,26 @@ Item {
     property bool centeredOnlyWhenLocked: Config.options.background.centeredWallpaperOnlyWhenLocked
     property int centeredWallpaperShape: CF.ShapeUtils.getShape(Config.options.background.centeredWallpaperShape)
     property int centeredWallpaperSize: Config.options.background.centeredWallpaperSize
+    readonly property bool collageMode: Collage.enabled
+    readonly property string shapeImagePath: root.collageMode && Config.options.background.centeredWallpaperImage !== ""
+        ? Config.options.background.centeredWallpaperImage
+        : root.wallpaperPath
     property color centeredWallpaperColor: Appearance.getColorFromName(Config.options.background.centeredWallpaperColor)
 
-    onCenteredOnlyWhenLockedChanged: {
-        root.setCenteredProgress(GlobalStates.screenLocked ? 0 : (root.centeredOnlyWhenLocked ? 1 : 0))
-    }
+    onCenteredOnlyWhenLockedChanged: root.syncProgress()
 
     onCenteredWallpaperConfigEnabledChanged: {
         if (root.centeredWallpaperConfigEnabled) {
+            centeredAnim.stop()
             root.centeredWallpaperPendingDisable = false
             root.centeredWallpaperEnabled = true
             root.centeredProgress = 1
-            root.setCenteredProgress(GlobalStates.screenLocked ? 0 : (root.centeredOnlyWhenLocked ? 1 : 0))
+        } else if (root.centeredProgress === 1 && !centeredAnim.running) {
+            root.centeredWallpaperEnabled = false
         } else {
-            if (root.centeredProgress === 1) {
-                root.centeredWallpaperEnabled = false
-            } else {
-                root.centeredWallpaperPendingDisable = true
-                root.setCenteredProgress(1)
-            }
+            root.centeredWallpaperPendingDisable = true
         }
+        root.syncProgress()
     }
 
     // Size the shape (with the wallpaper inside) must reach so its masked
@@ -64,46 +65,50 @@ Item {
     property bool centeredAnimating: false
     property real centeredProgress: 0
 
-    // Unlock is slower (0.8s) than lock (0.65s); the helper picks the
-    // animation by direction. It also skips the animation while the config
-    // is still loading, so the initial set never plays a grow-in on startup.
+    function targetProgress() {
+        if (!root.centeredWallpaperConfigEnabled) return 1
+        return GlobalStates.screenLocked ? 0 : (root.centeredOnlyWhenLocked ? 1 : 0)
+    }
+
+    function syncProgress() {
+        root.setCenteredProgress(root.targetProgress())
+    }
+
     function setCenteredProgress(value) {
-        if (!root.centeredWallpaperEnabled || !Config.ready) {
+        if (!root.centeredWallpaperEnabled || !Config.ready || !root.centeredAnimationReady) {
+            centeredAnim.stop()
             root.centeredProgress = value
+            if (Config.ready) root.centeredAnimationReady = true
+            root.finishPendingDisable()
             return
         }
-        if (!root.centeredAnimationReady) {
-            root.centeredProgress = value
-            root.centeredAnimationReady = true
+        if (centeredAnim.running && centeredAnim.to === value) return
+        centeredAnim.stop()
+        if (value === root.centeredProgress) {
+            root.finishPendingDisable()
             return
         }
-        if (value === root.centeredProgress) return
-        const anim = value > root.centeredProgress ? centeredUnlockAnim : centeredLockAnim
-        anim.to = value
-        anim.restart()
+        centeredAnim.duration = value > root.centeredProgress ? 800 : 650
+        centeredAnim.to = value
+        centeredAnim.start()
     }
+
+    function finishPendingDisable() {
+        if (root.centeredWallpaperPendingDisable && root.centeredProgress === 1) {
+            root.centeredWallpaperPendingDisable = false
+            root.centeredWallpaperEnabled = false
+        }
+    }
+
     NumberAnimation {
-        id: centeredLockAnim
+        id: centeredAnim
         target: root
         property: "centeredProgress"
-        duration: 650
-        easing.type: Easing.BezierSpline
-        easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
-        onRunningChanged: root.centeredAnimating = running
-    }
-    NumberAnimation {
-        id: centeredUnlockAnim
-        target: root
-        property: "centeredProgress"
-        duration: 800
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
         onRunningChanged: {
             root.centeredAnimating = running
-            if (!running && root.centeredWallpaperPendingDisable) {
-                root.centeredWallpaperPendingDisable = false
-                root.centeredWallpaperEnabled = false
-            }
+            if (!running) root.finishPendingDisable()
         }
     }
 
@@ -142,13 +147,13 @@ Item {
     }
     function centeredBgOpacity() {
         if (!root.centeredWallpaperEnabled) return 0
-        if (root.wallpaperIsVideo) return 0
+        if (root.wallpaperIsVideo || root.collageMode) return 0
         return Math.max(0, Math.min(1, (1 - root.centeredProgress) / root.centeredFade))
     }
 
     Component.onCompleted: {
         root.centeredWallpaperEnabled = root.centeredWallpaperConfigEnabled
-        root.setCenteredProgress(GlobalStates.screenLocked ? 0 : (root.centeredOnlyWhenLocked ? 1 : 0))
+        root.syncProgress()
         if (Config.ready)
             root.centeredAnimationReady = true
     }
@@ -157,7 +162,7 @@ Item {
         target: Config
         function onReadyChanged() {
             if (!Config.ready) return
-            root.setCenteredProgress(GlobalStates.screenLocked ? 0 : (root.centeredOnlyWhenLocked ? 1 : 0))
+            root.syncProgress()
             root.centeredAnimationReady = true
         }
     }
@@ -165,7 +170,7 @@ Item {
     Connections {
         target: GlobalStates
         function onScreenLockedChanged() {
-            root.setCenteredProgress(GlobalStates.screenLocked ? 0 : (root.centeredOnlyWhenLocked ? 1 : 0))
+            root.syncProgress()
         }
     }
 
@@ -182,7 +187,7 @@ Item {
         anchors.centerIn: parent
         width: root.centeredShapeRenderSize
         height: root.centeredShapeRenderSize
-        color: root.wallpaperIsVideo ? "transparent" : root.centeredWallpaperColor
+        color: root.wallpaperIsVideo || root.collageMode ? "transparent" : root.centeredWallpaperColor
         shape: root.centeredWallpaperShape
         transformOrigin: Item.Center
         property real shapeZoom: 1
@@ -228,7 +233,7 @@ Item {
             width: root.width
             height: root.height
             anchors.centerIn: parent
-            source: root.wallpaperPath
+            source: root.shapeImagePath
             fillMode: Image.PreserveAspectCrop
             mipmap: true
             antialiasing: true
@@ -254,6 +259,33 @@ Item {
             Timer {
                 id: shapeCycleCooldown
                 interval: 400
+            }
+        }
+    }
+
+    DropArea {
+        id: shapeDropArea
+        anchors.centerIn: parent
+        width: Math.max(1, root.centeredShapeSize())
+        height: width
+        keys: ["text/uri-list"]
+        enabled: root.collageMode && root.centeredShapeActive && !GlobalStates.screenLocked
+        onEntered: drag => { drag.accepted = drag.hasUrls && drag.urls.length === 1 }
+        onDropped: drop => {
+            drop.accepted = Collage.dropShapeImage(drop.urls)
+        }
+
+        MaterialShape {
+            anchors.fill: parent
+            shape: root.centeredWallpaperShape
+            visible: shapeDropArea.containsDrag
+            color: CF.ColorUtils.transparentize(Appearance.colors.colPrimary, 0.55)
+
+            MaterialSymbol {
+                anchors.centerIn: parent
+                text: "add_photo_alternate"
+                iconSize: 48
+                color: Appearance.colors.colOnPrimary
             }
         }
     }

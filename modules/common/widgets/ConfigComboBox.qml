@@ -15,8 +15,10 @@ RowLayout {
     property var currentValue: undefined
 
     property real fieldWidth: 220
+    property bool fixedWidth: false
+    property bool searchable: false
 
-    property alias comboBox: comboBox
+    readonly property var comboBox: root.searchable ? searchComboBox : comboBox
 
     signal selected(var newValue)
 
@@ -52,6 +54,8 @@ RowLayout {
 
     StyledComboBox {
         id: comboBox
+        visible: !root.searchable
+        Layout.fillWidth: !root.fixedWidth
         Layout.preferredWidth: root.fieldWidth
         Layout.alignment: Qt.AlignVCenter
         enabled: root.enabled
@@ -65,6 +69,26 @@ RowLayout {
 
         onActivated: index => {
             root.selected(comboBox.model[index].value);
+        }
+    }
+
+    StyledComboBoxSearch {
+        id: searchComboBox
+        visible: root.searchable
+        Layout.fillWidth: !root.fixedWidth
+        Layout.preferredWidth: root.fieldWidth
+        Layout.alignment: Qt.AlignVCenter
+        enabled: root.enabled
+        textRole: root.textRole
+        model: root.model
+
+        currentIndex: {
+            const index = root.model.findIndex(item => item.value === root.currentValue);
+            return index !== -1 ? index : 0;
+        }
+
+        onActivated: index => {
+            root.selected(searchComboBox.model[index].value);
         }
     }
 }

@@ -1,4 +1,3 @@
-// soon
 import QtQuick
 import QtQuick.Layouts
 import qs.modules.common
@@ -12,36 +11,63 @@ Item {
     property bool editMode: false
     property real itemSpacing: 10
     property color accentColor: Appearance.colors.colPrimary
-    property real cornerRadius: Appearance.rounding?.normal ?? 12
+    property real cornerRadius: Appearance.rounding.normal
 
     property string fillKey: ""
     property real fillMinHeight: 60
 
     signal reordered(var newOrder)
     property var componentForKey: function(key) { return null }
+    property var isKeyActive: function(key) { return true }
 
     property var workingOrder: order.slice()
-    onOrderChanged: root.workingOrder = order.slice()
-
+    property var stableKeys: []
+    property string keySignature: ""
     property var heightMap: ({})
+    property string draggingKey: ""
+    readonly property bool animateMoves: root.draggingKey !== "" || settleTimer.running
+
+    Timer {
+        id: settleTimer
+        interval: 320
+    }
+
+    onOrderChanged: {
+        if (root.draggingKey === "") root.workingOrder = root.order.slice()
+        root.syncKeys()
+    }
+    Component.onCompleted: root.syncKeys()
+
+    function syncKeys() {
+        const signature = root.order.slice().sort().join("|")
+        if (signature === root.keySignature) return
+        root.keySignature = signature
+        root.stableKeys = root.order.slice()
+    }
 
     function naturalHeight(key) {
         return root.heightMap[key] ?? 0
     }
 
+    function isShown(key) {
+        if (!root.isKeyActive(key)) return false
+        return key === root.fillKey || root.naturalHeight(key) > 0.5
+    }
+
+    function shownKeys() {
+        return root.workingOrder.filter(key => root.isShown(key))
+    }
+
     function effectiveHeight(key) {
-        if (!root.editMode && key === root.fillKey && root.fillKey.length > 0) {
-            let othersTotal = 0
-            for (let i = 0; i < root.workingOrder.length; i++) {
-                const k = root.workingOrder[i]
-                if (k === root.fillKey) continue
-                othersTotal += root.naturalHeight(k)
-            }
-            const spacingTotal = Math.max(0, root.workingOrder.length - 1) * root.itemSpacing
-            const remaining = root.height - othersTotal - spacingTotal
-            return Math.max(root.fillMinHeight, remaining)
+        if (!root.isShown(key)) return 0
+        if (key !== root.fillKey) return root.naturalHeight(key)
+        const keys = root.shownKeys()
+        let others = 0
+        for (let i = 0; i < keys.length; i++) {
+            if (keys[i] !== root.fillKey) others += root.naturalHeight(keys[i])
         }
-        return root.naturalHeight(key)
+        const remaining = root.height - others - Math.max(0, keys.length - 1) * root.itemSpacing
+        return Math.max(root.fillMinHeight, remaining)
     }
 
     function yForKey(key) {
@@ -49,131 +75,142 @@ Item {
         for (let i = 0; i < root.workingOrder.length; i++) {
             const k = root.workingOrder[i]
             if (k === key) break
+            if (!root.isShown(k)) continue
             y += root.effectiveHeight(k) + root.itemSpacing
         }
         return y
     }
 
+    function indexAtCenter(centerY) {
+        const keys = root.shownKeys()
+        let accY = 0
+        for (let i = 0; i < keys.length; i++) {
+            const h = root.effectiveHeight(keys[i])
+            if (centerY <= accY + h / 2) return i
+            accY += h + root.itemSpacing
+        }
+        return keys.length - 1
+    }
+
+    function moveKey(key, shownIndex) {
+        const keys = root.shownKeys()
+        const target = keys[shownIndex]
+        if (target === undefined || target === key) return
+        const next = root.workingOrder.slice()
+        next.splice(next.indexOf(key), 1)
+        next.splice(next.indexOf(target) + (shownIndex > keys.indexOf(key) ? 1 : 0), 0, key)
+        root.workingOrder = next
+    }
+
     Repeater {
         id: repeater
-        model: root.order
+        model: root.stableKeys
 
         delegate: Item {
             id: slot
             required property string modelData
-            required property int index
+
+            readonly property bool dragging: root.draggingKey === slot.modelData
+            property real dragY: 0
+            readonly property real baseY: root.yForKey(slot.modelData)
 
             width: root.width
-            height: root.effectiveHeight(modelData)
-
-            property real baseY: root.yForKey(modelData)
-            property real pressY: 0
-            y: dragArea.drag.active ? slot.pressY : slot.baseY
-            z: dragArea.drag.active ? 100 : 0
+            height: root.effectiveHeight(slot.modelData)
+            visible: height > 0
+            y: slot.dragging ? slot.dragY : slot.baseY
+            z: slot.dragging ? 100 : 0
 
             Behavior on y {
-                enabled: !dragArea.drag.active
-                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
-            }
-            Behavior on height {
-                enabled: !dragArea.drag.active
-                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                enabled: root.animateMoves && !slot.dragging
+                NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
             }
 
             function reportHeight() {
-                let hm = Object.assign({}, root.heightMap)
+                const hm = Object.assign({}, root.heightMap)
                 hm[slot.modelData] = loader.implicitHeight
                 root.heightMap = hm
             }
 
-            Item {
-                id: dragSurface
-                width: slot.width
-                height: slot.height
-                x: 0
-                y: 0
+            StyledRectangularShadow {
+                visible: slot.dragging
+                target: frame
+            }
 
-                Loader {
-                    id: loader
-                    anchors.fill: parent
-                    sourceComponent: root.componentForKey(slot.modelData)
-                    onImplicitHeightChanged: slot.reportHeight()
-                    Component.onCompleted: slot.reportHeight()
+            Loader {
+                id: loader
+                anchors.fill: parent
+                sourceComponent: root.componentForKey(slot.modelData)
+                opacity: root.editMode && !slot.dragging ? 0.7 : 1
+
+                Behavior on opacity {
+                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                }
+                onImplicitHeightChanged: slot.reportHeight()
+                Component.onCompleted: slot.reportHeight()
+            }
+
+            Rectangle {
+                id: frame
+                anchors.fill: parent
+                radius: root.cornerRadius
+                visible: root.editMode
+                color: slot.dragging ? ColorUtils.transparentize(root.accentColor, 0.8) : "transparent"
+                border.width: 2
+                border.color: slot.dragging ? root.accentColor : ColorUtils.transparentize(root.accentColor, 0.55)
+
+                Behavior on color {
+                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
                 }
 
                 Rectangle {
-                    anchors.fill: parent
-                    radius: root.cornerRadius
-                    color: ColorUtils.transparentize(root.accentColor, 0.75)
-                    visible: dragArea.drag.active
-                }
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        margins: 6
+                    }
+                    width: 30
+                    height: 30
+                    radius: height / 2
+                    color: root.accentColor
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: root.cornerRadius
-                    color: "transparent"
-                    border.width: 2
-                    border.color: root.accentColor
-                    visible: dragArea.drag.active
-                }
-
-                Loader {
-                    active: dragArea.drag.active
-                    sourceComponent: StyledRectangularShadow {
-                        target: dragSurface
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "drag_indicator"
+                        iconSize: 20
+                        color: Appearance.colors.colOnPrimary
                     }
                 }
+            }
 
-                MouseArea {
-                    id: dragArea
-                    anchors.fill: parent
-                    enabled: root.editMode
-                    drag.target: dragSurface
-                    drag.axis: Drag.YAxis
-                    cursorShape: root.editMode ? Qt.SizeVerCursor : Qt.ArrowCursor
+            MouseArea {
+                id: dragArea
+                anchors.fill: parent
+                enabled: root.editMode
+                visible: root.editMode
+                cursorShape: slot.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                property real grabOffset: 0
 
-                    property real minY: 0
-                    property real maxY: 0
-                    drag.minimumY: minY
-                    drag.maximumY: maxY
+                onPressed: mouse => {
+                    dragArea.grabOffset = dragArea.mapToItem(root, mouse.x, mouse.y).y - slot.y
+                    slot.dragY = slot.y
+                    root.draggingKey = slot.modelData
+                }
 
-                    onPressed: {
-                        slot.pressY = slot.y
-                        dragArea.minY = -slot.pressY
-                        dragArea.maxY = root.height - slot.pressY - slot.height
-                    }
+                onPositionChanged: mouse => {
+                    if (!slot.dragging) return
+                    const pointerY = dragArea.mapToItem(root, mouse.x, mouse.y).y
+                    slot.dragY = Math.max(0, Math.min(root.height - slot.height, pointerY - dragArea.grabOffset))
+                    root.moveKey(slot.modelData, root.indexAtCenter(slot.dragY + slot.height / 2))
+                }
 
-                    onPositionChanged: {
-                        if (!drag.active) return
-                        const currentIndex = root.workingOrder.indexOf(slot.modelData)
-                        const centerY = slot.pressY + dragSurface.y + dragSurface.height / 2
+                onReleased: finish()
+                onCanceled: finish()
 
-                        let targetIndex = currentIndex
-                        let accY = 0
-                        for (let i = 0; i < root.workingOrder.length; i++) {
-                            const k = root.workingOrder[i]
-                            const h = root.effectiveHeight(k)
-                            const itemMidY = accY + h / 2
-                            if (centerY <= itemMidY) { targetIndex = i; break }
-                            accY += h + root.itemSpacing
-                            targetIndex = i + 1
-                        }
-                        targetIndex = Math.max(0, Math.min(root.workingOrder.length - 1, targetIndex))
-
-                        if (targetIndex !== currentIndex) {
-                            let newWorking = root.workingOrder.slice()
-                            newWorking.splice(currentIndex, 1)
-                            newWorking.splice(targetIndex, 0, slot.modelData)
-                            root.workingOrder = newWorking
-                        }
-                    }
-
-                    onReleased: {
-                        dragSurface.x = 0
-                        dragSurface.y = 0
-                        root.order = root.workingOrder.slice()
-                        root.reordered(root.order)
-                    }
+                function finish() {
+                    if (!slot.dragging) return
+                    settleTimer.restart()
+                    root.draggingKey = ""
+                    root.reordered(root.workingOrder.slice())
                 }
             }
         }

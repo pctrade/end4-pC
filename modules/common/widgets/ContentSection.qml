@@ -12,6 +12,8 @@ ColumnLayout {
     property string icon: ""
     property var bgColor: Appearance.colors.colSecondaryContainer
     property bool collapsible: true
+    property string hint: ""
+    property string hintIcon: "info"
     default property alias data: sectionContent.data
 
     readonly property string sectionId: root.title
@@ -111,6 +113,33 @@ ColumnLayout {
                     width: parent.width
                     position: root.flashScan
                     opacity: root.flashTint
+                }
+            }
+
+            MaterialSymbol {
+                id: hintSymbol
+                visible: root.hint.length > 0
+                Layout.leftMargin: 2
+                text: root.hintIcon
+                iconSize: Appearance.font.pixelSize.larger
+                color: Appearance.colors.colSubtext
+                opacity: hintArea.containsMouse ? 1 : 0.55
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
+                }
+
+                MouseArea {
+                    id: hintArea
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    hoverEnabled: true
+                    cursorShape: Qt.WhatsThisCursor
+                }
+
+                StyledToolTip {
+                    extraVisibleCondition: hintArea.containsMouse
+                    text: root.hint
                 }
             }
 

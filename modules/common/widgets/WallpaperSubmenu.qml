@@ -27,7 +27,13 @@ Item {
             Layout.fillWidth: true
             implicitHeight: schemeGrid.implicitHeight + 20
             radius: Appearance.rounding.verylarge
-            color: Appearance.colors.colLayer0
+            color: Appearance.colors.colUiBackground
+
+            WindowGlass {
+                anchors.fill: parent
+                cardRadius: parent.radius
+                tint: parent.color
+            }
 
             GridLayout {
                 id: schemeGrid
@@ -121,7 +127,13 @@ Item {
             Layout.fillWidth: true
             implicitHeight: centeredCol.implicitHeight + 16
             radius: Appearance.rounding.verylarge
-            color: Appearance.colors.colLayer0
+            color: Appearance.colors.colUiBackground
+
+            WindowGlass {
+                anchors.fill: parent
+                cardRadius: parent.radius
+                tint: parent.color
+            }
 
             ColumnLayout {
                 id: centeredCol
@@ -188,7 +200,13 @@ Item {
             Layout.fillWidth: true
             implicitHeight: transCol.implicitHeight + 16
             radius: Appearance.rounding.verylarge
-            color: Appearance.colors.colLayer0
+            color: Appearance.colors.colUiBackground
+
+            WindowGlass {
+                anchors.fill: parent
+                cardRadius: parent.radius
+                tint: parent.color
+            }
 
             ColumnLayout {
                 id: transCol

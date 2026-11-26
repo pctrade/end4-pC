@@ -11,30 +11,56 @@ Item {
     id: root
 
     property bool enableShadow: true
+    property bool glass: false
+    property bool glassFullscreen: false
+    readonly property bool glassOn: glass && Config.options.background.widgets.glass.enable
+    property bool outerShadow: false
     property real padding: 8
-    property alias colBackground: background.color
+    property color colBackground: Appearance.m3colors.m3surfaceContainer
     property alias spacing: toolbarLayout.spacing
     default property alias data: toolbarLayout.data
     implicitWidth: background.implicitWidth
     implicitHeight: background.implicitHeight
     property alias radius: background.radius
 
-    Loader {
-        active: root.enableShadow
-        anchors.fill: background
-        sourceComponent: StyledRectangularShadow {
+    Component {
+        id: plainShadow
+
+        StyledRectangularShadow {
             target: background
             anchors.fill: undefined
         }
     }
 
+    Component {
+        id: outerShadowOnly
+
+        StyledOuterShadow {
+            target: background
+        }
+    }
+
+    Loader {
+        active: root.enableShadow
+        anchors.fill: background
+        sourceComponent: root.outerShadow ? outerShadowOnly : plainShadow
+    }
+
     Rectangle {
         id: background
         anchors.fill: parent
-        color: Appearance.m3colors.m3surfaceContainer
+        color: root.glassOn ? "transparent" : root.colBackground
         implicitHeight: 56
         implicitWidth: toolbarLayout.implicitWidth + root.padding * 2
         radius: height / 2
+
+        WindowGlass {
+            anchors.fill: parent
+            glassEnabled: root.glass
+            fullscreenSurface: root.glassFullscreen
+            cardRadius: background.radius
+            tint: root.colBackground
+        }
 
         // Plain Items don't consume mouse events in QML, so clicks on the
         // toolbar's empty areas would fall through to content underneath

@@ -1,33 +1,55 @@
 #!/usr/bin/env python3
-import json, subprocess, time, os
+import json
+import os
+import subprocess
+import sys
+import time
 
-lockfile = "/tmp/qs-autostart.lock"
-if os.path.exists(lockfile):
-    exit(0)
-open(lockfile, 'w').close()
+LOCK_FILE = "/tmp/qs-autostart.lock"
+CONFIG_FILE = os.path.join(os.environ["HOME"], ".config", "illogical-impulse", "config.json")
+force = "--force" in sys.argv
 
-with open(f"{os.environ['HOME']}/.config/illogical-impulse/config.json") as f:
-    data = json.load(f)
 
-autostart = data.get('hyprland', {}).get('autostartApps', {})
-if not autostart.get('enable', False):
-    exit(0)
+def dispatch(expression):
+    subprocess.run(["hyprctl", "dispatch", expression], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-for app in autostart.get('apps', []):
-    cmd = app.get('cmd', '').strip()
-    workspace = app.get('workspace', 1)
-    delay = app.get('delay', 0)
-    if not cmd:
+
+def lua_string(text):
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def active_workspace():
+    result = subprocess.run(["hyprctl", "activeworkspace", "-j"], capture_output=True, text=True)
+    try:
+        return json.loads(result.stdout)["id"]
+    except (ValueError, KeyError):
+        return None
+
+
+if not force:
+    if os.path.exists(LOCK_FILE):
+        sys.exit(0)
+    open(LOCK_FILE, "w").close()
+
+with open(CONFIG_FILE) as handle:
+    data = json.load(handle)
+
+autostart = data.get("hyprland", {}).get("autostartApps", {})
+if not autostart.get("enable", False):
+    sys.exit(0)
+
+original = active_workspace()
+
+for app in autostart.get("apps", []):
+    command = str(app.get("cmd", "")).strip()
+    workspace = int(app.get("workspace", 1) or 1)
+    delay = float(app.get("delay", 0) or 0)
+    if not command:
         continue
 
-    subprocess.run(['hyprctl', 'dispatch', f'hl.dsp.focus({{workspace = {workspace}}})'])
+    dispatch(f"hl.dsp.focus({{workspace = {workspace}}})")
+    dispatch(f"hl.dsp.exec_cmd({lua_string(os.path.expanduser(command))})")
+    time.sleep(max(delay, 0.4))
 
-    expanded_cmd = os.path.expanduser(cmd)
-    subprocess.Popen(
-        ['hyprctl', 'dispatch', f'hl.dsp.exec_cmd("{expanded_cmd}")'],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        close_fds=True
-    )
-
-    time.sleep(delay)
+if original is not None:
+    dispatch(f"hl.dsp.focus({{workspace = {original}}})")

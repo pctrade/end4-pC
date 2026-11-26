@@ -15,13 +15,13 @@ Singleton {
     readonly property int activeSessions: root.sessions.length
 
     function refresh() {
-        if (!usageProc.running) usageProc.running = true;
+        if (Config.options.bar.aiUsage.claudeEnabled && !usageProc.running) usageProc.running = true;
     }
 
     Timer {
         interval: Config.options.bar.aiUsage.updateInterval * 1000
         repeat: true
-        running: Config.ready
+        running: Config.ready && Config.options.bar.aiUsage.claudeEnabled
         triggeredOnStart: true
         onTriggered: root.refresh()
     }

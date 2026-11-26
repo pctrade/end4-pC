@@ -13,6 +13,7 @@ ContentPage {
     forceWidth: true
 
     Component.onCompleted: {
+        HyprlandOptions.refresh()
         const h = Config.options.hyprland
         // One setMany for everything: separate calls would be separate
         // processes racing to rewrite the same overrides file.
@@ -353,6 +354,83 @@ ContentPage {
                     ]
                 }
             }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                visible: Config.options.hyprland.general.layout === "dwindle"
+                title: Translation.tr("Dwindle")
+
+                GroupedList {
+                    HyprOptionSwitch {
+                        optionKey: "dwindle:preserve_split"
+                        buttonIcon: "call_split"
+                        text: Translation.tr("Preserve split direction")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "dwindle:smart_split"
+                        buttonIcon: "smart_toy"
+                        text: Translation.tr("Smart split (follow the cursor)")
+                    }
+                    HyprOptionSelection {
+                        optionKey: "dwindle:force_split"
+                        icon: "splitscreen"
+                        text: Translation.tr("Force split side")
+                        fallback: 0
+                        options: [
+                            { displayName: Translation.tr("Auto"), icon: "auto_mode", value: 0 },
+                            { displayName: Translation.tr("Left / top"), icon: "align_horizontal_left", value: 1 },
+                            { displayName: Translation.tr("Right / bottom"), icon: "align_horizontal_right", value: 2 }
+                        ]
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "dwindle:default_split_ratio"
+                        icon: "percent"
+                        text: Translation.tr("Default split ratio")
+                        factor: 10
+                        from: 2; to: 18; stepSize: 1
+                    }
+                }
+            }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                visible: Config.options.hyprland.general.layout === "master"
+                title: Translation.tr("Master")
+
+                GroupedList {
+                    HyprOptionSelection {
+                        optionKey: "master:new_status"
+                        icon: "add_box"
+                        text: Translation.tr("New windows become")
+                        fallback: "slave"
+                        options: [
+                            { displayName: Translation.tr("Master"), icon: "star", value: "master" },
+                            { displayName: Translation.tr("Slave"), icon: "view_agenda", value: "slave" },
+                            { displayName: Translation.tr("Inherit"), icon: "content_copy", value: "inherit" }
+                        ]
+                    }
+                    HyprOptionSelection {
+                        optionKey: "master:orientation"
+                        icon: "screen_rotation"
+                        text: Translation.tr("Master position")
+                        fallback: "left"
+                        options: [
+                            { displayName: Translation.tr("Left"), icon: "align_horizontal_left", value: "left" },
+                            { displayName: Translation.tr("Right"), icon: "align_horizontal_right", value: "right" },
+                            { displayName: Translation.tr("Top"), icon: "align_vertical_top", value: "top" },
+                            { displayName: Translation.tr("Bottom"), icon: "align_vertical_bottom", value: "bottom" },
+                            { displayName: Translation.tr("Center"), icon: "align_horizontal_center", value: "center" }
+                        ]
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "master:mfact"
+                        icon: "aspect_ratio"
+                        text: Translation.tr("Master size")
+                        factor: 100
+                        from: 10; to: 90; stepSize: 5
+                    }
+                }
+            }
         }
 
         // Input
@@ -418,6 +496,20 @@ ContentPage {
                             HyprlandConfig.set("input:repeat_rate", value)
                         }
                     }
+                    HyprOptionText {
+                        optionKey: "input:kb_variant"
+                        Layout.fillWidth: true
+                        buttonIcon: "keyboard_alt"
+                        text: Translation.tr("Keyboard variant")
+                        placeholderText: Translation.tr("e.g., intl, dvorak")
+                    }
+                    HyprOptionText {
+                        optionKey: "input:kb_options"
+                        Layout.fillWidth: true
+                        buttonIcon: "keyboard_command_key"
+                        text: Translation.tr("Keyboard options")
+                        placeholderText: Translation.tr("e.g., caps:escape, grp:alt_shift_toggle")
+                    }
                     ConfigSelectionArray {
                         text: Translation.tr("Follow mouse")
                         icon: "mouse"
@@ -432,6 +524,46 @@ ContentPage {
                             { displayName: Translation.tr("Loose"),    icon: "drag_pan",   value: 2 },
                             { displayName: Translation.tr("Explicit"), icon: "ads_click",  value: 3 },
                         ]
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Mouse")
+
+                GroupedList {
+                    HyprOptionSpinBox {
+                        optionKey: "input:sensitivity"
+                        icon: "speed"
+                        text: Translation.tr("Pointer sensitivity")
+                        factor: 10
+                        from: -10; to: 10; stepSize: 1
+                    }
+                    HyprOptionSelection {
+                        optionKey: "input:accel_profile"
+                        icon: "trending_up"
+                        text: Translation.tr("Acceleration profile")
+                        fallback: ""
+                        options: [
+                            { displayName: Translation.tr("Default"), icon: "settings_backup_restore", value: "" },
+                            { displayName: Translation.tr("Flat"), icon: "horizontal_rule", value: "flat" },
+                            { displayName: Translation.tr("Adaptive"), icon: "show_chart", value: "adaptive" }
+                        ]
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "input:force_no_accel"
+                        buttonIcon: "mouse"
+                        text: Translation.tr("Disable acceleration (raw input)")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "input:left_handed"
+                        buttonIcon: "front_hand"
+                        text: Translation.tr("Left-handed buttons")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:middle_click_paste"
+                        buttonIcon: "content_paste"
+                        text: Translation.tr("Middle click paste")
                     }
                 }
             }
@@ -472,6 +604,21 @@ ContentPage {
                         }
                     }
 
+                    HyprOptionSwitch {
+                        optionKey: "input:touchpad:tap-to-click"
+                        buttonIcon: "touch_app"
+                        text: Translation.tr("Tap to click")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "input:touchpad:tap-and-drag"
+                        buttonIcon: "drag_pan"
+                        text: Translation.tr("Tap and drag")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "input:touchpad:middle_button_emulation"
+                        buttonIcon: "mouse"
+                        text: Translation.tr("Middle button emulation (3-finger tap)")
+                    }
                     ConfigSpinBox {
                         icon: "swipe"
                         text: Translation.tr("Scroll factor")
@@ -797,6 +944,51 @@ ContentPage {
                     }
                 }
             }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                title: Translation.tr("Shadows, dimming & blur")
+
+                GroupedList {
+                    HyprOptionSwitch {
+                        optionKey: "decoration:shadow:enabled"
+                        buttonIcon: "shadow"
+                        text: Translation.tr("Window shadows")
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "decoration:shadow:range"
+                        icon: "blur_on"
+                        text: Translation.tr("Shadow range")
+                        from: 0; to: 50; stepSize: 1
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "decoration:dim_inactive"
+                        buttonIcon: "brightness_low"
+                        text: Translation.tr("Dim inactive windows")
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "decoration:dim_strength"
+                        icon: "contrast"
+                        text: Translation.tr("Dim strength")
+                        factor: 100
+                        from: 0; to: 100; stepSize: 5
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "decoration:blur:noise"
+                        icon: "grain"
+                        text: Translation.tr("Blur noise")
+                        factor: 100
+                        from: 0; to: 50; stepSize: 1
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "decoration:blur:vibrancy"
+                        icon: "palette"
+                        text: Translation.tr("Blur vibrancy")
+                        factor: 100
+                        from: 0; to: 100; stepSize: 5
+                    }
+                }
+            }
         }
 
         // Misc
@@ -814,6 +1006,154 @@ ContentPage {
                         if (checked === Config.options.hyprland.misc.focusOnActivate) return
                         Config.options.hyprland.misc.focusOnActivate = checked
                         HyprlandConfig.set("misc:focus_on_activate", checked ? 1 : 0)
+                    }
+                }
+                    HyprOptionSelection {
+                        optionKey: "misc:vrr"
+                        icon: "slow_motion_video"
+                        text: Translation.tr("Variable refresh rate (VRR)")
+                        fallback: 0
+                        options: [
+                            { displayName: Translation.tr("Off"), icon: "block", value: 0 },
+                            { displayName: Translation.tr("On"), icon: "check_circle", value: 1 },
+                            { displayName: Translation.tr("Fullscreen only"), icon: "fullscreen", value: 2 }
+                        ]
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:enable_swallow"
+                        buttonIcon: "call_merge"
+                        text: Translation.tr("Window swallowing (terminal swallows launched apps)")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:animate_manual_resizes"
+                        buttonIcon: "animation"
+                        text: Translation.tr("Animate manual resizes")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:close_special_on_empty"
+                        buttonIcon: "close_fullscreen"
+                        text: Translation.tr("Close empty special workspace")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:disable_hyprland_logo"
+                        buttonIcon: "hide_image"
+                        text: Translation.tr("Hide the Hyprland logo")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:disable_splash_rendering"
+                        buttonIcon: "subtitles_off"
+                        text: Translation.tr("Hide the splash text")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:mouse_move_enables_dpms"
+                        buttonIcon: "mouse"
+                        text: Translation.tr("Mouse wakes the screen")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "misc:key_press_enables_dpms"
+                        buttonIcon: "keyboard"
+                        text: Translation.tr("Keys wake the screen")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "xwayland:force_zero_scaling"
+                        buttonIcon: "zoom_out_map"
+                        text: Translation.tr("XWayland: sharp apps (force zero scaling)")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "group:auto_group"
+                        buttonIcon: "tab_group"
+                        text: Translation.tr("Auto-group dragged windows")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "binds:workspace_back_and_forth"
+                        buttonIcon: "swap_horiz"
+                        text: Translation.tr("Switching to the current workspace goes back")
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "binds:allow_workspace_cycles"
+                        buttonIcon: "cached"
+                        text: Translation.tr("Allow workspace cycles")
+                    }
+                    HyprOptionSelection {
+                        optionKey: "render:direct_scanout"
+                        icon: "speed"
+                        text: Translation.tr("Direct scanout (fullscreen apps)")
+                        fallback: 0
+                        options: [
+                            { displayName: Translation.tr("Off"), icon: "block", value: 0 },
+                            { displayName: Translation.tr("On"), icon: "check_circle", value: 1 },
+                            { displayName: Translation.tr("Auto"), icon: "auto_mode", value: 2 }
+                        ]
+                    }
+            }
+        }
+
+        // Windows & Cursor
+        ContentSection {
+            icon: "pan_tool"
+            shape: MaterialShape.Shape.Cookie9Sided
+            title: Translation.tr("Windows & Cursor")
+
+            ContentSubsection {
+                title: Translation.tr("Windows")
+
+                GroupedList {
+                    HyprOptionSwitch {
+                        optionKey: "general:resize_on_border"
+                        buttonIcon: "open_in_full"
+                        text: Translation.tr("Resize windows by dragging their borders")
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "general:extend_border_grab_area"
+                        icon: "border_outer"
+                        text: Translation.tr("Border grab area (px)")
+                        from: 0; to: 60; stepSize: 1
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "general:allow_tearing"
+                        buttonIcon: "sports_esports"
+                        text: Translation.tr("Allow tearing (lower latency in games)")
+                    }
+                }
+            }
+
+            ContentSubsection {
+                Layout.topMargin: 10
+                title: Translation.tr("Cursor")
+
+                GroupedList {
+                    HyprOptionSelection {
+                        optionKey: "cursor:no_hardware_cursors"
+                        icon: "mouse"
+                        text: Translation.tr("Hardware cursor")
+                        fallback: 2
+                        options: [
+                            { displayName: Translation.tr("Auto"), icon: "auto_mode", value: 2 },
+                            { displayName: Translation.tr("On"), icon: "check_circle", value: 0 },
+                            { displayName: Translation.tr("Off"), icon: "block", value: 1 }
+                        ]
+                    }
+                    HyprOptionSpinBox {
+                        optionKey: "cursor:inactive_timeout"
+                        icon: "hourglass_empty"
+                        text: Translation.tr("Hide cursor after inactivity (s, 0 = never)")
+                        from: 0; to: 60; stepSize: 1
+                    }
+                    HyprOptionSwitch {
+                        optionKey: "cursor:hide_on_key_press"
+                        buttonIcon: "keyboard_hide"
+                        text: Translation.tr("Hide cursor while typing")
+                    }
+                    HyprOptionSelection {
+                        optionKey: "cursor:warp_on_change_workspace"
+                        icon: "ads_click"
+                        text: Translation.tr("Move cursor to the new workspace")
+                        fallback: 0
+                        options: [
+                            { displayName: Translation.tr("Off"), icon: "block", value: 0 },
+                            { displayName: Translation.tr("On"), icon: "check_circle", value: 1 },
+                            { displayName: Translation.tr("Force"), icon: "bolt", value: 2 }
+                        ]
                     }
                 }
             }

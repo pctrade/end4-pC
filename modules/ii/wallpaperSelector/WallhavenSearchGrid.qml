@@ -201,7 +201,7 @@ Item {
         }
 
         // Grid
-        GridView {
+        StyledGridView {
             id: wallhavenGrid
             anchors.fill: parent
             visible: WallhavenSearch.currentResults.length > 0

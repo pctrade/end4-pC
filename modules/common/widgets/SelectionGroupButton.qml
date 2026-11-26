@@ -15,10 +15,11 @@ GroupButton {
     property bool rightmost: false
 
     property bool isDragging: false
-    property color colText: root.toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
+    readonly property bool showToggled: root.toggled && root.enabled
+    property color colText: root.showToggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
 
-    leftRadius: (toggled || leftmost) ? (height / 2) : Appearance.rounding.unsharpenmore
-    rightRadius: (toggled || rightmost) ? (height / 2) : Appearance.rounding.unsharpenmore
+    leftRadius: (showToggled || leftmost) ? (height / 2) : Appearance.rounding.unsharpenmore
+    rightRadius: (showToggled || rightmost) ? (height / 2) : Appearance.rounding.unsharpenmore
 
     horizontalPadding: 12
     verticalPadding: 8 

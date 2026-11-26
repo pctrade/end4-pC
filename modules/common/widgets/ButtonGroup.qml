@@ -13,6 +13,7 @@ Rectangle {
     property alias uniformCellSizes: rowLayout.uniformCellSizes
     property real spacing: 5
     property real padding: 0
+    property bool glass: false
     property alias clickIndex: rowLayout.clickIndex
     property alias childrenCount: rowLayout.childrenCount
 
@@ -33,7 +34,12 @@ Rectangle {
     implicitHeight: rowLayout.implicitHeight + padding * 2
     implicitWidth: root.contentWidth + padding * 2
     
-    children: [RowLayout {
+    children: [WindowGlass {
+        anchors.fill: parent
+        glassEnabled: root.glass && root.color.a > 0
+        cardRadius: root.radius
+        tint: root.color
+    }, RowLayout {
         id: rowLayout
         anchors.fill: parent
         anchors.margins: root.padding

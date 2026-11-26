@@ -31,9 +31,9 @@ Item {
 
     property var mainAppIconSource: {
         if (!root.activeAppClass || root.activeAppClass === "")
-            return Quickshell.iconPath("user-desktop", "image-missing")
-        return Quickshell.iconPath(AppSearch.guessIcon(root.activeAppClass), 
-            Quickshell.iconPath("user-desktop", "image-missing"))     // ← fallback Desktop
+            return SystemAppearance.iconPath("user-desktop", "image-missing")
+        return SystemAppearance.iconPath(AppSearch.guessIcon(root.activeAppClass), 
+            SystemAppearance.iconPath("user-desktop", "image-missing"))     // ← fallback Desktop
     }
 
     Component.onCompleted: {

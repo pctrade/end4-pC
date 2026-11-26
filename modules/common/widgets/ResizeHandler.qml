@@ -18,13 +18,27 @@ Canvas {
     signal rotated(real newAngle)
     signal rotateFinished()
 
+    readonly property bool widgetSelected: {
+        let item = root.anchorItem
+        while (item) {
+            if (item.selected === true) return true
+            item = item.parent
+        }
+        return false
+    }
+    property real selectionInset: widgetSelected ? 8 : 0
+
+    Behavior on selectionInset {
+        NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+    }
+
     width: 62
     height: 62
     anchors {
         right: anchorItem.right
         bottom: anchorItem.bottom
-        rightMargin: -8
-        bottomMargin: -8
+        rightMargin: -8 + selectionInset
+        bottomMargin: -8 + selectionInset
     }
     opacity: (hoverActive || resizeArea.containsMouse || resizeArea.pressed) ? 0.85 : 0
     visible: opacity > 0 && !locked

@@ -11,6 +11,8 @@ import qs.modules.common.widgets
 import qs.modules.ii.overlay
 
 StyledOverlayWidget {
+    Component.onCompleted: ResourceUsage.consumers++
+    Component.onDestruction: ResourceUsage.consumers--
     id: root
     minimumWidth: 300
     minimumHeight: 200

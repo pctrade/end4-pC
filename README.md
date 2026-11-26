@@ -42,6 +42,21 @@ Customized and maintained by **pctrade**
 
 ---
 
+## 🎨 Community Presets
+
+Share your whole desktop with one button, or try someone else's in a click.
+
+**[end4-pCpresets](https://github.com/pctrade/end4-pCpresets)** is the community gallery for this shell. Open **Dashboard → Presets**, pick a preset and press **Download** to try it or **Install** to keep it. Made your own? Press **Upload**, choose a screenshot and it is sent for you with one click. The first time, a terminal opens to install the [GitHub CLI](https://cli.github.com) (`gh`) and sign you in, which takes a minute. If you skip that, the shell opens a GitHub page where you drag the folder in instead. Changed your mind? **Remove from gallery** takes your own preset back out.
+
+- 🔒 **Private by design:** nothing is collected from you. The shell only reads public files from GitHub.
+- 🧹 **Clean exports:** personal paths, keys and commands are removed before anything is shared.
+- ✅ **Every preset is checked** automatically. First-time authors are reviewed by hand, and trusted authors are merged automatically once the check passes.
+- 👤 **Yours stays yours:** only the person who shared a preset can change or remove it.
+
+[Browse the gallery](https://github.com/pctrade/end4-pCpresets) · [How to share yours](https://github.com/pctrade/end4-pCpresets#share-your-preset)
+
+---
+
 ## ⚡ Installation
 
 > [!NOTE]

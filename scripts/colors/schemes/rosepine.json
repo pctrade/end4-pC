@@ -1,0 +1,92 @@
+{
+    "name": "Rosé Pine",
+    "defaults": {
+        "primary": "iris",
+        "secondary": "rose",
+        "tertiary": "foam"
+    },
+    "dark": {
+        "surface_dim": "#13111d",
+        "surface": "#191724",
+        "surface_bright": "#403d52",
+        "surface_container_lowest": "#13111d",
+        "surface_container_low": "#1f1d2e",
+        "surface_container": "#26233a",
+        "surface_container_high": "#403d52",
+        "surface_container_highest": "#524f67",
+        "on_surface": "#e0def4",
+        "on_surface_variant": "#908caa",
+        "outline": "#6e6a86",
+        "outline_variant": "#403d52",
+        "error": "#eb6f92",
+        "on_accent": "#191724",
+        "accents": {
+            "love": "#eb6f92",
+            "gold": "#f6c177",
+            "rose": "#ebbcba",
+            "pine": "#31748f",
+            "foam": "#9ccfd8",
+            "iris": "#c4a7e7"
+        },
+        "term": [
+            "#26233a",
+            "#eb6f92",
+            "#31748f",
+            "#f6c177",
+            "#9ccfd8",
+            "#c4a7e7",
+            "#ebbcba",
+            "#e0def4",
+            "#6e6a86",
+            "#eb6f92",
+            "#31748f",
+            "#f6c177",
+            "#9ccfd8",
+            "#c4a7e7",
+            "#ebbcba",
+            "#e0def4"
+        ]
+    },
+    "light": {
+        "surface_dim": "#dfdad9",
+        "surface": "#faf4ed",
+        "surface_bright": "#fffaf3",
+        "surface_container_lowest": "#fffaf3",
+        "surface_container_low": "#f4ede8",
+        "surface_container": "#f2e9e1",
+        "surface_container_high": "#dfdad9",
+        "surface_container_highest": "#cecacd",
+        "on_surface": "#575279",
+        "on_surface_variant": "#797593",
+        "outline": "#9893a5",
+        "outline_variant": "#cecacd",
+        "error": "#b4637a",
+        "on_accent": "#faf4ed",
+        "accents": {
+            "love": "#b4637a",
+            "gold": "#ea9d34",
+            "rose": "#d7827e",
+            "pine": "#286983",
+            "foam": "#56949f",
+            "iris": "#907aa9"
+        },
+        "term": [
+            "#f2e9e1",
+            "#b4637a",
+            "#286983",
+            "#ea9d34",
+            "#56949f",
+            "#907aa9",
+            "#d7827e",
+            "#575279",
+            "#9893a5",
+            "#b4637a",
+            "#286983",
+            "#ea9d34",
+            "#56949f",
+            "#907aa9",
+            "#d7827e",
+            "#575279"
+        ]
+    }
+}

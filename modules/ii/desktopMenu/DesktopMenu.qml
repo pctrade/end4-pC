@@ -148,8 +148,14 @@ Scope {
                         Layout.fillWidth: true
                         implicitHeight: 160
                         radius: Appearance.rounding.verylarge
-                        color: Appearance.colors.colLayer0
+                        color: Appearance.colors.colUiBackground
                         clip: true
+
+                        WindowGlass {
+                            anchors.fill: parent
+                            cardRadius: parent.radius
+                            tint: parent.color
+                        }
 
                         Carousel {
                             anchors.fill: parent
@@ -162,146 +168,118 @@ Scope {
                         }
                     }
 
-                    GroupedList {
+                    Component {
+                        id: wallpaperSubmenu
+                        WallpaperSubmenu {}
+                    }
+
+                    Component {
+                        id: widgetsSubmenu
+                        WidgetsSubmenu {}
+                    }
+
+                    ColumnLayout {
+                        id: rowsColumn
                         Layout.fillWidth: true
-                        itemVerticalPadding: 16
-                        bgcolor: Appearance.colors.colLayer0
+                        spacing: 2
 
-                        // Wallpapers
-                        RippleButton {
-                            id: wallpaperRow
-                            implicitHeight: 40
-                            colBackground: "transparent"
-                            colBackgroundHover: Appearance.colors.colLayer2
-                            contentItem: RowLayout {
-                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                                spacing: 12
-                                MaterialSymbol { text: "format_paint"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
-                                StyledText { Layout.fillWidth: true; text: "Wallpaper & style"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
-                                MaterialSymbol { text: "chevron_right"; iconSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1; opacity: 0.4 }
-                            }
-                            Component {
-                                id: wallpaperSubmenu
-                                WallpaperSubmenu {}
-                            }
-                            HoverHandler {
-                                onHoveredChanged: {
-                                    if (hovered) {
-                                        submenuCloseTimer.stop()
-                                        menuWindow.submenuAnchorY = menuCard.y + wallpaperRow.mapToItem(menuCard, 0, 0).y
-                                        menuWindow.openSubmenuComponent = wallpaperSubmenu
-                                    } else {
-                                        submenuCloseTimer.restart()
+                        Repeater {
+                            model: [
+                                { icon: "format_paint", label: "Wallpaper & style", kind: "wallpaper" },
+                                { icon: "widgets", label: "Widgets", kind: "widgets" },
+                                { icon: "stacks", label: "DropShelf", kind: "dropshelf" },
+                                { icon: "video_template", label: "Live Wallpaper", kind: "live" },
+                                { icon: "settings", label: "Settings", kind: "settings" }
+                            ]
+
+                            delegate: Rectangle {
+                                id: menuRow
+                                required property var modelData
+                                required property int index
+                                readonly property bool isFirst: index === 0
+                                readonly property bool isLast: index === 4
+
+                                Layout.fillWidth: true
+                                implicitHeight: 56
+                                color: Appearance.colors.colUiBackground
+                                topLeftRadius: isFirst ? Appearance.rounding.normal : Appearance.rounding.unsharpenmore
+                                topRightRadius: isFirst ? Appearance.rounding.normal : Appearance.rounding.unsharpenmore
+                                bottomLeftRadius: isLast ? Appearance.rounding.normal : Appearance.rounding.unsharpenmore
+                                bottomRightRadius: isLast ? Appearance.rounding.normal : Appearance.rounding.unsharpenmore
+
+                                WindowGlass {
+                                    anchors.fill: parent
+                                    topLeftRadius: menuRow.topLeftRadius
+                                    topRightRadius: menuRow.topRightRadius
+                                    bottomLeftRadius: menuRow.bottomLeftRadius
+                                    bottomRightRadius: menuRow.bottomRightRadius
+                                    tint: menuRow.color
+                                }
+
+                                RippleButton {
+                                    id: rowButton
+                                    anchors { fill: parent; margins: 8 }
+                                    colBackground: "transparent"
+                                    colBackgroundHover: Appearance.colors.colLayer2
+                                    contentItem: RowLayout {
+                                        anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                                        spacing: 12
+                                        MaterialSymbol { text: menuRow.modelData.icon; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
+                                        StyledText { Layout.fillWidth: true; text: menuRow.modelData.label; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
+                                        StyledText {
+                                            visible: menuRow.modelData.kind === "dropshelf" && DropShelf.items.length > 0
+                                            text: DropShelf.items.length
+                                            font.pixelSize: Appearance.font.pixelSize.small
+                                            color: Appearance.colors.colOnLayer1
+                                            opacity: 0.6
+                                        }
+                                        MaterialSymbol {
+                                            visible: !(menuRow.modelData.kind === "dropshelf" && DropShelf.items.length > 0)
+                                            text: "chevron_right"
+                                            iconSize: Appearance.font.pixelSize.normal
+                                            color: Appearance.colors.colOnLayer1
+                                            opacity: 0.4
+                                        }
+                                    }
+
+                                    HoverHandler {
+                                        enabled: menuRow.modelData.kind === "wallpaper" || menuRow.modelData.kind === "widgets"
+                                        onHoveredChanged: {
+                                            if (hovered) {
+                                                submenuCloseTimer.stop()
+                                                menuWindow.submenuAnchorY = menuCard.y + rowButton.mapToItem(menuCard, 0, 0).y
+                                                menuWindow.openSubmenuComponent = menuRow.modelData.kind === "wallpaper" ? wallpaperSubmenu : widgetsSubmenu
+                                            } else {
+                                                submenuCloseTimer.restart()
+                                            }
+                                        }
+                                    }
+
+                                    onClicked: {
+                                        switch (menuRow.modelData.kind) {
+                                        case "wallpaper":
+                                            GlobalStates.desktopMenuOpen = false
+                                            break
+                                        case "dropshelf":
+                                            GlobalStates.desktopMenuOpen = false
+                                            GlobalStates.dropShelfX = GlobalStates.desktopMenuX
+                                            GlobalStates.dropShelfY = GlobalStates.desktopMenuY
+                                            GlobalStates.dropShelfOpen = true
+                                            break
+                                        case "live":
+                                            GlobalStates.desktopMenuOpen = false
+                                            Wallpapers.openFallbackPicker(
+                                                Appearance.m3colors.darkmode,
+                                                Config.options.wallpaperSelector.liveWallpapersPath ?? ""
+                                            )
+                                            break
+                                        case "settings":
+                                            GlobalStates.desktopMenuOpen = false
+                                            GlobalStates.settingsOpen = true
+                                            break
+                                        }
                                     }
                                 }
-                            }
-                            onClicked: GlobalStates.desktopMenuOpen = false
-                        }
-
-                        // Widgets
-                        RippleButton {
-                            id: widgetsRow
-                            implicitHeight: 40
-                            colBackground: "transparent"
-                            colBackgroundHover: Appearance.colors.colLayer2
-                            contentItem: RowLayout {
-                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                                spacing: 12
-                                MaterialSymbol { text: "widgets"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
-                                StyledText { Layout.fillWidth: true; text: "Widgets"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
-                                MaterialSymbol { text: "chevron_right"; iconSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1; opacity: 0.4 }
-                            }
-
-                            Component {
-                                id: widgetsSubmenu
-                                WidgetsSubmenu {}
-                            }
-
-                            HoverHandler {
-                                onHoveredChanged: {
-                                    if (hovered) {
-                                        submenuCloseTimer.stop()
-                                        menuWindow.submenuAnchorY = menuCard.y + widgetsRow.mapToItem(menuCard, 0, 0).y
-                                        menuWindow.openSubmenuComponent = widgetsSubmenu
-                                    } else {
-                                        submenuCloseTimer.restart()
-                                    }
-                                }
-                            }
-                        }
-
-                        RippleButton {
-                            implicitHeight: 40
-                            colBackground: "transparent"
-                            colBackgroundHover: Appearance.colors.colLayer2
-                            contentItem: RowLayout {
-                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                                spacing: 12
-                                MaterialSymbol { text: "stacks"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
-                                StyledText { Layout.fillWidth: true; text: "DropShelf"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
-                                StyledText {
-                                    visible: DropShelf.items.length > 0
-                                    text: DropShelf.items.length
-                                    font.pixelSize: Appearance.font.pixelSize.small
-                                    color: Appearance.colors.colOnLayer1
-                                    opacity: 0.6
-                                }
-                                MaterialSymbol {
-                                    visible: DropShelf.items.length === 0
-                                    text: "chevron_right"
-                                    iconSize: Appearance.font.pixelSize.normal
-                                    color: Appearance.colors.colOnLayer1
-                                    opacity: 0.4
-                                }
-                            }
-                            onClicked: {
-                                GlobalStates.desktopMenuOpen = false
-                                GlobalStates.dropShelfX = GlobalStates.desktopMenuX
-                                GlobalStates.dropShelfY = GlobalStates.desktopMenuY
-                                GlobalStates.dropShelfOpen = true
-                            }
-                        }
-
-                        RippleButton {
-                            implicitHeight: 40
-                            colBackground: "transparent"
-                            colBackgroundHover: Appearance.colors.colLayer2
-                            contentItem: RowLayout {
-                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                                spacing: 12
-                                MaterialSymbol { text: "video_template"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
-                                StyledText { Layout.fillWidth: true; text: "Live Wallpaper"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
-                                MaterialSymbol {
-                                    visible: DropShelf.items.length === 0
-                                    text: "chevron_right"
-                                    iconSize: Appearance.font.pixelSize.normal
-                                    color: Appearance.colors.colOnLayer1
-                                    opacity: 0.4
-                                }
-                            }
-                            onClicked: {
-                                GlobalStates.desktopMenuOpen = false
-                                Wallpapers.openFallbackPicker(
-                                    Appearance.m3colors.darkmode,
-                                    Config.options.wallpaperSelector.liveWallpapersPath ?? ""
-                                )
-                            }
-                        }
-
-                        RippleButton {
-                            implicitHeight: 40
-                            colBackground: "transparent"
-                            colBackgroundHover: Appearance.colors.colLayer2
-                            contentItem: RowLayout {
-                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                                spacing: 12
-                                MaterialSymbol { text: "settings"; iconSize: Appearance.font.pixelSize.larger; color: Appearance.colors.colOnLayer1 }
-                                StyledText { Layout.fillWidth: true; text: "Settings"; font.pixelSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1 }
-                                MaterialSymbol { text: "chevron_right"; iconSize: Appearance.font.pixelSize.normal; color: Appearance.colors.colOnLayer1; opacity: 0.4 }
-                            }
-                            onClicked: {
-                                GlobalStates.desktopMenuOpen = false
-                                GlobalStates.settingsOpen = true
                             }
                         }
                     }

@@ -13,7 +13,7 @@ Singleton {
 
     FontLoader {
         id: materialSymbolsLoader
-        source: Qt.resolvedUrl(`${Quickshell.shellPath("assets/fonts")}/MaterialSymbolsRounded.ttf`)
+        source: Qt.resolvedUrl(`${Quickshell.shellPath("assets/fonts")}/MaterialSymbolsLite.ttf`)
     }
 
     Instantiator {

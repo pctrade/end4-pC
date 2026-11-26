@@ -24,9 +24,11 @@ Scope {
         GlobalStates.settingsOpen = false;
     }
 
+    Dashboard {}
+
     PanelWindow {
         id: panelWindow
-        visible: GlobalStates.settingsOpen
+        visible: GlobalStates.settingsOpen && Config.options.settings.style !== "dashboard"
 
         function hide() {
             GlobalStates.settingsOpen = false;
@@ -57,7 +59,7 @@ Scope {
         Connections {
             target: GlobalFocusGrab
             function onDismissed() {
-                panelWindow.hide();
+                if (panelWindow.visible) panelWindow.hide();
             }
         }
 
@@ -78,9 +80,15 @@ Scope {
 
         Rectangle {
             id: settingsWindow
+            WindowGlass {
+                anchors.fill: parent
+                glassEnabled: (parent?.color.a ?? 0) > 0
+                cardRadius: parent?.radius ?? 0
+                tint: parent?.color ?? 'transparent'
+            }
             width: Config.options.settings.style === "minimal" ? Math.min(parent.width - 70, 980 * sizeScale) : Math.min(parent.width - 80, 980 * sizeScale)
             height: Math.min(parent.height - 80, 665 * sizeScale)
-            color: Appearance.colors.colLayer0
+            color: Appearance.colors.colUiBackground
             border.width: Config.options.settings.borderSize
             border.color: CF.ColorUtils.transparentize(Appearance.getColorFromName(Config.options.settings.borderColor), 0.8)
             radius: !isMinimal ? Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5 : Appearance.rounding.screenRounding + 5

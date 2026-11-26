@@ -154,9 +154,13 @@ Singleton {
         command: ["bash", "-c", `
             gpu=$(glxinfo 2>/dev/null | grep 'renderer string' | grep -o 'Intel(R) HD Graphics [0-9]\\{4\\}' | sed 's/Intel(R)/Intel®/')
             if [ -z "$gpu" ]; then
-                gpu=$(lspci | grep -iE 'vga|3d|display' | head -1 | sed -E '
+                # Prefer a discrete card: the iGPU usually sits first on the bus
+                gpus=$(lspci | grep -iE 'vga|3d|display')
+                line=$(echo "$gpus" | grep -vi 'Intel Corporation' | head -1)
+                [ -z "$line" ] && line=$(echo "$gpus" | head -1)
+                gpu=$(echo "$line" | sed -E '
                     s/.*: //;
-                    s/\\(rev [0-9a-f]+\\)//;
+                    s/ *\\(rev [0-9a-f]+\\)//;
                     s/Advanced Micro Devices, Inc\\. \\[AMD\\/ATI\\]//;
                     s/NVIDIA Corporation//;
                     s/Intel Corporation//;

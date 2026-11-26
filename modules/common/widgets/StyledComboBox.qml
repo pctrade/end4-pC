@@ -12,6 +12,8 @@ ComboBox {
 
     property string buttonIcon: ""
     property real buttonRadius: height / 2
+    property bool glass: false
+    readonly property bool glassActive: glass && (Config.options?.background.widgets.glass.enable ?? false)
     property color colBackground: Appearance.colors.colSecondaryContainer
     property color colBackgroundHover: Appearance.colors.colSecondaryContainerHover
     property color colBackgroundActive: Appearance.colors.colSecondaryContainerActive
@@ -21,7 +23,13 @@ ComboBox {
 
     background: Rectangle {
         radius: root.buttonRadius
-        color: (root.down && !root.popup.visible) ? root.colBackgroundActive : root.hovered ? root.colBackgroundHover : root.colBackground
+        color: root.glassActive ? ((root.down && !root.popup.visible) || root.hovered ? ColorUtils.transparentize(root.colBackgroundHover, 0.6) : "transparent") : (root.down && !root.popup.visible) ? root.colBackgroundActive : root.hovered ? root.colBackgroundHover : root.colBackground
+
+        WindowGlass {
+            anchors.fill: parent
+            glassEnabled: root.glassActive
+            cardRadius: root.buttonRadius
+        }
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)

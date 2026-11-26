@@ -29,7 +29,7 @@ WindowDialog {
         Layout.rightMargin: 0
     }
 
-    GridView {
+    StyledGridView {
         id: grid
         Layout.fillWidth: true
         Layout.fillHeight: true

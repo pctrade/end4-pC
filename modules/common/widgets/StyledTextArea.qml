@@ -6,7 +6,9 @@ import QtQuick.Controls
  * Does not include visual layout, but includes the easily neglected colors.
  */
 TextArea {
+    id: root
     renderType: Text.NativeRendering
+    ContextMenu.menu: StyledTextEditMenu { editor: root }
     selectedTextColor: Appearance.m3colors.m3onSecondaryContainer
     selectionColor: Appearance.colors.colSecondaryContainer
     placeholderTextColor: Appearance.m3colors.m3outline

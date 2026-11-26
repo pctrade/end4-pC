@@ -37,7 +37,7 @@ Item {
         color: "transparent"
         border.width: 1
         border.color: ColorUtils.transparentize(notifs.accent, 0.7)
-    }
+    }    }
 
     Item {
         id: measure

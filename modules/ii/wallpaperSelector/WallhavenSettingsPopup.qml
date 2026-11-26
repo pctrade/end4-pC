@@ -341,6 +341,7 @@ WindowDialog {
 
                 TextField {
                     id: apiKeyField
+                    ContextMenu.menu: StyledTextEditMenu { editor: apiKeyField }
                     Layout.fillWidth: true
                     echoMode: TextInput.Password
                     placeholderText: Translation.tr("Optional — needed for NSFW")

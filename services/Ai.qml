@@ -556,8 +556,10 @@ Singleton {
 
     function setModel(modelId, feedback = true, setPersistentState = true) {
         if (!modelId) modelId = ""
-        modelId = modelId.toLowerCase()
-        if (modelList.indexOf(modelId) !== -1) {
+        // Find the real model ID case-insensitively.
+        const matchedModelId = modelList.find(id => id.toLowerCase() === modelId.toLowerCase())
+        if (matchedModelId !== undefined) {
+            modelId = matchedModelId
             const model = models[modelId]
             // See if policy prevents online models
             if (Config.options.policies.ai === 2 && !model.endpoint.includes("localhost")) {

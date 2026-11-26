@@ -32,7 +32,46 @@ handle_kde_material_you_colors() {
             kde_scheme_variant="scheme-tonal-spot"
             ;;
     esac
+
+    # Konsole lock: the kde-material-you-colors wrapper also rewrites the
+    # Konsole profiles' [Appearance] ColorScheme/Font to the generated
+    # MaterialYou values. Snapshot the profiles first and restore them after
+    # the wrapper runs so Konsole keeps the user's own color scheme while
+    # every other app is still themed.
+    KONSOLE_DIR="$HOME/.local/share/konsole"
+    konsole_backup_dir="$STATE_DIR/user/generated/konsole-lock-backup"
+    lock_konsole="true"
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        lock_konsole=$(jq -r '.appearance.wallpaperTheming.lockKonsoleColors // "true"' "$SHELL_CONFIG_FILE")
+    fi
+
+    konsole_lock_backup() {
+        [ ! -d "$konsole_backup_dir" ] && mkdir -p "$konsole_backup_dir"
+        find "$KONSOLE_DIR" -maxdepth 1 -name "*.profile" -type f -exec cp -f {} "$konsole_backup_dir/" \;
+    }
+
+    konsole_lock_restore() {
+        if [ -d "$konsole_backup_dir" ] && compgen -G "$konsole_backup_dir/*.profile" > /dev/null; then
+            for f in "$konsole_backup_dir"/*.profile; do
+                cp -f "$f" "$KONSOLE_DIR/$(basename "$f")" 2>/dev/null || true
+            done
+        fi
+    }
+
+    if [[ "$lock_konsole" == "true" && -d "$KONSOLE_DIR" ]]; then
+        konsole_lock_backup
+    fi
+
     "$XDG_CONFIG_HOME"/matugen/templates/kde/kde-material-you-colors-wrapper.sh --scheme-variant "$kde_scheme_variant"
+
+    if [[ "$lock_konsole" == "true" ]]; then
+        konsole_lock_restore
+    fi
+
+    # kde-material-you-colors rewrites the KDE icon theme from its own config.
+    # Re-assert the managed theme after the wrapper, but only when the user
+    # enabled the override (the manager enforces that policy).
+    apply_icon_override_safety_net "$mode_flag"
 }
 
 pre_process() {
@@ -50,6 +89,20 @@ pre_process() {
     fi
 }
 
+update_icon_scheme() {
+    local mode_flag="$1"
+    local manager="$SCRIPT_DIR/../theming/icon-theme-manager.sh"
+    [ -x "$manager" ] || return 0
+    bash "$manager" --sync --apply --mode "$mode_flag" --source wallpaper || true
+}
+
+apply_icon_override_safety_net() {
+    local mode_flag="$1"
+    local manager="$SCRIPT_DIR/../theming/icon-theme-manager.sh"
+    [ -x "$manager" ] || return 0
+    bash "$manager" --post-kde --mode "$mode_flag" || true
+}
+
 post_process() {
     local screen_width="$1"
     local screen_height="$2"
@@ -64,8 +117,41 @@ post_process() {
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
 }
 
+apply_named_scheme() {
+    local mode_flag="$1"
+    local wallpaper_path="$2"
+    python3 "$SCRIPT_DIR/named_scheme.py" \
+        --scheme "$named_scheme" \
+        --mode "$mode_flag" \
+        --image "$wallpaper_path" \
+        --primary "$named_primary" \
+        --secondary "$named_secondary" \
+        --scss "$STATE_DIR/user/generated/material_colors.scss" \
+        --cache "$STATE_DIR/user/generated/color.txt" || {
+            notify-send "Color scheme" "'$named_scheme' is invalid, going back to Material colors" -a "Shell"
+            config_json_update "$SHELL_CONFIG_FILE" '.appearance.palette.namedScheme = ""'
+            return 1
+        }
+    "$SCRIPT_DIR"/applycolor.sh
+    update_icon_scheme "$mode_flag"
+    apply_named_qt &
+    "$SCRIPT_DIR/code/material-code-set-color.sh" &
+}
+
+apply_named_qt() {
+    if [ -f "$SHELL_CONFIG_FILE" ] && [ "$(jq -r '.appearance.wallpaperTheming.enableQtApps' "$SHELL_CONFIG_FILE")" == "false" ]; then
+        return
+    fi
+    command -v plasma-apply-colorscheme >/dev/null || return
+    plasma-apply-colorscheme IllogicalNamed2 >/dev/null 2>&1
+    plasma-apply-colorscheme IllogicalNamed >/dev/null 2>&1
+}
+
 check_and_prompt_upscale() {
     local img="$1"
+    if [ -f "$SHELL_CONFIG_FILE" ] && [ "$(jq -r '.background.collage.enable // false' "$SHELL_CONFIG_FILE")" == "true" ]; then
+        return
+    fi
     min_width_desired="$(hyprctl monitors -j | jq '([.[].width] | max)' | xargs)"
     min_height_desired="$(hyprctl monitors -j | jq '([.[].height] | max)' | xargs)"
 
@@ -94,7 +180,13 @@ check_and_prompt_upscale() {
                         "Install Upscayl?" \
                         "yay -S upscayl-bin")
                     if [[ "$action2" == "install_upscayl" ]]; then
-                        kitty -1 yay -S upscayl-bin
+                        if command -v yay &>/dev/null; then
+                            kitty -1 yay -S upscayl-bin
+                        elif command -v paru &>/dev/null; then
+                            kitty -1 paru -S upscayl-bin
+                        else
+                            kitty -1 sudo pacman -S upscayl-bin
+                        fi
                         if command -v upscayl &>/dev/null; then
                             nohup upscayl > /dev/null 2>&1 &
                         fi
@@ -109,7 +201,12 @@ CUSTOM_DIR="$XDG_CONFIG_HOME/hypr/custom"
 RESTORE_SCRIPT_DIR="$CUSTOM_DIR/scripts"
 RESTORE_SCRIPT="$RESTORE_SCRIPT_DIR/__restore_video_wallpaper.sh"
 THUMBNAIL_DIR="$RESTORE_SCRIPT_DIR/mpvpaper_thumbnails"
+MPVPAPER_FLAGS="-p -a max"
 VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no"
+# One control socket per output, so the shell can pause and resume the live
+# wallpaper instead of only being able to kill it.
+MPV_SOCKET_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+MPV_SOCKET_PREFIX="$MPV_SOCKET_DIR/mpvpaper-"
 
 is_video() {
     local extension="${1##*.}"
@@ -128,9 +225,10 @@ create_restore_script() {
 # Time: $(date)
 
 pkill -f -9 mpvpaper
+rm -f "$MPV_SOCKET_PREFIX"*.sock
 
 for monitor in \$(hyprctl monitors -j | jq -r '.[] | .name'); do
-    mpvpaper -o "$VIDEO_OPTS" "\$monitor" "$video_path" &
+    mpvpaper $MPVPAPER_FLAGS -o "$VIDEO_OPTS input-ipc-server=$MPV_SOCKET_PREFIX\$monitor.sock" "\$monitor" "$video_path" &
     sleep 0.1
 done
 EOF
@@ -236,8 +334,9 @@ switch() {
 
                 local video_path="$imgpath"
                 monitors=$(hyprctl monitors -j | jq -r '.[] | .name')
+                rm -f "$MPV_SOCKET_PREFIX"*.sock
                 for monitor in $monitors; do
-                    mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
+                    mpvpaper $MPVPAPER_FLAGS -o "$VIDEO_OPTS input-ipc-server=$MPV_SOCKET_PREFIX$monitor.sock" "$monitor" "$video_path" &
                     sleep 0.1
                 done
             fi
@@ -293,6 +392,10 @@ switch() {
     generate_colors_material_args+=(--termscheme "$terminalscheme" --blend_bg_fg)
     generate_colors_material_args+=(--cache "$STATE_DIR/user/generated/color.txt")
 
+    if [[ -n "$named_scheme" && -z "$noswitch_flag" && -z "$colors_lock_flag" ]]; then
+        return
+    fi
+
     pre_process "$mode_flag"
 
     if [ -f "$SHELL_CONFIG_FILE" ]; then
@@ -313,6 +416,11 @@ switch() {
     fi
 
     colors_json_path="$STATE_DIR/user/generated/colors.json"
+    if [[ -n "$named_scheme" && -z "$colors_lock_flag" ]]; then
+        apply_named_scheme "$mode_flag" "$imgpath"
+        return
+    fi
+
     colors_lock_json_path="$STATE_DIR/user/generated/colors-lock.json"
     colors_lock_watch_paths=(
         "$colors_json_path"
@@ -360,6 +468,7 @@ switch() {
 
     if [[ -z "$colors_lock_flag" ]]; then
         "$SCRIPT_DIR"/applycolor.sh
+        update_icon_scheme "$mode_flag"
     fi
 
     max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
@@ -381,6 +490,26 @@ main() {
 
     get_type_from_config() {
         jq -r '.appearance.palette.type' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "auto"
+    }
+    get_named_scheme_from_config() {
+        jq -r '.appearance.palette.namedScheme // ""' "$SHELL_CONFIG_FILE" 2>/dev/null || echo ""
+    }
+    set_named_scheme() {
+        local previous
+        previous="$(get_named_scheme_from_config)"
+        if [[ "$previous" != "$1" ]]; then
+            config_json_update "$SHELL_CONFIG_FILE" --arg name "$1" \
+                '.appearance.palette.namedScheme = $name | .appearance.palette.namedSchemePrimary = "" | .appearance.palette.namedSchemeSecondary = ""'
+        fi
+    }
+    set_named_accent() {
+        local slot="$1" value="$2"
+        [[ "$value" == "clear" ]] && value=""
+        config_json_update "$SHELL_CONFIG_FILE" --arg slot "$slot" --arg value "$value" \
+            '.appearance.palette["namedScheme" + $slot] = $value'
+    }
+    get_named_accent_from_config() {
+        jq -r --arg key "namedScheme$1" '.appearance.palette[$key] // ""' "$SHELL_CONFIG_FILE" 2>/dev/null || echo ""
     }
     get_accent_color_from_config() {
         jq -r '.appearance.palette.accentColor' "$SHELL_CONFIG_FILE" 2>/dev/null || echo ""
@@ -419,6 +548,22 @@ main() {
                     shift
                 fi
                 ;;
+            --scheme-name)
+                if [[ "$2" == "clear" ]]; then
+                    set_named_scheme ""
+                else
+                    set_named_scheme "$2"
+                fi
+                shift 2
+                ;;
+            --scheme-primary)
+                set_named_accent Primary "$2"
+                shift 2
+                ;;
+            --scheme-secondary)
+                set_named_accent Secondary "$2"
+                shift 2
+                ;;
             --image)
                 imgpath="$2"
                 explicit_image="1"
@@ -456,6 +601,15 @@ main() {
     if [[ -n "$noswitch_flag" && -n "$explicit_image" ]]; then
         colors_only_flag="1"
     fi
+
+    named_scheme="$(get_named_scheme_from_config)"
+    if [[ -n "$named_scheme" && ! -f "$SCRIPT_DIR/schemes/$named_scheme.json" && ! -f "$(dirname "$SHELL_CONFIG_FILE")/schemes/$named_scheme.json" ]]; then
+        echo "[switchwall.sh] Warning: Unknown named scheme '$named_scheme', ignoring" >&2
+        named_scheme=""
+    fi
+
+    named_primary="$(get_named_accent_from_config Primary)"
+    named_secondary="$(get_named_accent_from_config Secondary)"
 
     config_color="$(get_accent_color_from_config)"
     if [[ "$config_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then

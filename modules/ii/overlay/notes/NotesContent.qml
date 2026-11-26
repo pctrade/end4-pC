@@ -146,6 +146,7 @@ OverlayBackground {
 
         ScrollView {
             id: editorScrollView
+            property TouchpadScrollArea _touchpadScroll: TouchpadScrollArea { flickable: editorScrollView.contentItem }
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true

@@ -119,11 +119,9 @@ ContentPage {
         onExited: (code) => {
             page.onlinePresetsLoading = false
             const raw = onlinePresetsListCollector.text
-            console.log("[onlinePresets] curl exit code:", code)
             const statusMatch = raw.match(/HTTP_STATUS:(\d+)\s*$/)
             const httpStatus = statusMatch ? parseInt(statusMatch[1]) : -1
             const body = statusMatch ? raw.slice(0, statusMatch.index) : raw
-            console.log("[onlinePresets] http status:", httpStatus)
             try {
                 const data = JSON.parse(body)
                 if (!Array.isArray(data.tree)) throw new Error("unexpected response: " + JSON.stringify(data))
@@ -589,11 +587,7 @@ ContentPage {
                             onLoaded: {
                                 try {
                                     const data = JSON.parse(text())
-                                    const rawWallpaper = data?.background?.wallpaperPath ?? ""
-                                    const isVideo = /\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaper)
-                                    presetDelegate.presetWallpaper = isVideo
-                                        ? (data?.background?.thumbnailPath ?? "")
-                                        : rawWallpaper
+                                    presetDelegate.presetWallpaper = Presets.previewImage(data)
                                     presetDelegate.presetDescription = data?._presetMeta?.description ?? ""
                                 } catch (e) {
                                     console.log("Failed to parse preset:", e)
@@ -637,11 +631,7 @@ ContentPage {
                                 onLoaded: {
                                     try {
                                         const data = JSON.parse(text())
-                                        const rawWallpaper = data?.background?.wallpaperPath ?? ""
-                                        const isVideo = /\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaper)
-                                        onlineDelegate.presetWallpaper = isVideo
-                                            ? (data?.background?.thumbnailPath ?? "")
-                                            : rawWallpaper
+                                        onlineDelegate.presetWallpaper = Presets.previewImage(data)
                                         onlineDelegate.presetDescription = data?._presetMeta?.description ?? ""
                                     } catch (e) {
                                         console.log("Failed to parse online preset:", e)
@@ -690,11 +680,7 @@ ContentPage {
                             onLoaded: {
                                 try {
                                     const data = JSON.parse(text())
-                                    const rawWallpaper = data?.background?.wallpaperPath ?? ""
-                                    const isVideo = /\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaper)
-                                    importedDelegate.presetWallpaper = isVideo
-                                        ? (data?.background?.thumbnailPath ?? "")
-                                        : rawWallpaper
+                                    importedDelegate.presetWallpaper = Presets.previewImage(data)
                                     importedDelegate.presetDescription = data?._presetMeta?.description ?? ""
                                 } catch (e) {
                                     console.log("Failed to parse imported preset:", e)

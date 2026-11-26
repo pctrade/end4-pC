@@ -19,6 +19,8 @@ QtObject {
     }
     property var actions: []
     property var control: null
+    property bool clipboard: false
+    property bool pinned: false
     
     // Stuff needed for DesktopEntry 
     property string id: ""

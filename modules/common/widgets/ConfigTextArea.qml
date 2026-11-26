@@ -16,6 +16,7 @@ RowLayout {
     property bool filled: true
     property bool showBorder: !filled
     property bool rounded: false
+    property bool multiline: false
     property real fieldWidth: 220
     property real fieldHeight: 40
     property color colBackground: filled ? Appearance.colors.colLayer1 : "transparent"
@@ -91,12 +92,15 @@ RowLayout {
 
         TextArea {
             id: textArea
+            ContextMenu.menu: StyledTextEditMenu { editor: textArea }
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
             enabled: root.enabled
             wrapMode: TextArea.Wrap
-            verticalAlignment: TextEdit.AlignVCenter
+            verticalAlignment: root.multiline ? TextEdit.AlignTop : TextEdit.AlignVCenter
+            topPadding: root.multiline ? 10 : 0
+            bottomPadding: root.multiline ? 10 : 0
             selectByMouse: true
             placeholderTextColor: Appearance.colors.colSubtext
             color: root.colOnBackground
@@ -113,10 +117,18 @@ RowLayout {
             }
 
             Keys.onReturnPressed: function(event) {
+                if (root.multiline && !(event.modifiers & Qt.ControlModifier)) {
+                    event.accepted = false
+                    return
+                }
                 event.accepted = true
                 root.confirmClicked()
             }
             Keys.onEnterPressed: function(event) {
+                if (root.multiline && !(event.modifiers & Qt.ControlModifier)) {
+                    event.accepted = false
+                    return
+                }
                 event.accepted = true
                 root.confirmClicked()
             }

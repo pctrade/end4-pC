@@ -22,13 +22,20 @@ Singleton {
     property string translationsDir: Quickshell.shellPath("translations")
     property string generatedTranslationsDir: Directories.shellConfig + "/translations"
 
+    function resolveLanguage(wanted) {
+        const all = root.allAvailableLanguages;
+        if (all.includes(wanted))
+            return wanted;
+        if (!wanted || wanted === "C" || wanted === "POSIX")
+            return "en_US";
+        const prefix = wanted.split(/[_.@-]/)[0];
+        const sameLanguage = all.find(lang => lang.split("_")[0] === prefix);
+        return sameLanguage ?? wanted;
+    }
+
     property string languageCode: {
-        var configLang = Config?.options.language.ui ?? "auto";
-
-        if (configLang !== "auto")
-            return configLang;
-
-        return Qt.locale().name;
+        const configLang = Config?.options.language.ui ?? "auto";
+        return root.resolveLanguage(configLang !== "auto" ? configLang : Qt.locale().name);
     }
 
     TranslationScanner {
@@ -48,7 +55,6 @@ Singleton {
     }
 
     onLanguageCodeChanged: {
-        print("[Translation] Language changed to", root.languageCode);
         translationFileView.languageCode = root.languageCode;
         generatedTranslationFileView.languageCode = root.languageCode;
         translationFileView.reread();
@@ -120,6 +126,7 @@ Singleton {
         required property string translationsDir
         property string languageCode: root.languageCode
         signal contentLoaded(var data)
+        printErrors: false
 
         function reread() { // Proper reload in case the file was incorrect before
             translationReader.path = "";

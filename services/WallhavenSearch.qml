@@ -81,6 +81,17 @@ Singleton {
             KeyringStorage.setNestedField(["apiKeys", "wallhaven"], apiKey)
     }
 
+    function clearQuery() {
+        if (currentQuery === "" && currentResults.length === 0) return
+        currentQuery = ""
+        currentResults = []
+        currentPage = 1
+        lastPage = 1
+        currentMeta = ({})
+        lastError = ""
+        saveToConfig()
+    }
+
     function search(query, page) {
         if (fetching) return
 

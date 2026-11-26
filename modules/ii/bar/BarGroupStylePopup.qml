@@ -91,10 +91,16 @@ PopupWindow {
 
         Rectangle {
             id: popupBackground
+            WindowGlass {
+                anchors.fill: parent
+                glassEnabled: (parent?.color.a ?? 0) > 0
+                cardRadius: parent?.radius ?? 0
+                tint: parent?.color ?? 'transparent'
+            }
             anchors.fill: parent
             implicitWidth: 340
             implicitHeight: content.implicitHeight + 32
-            color: Appearance.m3colors.m3surfaceContainer
+            color: Config.options.appearance.uiBackground === "oled" ? "#000000" : Appearance.m3colors.m3surfaceContainer
             radius: Appearance.rounding.large
 
             ColumnLayout {
