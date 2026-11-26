@@ -65,7 +65,13 @@ def _write_private_json(path: Path, payload: object) -> None:
         raise
 
 
+def history_enabled() -> bool:
+    return os.environ.get("QS_OMNI_HISTORY", "1") != "0"
+
+
 def record_history(item_type: str, text: str, data: str = "") -> None:
+    if not history_enabled():
+        return
     text = text.strip()
     if not text:
         return
@@ -254,9 +260,8 @@ def search_suggestions(raw_query: str, include_browser: bool = True, include_spo
     return suggestions[:8]
 
 
-def open_browser_url(url: str, save_history: bool = True) -> None:
-    if save_history:
-        record_history("url", url, url)
+def open_browser_url(url: str) -> None:
+    record_history("url", url, url)
     cmd = get_default_browser_cmd() + [url]
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -827,7 +832,7 @@ def main() -> None:
     elif cmd == "record":
         record_history(arg, arg2, arg3)
     elif cmd == "open-url":
-        open_browser_url(arg, save_history=(arg2 != "0"))
+        open_browser_url(arg)
     elif cmd == "open-search":
         open_browser_search(arg, arg2 or "https://www.google.com/search?q=")
     elif cmd == "run-shell":
