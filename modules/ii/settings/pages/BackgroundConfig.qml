@@ -492,6 +492,7 @@ ContentPage {
 
             readonly property bool digitalPresent: stylePresent("digital")
             readonly property bool cookiePresent: stylePresent("cookie")
+            readonly property bool dailyPresent: stylePresent("daily")
 
             GroupedList {
                 ConfigSwitch {
@@ -597,6 +598,25 @@ ContentPage {
                             icon: "grid_view",
                             value: "pixel"
                         }
+                    ]
+                }
+            }
+
+            ContentSubsection {
+                visible: settingsClock.dailyPresent
+                title: Translation.tr("Daily clock settings")
+
+                ConfigSelectionArray {
+                    currentValue: Config.options.background.widgets.clock.daily.variant
+                    onSelected: newValue => {
+                        Config.options.background.widgets.clock.daily.variant = newValue;
+                    }
+                    options: [
+                        { displayName: Translation.tr("Badge"), icon: "cookie", value: "badge" },
+                        { displayName: Translation.tr("Morning"), icon: "wb_twilight", value: "morning" },
+                        { displayName: Translation.tr("Script"), icon: "draw", value: "script" },
+                        { displayName: Translation.tr("Bold"), icon: "format_bold", value: "bold" },
+                        { displayName: Translation.tr("Bento"), icon: "dashboard", value: "bento" }
                     ]
                 }
             }

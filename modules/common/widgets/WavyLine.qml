@@ -8,6 +8,9 @@ Canvas {
     property color color: Appearance?.colors.colPrimary ?? "#685496"
     property real lineWidth: 4
     property real fullLength: width
+    // How much of the width is drawn: changing it repaints without resizing the canvas
+    property real drawLength: width
+    onDrawLengthChanged: requestPaint()
 
     onPaint: {
         var ctx = getContext("2d");
@@ -22,7 +25,7 @@ Canvas {
         ctx.lineWidth = root.lineWidth;
         ctx.lineCap = "round";
         ctx.beginPath();
-        for (var x = ctx.lineWidth / 2; x <= root.width - ctx.lineWidth / 2; x += 1) {
+        for (var x = ctx.lineWidth / 2; x <= root.drawLength - ctx.lineWidth / 2; x += 1) {
             var waveY = centerY + amplitude * Math.sin(frequency * 2 * Math.PI * x / root.fullLength + phase);
             if (x === 0)
                 ctx.moveTo(x, waveY);
